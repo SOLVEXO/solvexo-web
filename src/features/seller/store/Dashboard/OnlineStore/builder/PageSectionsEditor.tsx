@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical, Eye
 import { useToast } from '@/contexts/ToastContext';
 import type { SavedSectionEntry } from '@/api/services/savedSections';
 import { useSavedSectionLibrary, type SavedSectionLibrary } from './useSavedSectionLibrary';
-import { useStoreSectionDefs } from '@/features/storefront-themes/storeSections/useStoreSectionDefs';
+import { invalidateStoreSectionDefs, useStoreSectionDefs } from '@/features/storefront-themes/storeSections/useStoreSectionDefs';
 import { useParams } from 'react-router-dom';
 import { SaveToLibraryDialog, SavedSectionBody } from './SavedSectionParts';
 import { copySectionToClipboard, readSectionClipboard, pasteBlockedReason, cleanSectionCopy } from './sectionClipboard';
@@ -638,6 +638,8 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
           library={library}
           storeSections={storeSections}
           builderPath={routeStoreId ? `/store/${routeStoreId}/online-store/section-builder` : undefined}
+          onRefreshMine={storeId ? () => invalidateStoreSectionDefs(storeId) : undefined}
+          returnTo={`${window.location.pathname}${window.location.search}`}
           onPickSaved={entry => {
             const next = [...sections];
             next.splice(Math.min(insertAt, sections.length), 0, { type: 'saved_section', settings: { savedSectionId: entry._id }, blocks: [] } as Section);

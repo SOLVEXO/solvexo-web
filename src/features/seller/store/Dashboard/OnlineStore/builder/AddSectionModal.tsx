@@ -1,6 +1,6 @@
 ﻿import '@/features/storefront-themes/editorThemes';
-import { useState, type ReactNode } from 'react';
-import { Search } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Plus, Search } from 'lucide-react';
 import { Modal } from '@/components/comman/ui';
 import { SECTION_META, SECTION_META_BY_TYPE } from './sectionRegistry';
 import { customSectionsOf } from '@/features/storefront-themes/themeManifest';
@@ -57,11 +57,15 @@ function Mock({ kind }: { kind: PresetMock }) {
 }
 
 export function AddSectionModal({
-  onPick, onClose, supportedTypes, layoutThemeId, layoutScope, library, onPickSaved, storeSections, builderPath,
+  onPick, onClose, supportedTypes, layoutThemeId, layoutScope, library, onPickSaved, storeSections, builderPath, onRefreshMine, returnTo,
 }: {
   /** Sections the seller designed in the Section builder; offered as their own tab. `builderPath` links to where they are made. */
   storeSections?: StoreSectionDef[] | null;
   builderPath?: string;
+  /** Re-reads the store's own sections. Called when the picker opens and when this tab is shown again (the Section builder is opened in a new tab). */
+  onRefreshMine?: () => void;
+  /** Where the Section builder's "Back to editor" button returns to (this editor's own path). */
+  returnTo?: string;
   /** The store's saved (global) sections: offered as their own tab; picking one places a reference to it. */
   library?: SavedSectionLibrary;
   onPickSaved?: (entry: SavedSectionEntry) => void;
@@ -110,6 +114,19 @@ export function AddSectionModal({
       style={{ borderColor: tab === id ? ACCENT : 'transparent', color: tab === id ? '#161412' : '#77736b' }}>{label}</button>
   );
 
+  // The Section builder opens in a NEW tab (nothing typed in this editor is lost); when the seller comes back, the list is read again.
+  useEffect(() => {
+    if (!onRefreshMine) return undefined;
+    onRefreshMine();
+    const again = () => { if (document.visibilityState === 'visible') onRefreshMine(); };
+    window.addEventListener('focus', again);
+    document.addEventListener('visibilitychange', again);
+    return () => { window.removeEventListener('focus', again); document.removeEventListener('visibilitychange', again); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per open
+  }, []);
+  const builderHref = builderPath ? `${builderPath}?new=1${returnTo ? `&return=${encodeURIComponent(returnTo)}` : ''}` : undefined;
+  const builderLink = 'inline-flex items-center gap-1.5 text-brand-orange font-semibold hover:underline';
+
   return (
     <Modal title="Add a section" width={1040} onClose={onClose}>
       <div role="tablist" className="flex gap-2 border-b border-bone -mt-1 mb-3">
@@ -128,10 +145,19 @@ export function AddSectionModal({
         />
       </div>
 
+      {tab === 'mine' && storeSections && builderHref && (
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <p className="m-0 text-[12px] text-slate">Sections you designed yourself, without any code.</p>
+          <span className="flex items-center gap-3 text-[12.5px]">
+            <a href={builderPath} target="_blank" rel="noopener noreferrer" className="text-slate font-medium hover:underline">Manage my sections</a>
+            <a href={builderHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-brand-orange px-3 py-1.5 font-semibold text-white no-underline hover:opacity-90"><Plus size={13} aria-hidden /> New section</a>
+          </span>
+        </div>
+      )}
       {tab === 'mine' && storeSections ? (
         storeSections.length === 0 ? (
           <p role="status" className="text-[13px] text-slate py-8 text-center max-w-[440px] mx-auto leading-relaxed">
-            You have not designed any sections yet. {builderPath ? <>Open the <a href={builderPath} className="text-brand-orange font-semibold hover:underline">Section builder</a> to make one without code.</> : 'Use the Section builder to make one without code.'}
+            You have not designed any sections yet. {builderPath ? <>Open the <a href={builderHref} target="_blank" rel="noopener noreferrer" className="text-brand-orange font-semibold hover:underline">Section builder</a> to make one without code.</> : 'Use the Section builder to make one without code.'}
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -246,6 +272,11 @@ export function AddSectionModal({
             ))}
           </div>
         </>
+      )}
+      {builderHref && tab !== 'mine' && (
+        <p className="m-0 mt-4 border-t border-bone pt-3 text-[12px] text-slate">
+          Want something that is not here? <a href={builderHref} target="_blank" rel="noopener noreferrer" className={builderLink}><Plus size={12} aria-hidden /> Design your own section</a> in the Section builder (opens in a new tab).
+        </p>
       )}
     </Modal>
   );

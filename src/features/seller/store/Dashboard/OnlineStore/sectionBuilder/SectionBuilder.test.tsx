@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import type { StoreSectionDef } from '@/api/services/storeSectionDefs';
 import { SectionDesigner } from './SectionDesigner';
 import { SectionBuilderPage } from './SectionBuilderPage';
@@ -114,20 +115,20 @@ describe('SectionDesigner', () => {
 
 describe('SectionBuilderPage', () => {
   it('lists the seller\'s sections with where they are used', async () => {
-    render(<SectionBuilderPage />);
+    render(<MemoryRouter><SectionBuilderPage /></MemoryRouter>);
     expect(await screen.findByText('Banner')).toBeTruthy();
     expect(screen.getByText(/Used on 2 pages/)).toBeTruthy();
   });
 
   it('an empty store gets a helpful start', async () => {
     list.mockResolvedValue({ data: [] });
-    render(<SectionBuilderPage />);
+    render(<MemoryRouter><SectionBuilderPage /></MemoryRouter>);
     expect(await screen.findByText('No sections of your own yet')).toBeTruthy();
   });
 
   it('a load error can be retried', async () => {
     list.mockRejectedValueOnce(new Error('offline'));
-    render(<SectionBuilderPage />);
+    render(<MemoryRouter><SectionBuilderPage /></MemoryRouter>);
     expect(await screen.findByRole('alert')).toBeTruthy();
     fireEvent.click(screen.getByText('Try again'));
     expect(await screen.findByText('Banner')).toBeTruthy();
@@ -135,7 +136,7 @@ describe('SectionBuilderPage', () => {
 
   it('New section: pick a starter, name it, save; the storefront cache is refreshed', async () => {
     create.mockResolvedValue({ data: { ...existing, _id: 'd2', name: 'Cards' } });
-    render(<SectionBuilderPage />);
+    render(<MemoryRouter><SectionBuilderPage /></MemoryRouter>);
     await screen.findByText('Banner');
     fireEvent.click(screen.getAllByText('New section')[0]);
     fireEvent.click(await screen.findByText('Feature cards'));
@@ -152,7 +153,7 @@ describe('SectionBuilderPage', () => {
 
   it('Edit saves to the same section', async () => {
     update.mockResolvedValue({ data: existing });
-    render(<SectionBuilderPage />);
+    render(<MemoryRouter><SectionBuilderPage /></MemoryRouter>);
     fireEvent.click(await screen.findByText('Edit'));
     fireEvent.change(await screen.findByLabelText('Section name'), { target: { value: 'Banner 2' } });
     fireEvent.click(screen.getByText('Save section'));
@@ -164,7 +165,7 @@ describe('SectionBuilderPage', () => {
 
   it('shows the server\'s reason when saving fails and stays in the designer', async () => {
     create.mockRejectedValue(new Error('A section with this name already exists'));
-    render(<SectionBuilderPage />);
+    render(<MemoryRouter><SectionBuilderPage /></MemoryRouter>);
     await screen.findByText('Banner');
     fireEvent.click(screen.getAllByText('New section')[0]);
     fireEvent.click(await screen.findByText('Blank'));
@@ -175,7 +176,7 @@ describe('SectionBuilderPage', () => {
   });
 
   it('Cancel asks before throwing changes away', async () => {
-    render(<SectionBuilderPage />);
+    render(<MemoryRouter><SectionBuilderPage /></MemoryRouter>);
     fireEvent.click(await screen.findByText('Edit'));
     await screen.findByLabelText('Section name');
     fireEvent.click(screen.getByText('Cancel'));
@@ -186,7 +187,7 @@ describe('SectionBuilderPage', () => {
 
   it('Delete confirms, deletes and refreshes; a section in use explains why it can not be deleted', async () => {
     remove.mockResolvedValueOnce({ success: true });
-    render(<SectionBuilderPage />);
+    render(<MemoryRouter><SectionBuilderPage /></MemoryRouter>);
     fireEvent.click(await screen.findByText('Delete'));
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(remove).toHaveBeenCalledWith('S1', 'd1'));

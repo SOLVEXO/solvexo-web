@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Boxes, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Boxes, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Button, EmptyState, Modal, SkeletonBox } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
@@ -16,12 +17,22 @@ import { STARTERS } from './layoutTree';
 
 type View = { mode: 'list' } | { mode: 'pick' } | { mode: 'new'; layout: LayoutNode } | { mode: 'edit'; def: StoreSectionDef };
 
+/** A same-store page path only (the editor the seller came from): never an address on another site. */
+export function safeReturnPath(v: string | null): string | null {
+  if (!v || !v.startsWith('/store/') || v.startsWith('//') || /[\\:]|\.\./.test(v) || v.length > 300) return null;
+  return v;
+}
+
 /** "Section builder": design your own sections without code (a layout of headings, text, images, buttons and repeating cards), then add them to any page like any other section. */
 export function SectionBuilderPage() {
   const { storeId } = useStoreWorkspace();
   const toast = useToast();
   const { data, error, loading, retry } = useKeyedLoad(() => apiListStoreSectionDefs(storeId).then(r => r.data), storeId);
-  const [view, setView] = useState<View>({ mode: 'list' });
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  // Opened from the editor's "Add a section" (new tab): go straight to the starter list, and offer a way back to the editor.
+  const [view, setView] = useState<View>(() => (params.get('new') === '1' ? { mode: 'pick' } : { mode: 'list' }));
+  const returnPath = safeReturnPath(params.get('return'));
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [deleting, setDeleting] = useState<StoreSectionDef | null>(null);
@@ -71,7 +82,12 @@ export function SectionBuilderPage() {
       <StorePageHeader
         title="Section builder"
         subtitle="Design your own sections without any code, then add them to any page."
-        actions={!designing ? <Button variant="primary" icon={<Plus size={14} />} onClick={() => setView({ mode: 'pick' })}>New section</Button> : undefined}
+        actions={!designing ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {returnPath && <Button variant="outline" icon={<ArrowLeft size={14} />} onClick={() => navigate(returnPath)}>Back to editor</Button>}
+            <Button variant="primary" icon={<Plus size={14} />} onClick={() => setView({ mode: 'pick' })}>New section</Button>
+          </div>
+        ) : undefined}
       />
       <div className="px-4 md:px-7 py-5 pb-10">
         {designing ? (

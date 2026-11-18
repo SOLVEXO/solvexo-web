@@ -68,7 +68,42 @@ describe('PageSectionsEditor + seller-built sections', () => {
     fireEvent.click(await screen.findByText('Add Your First Section'));
     fireEvent.click(await screen.findByRole('tab', { name: 'My sections' }));
     const link = await screen.findByRole('link', { name: 'Section builder' });
-    expect(link.getAttribute('href')).toBe('/store/S1/online-store/section-builder');
+    expect(link.getAttribute('href')).toContain('/store/S1/online-store/section-builder?new=1');
+    expect(link.getAttribute('target')).toBe('_blank'); // opens in a new tab: nothing typed in the editor is lost
+  });
+
+  it('even with sections already made, the tab has "New section" and "Manage my sections" (they open the Section builder in a new tab)', async () => {
+    window.history.pushState({}, '', '/store/S1/online-store/customize'); // the editor's own address (a real browser has it)
+    render(<Harness initial={[]} />);
+    fireEvent.click(await screen.findByText('Add Your First Section'));
+    fireEvent.click(await screen.findByRole('tab', { name: 'My sections' }));
+    expect(await screen.findByText('Three cards in a row')).toBeTruthy();
+    const add = screen.getByRole('link', { name: /New section/ });
+    expect(add.getAttribute('href')).toBe(`/store/S1/online-store/section-builder?new=1&return=${encodeURIComponent('/store/S1/online-store/customize')}`);
+    expect(add.getAttribute('target')).toBe('_blank');
+    expect(add.getAttribute('rel')).toBe('noopener noreferrer');
+    const manage = screen.getByRole('link', { name: 'Manage my sections' });
+    expect(manage.getAttribute('href')).toBe('/store/S1/online-store/section-builder');
+  });
+
+  it('every other tab ends with a link to design your own section', async () => {
+    render(<Harness initial={[]} />);
+    fireEvent.click(await screen.findByText('Add Your First Section'));
+    fireEvent.click(await screen.findByRole('tab', { name: 'All section types' }));
+    const link = await screen.findByRole('link', { name: /Design your own section/ });
+    expect(link.getAttribute('href')).toContain('/section-builder?new=1');
+    expect(link.getAttribute('target')).toBe('_blank');
+  });
+
+  it('a section made in the Section builder tab shows up here when the seller comes back', async () => {
+    render(<Harness initial={[]} />);
+    fireEvent.click(await screen.findByText('Add Your First Section'));
+    fireEvent.click(await screen.findByRole('tab', { name: 'My sections' }));
+    await screen.findByText('Three cards in a row');
+    const fresh = { ...def, _id: 'd2', key: 'my.new-one', name: 'Brand new one', description: 'Made a minute ago' };
+    listPublic.mockResolvedValue({ data: [def, fresh] });
+    window.dispatchEvent(new Event('focus')); // coming back to this tab
+    expect(await screen.findByText('Made a minute ago')).toBeTruthy();
   });
 
   it('a page section built by the seller shows its name, its form fields and its cards in the editor', async () => {
