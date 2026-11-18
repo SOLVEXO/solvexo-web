@@ -71,6 +71,11 @@ export function apiUpdateMetafieldDefinition(storeId: string, definitionId: stri
   return client.patch<never, ApiResponse<MetafieldDefinition>>(ENDPOINTS.METAFIELDS.DEFINITION(storeId, definitionId), payload);
 }
 
+/** How many resources have a real value for this field (what deleting it would wipe). */
+export function apiGetMetafieldDefinitionUsage(storeId: string, definitionId: string) {
+  return client.get<never, ApiResponse<{ used: number }>>(ENDPOINTS.METAFIELDS.DEFINITION_USAGE(storeId, definitionId));
+}
+
 export function apiDeleteMetafieldDefinition(storeId: string, definitionId: string) {
   return client.delete<never, ApiResponse<null>>(ENDPOINTS.METAFIELDS.DEFINITION(storeId, definitionId));
 }

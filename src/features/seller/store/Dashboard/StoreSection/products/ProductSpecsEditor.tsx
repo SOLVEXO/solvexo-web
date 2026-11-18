@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { specKeyFrom } from './productSpecs';
-import { Check, Loader2, Plus } from 'lucide-react';
+import { Check, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ActionMenu, Button, Modal } from '@/components/comman/ui';
+import { can } from '@/hooks/auth/useCan';
 import { ValueInput } from '@/features/seller/store/Dashboard/OnlineStore/customize/MetafieldsEditor';
 import {
-  apiCreateMetafieldDefinition, apiGetMetafieldValues, apiListMetafieldDefinitions, apiSetMetafieldValues,
+  apiCreateMetafieldDefinition, apiDeleteMetafieldDefinition, apiGetMetafieldDefinitionUsage, apiGetMetafieldValues, apiListMetafieldDefinitions, apiSetMetafieldValues, apiUpdateMetafieldDefinition,
   type MetafieldDefinition,
 } from '@/api/services/metafields';
 
@@ -34,6 +36,12 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [attempt, setAttempt] = useState(0);
+  // Rename / delete of a spec: the spec is shared by every product, so the dialog says so.
+  const [manage, setManage] = useState<{ def: MetafieldDefinition; mode: 'rename' | 'delete'; used: number | null } | null>(null);
+  const [renameTo, setRenameTo] = useState('');
+  const [manageBusy, setManageBusy] = useState(false);
+  const [manageError, setManageError] = useState('');
+  const canManage = can('content.metaobjects.manage');
   const nameRef = useRef<HTMLInputElement>(null);
   useEffect(() => { if (adding) nameRef.current?.focus(); }, [adding]);
 
@@ -80,6 +88,46 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
     }
   };
 
+  const openManage = (def: MetafieldDefinition, mode: 'rename' | 'delete') => {
+    setManage({ def, mode, used: null }); setRenameTo(def.name); setManageError('');
+    if (mode === 'delete') {
+      apiGetMetafieldDefinitionUsage(storeId, def._id)
+        .then(r => setManage(m => (m && m.def._id === def._id ? { ...m, used: r.data.used } : m)))
+        .catch(() => setManage(m => (m && m.def._id === def._id ? { ...m, used: -1 } : m)));
+    }
+  };
+
+  const doRename = async () => {
+    if (!manage) return;
+    const name = renameTo.trim().slice(0, 60);
+    if (!name) { setManageError('Give the spec a name.'); return; }
+    if ((defs ?? []).some(d => d._id !== manage.def._id && d.name.toLowerCase() === name.toLowerCase())) { setManageError('You already have a spec with this name.'); return; }
+    setManageBusy(true); setManageError('');
+    try {
+      const res = await apiUpdateMetafieldDefinition(storeId, manage.def._id, { name });
+      setDefs(prev => (prev ?? []).map(d => (d._id === manage.def._id ? { ...d, name: res.data?.name ?? name } : d)));
+      setManage(null);
+    } catch (err) {
+      setManageError(err instanceof Error ? err.message : 'Could not rename this spec.');
+    } finally { setManageBusy(false); }
+  };
+
+  const doDelete = async () => {
+    if (!manage) return;
+    setManageBusy(true); setManageError('');
+    try {
+      await apiDeleteMetafieldDefinition(storeId, manage.def._id);
+      const gone = valueKey(manage.def);
+      setDefs(prev => (prev ?? []).filter(d => d._id !== manage.def._id));
+      const { [gone]: _removed, ...rest } = values;
+      setValues(rest);
+      onValuesChange?.(rest);
+      setManage(null);
+    } catch (err) {
+      setManageError(err instanceof Error ? err.message : 'Could not delete this spec.');
+    } finally { setManageBusy(false); }
+  };
+
   const save = async () => {
     if (!productId || !defs) return;
     setSaving(true); setSaveError('');
@@ -108,11 +156,22 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
         {defs && defs.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {defs.map(d => (
-              <label key={d._id} className="block">
-                <span className="block text-[12px] font-medium text-charcoal mb-1">{d.name}{d.required && <span className="text-brand-orange"> *</span>}</span>
-                <ValueInput entry={{ definitionId: d._id, namespace: d.namespace, key: d.key, name: d.name, type: d.type, required: d.required, value: values[valueKey(d)] ?? '' }} value={values[valueKey(d)] ?? ''} onChange={v => change(d, v)} />
-              </label>
+              <div key={d._id} className="relative">
+                <label className="block">
+                  <span className="block text-[12px] font-medium text-charcoal mb-1 pr-8">{d.name}{d.required && <span className="text-brand-orange"> *</span>}</span>
+                  <ValueInput entry={{ definitionId: d._id, namespace: d.namespace, key: d.key, name: d.name, type: d.type, required: d.required, value: values[valueKey(d)] ?? '' }} value={values[valueKey(d)] ?? ''} onChange={v => change(d, v)} />
+                </label>
+                {canManage && (
+                  <div className="absolute right-0 -top-1">
+                    <ActionMenu ariaLabel={`Manage spec ${d.name}`} items={[
+                      { label: 'Rename', icon: <Pencil size={13} />, onClick: () => openManage(d, 'rename') },
+                      { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => openManage(d, 'delete') },
+                    ]} />
+                  </div>
+                )}
+              </div>
             ))}
+            <p className="m-0 text-[11.5px] text-slate sm:col-span-2">A spec you leave empty is not shown in this product&apos;s table. Specs are shared by all your products; use the menu on a spec to rename or delete it everywhere.</p>
           </div>
         )}
         {defs && (adding ? (
@@ -147,6 +206,32 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
           </div>
         )}
       </div>
+      {manage?.mode === 'rename' && (
+        <Modal title="Rename spec" onClose={() => setManage(null)} width={420} mobileSheet={false}
+          footer={<><Button variant="outline" onClick={() => setManage(null)}>Cancel</Button><Button onClick={() => void doRename()} loading={manageBusy}>Save</Button></>}>
+          <div className="flex flex-col gap-2">
+            <input className={inp} value={renameTo} maxLength={60} autoFocus aria-label="Spec name" onChange={e => { setRenameTo(e.target.value); setManageError(''); }}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void doRename(); } }} />
+            <p className="m-0 text-[12px] text-slate">The new name shows on every product. The values stay.</p>
+            {manageError && <p role="alert" className="m-0 text-[12px] text-error">{manageError}</p>}
+          </div>
+        </Modal>
+      )}
+      {manage?.mode === 'delete' && (
+        <Modal title={`Delete "${manage.def.name}"?`} onClose={() => setManage(null)} width={440} mobileSheet={false}
+          footer={<><Button variant="outline" onClick={() => setManage(null)}>Cancel</Button><Button variant="danger" onClick={() => void doDelete()} loading={manageBusy}>Delete spec</Button></>}>
+          <div className="flex flex-col gap-2 text-[13px] text-charcoal">
+            <p className="m-0" data-testid="delete-usage">
+              {manage.used === null ? 'Checking which products use it…'
+                : manage.used < 0 ? 'This spec will be removed from all your products.'
+                : manage.used === 0 ? 'No product has a value for it. It will be removed from the product form.'
+                : `It will be removed from ${manage.used} product${manage.used === 1 ? '' : 's'}, and their values for it are deleted.`}
+            </p>
+            <p className="m-0 text-[12px] text-slate">This cannot be undone. To hide it on one product only, leave it empty there.</p>
+            {manageError && <p role="alert" className="m-0 text-[12px] text-error">{manageError}</p>}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

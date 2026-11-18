@@ -1524,6 +1524,7 @@ export const ENDPOINTS = {
   METAFIELDS: {
     DEFINITIONS:       (storeId: string) => `/api/metafields/${storeId}/definitions`,
     DEFINITION:        (storeId: string, definitionId: string) => `/api/metafields/${storeId}/definitions/${definitionId}`,
+    DEFINITION_USAGE:  (storeId: string, definitionId: string) => `/api/metafields/${storeId}/definitions/${definitionId}/usage`,
     VALUES:            (storeId: string, ownerResource: string, ownerId: string) => `/api/metafields/${storeId}/values/${ownerResource}/${ownerId}`,
     PUBLIC_VALUES:     (storeId: string, ownerResource: string, ownerId: string) => `/api/public/metafields/${storeId}/${ownerResource}/${ownerId}`,
   },
