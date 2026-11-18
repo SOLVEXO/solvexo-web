@@ -41,6 +41,10 @@ export interface MetafieldDefinition {
   required: boolean;
   /** Shopify "Storefronts" access — values are exposed publicly only when true. */
   storefrontAccess?: boolean;
+  /** Categories (or sub-categories) this field is for. Empty / missing = every product. */
+  categoryIds?: string[];
+  /** Place in the form and on the product page's table. */
+  position?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,13 +66,18 @@ export function apiListMetafieldDefinitions(storeId: string, ownerResource?: Met
 }
 
 export function apiCreateMetafieldDefinition(storeId: string, payload: {
-  ownerResource: MetafieldOwnerResource; key: string; name: string; description?: string; type: MetafieldType; required?: boolean; storefrontAccess?: boolean;
+  ownerResource: MetafieldOwnerResource; key: string; name: string; description?: string; type: MetafieldType; required?: boolean; storefrontAccess?: boolean; categoryIds?: string[];
 }) {
   return client.post<never, ApiResponse<MetafieldDefinition>>(ENDPOINTS.METAFIELDS.DEFINITIONS(storeId), payload);
 }
 
-export function apiUpdateMetafieldDefinition(storeId: string, definitionId: string, payload: { name?: string; description?: string; required?: boolean; storefrontAccess?: boolean }) {
+export function apiUpdateMetafieldDefinition(storeId: string, definitionId: string, payload: { name?: string; description?: string; required?: boolean; storefrontAccess?: boolean; categoryIds?: string[] }) {
   return client.patch<never, ApiResponse<MetafieldDefinition>>(ENDPOINTS.METAFIELDS.DEFINITION(storeId, definitionId), payload);
+}
+
+/** Saves the order of a resource's fields (every id, first to last). */
+export function apiReorderMetafieldDefinitions(storeId: string, ownerResource: MetafieldOwnerResource, ids: string[]) {
+  return client.put<never, ApiResponse<null>>(ENDPOINTS.METAFIELDS.DEFINITIONS_REORDER(storeId), { ownerResource, ids });
 }
 
 /** How many resources have a real value for this field (what deleting it would wipe). */

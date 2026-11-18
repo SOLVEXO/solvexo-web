@@ -10,6 +10,7 @@ const defs = [
 ];
 
 vi.mock('@/hooks/auth/useCan', () => ({ can: () => permitted }));
+vi.mock('@/hooks/store/useStoreCategoryTree', () => ({ useStoreCategoryTree: () => ({ tree: [], loading: false, error: '', refetch: () => undefined }) }));
 vi.mock('@/features/seller/store/Dashboard/OnlineStore/customize/MetafieldsEditor', () => ({
   ValueInput: ({ entry, value, onChange }: { entry: { name: string }; value: string; onChange: (v: string) => void }) => <input aria-label={`value of ${entry.name}`} value={value} onChange={e => onChange(e.target.value)} />,
 }));
@@ -21,6 +22,8 @@ vi.mock('@/api/services/metafields', () => ({
   apiGetMetafieldDefinitionUsage: vi.fn(() => Promise.resolve({ data: { used: usage } })),
   apiUpdateMetafieldDefinition: vi.fn((_s: string, id: string, p: { name: string }) => { calls.push(`rename:${id}:${p.name}`); return Promise.resolve({ data: { ...defs.find(d => d._id === id), name: p.name } }); }),
   apiDeleteMetafieldDefinition: vi.fn((_s: string, id: string) => { calls.push(`delete:${id}`); return Promise.resolve({ data: null }); }),
+  apiReorderMetafieldDefinitions: vi.fn(() => Promise.resolve({ data: null })),
+  METAFIELD_TYPE_LABELS: { single_line_text_field: 'Single line text', multi_line_text_field: 'Multi-line text', number_integer: 'Integer', number_decimal: 'Decimal', boolean: 'True/False', date: 'Date', url: 'URL', color: 'Color', json: 'JSON' },
 }));
 
 import { ProductSpecsEditor } from './ProductSpecsEditor';

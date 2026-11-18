@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { specKeyFrom } from './productSpecs';
-import { Check, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { specAppliesTo, moveBefore, moveStep, flattenCategories, categorySummary } from './specVisibility';
+import { SpecCategoryPicker } from './SpecCategoryPicker';
+import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
+import { ArrowDown, ArrowUp, Check, GripVertical, Loader2, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
 import { ActionMenu, Button, Modal } from '@/components/comman/ui';
 import { can } from '@/hooks/auth/useCan';
 import { ValueInput } from '@/features/seller/store/Dashboard/OnlineStore/customize/MetafieldsEditor';
 import {
-  apiCreateMetafieldDefinition, apiDeleteMetafieldDefinition, apiGetMetafieldDefinitionUsage, apiGetMetafieldValues, apiListMetafieldDefinitions, apiSetMetafieldValues, apiUpdateMetafieldDefinition,
-  type MetafieldDefinition,
+  apiCreateMetafieldDefinition, apiDeleteMetafieldDefinition, apiReorderMetafieldDefinitions, METAFIELD_TYPE_LABELS, apiGetMetafieldDefinitionUsage, apiGetMetafieldValues, apiListMetafieldDefinitions, apiSetMetafieldValues, apiUpdateMetafieldDefinition,
+  type MetafieldDefinition, type MetafieldType,
 } from '@/api/services/metafields';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none focus:border-brand-orange';
@@ -20,10 +23,15 @@ const valueKey = (d: Pick<MetafieldDefinition, 'namespace' | 'key'>) => `${d.nam
  *  - Edit page: pass `productId`; the card loads and saves the values itself.
  *  - Add page: no `productId` yet; the parent receives the values through `onValuesChange` and saves them after the
  *    product exists (see `saveProductSpecs`). */
-export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
+/** The types a seller can pick for a new spec here (the full list stays in Settings → Custom Fields). */
+const SPEC_TYPES: MetafieldType[] = ['single_line_text_field', 'multi_line_text_field', 'number_integer', 'number_decimal', 'boolean', 'date', 'url', 'color'];
+
+export function ProductSpecsEditor({ storeId, productId, onValuesChange, categoryIds = [] }: {
   storeId: string;
   productId?: string;
   onValuesChange?: (values: Record<string, string>) => void;
+  /** The product's category and sub-category (as chosen in the form): specs meant for other categories are tucked away. */
+  categoryIds?: string[];
 }) {
   const [defs, setDefs] = useState<MetafieldDefinition[] | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
@@ -37,7 +45,16 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
   const [saveError, setSaveError] = useState('');
   const [attempt, setAttempt] = useState(0);
   // Rename / delete of a spec: the spec is shared by every product, so the dialog says so.
-  const [manage, setManage] = useState<{ def: MetafieldDefinition; mode: 'rename' | 'delete'; used: number | null } | null>(null);
+  const [manage, setManage] = useState<{ def: MetafieldDefinition; mode: 'rename' | 'delete' | 'categories'; used: number | null } | null>(null);
+  const [pickedCats, setPickedCats] = useState<string[]>([]);
+  const [newType, setNewType] = useState<MetafieldType>('single_line_text_field');
+  const [onlyHere, setOnlyHere] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [orderError, setOrderError] = useState('');
+  const { tree } = useStoreCategoryTree(storeId);
+  const catOptions = useMemo(() => flattenCategories(tree), [tree]);
+  const here = categoryIds.filter(Boolean);
   const [renameTo, setRenameTo] = useState('');
   const [manageBusy, setManageBusy] = useState(false);
   const [manageError, setManageError] = useState('');
@@ -74,13 +91,13 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
       const base = specKeyFrom(name);
       let res;
       try {
-        res = await apiCreateMetafieldDefinition(storeId, { ownerResource: 'product', key: base, name: name.slice(0, 60), type: 'single_line_text_field', storefrontAccess: true });
+        res = await apiCreateMetafieldDefinition(storeId, { ownerResource: 'product', key: base, name: name.slice(0, 60), type: newType, storefrontAccess: true, ...(onlyHere && here.length ? { categoryIds: here.slice(-1) } : {}) });
       } catch {
         // The key may be taken by a field with a different name: retry once with a short suffix.
-        res = await apiCreateMetafieldDefinition(storeId, { ownerResource: 'product', key: `${base.slice(0, 34)}-${Math.random().toString(36).slice(2, 6)}`, name: name.slice(0, 60), type: 'single_line_text_field', storefrontAccess: true });
+        res = await apiCreateMetafieldDefinition(storeId, { ownerResource: 'product', key: `${base.slice(0, 34)}-${Math.random().toString(36).slice(2, 6)}`, name: name.slice(0, 60), type: newType, storefrontAccess: true, ...(onlyHere && here.length ? { categoryIds: here.slice(-1) } : {}) });
       }
       setDefs(prev => [...(prev ?? []), res.data]);
-      setNewName(''); setAdding(false);
+      setNewName(''); setAdding(false); setNewType('single_line_text_field'); setOnlyHere(false);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : 'Could not add this spec.');
     } finally {
@@ -88,8 +105,8 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
     }
   };
 
-  const openManage = (def: MetafieldDefinition, mode: 'rename' | 'delete') => {
-    setManage({ def, mode, used: null }); setRenameTo(def.name); setManageError('');
+  const openManage = (def: MetafieldDefinition, mode: 'rename' | 'delete' | 'categories') => {
+    setManage({ def, mode, used: null }); setRenameTo(def.name); setManageError(''); setPickedCats(def.categoryIds ?? []);
     if (mode === 'delete') {
       apiGetMetafieldDefinitionUsage(storeId, def._id)
         .then(r => setManage(m => (m && m.def._id === def._id ? { ...m, used: r.data.used } : m)))
@@ -112,6 +129,32 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
     } finally { setManageBusy(false); }
   };
 
+  const doCategories = async () => {
+    if (!manage) return;
+    setManageBusy(true); setManageError('');
+    try {
+      await apiUpdateMetafieldDefinition(storeId, manage.def._id, { categoryIds: pickedCats });
+      setDefs(prev => (prev ?? []).map(d => (d._id === manage.def._id ? { ...d, categoryIds: pickedCats } : d)));
+      setManage(null);
+    } catch (err) {
+      setManageError(err instanceof Error ? err.message : 'Could not save the categories.');
+    } finally { setManageBusy(false); }
+  };
+
+  const hasValue = (d: MetafieldDefinition) => !!values[valueKey(d)]?.trim();
+  const shown = (d: MetafieldDefinition) => showAll || specAppliesTo(d, here, hasValue(d));
+  const visibleDefs = (defs ?? []).filter(shown);
+  // how many specs are for other categories (counted whether or not they are shown right now, so the toggle can hide them again)
+  const hiddenCount = (defs ?? []).filter(d => !specAppliesTo(d, here, hasValue(d))).length;
+
+  /** The new order: shown at once, saved in the background (a failed save puts the old order back). */
+  const applyOrder = (next: MetafieldDefinition[]) => {
+    const before = defs;
+    if (!before || next === before) return;
+    setDefs(next); setOrderError('');
+    apiReorderMetafieldDefinitions(storeId, 'product', next.map(d => d._id)).catch(() => { setDefs(before); setOrderError('Could not save the new order.'); });
+  };
+
   const doDelete = async () => {
     if (!manage) return;
     setManageBusy(true); setManageError('');
@@ -132,7 +175,8 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
     if (!productId || !defs) return;
     setSaving(true); setSaveError('');
     try {
-      await apiSetMetafieldValues(storeId, 'product', productId, defs.map(d => ({ namespace: d.namespace, key: d.key, value: (values[valueKey(d)] ?? '').trim() })));
+      // Only the specs this product shows: a spec meant for another category is neither sent nor checked as required.
+      await apiSetMetafieldValues(storeId, 'product', productId, defs.filter(shown).map(d => ({ namespace: d.namespace, key: d.key, value: (values[valueKey(d)] ?? '').trim() })));
       setSaved(true);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Could not save specifications.');
@@ -153,17 +197,28 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
         )}
         {!loadError && defs === null && <p className="text-[12px] text-slate m-0">Loading…</p>}
         {defs && defs.length === 0 && !adding && <p className="text-[12px] text-slate m-0">No specs yet. Add the first one, for example Brand or Capacity.</p>}
-        {defs && defs.length > 0 && (
+        {defs && defs.length > 0 && visibleDefs.length === 0 && <p className="text-[12px] text-slate m-0">None of your specs are for this product&apos;s category yet.</p>}
+        {defs && visibleDefs.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {defs.map(d => (
-              <div key={d._id} className="relative">
+            {visibleDefs.map(d => (
+              <div key={d._id} className="relative" style={{ opacity: dragId === d._id ? 0.5 : 1 }}
+                onDragOver={e => { if (dragId && dragId !== d._id) e.preventDefault(); }}
+                onDrop={e => { e.preventDefault(); if (dragId) applyOrder(moveBefore(defs ?? [], dragId, d._id)); setDragId(null); }}>
                 <label className="block">
-                  <span className="block text-[12px] font-medium text-charcoal mb-1 pr-8">{d.name}{d.required && <span className="text-brand-orange"> *</span>}</span>
+                  <span className="block text-[12px] font-medium text-charcoal mb-1 pr-16">{canManage && (
+                    <span draggable aria-label={`Drag to move ${d.name}`} title="Drag to change the order" className="mr-1 inline-block cursor-grab align-middle text-slate"
+                      onDragStart={e => { setDragId(d._id); e.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => setDragId(null)}><GripVertical size={13} /></span>
+                  )}{d.name}{d.required && <span className="text-brand-orange"> *</span>}
+                    {(d.categoryIds ?? []).length > 0 && <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10.5px] font-normal text-slate" title="Only for these categories"><Tag size={10} />{categorySummary(d.categoryIds, catOptions) || 'Categories'}</span>}
+                  </span>
                   <ValueInput entry={{ definitionId: d._id, namespace: d.namespace, key: d.key, name: d.name, type: d.type, required: d.required, value: values[valueKey(d)] ?? '' }} value={values[valueKey(d)] ?? ''} onChange={v => change(d, v)} />
                 </label>
                 {canManage && (
                   <div className="absolute right-0 -top-1">
                     <ActionMenu ariaLabel={`Manage spec ${d.name}`} items={[
+                      { label: 'Move up', icon: <ArrowUp size={13} />, onClick: () => applyOrder(moveStep(defs ?? [], d._id, -1, shown)) },
+                      { label: 'Move down', icon: <ArrowDown size={13} />, onClick: () => applyOrder(moveStep(defs ?? [], d._id, 1, shown)) },
+                      { label: 'Choose categories…', icon: <Tag size={13} />, onClick: () => openManage(d, 'categories') },
                       { label: 'Rename', icon: <Pencil size={13} />, onClick: () => openManage(d, 'rename') },
                       { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => openManage(d, 'delete') },
                     ]} />
@@ -171,8 +226,14 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
                 )}
               </div>
             ))}
-            <p className="m-0 text-[11.5px] text-slate sm:col-span-2">A spec you leave empty is not shown in this product&apos;s table. Specs are shared by all your products; use the menu on a spec to rename or delete it everywhere.</p>
+            <p className="m-0 text-[11.5px] text-slate sm:col-span-2">A spec you leave empty is not shown in this product&apos;s table. Specs are shared by all your products; use the menu on a spec to move, rename, delete it or limit it to some categories.</p>
           </div>
+        )}
+        {orderError && <p role="alert" className="text-[12px] text-error m-0">{orderError}</p>}
+        {defs && hiddenCount > 0 && (
+          <button type="button" onClick={() => setShowAll(v => !v)} className="self-start bg-transparent border-none p-0 text-[12px] text-slate underline cursor-pointer">
+            {showAll ? 'Hide the specs for other categories' : `Show ${hiddenCount} spec${hiddenCount === 1 ? '' : 's'} for other categories`}
+          </button>
         )}
         {defs && (adding ? (
           <div className="flex flex-col gap-1.5">
@@ -186,6 +247,18 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
               </button>
               <button type="button" onClick={() => { setAdding(false); setNewName(''); setAddError(''); }}
                 className="px-2 py-2 text-[12px] text-slate bg-transparent border-none cursor-pointer shrink-0">Cancel</button>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-1.5 text-[12px] text-slate">Type
+                <select aria-label="Spec type" className="rounded-lg border border-bone bg-white px-2 py-1.5 text-[12px] text-charcoal" value={newType} onChange={e => setNewType(e.target.value as MetafieldType)}>
+                  {SPEC_TYPES.map(t => <option key={t} value={t}>{METAFIELD_TYPE_LABELS[t]}</option>)}
+                </select>
+              </label>
+              {here.length > 0 && (
+                <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-slate">
+                  <input type="checkbox" checked={onlyHere} onChange={e => setOnlyHere(e.target.checked)} /> Only for products in this category
+                </label>
+              )}
             </div>
             {addError && <p className="text-[12px] text-error m-0">{addError}</p>}
           </div>
@@ -213,6 +286,16 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange }: {
             <input className={inp} value={renameTo} maxLength={60} autoFocus aria-label="Spec name" onChange={e => { setRenameTo(e.target.value); setManageError(''); }}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void doRename(); } }} />
             <p className="m-0 text-[12px] text-slate">The new name shows on every product. The values stay.</p>
+            {manageError && <p role="alert" className="m-0 text-[12px] text-error">{manageError}</p>}
+          </div>
+        </Modal>
+      )}
+      {manage?.mode === 'categories' && (
+        <Modal title={`Categories for "${manage.def.name}"`} onClose={() => setManage(null)} width={460} mobileSheet={false}
+          footer={<><Button variant="outline" onClick={() => setManage(null)}>Cancel</Button><Button onClick={() => void doCategories()} loading={manageBusy}>Save</Button></>}>
+          <div className="flex flex-col gap-2">
+            <SpecCategoryPicker storeId={storeId} selected={pickedCats} onChange={setPickedCats} />
+            <p className="m-0 text-[12px] text-slate">A product that already has a value for this spec keeps showing it.</p>
             {manageError && <p role="alert" className="m-0 text-[12px] text-error">{manageError}</p>}
           </div>
         </Modal>

@@ -10,6 +10,7 @@ import {
   METAFIELD_TYPES, METAFIELD_TYPE_LABELS, METAFIELD_OWNER_RESOURCES,
   type MetafieldDefinition, type MetafieldType, type MetafieldOwnerResource,
 } from '@/api/services/metafields';
+import { SpecCategoryPicker } from '@/features/seller/store/Dashboard/StoreSection/products/SpecCategoryPicker';
 
 const RESOURCE_LABELS: Record<MetafieldOwnerResource, string> = {
   product: 'Products', category: 'Categories', collection: 'Collections', page: 'Pages', article: 'Blog Articles',
@@ -27,6 +28,7 @@ function DefinitionFormModal({ storeId, editing, onClose, onSaved }: { storeId: 
   const [type, setType] = useState<MetafieldType>(editing?.type ?? 'single_line_text_field');
   const [required, setRequired] = useState(editing?.required ?? false);
   const [storefrontAccess, setStorefrontAccess] = useState(editing?.storefrontAccess ?? false);
+  const [categoryIds, setCategoryIds] = useState<string[]>(editing?.categoryIds ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,9 +38,9 @@ function DefinitionFormModal({ storeId, editing, onClose, onSaved }: { storeId: 
     setError('');
     try {
       if (editing) {
-        await apiUpdateMetafieldDefinition(storeId, editing._id, { name: name.trim(), required, storefrontAccess });
+        await apiUpdateMetafieldDefinition(storeId, editing._id, { name: name.trim(), required, storefrontAccess, ...(ownerResource === 'product' ? { categoryIds } : {}) });
       } else {
-        await apiCreateMetafieldDefinition(storeId, { ownerResource, key: key.trim(), name: name.trim(), type, required, storefrontAccess });
+        await apiCreateMetafieldDefinition(storeId, { ownerResource, key: key.trim(), name: name.trim(), type, required, storefrontAccess, ...(ownerResource === 'product' ? { categoryIds } : {}) });
       }
       onSaved();
     } catch (err) {
@@ -67,6 +69,11 @@ function DefinitionFormModal({ storeId, editing, onClose, onSaved }: { storeId: 
             {METAFIELD_TYPES.map(t => <option key={t} value={t}>{METAFIELD_TYPE_LABELS[t]}</option>)}
           </Select>
         </Field>
+        {ownerResource === 'product' && (
+          <Field label="For which products" hint="Tick categories to show this field only for products in them. Nothing ticked: every product.">
+            <SpecCategoryPicker storeId={storeId} selected={categoryIds} onChange={setCategoryIds} />
+          </Field>
+        )}
         <label className="flex items-center gap-2 text-[13px] text-charcoal cursor-pointer">
           <input type="checkbox" checked={required} onChange={e => setRequired(e.target.checked)} />
           Required

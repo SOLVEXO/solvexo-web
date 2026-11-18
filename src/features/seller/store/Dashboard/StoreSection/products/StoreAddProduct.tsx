@@ -361,7 +361,7 @@ export default function StoreAddProduct() {
             </div>
           </Card>
 
-          <ProductSpecsEditor storeId={storeId} onValuesChange={setSpecValues} />
+          <ProductSpecsEditor storeId={storeId} onValuesChange={setSpecValues} categoryIds={[cur.categoryId, cur.subCategoryId]} />
 
           {/* Category */}
           <Card title="Category">
