@@ -35,6 +35,8 @@ export interface StoreSeoMeta {
    *  a dedicated endpoint since it isn't part of the shared product/store/page
    *  `UpdateSeoMetaDto` shape. */
   robotsTxtOverride?: string | null;
+  /** Google site-verification token (the `content` of Google's meta tag); rendered into the storefront <head>. */
+  googleSiteVerification?: string | null;
 }
 
 export interface UpdateSeoMetaPayload {
@@ -47,6 +49,8 @@ export interface UpdateSeoMetaPayload {
   canonicalUrlOverride?: string;
   noindex?: boolean;
   keywords?: string[];
+  /** Store only. The whole meta tag or just its content value; blank removes it. */
+  googleSiteVerification?: string;
 }
 
 export interface UpdateChecklistItemPayload {

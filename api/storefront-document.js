@@ -28,6 +28,8 @@ function injectMetadata(html, meta) {
     `<meta property="og:type" content="website">`,
     `<meta property="og:title" content="${escapeHtml(meta.ogTitle || meta.title || '')}">`,
     `<meta property="og:description" content="${escapeHtml(meta.ogDescription || meta.description || '')}">`,
+    // Seller's Google Merchant Center / Search Console token. Re-checked here so only a URL-safe token can ever reach <head>.
+    /^[A-Za-z0-9_-]{10,200}$/.test(String(meta.googleSiteVerification ?? '')) ? `<meta name="google-site-verification" content="${meta.googleSiteVerification}">` : '',
     meta.url ? `<meta property="og:url" content="${escapeHtml(meta.url)}">` : '',
     meta.ogImage ? `<meta property="og:image" content="${escapeHtml(meta.ogImage)}">` : '',
     `<meta name="twitter:card" content="${escapeHtml(meta.twitterCard || (meta.ogImage ? 'summary_large_image' : 'summary'))}">`,

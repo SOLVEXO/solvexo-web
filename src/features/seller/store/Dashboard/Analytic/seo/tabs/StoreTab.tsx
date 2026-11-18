@@ -5,6 +5,7 @@ import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErro
 import { SeoMetaForm, type SeoMetaFormValue } from '@/components/comman/seo';
 import { useStoreSeo, useUpdateStoreSeo } from '@/hooks/seller/seo/useSeoDashboard';
 import { apiUpdateStoreRobotsTxt } from '@/api/services/store';
+import { apiUpdateStoreSeo } from '@/api/services/seo/seller/dashboard.service';
 
 interface StoreTabProps {
   storeId: string;
@@ -22,14 +23,24 @@ export function StoreTab({ storeId, storeSlug }: StoreTabProps) {
   const [robotsInitialized, setRobotsInitialized] = useState(false);
   const [savingRobots, setSavingRobots] = useState(false);
   const [robotsMsg, setRobotsMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [googleCode, setGoogleCode] = useState('');
+  const [googleInitialized, setGoogleInitialized] = useState(false);
+  const [savingGoogle, setSavingGoogle] = useState(false);
+  const [googleMsg, setGoogleMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   if (data && !initialized) {
-    setForm(data);
+    // The Google code has its own card and Save; keeping it out of `form` stops "Save Changes" re-sending a stale value.
+    const { googleSiteVerification: _googleCode, ...metaFields } = data;
+    setForm(metaFields);
     setInitialized(true);
   }
   if (data && !robotsInitialized) {
     setRobotsTxt(data.robotsTxtOverride ?? '');
     setRobotsInitialized(true);
+  }
+  if (data && !googleInitialized) {
+    setGoogleCode(data.googleSiteVerification ?? '');
+    setGoogleInitialized(true);
   }
 
   if (error) return <AnalyticsErrorState message={error} onRetry={refetch} />;
@@ -54,6 +65,21 @@ export function StoreTab({ storeId, storeSlug }: StoreTabProps) {
 
   const handleResetRobots = () => setRobotsTxt('');
 
+  const handleSaveGoogle = async () => {
+    setSavingGoogle(true); setGoogleMsg(null);
+    try {
+      const res = await apiUpdateStoreSeo(storeId, { googleSiteVerification: googleCode.trim() });
+      const saved = res?.data?.googleSiteVerification ?? '';
+      setGoogleCode(saved);
+      refetch();
+      setGoogleMsg({ ok: true, text: saved ? 'Saved. Your storefront now shows the code. Go back to Google and click "Verify".' : 'Google verification code removed.' });
+    } catch (err) {
+      setGoogleMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to save the Google verification code.' });
+    } finally {
+      setSavingGoogle(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-5 max-w-[640px]">
       <Card>
@@ -67,6 +93,24 @@ export function StoreTab({ storeId, storeSlug }: StoreTabProps) {
           onChange={patch => setForm(f => ({ ...f, ...patch }))}
           loading={loading}
           previewUrl={storeSlug ? `https://solvexo.store/${storeSlug}` : undefined}
+        />
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+          <p className="text-[15px] font-bold text-carbon">Google site verification</p>
+          <Button variant="primary" size="sm" loading={savingGoogle} onClick={handleSaveGoogle}>Save</Button>
+        </div>
+        <p className="text-[12px] text-slate mb-3">
+          For Google Merchant Center or Search Console. Choose "Add an HTML tag" there, then paste the whole tag or just the value inside content="…". It is added to your storefront's home page automatically, and may take about a minute to appear. Keep it saved after verifying.
+        </p>
+        {googleMsg && <p className={`text-[12px] mb-2 ${googleMsg.ok ? 'text-success' : 'text-error'}`}>{googleMsg.text}</p>}
+        <input
+          value={googleCode}
+          onChange={e => setGoogleCode(e.target.value)}
+          placeholder='<meta name="google-site-verification" content="..." />'
+          spellCheck={false}
+          className="w-full px-3 py-2.5 rounded-lg text-[12.5px] font-mono border border-bone bg-bone text-charcoal outline-none box-border"
         />
       </Card>
 
