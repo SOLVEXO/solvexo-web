@@ -43,6 +43,8 @@ interface DropdownPos {
   bottom?: number;
   left?:   number;
   right?:  number;
+  /** Room left on the side the menu opens to, so a long list scrolls inside the menu instead of running off the screen. */
+  maxHeight?: number;
 }
 
 // ── Portal dropdown ───────────────────────────────────────────────────────────
@@ -120,7 +122,7 @@ function DropdownPortal({
             ? 'left-0 right-0 bottom-0 w-full max-h-[72dvh] rounded-t-[18px] border-x border-t border-bone pt-2 pb-[calc(8px+env(safe-area-inset-bottom))]'
             : 'border border-bone rounded-[10px] py-1 min-w-[160px] max-w-[calc(100vw-24px)]',
         )}
-        style={sheet ? undefined : { ...pos, transformOrigin: align === 'right' ? 'top right' : 'top left', maxHeight: searchable ? 328 : 288 }}
+        style={sheet ? undefined : { ...pos, transformOrigin: `${pos.bottom !== undefined ? 'bottom' : 'top'} ${align === 'right' ? 'right' : 'left'}`, maxHeight: Math.min(searchable ? 328 : 288, pos.maxHeight ?? 9999) }}
       >
       {searchable && (
         <div className="px-2.5 pt-1 pb-2 border-b border-bone shrink-0">
@@ -223,11 +225,18 @@ export function ActionMenu({
     // flip decision never under-estimates and strands the menu off-screen.
     const ESTIMATED_H   = Math.min(items.length * 44 + 8, searchable ? 328 : 288);
     const GAP           = 4;
-    const spaceBelow    = container.bottom - rect.bottom;
-    const spaceAbove    = rect.top - container.top;
-    const openUpward    = spaceBelow < ESTIMATED_H + GAP && spaceAbove >= ESTIMATED_H;
+    const EDGE_V        = 8;
+    // Room is measured against the table/card the button sits in AND the screen, whichever ends first: the menu is
+    // never allowed to hang below the last row off the bottom of the screen, nor above the top of it.
+    const spaceBelow    = Math.min(container.bottom, window.innerHeight) - rect.bottom - EDGE_V;
+    const spaceAbove    = rect.top - Math.max(container.top, 0) - EDGE_V;
+    const vpBelow       = window.innerHeight - rect.bottom - EDGE_V;
+    const vpAbove       = rect.top - EDGE_V;
+    // Prefer below; go up when it does not fit below and fits above; when neither fits, take the side with more screen room.
+    const openUpward    = spaceBelow >= ESTIMATED_H + GAP ? false : spaceAbove >= ESTIMATED_H + GAP ? true : vpAbove > vpBelow;
 
     const next: DropdownPos = {};
+    next.maxHeight = Math.max(120, (openUpward ? vpAbove : vpBelow) - GAP);
     next[openUpward ? 'bottom' : 'top'] = openUpward
       ? window.innerHeight - rect.top + GAP
       : rect.bottom + GAP;
