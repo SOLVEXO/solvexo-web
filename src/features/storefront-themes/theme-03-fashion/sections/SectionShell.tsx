@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
@@ -50,6 +51,6 @@ export function LinkButton({ text, link, variant = 'primary', style }: { text?: 
   const inner = <><span style={{ position: 'relative', zIndex: 1 }}>{text}</span><span className="fx-cta-icon" style={cta.chip}><ArrowUpRight size={16} className="fx-flip-rtl" /></span></>;
   const base: CSSProperties = { ...cta.button, ...style };
   return target.to
-    ? <Link to={target.to} className="fx-cta" style={base}>{inner}</Link>
+    ? <Link to={target.to} {...newTabProps(target)} className="fx-cta" style={base}>{inner}</Link>
     : <a href={target.href ?? '#'} className="fx-cta" style={base} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{inner}</a>;
 }

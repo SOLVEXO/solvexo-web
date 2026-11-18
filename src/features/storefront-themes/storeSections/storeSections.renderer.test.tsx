@@ -15,7 +15,10 @@ vi.mock('@/features/storefront/StorefrontContext', async importOriginal => {
     useStorefront: () => ({
       theme: null,
       store: { storeId: 'S1' },
-      resolveLink: (l: { linkType?: string; url?: string }) => (l?.linkType === 'external' ? { href: l.url, newTab: true } : l?.linkType === 'home' ? { to: '/' } : {}),
+      // like the real resolver: any kind of link reports newTab when the seller ticked it
+      resolveLink: (l: { linkType?: string; url?: string; categoryId?: string; newTab?: boolean }) => (l?.linkType === 'external' ? { href: l.url, newTab: true }
+        : l?.linkType === 'home' ? { to: '/' }
+        : l?.linkType === 'category' ? { to: `/category/${l.categoryId}`, ...(l.newTab ? { newTab: true } : {}) } : {}),
     }),
   };
 });
@@ -71,6 +74,20 @@ describe('seller-built sections on the storefront (Maison)', () => {
     const a = await screen.findByRole('link', { name: 'Out' });
     expect(a.getAttribute('target')).toBe('_blank');
     expect(a.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('"Open in a new tab" works for a link to a page of the store too (a category), not only for external links', async () => {
+    renderIt([section({ title: 'T', cta: 'Shop it', ctaLink: { linkType: 'category', categoryId: 'c1', newTab: true } })]);
+    const a = await screen.findByRole('link', { name: 'Shop it' });
+    expect(a.getAttribute('href')).toBe('/category/c1');
+    expect(a.getAttribute('target')).toBe('_blank');
+    expect(a.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('without the tick a store-page link stays in the same tab', async () => {
+    renderIt([section({ title: 'T', cta: 'Shop it', ctaLink: { linkType: 'category', categoryId: 'c1' } })]);
+    const a = await screen.findByRole('link', { name: 'Shop it' });
+    expect(a.getAttribute('target')).toBeNull();
   });
 
   it('the page-design settings (Phase 1) still apply around it', async () => {

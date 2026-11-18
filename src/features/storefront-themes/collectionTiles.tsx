@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Link } from 'react-router-dom';
 import type { Block, Section } from '@/api/services/storefrontTypes';
 import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
@@ -152,7 +153,7 @@ export function CollectionTileCard({ tile, colors, fonts, imageRadius, buttonRad
   const button = tile.ctaText && target && (
     <div style={{ marginTop: 'auto', paddingTop: 16 }}>
       {'to' in target && target.to
-        ? <Link to={target.to} style={btnStyle}>{tile.ctaText}</Link>
+        ? <Link to={target.to} {...newTabProps(target)} style={btnStyle}>{tile.ctaText}</Link>
         : <a href={(target as { href?: string }).href ?? '#'} style={btnStyle} {...((target as { newTab?: boolean }).newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{tile.ctaText}</a>}
     </div>
   );

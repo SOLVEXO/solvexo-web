@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON */
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Power } from 'lucide-react';
 import type { Block } from '@/api/services/storefrontTypes';
@@ -32,7 +33,7 @@ export const reducedMotion = () => typeof window !== 'undefined' && !!window.mat
 export function LinkOrDiv({ link, className, children, style }: { link?: any; className?: string; children: ReactNode; style?: React.CSSProperties }) {
   const { resolveLink } = useStorefront();
   const target = link && link.linkType !== 'none' && link.type !== 'none' ? resolveLink(link) : null;
-  if (target?.to) return <Link to={target.to} className={className} style={style}>{children}</Link>;
+  if (target?.to) return <Link to={target.to} {...newTabProps(target)} className={className} style={style}>{children}</Link>;
   if (target?.href) return <a href={target.href} className={className} style={style} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{children}</a>;
   return <div className={className} style={style}>{children}</div>;
 }

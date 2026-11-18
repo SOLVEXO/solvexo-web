@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import type { Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { PreviewBlock } from '../../../previewInspector';
@@ -17,7 +18,7 @@ function Logo({ block, height, grayscale }: { block: Block; height: number; gray
   );
   if (!s.link) return img;
   const target = resolveLink(s.link);
-  return target.to ? <Link to={target.to}>{img}</Link> : <a href={target.href} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{img}</a>;
+  return target.to ? <Link to={target.to} {...newTabProps(target)}>{img}</Link> : <a href={target.href} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{img}</a>;
 }
 
 export function LogoListSection({ section, blocks, colors }: SharedSectionProps) {

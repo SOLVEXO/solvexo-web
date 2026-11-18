@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this file registers renderers, it exports none */
 import { useState } from 'react';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Download, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
@@ -24,7 +25,7 @@ function Cta({ label, link, className }: { label?: string; link?: any; className
   const { resolveLink } = useStorefront();
   if (!label || !link) return null;
   const target = resolveLink(link);
-  if (target.to) return <Link to={target.to} className={className}>{label} <ArrowUpRight size={14} aria-hidden /></Link>;
+  if (target.to) return <Link to={target.to} {...newTabProps(target)} className={className}>{label} <ArrowUpRight size={14} aria-hidden /></Link>;
   return <a href={target.href ?? '#'} className={className} {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{label} <ArrowUpRight size={14} aria-hidden /></a>;
 }
 

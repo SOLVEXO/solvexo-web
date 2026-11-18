@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- this module registers renderers as a side effect */
 import { columnCount } from '@/features/storefront/browse/gridLayout';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { Block, Section } from '@/api/services/storefrontTypes';
@@ -56,8 +57,8 @@ function LookTile({ block, fit, colors }: { block: Block; fit: ReturnType<typeof
       )}
     </>
   );
-  if (link?.to) return <Link to={link.to} className="block no-underline" style={{ color: colors.ink }}>{tile}</Link>;
-  if (link?.href) return <a href={link.href} className="block no-underline" style={{ color: colors.ink }}>{tile}</a>;
+  if (link?.to) return <Link to={link.to} {...newTabProps(link)} className="block no-underline" style={{ color: colors.ink }}>{tile}</Link>;
+  if (link?.href) return <a href={link.href} {...newTabProps(link)} className="block no-underline" style={{ color: colors.ink }}>{tile}</a>;
   return <div>{tile}</div>;
 }
 

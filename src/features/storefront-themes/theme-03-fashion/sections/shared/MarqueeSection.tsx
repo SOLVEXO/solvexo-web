@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Link } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { PreviewBlock } from '../../../previewInspector';
@@ -21,7 +22,7 @@ export function MarqueeSection({ section, blocks, colors }: SharedSectionProps) 
   const items = blocks.map((b, i) => {
     const text = <span className="whitespace-nowrap font-medium tracking-tight" style={{ fontSize, fontFamily: t.fonts.display, color: colors.ink, unicodeBidi: 'plaintext' }}>{b.settings.text}</span>;
     const target = b.settings.link ? resolveLink(b.settings.link) : null;
-    const inner = !target ? text : target.to ? <Link to={target.to} className="no-underline">{text}</Link>
+    const inner = !target ? text : target.to ? <Link to={target.to} {...newTabProps(target)} className="no-underline">{text}</Link>
       : <a href={target.href} className="no-underline" {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{text}</a>;
     return (
       <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>

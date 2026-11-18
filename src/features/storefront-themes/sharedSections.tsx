@@ -1,4 +1,5 @@
 import { useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { tt, ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
@@ -45,8 +46,8 @@ export function CtaButton({ text, link, theme, variant = 'outline' }: { text?: s
   const target = resolveLink(link);
   const B = theme.Button;
   return target.to
-    ? <Link to={target.to} className="no-underline"><B variant={variant}>{text}</B></Link>
-    : <a href={target.href} className="no-underline"><B variant={variant}>{text}</B></a>;
+    ? <Link to={target.to} {...newTabProps(target)} className="no-underline"><B variant={variant}>{text}</B></Link>
+    : <a href={target.href} {...newTabProps(target)} className="no-underline"><B variant={variant}>{text}</B></a>;
 }
 
 export function Heading({ text, theme, colors, align }: { text?: string; theme: SharedThemeTokens; colors: SharedColors; align?: CSSProperties['textAlign'] }) {
@@ -101,7 +102,7 @@ function Logo({ block, height, grayscale }: { block: Block; height: number; gray
   const img = <img src={s.imageUrl} alt={s.alt ?? ''} loading="lazy" style={{ height, width: 'auto', maxWidth: '180px', objectFit: 'contain', filter: grayscale ? 'grayscale(1)' : undefined, opacity: grayscale ? 0.7 : 1 }} />;
   if (!s.link) return img;
   const target = resolveLink(s.link);
-  return target.to ? <Link to={target.to}>{img}</Link> : <a href={target.href}>{img}</a>;
+  return target.to ? <Link to={target.to} {...newTabProps(target)}>{img}</Link> : <a href={target.href} {...newTabProps(target)}>{img}</a>;
 }
 
 export function LogoListSection({ section, blocks, colors, theme }: Props) {
@@ -135,7 +136,7 @@ export function MarqueeSection({ section, blocks, colors, theme }: Props) {
   const items = blocks.map((b, i) => {
     const text = <span style={{ fontFamily: theme.fonts.body, fontSize: '13px', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600, color: colors.ink, whiteSpace: 'nowrap' }}>{b.settings.text}</span>;
     const target = b.settings.link ? resolveLink(b.settings.link) : null;
-    const inner = !target ? text : target.to ? <Link to={target.to} className="no-underline">{text}</Link> : <a href={target.href} className="no-underline">{text}</a>;
+    const inner = !target ? text : target.to ? <Link to={target.to} {...newTabProps(target)} className="no-underline">{text}</Link> : <a href={target.href} {...newTabProps(target)} className="no-underline">{text}</a>;
     return <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}><span className="inline-flex items-center" style={{ gap: '40px', paddingRight: '40px' }}>{inner}<span aria-hidden style={{ color: colors.accent }}>✦</span></span></PreviewBlock>;
   });
   const id = `mq-${String(section._id ?? 'x')}`;
@@ -231,7 +232,7 @@ function GalleryPhoto({ block, theme, colors, ratio }: { block: Block; theme: Sh
   );
   if (!s.link) return img;
   const target = resolveLink(s.link);
-  return target.to ? <Link to={target.to} className="block">{img}</Link> : <a href={target.href} className="block" {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{img}</a>;
+  return target.to ? <Link to={target.to} {...newTabProps(target)} className="block">{img}</Link> : <a href={target.href} className="block" {...(target.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{img}</a>;
 }
 
 export function GalleryGridSection({ section, blocks, colors, theme }: Props) {

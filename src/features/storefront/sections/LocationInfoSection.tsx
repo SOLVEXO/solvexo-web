@@ -1,4 +1,5 @@
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -76,8 +77,8 @@ export function LocationInfoSection({ settings }: { settings: LocationInfoSettin
           </div>
           {settings.ctaText && cta && (
             cta.href
-              ? <a href={cta.href} target="_blank" rel="noopener noreferrer" className="inline-block mt-5 px-4 py-2.5 text-[13px] font-bold text-white no-underline" style={{ background: cfg.primaryColor, borderRadius: cfg.buttonRadiusPx }}>{settings.ctaText}</a>
-              : <a href={cta.to} className="inline-block mt-5 px-4 py-2.5 text-[13px] font-bold text-white no-underline" style={{ background: cfg.primaryColor, borderRadius: cfg.buttonRadiusPx }}>{settings.ctaText}</a>
+              ? <a href={cta.href} {...newTabProps(cta)} target="_blank" rel="noopener noreferrer" className="inline-block mt-5 px-4 py-2.5 text-[13px] font-bold text-white no-underline" style={{ background: cfg.primaryColor, borderRadius: cfg.buttonRadiusPx }}>{settings.ctaText}</a>
+              : <a href={cta.to} {...newTabProps(cta)} className="inline-block mt-5 px-4 py-2.5 text-[13px] font-bold text-white no-underline" style={{ background: cfg.primaryColor, borderRadius: cfg.buttonRadiusPx }}>{settings.ctaText}</a>
           )}
         </div>
 

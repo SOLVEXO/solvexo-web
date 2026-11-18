@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- exports a helper next to section components */
 import { useEffect, useState } from 'react';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { tt } from '@/utils/tStatic';
 import { Link, useParams } from 'react-router-dom';
@@ -86,8 +87,8 @@ function CollageTile({ block, big, colors, theme }: { block: Block; big: boolean
   if (!s.link) return inner;
   const target = resolveLink(s.link);
   return target.to
-    ? <Link to={target.to} className="no-underline block h-full">{inner}</Link>
-    : <a href={target.href} className="no-underline block h-full">{inner}</a>;
+    ? <Link to={target.to} {...newTabProps(target)} className="no-underline block h-full">{inner}</Link>
+    : <a href={target.href} {...newTabProps(target)} className="no-underline block h-full">{inner}</a>;
 }
 
 export function CollageSection({ section, blocks, colors, theme }: Props) {

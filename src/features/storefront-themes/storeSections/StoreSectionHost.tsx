@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Link } from 'react-router-dom';
 import type { Block, Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -15,7 +16,7 @@ export function StoreSectionHost<C extends StoreSectionColors>({ section, blocks
   if (!def) return null;
   const link: LinkRenderer = ({ link: target, className, style, children }) => {
     const r = target ? resolveLink(target as never) : {};
-    if (r.to) return <Link to={r.to} className={className} style={style}>{children}</Link>;
+    if (r.to) return <Link to={r.to} {...newTabProps(r)} className={className} style={style}>{children}</Link>;
     if (r.href) return <a href={r.href} className={className} style={style} {...(r.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{children}</a>;
     return null; // a button with nowhere to go is not drawn
   };

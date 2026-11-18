@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { useRef, useState, type ReactNode } from 'react';
+import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
@@ -83,7 +84,7 @@ registerTechSection('theme_section', (section, blocks, colors) => custom.get(Str
 export function BlockLink({ block, children, className, style }: { block: Block; children: ReactNode; className?: string; style?: React.CSSProperties }) {
   const { resolveLink } = useStorefront();
   const link = block.settings.link ? resolveLink(block.settings.link) : null;
-  if (link?.to) return <Link to={link.to} className={className} style={style}>{children}</Link>;
+  if (link?.to) return <Link to={link.to} {...newTabProps(link)} className={className} style={style}>{children}</Link>;
   if (link?.href) return <a href={link.href} className={className} style={style} {...(link.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{children}</a>;
   return <div className={className} style={style}>{children}</div>;
 }
