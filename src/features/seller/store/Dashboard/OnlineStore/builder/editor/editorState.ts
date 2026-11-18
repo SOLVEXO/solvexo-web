@@ -51,7 +51,7 @@ export type EditorAction<T> =
   | { type: 'REDO' }
   | { type: 'SAVE_START' }
   /** `workingCopy` is optional — pass it only if the server responded with a normalized/merged value that should replace the client's. */
-  | { type: 'SAVE_SUCCESS'; workingCopy?: T }
+  | { type: 'SAVE_SUCCESS'; workingCopy?: T; savedFrom?: T }
   | { type: 'SAVE_ERROR'; message: string }
   | { type: 'PUBLISH_START' }
   /** Publishing always resolves working copy = published = this value (or the current working copy if the server didn't echo one back) and clears history — matches the documented Shopify convention: undo/redo never survives a publish. */
@@ -141,6 +141,13 @@ export function editorReducer<T>(state: EditorState<T>, action: EditorAction<T>)
       return { ...state, phase: 'saving', errorMessage: null };
 
     case 'SAVE_SUCCESS':
+      // The merchant kept editing while the save was in flight: the working
+      // copy is no longer what was sent. Never overwrite it with the server's
+      // echo (that silently reverted their newest change) and stay dirty so
+      // autosave sends the newer edit next.
+      if (action.savedFrom !== undefined && state.workingCopy !== action.savedFrom) {
+        return { ...state, phase: 'dirty', errorMessage: null };
+      }
       return {
         ...state,
         workingCopy: action.workingCopy ?? state.workingCopy,

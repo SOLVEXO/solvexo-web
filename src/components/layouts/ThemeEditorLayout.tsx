@@ -33,7 +33,10 @@ export function ThemeEditorLayout() {
   const { storeId: routeStoreId, themeId: routeThemeId } = useParams<{ storeId: string; themeId: string }>();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const reportUnsavedChanges = useCallback((dirty: boolean) => setHasUnsavedChanges(dirty), []);
-  const blocker = useBlocker(hasUnsavedChanges);
+  // Only block real page changes. Selecting/adding a section just changes the
+  // `?section=` query on the same page — that must never raise the dialog.
+  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+    hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname);
   const blockerRef = useRef(blocker);
   blockerRef.current = blocker;
 

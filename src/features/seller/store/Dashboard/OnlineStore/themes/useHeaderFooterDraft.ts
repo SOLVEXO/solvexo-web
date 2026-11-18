@@ -73,7 +73,7 @@ export function useHeaderFooterDraft({ storeId, installedThemeId, ready, store, 
     if (!draft) return;
     editor.markSaving();
     try {
-      editor.markSaved(await persist(draft));
+      editor.markSaved(await persist(draft), draft);
     } catch (err) {
       editor.markSaveError(err instanceof Error ? err.message : 'Failed to save.');
       throw err;
@@ -87,7 +87,7 @@ export function useHeaderFooterDraft({ storeId, installedThemeId, ready, store, 
     editor.edit(next);
     try {
       await persist(next);
-      editor.markSaved(next);
+      editor.markSaved(next, next);
     } catch (err) {
       if (rollbackTo) editor.discardDraft(rollbackTo);
       onError(err instanceof Error ? err.message : 'Failed to save.');

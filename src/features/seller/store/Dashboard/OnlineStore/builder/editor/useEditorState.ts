@@ -27,7 +27,7 @@ export function useEditorState<T>() {
   const undo = useCallback(() => dispatch({ type: 'UNDO' }), []);
   const redo = useCallback(() => dispatch({ type: 'REDO' }), []);
   const markSaving = useCallback(() => dispatch({ type: 'SAVE_START' }), []);
-  const markSaved = useCallback((workingCopy?: T) => dispatch({ type: 'SAVE_SUCCESS', workingCopy }), []);
+  const markSaved = useCallback((workingCopy?: T, savedFrom?: T) => dispatch({ type: 'SAVE_SUCCESS', workingCopy, savedFrom }), []);
   const markSaveError = useCallback((message: string) => dispatch({ type: 'SAVE_ERROR', message }), []);
   const markPublishing = useCallback(() => dispatch({ type: 'PUBLISH_START' }), []);
   const markPublished = useCallback((published?: T) => dispatch({ type: 'PUBLISH_SUCCESS', published }), []);

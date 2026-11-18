@@ -643,17 +643,18 @@ export function ThemeCustomizePage() {
       flash(true, hf.announcementDirty ? 'Draft saved. Your announcement bar changes go live when you Publish.' : 'Draft saved — Publish to make it live.');
       return;
     }
+    const sentCopy = editor.workingCopy;
     editor.markSaving();
     try {
       if (isStorePage) {
         if (!currentStorePage) return;
-        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, editor.workingCopy, installedThemeId, currentStorePage.updatedAt);
+        const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, sentCopy, installedThemeId, currentStorePage.updatedAt);
         setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
-        editor.markSaved(res.data.draft.sections);
+        editor.markSaved(res.data.draft.sections, sentCopy);
       } else {
-        const res = await apiUpdateCollectionTemplateSections(storeId, editor.workingCopy, config!.resourceType, templateKey, installedThemeId, activeTemplate?.updatedAt);
+        const res = await apiUpdateCollectionTemplateSections(storeId, sentCopy, config!.resourceType, templateKey, installedThemeId, activeTemplate?.updatedAt);
         setActiveTemplate(res.data);
-        editor.markSaved(res.data.draft.sections);
+        editor.markSaved(res.data.draft.sections, sentCopy);
       }
       if (!silent) flash(true, hf.announcementDirty
         ? 'Draft saved. Your announcement bar changes go live when you Publish.'
@@ -690,11 +691,11 @@ export function ThemeCustomizePage() {
         if (!currentStorePage) return;
         const res = await apiUpdateStorePageSections(storeId, currentStorePage._id, next, installedThemeId, currentStorePage.updatedAt);
         setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
-        editor.markSaved(res.data.draft.sections);
+        editor.markSaved(res.data.draft.sections, next);
       } else {
         const res = await apiUpdateCollectionTemplateSections(storeId, next, config!.resourceType, templateKey, installedThemeId, activeTemplate?.updatedAt);
         setActiveTemplate(res.data);
-        editor.markSaved(res.data.draft.sections);
+        editor.markSaved(res.data.draft.sections, next);
       }
     } catch (err) {
       if (isDraftConflict(err)) { flashConflict(); return; }
