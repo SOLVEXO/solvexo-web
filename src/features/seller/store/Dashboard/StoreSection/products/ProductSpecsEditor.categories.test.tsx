@@ -148,3 +148,42 @@ describe('order of the specs', () => {
     expect(order().slice(0, 2)).toEqual(['Size', 'Fabric']);
   });
 });
+
+describe('suggested specs for the category', () => {
+  it('offers the specs this kind of category usually has that the store lacks, and adds one on click for this category', async () => {
+    render(<ProductSpecsEditor storeId="s1" productId="p1" categoryIds={['cl']} />);
+    const box = await screen.findByTestId('spec-suggestions');
+    expect(box.textContent).toContain('Suggested for clothing');
+    expect(box.textContent).toContain('Season');
+    expect(box.textContent).toContain('Care instructions');
+    expect(box.textContent).not.toContain('Fabric'); // the store already has it
+    fireEvent.click(screen.getByRole('button', { name: /Season/ }));
+    await waitFor(() => expect(calls.find(c => c.op === 'create')).toBeTruthy());
+    const p = calls.find(c => c.op === 'create')!.args as Record<string, unknown>;
+    expect(p.name).toBe('Season');
+    expect(p.categoryIds).toEqual(['cl']);
+    expect(await screen.findByLabelText('value of Season')).toBeTruthy();
+  });
+
+  it('"Add all" adds every suggestion with its own type', async () => {
+    render(<ProductSpecsEditor storeId="s1" productId="p1" categoryIds={['cl']} />);
+    await screen.findByTestId('spec-suggestions');
+    fireEvent.click(screen.getByRole('button', { name: 'Add all' }));
+    await waitFor(() => expect(calls.filter(c => c.op === 'create').length).toBe(2));
+    expect(calls.filter(c => c.op === 'create').map(c => (c.args as { name: string; type: string }).type)).toEqual(['single_line_text_field', 'multi_line_text_field']);
+    await waitFor(() => expect(screen.queryByTestId('spec-suggestions')).toBeNull());
+  });
+
+  it('"Not now" hides the box', async () => {
+    render(<ProductSpecsEditor storeId="s1" productId="p1" categoryIds={['cl']} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Not now' }));
+    expect(screen.queryByTestId('spec-suggestions')).toBeNull();
+  });
+
+  it('no box when no category is chosen or none fits', async () => {
+    const { unmount } = render(<ProductSpecsEditor storeId="s1" productId="p1" categoryIds={['', '']} />);
+    await screen.findByLabelText('value of Size');
+    expect(screen.queryByTestId('spec-suggestions')).toBeNull();
+    unmount();
+  });
+});

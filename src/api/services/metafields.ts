@@ -8,7 +8,7 @@ interface ApiResponse<T> { success: boolean; message?: string; data: T }
 // for why these 9 and not the full ~113.
 export const METAFIELD_TYPES = [
   'single_line_text_field', 'multi_line_text_field', 'number_integer', 'number_decimal',
-  'boolean', 'date', 'url', 'color', 'json',
+  'boolean', 'date', 'url', 'color', 'dimension', 'weight', 'volume', 'json',
 ] as const;
 export type MetafieldType = (typeof METAFIELD_TYPES)[number];
 
@@ -26,6 +26,9 @@ export const METAFIELD_TYPE_LABELS: Record<MetafieldType, string> = {
   date: 'Date',
   url: 'URL',
   color: 'Color',
+  dimension: 'Dimension (length, width...)',
+  weight: 'Weight',
+  volume: 'Volume',
   json: 'JSON',
 };
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { specKeyFrom } from './productSpecs';
 import { specAppliesTo, moveBefore, moveStep, flattenCategories, categorySummary } from './specVisibility';
 import { SpecCategoryPicker } from './SpecCategoryPicker';
+import { suggestSpecs, type SpecSuggestion } from './specSuggestions';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ArrowDown, ArrowUp, Check, GripVertical, Loader2, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
 import { ActionMenu, Button, Modal } from '@/components/comman/ui';
@@ -24,7 +25,7 @@ const valueKey = (d: Pick<MetafieldDefinition, 'namespace' | 'key'>) => `${d.nam
  *  - Add page: no `productId` yet; the parent receives the values through `onValuesChange` and saves them after the
  *    product exists (see `saveProductSpecs`). */
 /** The types a seller can pick for a new spec here (the full list stays in Settings → Custom Fields). */
-const SPEC_TYPES: MetafieldType[] = ['single_line_text_field', 'multi_line_text_field', 'number_integer', 'number_decimal', 'boolean', 'date', 'url', 'color'];
+const SPEC_TYPES: MetafieldType[] = ['single_line_text_field', 'multi_line_text_field', 'number_integer', 'number_decimal', 'dimension', 'weight', 'volume', 'boolean', 'date', 'url', 'color'];
 
 export function ProductSpecsEditor({ storeId, productId, onValuesChange, categoryIds = [] }: {
   storeId: string;
@@ -82,21 +83,44 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange, categor
     onValuesChange?.(next);
   };
 
+  /** Creates the shared field. The key may be taken by a field with a different name: retry once with a short suffix. */
+  const createSpec = async (name: string, type: MetafieldType, cats: string[]) => {
+    const base = specKeyFrom(name);
+    const body = { ownerResource: 'product' as const, name: name.slice(0, 60), type, storefrontAccess: true, ...(cats.length ? { categoryIds: cats } : {}) };
+    try {
+      return (await apiCreateMetafieldDefinition(storeId, { ...body, key: base })).data;
+    } catch {
+      return (await apiCreateMetafieldDefinition(storeId, { ...body, key: `${base.slice(0, 34)}-${Math.random().toString(36).slice(2, 6)}` })).data;
+    }
+  };
+
+  // Starter specs for this product's kind of category (Clothing: Size, Fabric ...), added with one click.
+  const [suggestBusy, setSuggestBusy] = useState(false);
+  const [suggestOff, setSuggestOff] = useState(false);
+  const suggestion = useMemo(() => {
+    if (suggestOff || !defs || !canManage) return null;
+    const names = here.map(id => catOptions.find(o => o.id === id)?.name ?? '').filter(Boolean);
+    return suggestSpecs(names, defs.map(d => d.name));
+  }, [suggestOff, defs, canManage, here, catOptions]);
+  const addSuggested = async (picks: SpecSuggestion[]) => {
+    setSuggestBusy(true); setAddError('');
+    try {
+      const made: MetafieldDefinition[] = [];
+      for (const p of picks) made.push(await createSpec(p.name, p.type, here.slice(-1)));
+      setDefs(prev => [...(prev ?? []), ...made]);
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Could not add the suggested specs.');
+    } finally { setSuggestBusy(false); }
+  };
+
   const addSpec = async () => {
     const name = newName.trim();
     if (!name) return;
     if ((defs ?? []).some(d => d.name.toLowerCase() === name.toLowerCase())) { setAddError('You already have a spec with this name.'); return; }
     setBusy(true); setAddError('');
     try {
-      const base = specKeyFrom(name);
-      let res;
-      try {
-        res = await apiCreateMetafieldDefinition(storeId, { ownerResource: 'product', key: base, name: name.slice(0, 60), type: newType, storefrontAccess: true, ...(onlyHere && here.length ? { categoryIds: here.slice(-1) } : {}) });
-      } catch {
-        // The key may be taken by a field with a different name: retry once with a short suffix.
-        res = await apiCreateMetafieldDefinition(storeId, { ownerResource: 'product', key: `${base.slice(0, 34)}-${Math.random().toString(36).slice(2, 6)}`, name: name.slice(0, 60), type: newType, storefrontAccess: true, ...(onlyHere && here.length ? { categoryIds: here.slice(-1) } : {}) });
-      }
-      setDefs(prev => [...(prev ?? []), res.data]);
+      const created = await createSpec(name, newType, onlyHere && here.length ? here.slice(-1) : []);
+      setDefs(prev => [...(prev ?? []), created]);
       setNewName(''); setAdding(false); setNewType('single_line_text_field'); setOnlyHere(false);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : 'Could not add this spec.');
@@ -234,6 +258,20 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange, categor
           <button type="button" onClick={() => setShowAll(v => !v)} className="self-start bg-transparent border-none p-0 text-[12px] text-slate underline cursor-pointer">
             {showAll ? 'Hide the specs for other categories' : `Show ${hiddenCount} spec${hiddenCount === 1 ? '' : 's'} for other categories`}
           </button>
+        )}
+        {suggestion && !adding && (
+          <div className="flex flex-col gap-2 rounded-lg border border-dashed border-bone bg-cream/40 px-3 py-2.5" data-testid="spec-suggestions">
+            <p className="m-0 text-[12px] text-charcoal">Suggested for {suggestion.label.toLowerCase()}: add the ones you need.</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {suggestion.specs.map(p => (
+                <button key={p.name} type="button" disabled={suggestBusy} onClick={() => void addSuggested([p])}
+                  className="inline-flex items-center gap-1 rounded-full border border-bone bg-white px-2.5 py-1 text-[12px] text-charcoal cursor-pointer hover:bg-cream disabled:opacity-50"><Plus size={11} />{p.name}</button>
+              ))}
+              <button type="button" disabled={suggestBusy} onClick={() => void addSuggested(suggestion.specs)}
+                className="ml-1 border-none bg-transparent p-0 text-[12px] font-semibold text-brand-deep-orange underline cursor-pointer disabled:opacity-50">{suggestBusy ? 'Adding…' : 'Add all'}</button>
+              <button type="button" onClick={() => setSuggestOff(true)} className="ml-auto border-none bg-transparent p-0 text-[12px] text-slate cursor-pointer">Not now</button>
+            </div>
+          </div>
         )}
         {defs && (adding ? (
           <div className="flex flex-col gap-1.5">
