@@ -61,7 +61,7 @@ function Column({ block, colors, theme, ratio, align }: { block: Block; colors: 
   const [errored, setErrored] = useState(false);
   const fit = imageFit(ratio, '4 / 3');
   return (
-    <div style={{ textAlign: align }}>
+    <div style={{ textAlign: align, minWidth: 0, overflowWrap: 'anywhere' }}>
       {s.imageUrl && !errored && (
         <div style={{ ...fit.box, background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden', marginBottom: '16px' }}>
           <img src={s.imageUrl} alt={s.heading ?? ''} loading="lazy" onError={() => setErrored(true)} style={fit.img} />

@@ -115,9 +115,9 @@ export function CollectionTileCard({ tile, colors, fonts, imageRadius, buttonRad
   const Icon = collectionIcon(tile.icon);
   const boxed = opts.cardStyle !== 'none';
   const cardStyle: CSSProperties = {
-    color: colors.ink, textAlign: opts.center ? 'center' : undefined, height: '100%',
+    color: colors.ink, textAlign: opts.center ? 'center' : undefined, height: '100%', minWidth: 0, overflowWrap: 'anywhere',
     display: 'flex', flexDirection: 'column', alignItems: opts.center ? 'center' : 'stretch',
-    ...(boxed ? { padding: 16, borderRadius: imageRadius, background: opts.cardStyle === 'filled' ? colors.bgAlt : 'transparent', border: `1px solid ${colors.border}` } : {}),
+    ...(boxed ? { padding: 16, overflow: 'hidden', borderRadius: imageRadius, background: opts.cardStyle === 'filled' ? colors.bgAlt : 'transparent', border: `1px solid ${colors.border}` } : {}),
   };
 
   const visual = hasImage ? (

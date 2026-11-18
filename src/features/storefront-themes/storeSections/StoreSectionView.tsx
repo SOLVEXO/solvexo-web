@@ -21,7 +21,11 @@ export const STORE_SECTION_CSS =
   '@media (max-width:1023px){.sxv-grid{grid-template-columns:repeat(min(var(--cols,1),2),minmax(0,1fr))}}' +
   '@media (max-width:749px){.sxv-grid{grid-template-columns:minmax(0,1fr)}}' +
   '.sxv-rich>*:first-child{margin-top:0}.sxv-rich>*:last-child{margin-bottom:0}.sxv-rich a{text-decoration:underline}' +
-  '.sxv-rich img{max-width:100%;height:auto}.sxv-rich ul,.sxv-rich ol{padding-inline-start:1.4em}';
+  '.sxv-rich img{max-width:100%;height:auto}.sxv-rich ul,.sxv-rich ol{padding-inline-start:1.4em}' +
+  '.sxv-rich{overflow-wrap:anywhere}.sxv-rich pre,.sxv-rich table{display:block;max-width:100%;overflow-x:auto}';
+
+/** A long word or link with no spaces must wrap inside its box (a card, a column), never push out of it. */
+const WRAP: CSSProperties = { overflowWrap: 'anywhere', minWidth: 0, maxWidth: '100%' };
 
 const HEADING_SIZE: Record<string, string> = { sm: 'clamp(18px,2.4vw,22px)', md: 'clamp(22px,3vw,32px)', lg: 'clamp(28px,4.4vw,44px)', xl: 'clamp(34px,6vw,64px)' };
 const TEXT_SIZE: Record<string, string> = { sm: '14px', md: '16px', lg: '19px' };
@@ -89,7 +93,7 @@ function renderNode(node: LayoutNode, ctx: Ctx, path: string): ReactNode {
             return (
               <div key={i} style={{
                 display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0, textAlign: a as CSSProperties['textAlign'],
-                ...(node.card ? { border: `1px solid ${ctx.colors.border ?? 'rgba(0,0,0,.12)'}`, borderRadius: 14, padding: 20, background: ctx.colors.bgAlt ?? 'transparent' } : {}),
+                ...(node.card ? { border: `1px solid ${ctx.colors.border ?? 'rgba(0,0,0,.12)'}`, borderRadius: 14, padding: 20, overflow: 'hidden', background: ctx.colors.bgAlt ?? 'transparent' } : {}),
               }}>
                 {(node.children ?? []).map((c, j) => renderNode(c, inner, `${path}.${i}.${j}`))}
               </div>
@@ -102,17 +106,17 @@ function renderNode(node: LayoutNode, ctx: Ctx, path: string): ReactNode {
       const v = text(valueOf(ctx, node.key));
       if (!v) return ctx.preview ? <Placeholder key={path}>{node.label || 'Heading'}</Placeholder> : null;
       const Tag = (['h2', 'h3', 'h4'].includes(node.tag ?? '') ? node.tag : 'h2') as 'h2' | 'h3' | 'h4';
-      return <Tag key={path} style={{ margin: 0, fontSize: HEADING_SIZE[node.size ?? 'md'], lineHeight: 1.15, fontWeight: 600, color: ctx.colors.ink, textAlign: align(node.align) as CSSProperties['textAlign'] }}>{v}</Tag>;
+      return <Tag key={path} style={{ ...WRAP, margin: 0, fontSize: HEADING_SIZE[node.size ?? 'md'], lineHeight: 1.15, fontWeight: 600, color: ctx.colors.ink, textAlign: align(node.align) as CSSProperties['textAlign'] }}>{v}</Tag>;
     }
     case 'text': {
       const v = text(valueOf(ctx, node.key));
       if (!v) return ctx.preview ? <Placeholder key={path}>{node.label || 'Text'}</Placeholder> : null;
-      return <p key={path} style={{ margin: 0, fontSize: TEXT_SIZE[node.size ?? 'md'], lineHeight: 1.6, whiteSpace: 'pre-line', color: node.muted ? (ctx.colors.inkMuted ?? ctx.colors.ink) : ctx.colors.ink, textAlign: align(node.align) as CSSProperties['textAlign'] }}>{v}</p>;
+      return <p key={path} style={{ ...WRAP, margin: 0, fontSize: TEXT_SIZE[node.size ?? 'md'], lineHeight: 1.6, whiteSpace: 'pre-line', color: node.muted ? (ctx.colors.inkMuted ?? ctx.colors.ink) : ctx.colors.ink, textAlign: align(node.align) as CSSProperties['textAlign'] }}>{v}</p>;
     }
     case 'richtext': {
       const html = sanitizeHtml(text(valueOf(ctx, node.key)));
       if (!html) return ctx.preview ? <Placeholder key={path}>{node.label || 'Formatted text'}</Placeholder> : null;
-      return <div key={path} className="sxv-rich" style={{ color: ctx.colors.ink, lineHeight: 1.65, textAlign: align(node.align) as CSSProperties['textAlign'] }} dangerouslySetInnerHTML={{ __html: html }} />;
+      return <div key={path} className="sxv-rich" style={{ ...WRAP, color: ctx.colors.ink, lineHeight: 1.65, textAlign: align(node.align) as CSSProperties['textAlign'] }} dangerouslySetInnerHTML={{ __html: html }} />;
     }
     case 'image': {
       const src = httpsUrl(valueOf(ctx, node.key));
@@ -141,7 +145,7 @@ function renderNode(node: LayoutNode, ctx: Ctx, path: string): ReactNode {
           : { background: 'transparent', color: ctx.colors.accent, border: '1px solid transparent', textDecoration: 'underline', padding: 0 };
       const wrap = (child: ReactNode) => <div key={path} style={{ display: 'flex', justifyContent: JUSTIFY[align(node.align)] ?? 'flex-start' }}>{child}</div>;
       if (!label) return ctx.preview ? <Placeholder key={path}>{node.label || 'Button'}</Placeholder> : null;
-      const base: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '12px 22px', borderRadius: 999, fontSize: 15, fontWeight: 600, textDecoration: 'none', cursor: 'pointer', ...look };
+      const base: CSSProperties = { ...WRAP, textAlign: 'center', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '12px 22px', borderRadius: 24, fontSize: 15, fontWeight: 600, textDecoration: 'none', cursor: 'pointer', ...look };
       return wrap(ctx.link({ link, style: base, children: label }));
     }
     case 'divider':
