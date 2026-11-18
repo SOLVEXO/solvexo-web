@@ -384,7 +384,7 @@ export default function DraftOrderForm() {
             {!isNew && canManage && draft?.status !== 'completed' && (
               <Button variant="outline" size="sm" onClick={() => setConfirmingDelete(true)} className="!text-error !border-error/30 hover:!bg-error-bg">Delete</Button>
             )}
-            {!isNew && canManage && draft?.status === 'open' && customerEmail.trim() && (
+            {!isNew && canManage && draft?.status === 'open' && !draft.isPaid && customerEmail.trim() && (
               <Button variant="outline" size="sm" loading={sendingInvoice} onClick={handleSendInvoice}>
                 {draft.invoiceSentAt ? 'Resend Invoice' : 'Send Invoice'}
               </Button>

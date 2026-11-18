@@ -52,6 +52,8 @@ export default function PayInvoicePage() {
   if (!invoice) return null;
   const symbol = currencySymbol(invoice.currency);
   const alreadyPaid = invoice.isPaid || paid;
+  // paid a moment ago on this page vs. an invoice that was already paid when the customer opened the link
+  const paidBefore = invoice.isPaid && !paid;
 
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4 py-10">
@@ -93,7 +95,8 @@ export default function PayInvoicePage() {
           {alreadyPaid ? (
             <div className="flex flex-col items-center gap-2 py-4">
               <CheckCircle2 size={32} className="text-success" />
-              <p className="text-[14px] font-semibold text-charcoal">Payment received — thank you!</p>
+              <p className="text-[14px] font-semibold text-charcoal">{paidBefore ? 'This invoice has already been paid.' : 'Payment received — thank you!'}</p>
+              {paidBefore && <p className="text-[12px] text-slate text-center m-0">There is nothing more to pay. If you have a question, contact {invoice.storeName}.</p>}
             </div>
           ) : !isStripeConfigured() ? (
             <p className="text-[12.5px] text-slate text-center">Online payment isn't available right now — please contact {invoice.storeName} directly.</p>

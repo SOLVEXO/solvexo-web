@@ -67,6 +67,14 @@ describe('DraftOrderForm — guest draft', () => {
     expect(screen.queryByRole('button', { name: 'Send Invoice' })).toBeNull();
   });
 
+  it('offers no Send Invoice for a draft already marked as paid (there is nothing to ask for)', async () => {
+    draftData = guestDraft({ isPaid: true });
+    renderForm();
+    await screen.findByDisplayValue('Uzair');
+    expect(screen.queryByRole('button', { name: /Send Invoice|Resend Invoice/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Complete Order' })).toBeTruthy(); // the way forward for a paid draft
+  });
+
   it('saves the typed (unsaved) email first, then sends the invoice', async () => {
     renderForm();
     const email = await screen.findByDisplayValue('old@example.com');
