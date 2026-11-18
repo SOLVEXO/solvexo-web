@@ -553,6 +553,8 @@ export const SECTION_META: SectionMeta[] = [
     settingsSchema: [
       { key: 'imageUrl', kind: 'image', label: 'Image' },
       { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', hint: 'The part of the image that must stay visible when it is cropped.' },
+      { key: 'imageLinkOn', kind: 'checkbox', label: 'Make the whole image a link', defaultOff: true },
+      { key: 'imageLink', kind: 'link', label: 'Image link', showIf: s => s.imageLinkOn === true },
       { key: 'heading', kind: 'text', label: 'Heading' },
       { key: 'subheading', kind: 'text', label: 'Text' },
       { key: 'ctaText', kind: 'text', label: 'Button text' },
@@ -664,6 +666,8 @@ export const FOOTER_WIDTH_OPTIONS = [
 export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   multirow_row: [
     { key: 'imageUrl', kind: 'image', label: 'Image' },
+    { key: 'imageLinkOn', kind: 'checkbox', label: 'Make the whole image a link', defaultOff: true },
+    { key: 'imageLink', kind: 'link', label: 'Image link', showIf: s => s.imageLinkOn === true },
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
     { key: 'body', kind: 'richtext', label: 'Text', rows: 8, hint: 'Press Enter for a new paragraph. Use the toolbar for headings, bold, lists and links.' },
     { key: 'ctaText', kind: 'text', label: 'Button text', maxLength: 40 },
@@ -822,6 +826,8 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   ],
   multicolumn_column: [
     { key: 'imageUrl', kind: 'image', label: 'Image' },
+    { key: 'imageLinkOn', kind: 'checkbox', label: 'Make the whole image a link', defaultOff: true },
+    { key: 'imageLink', kind: 'link', label: 'Image link', showIf: s => s.imageLinkOn === true },
     { key: 'heading', kind: 'text', label: 'Heading', maxLength: 120 },
     { key: 'body', kind: 'richtext', label: 'Text', rows: 6, hint: 'Press Enter for a new paragraph. Use the toolbar for headings, bold, lists and links.' },
     { key: 'ctaText', kind: 'text', label: 'Button text' },
@@ -868,6 +874,8 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   ],
   image_text_pair: [
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
+    { key: 'imageLinkOn', kind: 'checkbox', label: 'Make the whole image a link', defaultOff: true },
+    { key: 'imageLink', kind: 'link', label: 'Image link', showIf: s => s.imageLinkOn === true },
     ...eyebrowFields('Blank keeps the theme\'s label (e.g. "A closer look").'),
     { key: 'heading', kind: 'text', label: 'Heading' },
     { key: 'body', kind: 'richtext', label: 'Body', rows: 6, hint: 'Press Enter for a new paragraph. Use the toolbar for headings, bold, lists and links.' },

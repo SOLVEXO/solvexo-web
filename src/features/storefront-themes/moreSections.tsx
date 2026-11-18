@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- exports a helper next to section components */
+import { ImageLink } from './HeroSlideLink';
 import { useEffect, useState } from 'react';
 import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { columnCount } from '@/features/storefront/browse/gridLayout';
@@ -41,8 +42,9 @@ function Row({ block, index, colors, theme, ratio, alternate }: { block: Block; 
   const imageRight = alternate ? index % 2 === 1 : false;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-14 items-center">
-      <div className={imageRight ? 'md:order-2' : ''} style={{ ...fit.box, background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden' }}>
+      <div className={imageRight ? 'md:order-2' : ''} style={{ ...fit.box, background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden', position: 'relative' }}>
         {s.imageUrl && !errored && <img src={s.imageUrl} alt={s.heading ?? ''} loading="lazy" onError={() => setErrored(true)} style={fit.img} />}
+        <ImageLink settings={s} label={s.heading} />
       </div>
       <div>
         {s.heading && <h3 style={{ fontFamily: theme.fonts.display, fontSize: 'clamp(22px, 2.6vw, 30px)', fontWeight: 600, color: colors.ink, marginBottom: '12px' }}>{s.heading}</h3>}

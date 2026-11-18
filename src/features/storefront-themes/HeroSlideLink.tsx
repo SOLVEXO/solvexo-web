@@ -3,6 +3,11 @@ import { useStorefront, type StorefrontLinkSettings } from '@/features/storefron
 import { ts } from '@/utils/tStatic';
 import { useInlineEditActive } from './inlineEdit';
 
+/** "Make the whole image a link" for the other image sections (Image Banner, Image with Text, Multicolumn, Multirow): the same transparent link, from `imageLinkOn` / `imageLink`. The parent must be `position: relative`. */
+export function ImageLink({ settings, label, focusable = true }: { settings: Record<string, unknown>; label?: string; focusable?: boolean }) {
+  return <HeroSlideLink settings={{ slideLinkOn: settings.imageLinkOn, slideLink: settings.imageLink }} label={label?.trim() || ts('sections.openImage', 'Open this image')} focusable={focusable} />;
+}
+
 /** "Make the whole slide a link": a transparent link laid over the slide's picture. The slide's own button (if any) must sit above it
  *  (`position: relative; z-index: 2`). Nothing renders unless the seller turned `slideLinkOn` on, and never inside the inline text editor
  *  (it would swallow the clicks). `settings` are the slide block's settings. */

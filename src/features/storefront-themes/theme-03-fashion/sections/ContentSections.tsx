@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+import { ImageLink } from '../../HeroSlideLink';
 import { ts } from '@/utils/tStatic';
 import { useState, type FormEvent } from 'react';
 import { Check, Gift, Headphones, Lock, RefreshCw, ShieldCheck, Star, Truck } from 'lucide-react';
@@ -30,8 +31,9 @@ registerFashionSection('image_with_text', (section, blocks, colors) => {
           return (
             <PreviewBlock key={bid(b, i)} blockId={bid(b, i)}>
               <div className={`grid items-center gap-8 md:grid-cols-2 md:gap-16 ${right ? 'md:[&>*:first-child]:order-2' : ''}`}>
-                <div className="overflow-hidden" style={{ ...fit.box, background: colors.bgAlt, borderRadius: t.imageRadiusPx }}>
+                <div className="relative overflow-hidden" style={{ ...fit.box, background: colors.bgAlt, borderRadius: t.imageRadiusPx }}>
                   {s.imageUrl && <img src={s.imageUrl} alt={s.heading ?? ''} loading="lazy" style={fit.img} />}
+                  <ImageLink settings={s} label={s.heading} />
                 </div>
                 <div className="max-w-[480px]">
                   {eyebrow && <p className="m-0 mb-3 text-sm font-medium" style={{ color: colors.inkMuted, fontFamily: t.fonts.body }}>{eyebrow}</p>}
