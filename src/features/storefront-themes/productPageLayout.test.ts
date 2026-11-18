@@ -5,8 +5,8 @@ import { PRODUCT_MAIN_BLOCKS, resolveProductMainLayout, splitProductTemplateSect
 const block = (type: string, enabled?: boolean) => ({ type, ...(enabled === undefined ? {} : { enabled }) });
 const section = (type: string, id?: string): Section => ({ _id: id, type: type as Section['type'], settings: {}, blocks: [] });
 
-/** What a store saved before the optional blocks existed renders: the rating sits right under the title. */
-const LEGACY_ORDER = ['product_title', 'product_rating', 'product_price', 'product_variant_picker', 'product_quantity', 'product_buy_buttons', 'product_description'];
+/** What a store saved before the optional blocks existed renders: the rating sits right under the title, the specifications table (empty unless the product has specs) last. */
+const LEGACY_ORDER = ['product_title', 'product_rating', 'product_price', 'product_variant_picker', 'product_quantity', 'product_buy_buttons', 'product_description', 'product_specs'];
 
 describe('resolveProductMainLayout', () => {
   it('uses the default order when the template has no product_main (older stores)', () => {
@@ -28,7 +28,7 @@ describe('resolveProductMainLayout', () => {
       ],
     });
     expect(r.infoOrder).toEqual([
-      'product_description', 'product_title', 'product_rating', 'product_price', 'product_buy_buttons', 'product_variant_picker', 'product_quantity',
+      'product_description', 'product_title', 'product_rating', 'product_price', 'product_buy_buttons', 'product_variant_picker', 'product_quantity', 'product_specs',
     ]);
   });
 
@@ -44,7 +44,7 @@ describe('resolveProductMainLayout', () => {
   it('treats a required block missing from the section as on, at its default position, after the listed ones', () => {
     const r = resolveProductMainLayout({ blocks: [block('product_price'), block('product_title')] });
     expect(r.infoOrder).toEqual([
-      'product_price', 'product_title', 'product_rating', 'product_variant_picker', 'product_quantity', 'product_buy_buttons', 'product_description',
+      'product_price', 'product_title', 'product_rating', 'product_variant_picker', 'product_quantity', 'product_buy_buttons', 'product_description', 'product_specs',
     ]);
   });
 
@@ -55,9 +55,20 @@ describe('resolveProductMainLayout', () => {
   });
 
   describe('optional blocks', () => {
-    it('stay off when the template has never had them (wishlist, share, SKU, specifications)', () => {
+    it('stay off when the template has never had them (wishlist, share, SKU)', () => {
       const r = resolveProductMainLayout({ blocks: PRODUCT_MAIN_BLOCKS.map(t => block(t, true)) });
-      for (const optional of ['product_sku', 'product_wishlist', 'product_share', 'product_specs']) expect(r.infoOrder).not.toContain(optional);
+      for (const optional of ['product_sku', 'product_wishlist', 'product_share']) expect(r.infoOrder).not.toContain(optional);
+    });
+
+    it('the specifications table is on by default, after the description, so the specs a seller typed always show', () => {
+      const r = resolveProductMainLayout({ blocks: PRODUCT_MAIN_BLOCKS.map(t => block(t, true)) });
+      expect(r.infoOrder[r.infoOrder.length - 1]).toBe('product_specs');
+      expect(resolveProductMainLayout(null).infoOrder).toContain('product_specs');
+    });
+
+    it('but a seller who switched it off keeps it off', () => {
+      const r = resolveProductMainLayout({ blocks: [...PRODUCT_MAIN_BLOCKS.map(t => block(t, true)), block('product_specs', false)] });
+      expect(r.infoOrder).not.toContain('product_specs');
     });
 
     it('show where the seller put them once switched on', () => {

@@ -43,7 +43,7 @@ interface BlockLike { type: string; enabled?: boolean; settings?: Record<string,
  * A template with no `product_main` yet (older stores), or a required block
  * missing from it, resolves to "on" at its default position — identical to the
  * page before blocks could be reordered. Optional blocks that are absent stay
- * off, except the rating, which always showed under the title and so keeps doing so.
+ * off, except the rating (always showed under the title) and the specifications table (it draws nothing for a product with no specs).
  */
 /** The seller's choices for the photo area. `layout` is undefined until chosen, so the theme's own default stays. */
 export interface MediaLook { layout?: 'thumbs_left' | 'thumbs_bottom' | 'grid' | 'stacked'; aspect?: string; zoom: boolean }
@@ -69,6 +69,9 @@ export function resolveProductMainLayout(main?: { blocks?: BlockLike[] } | null)
     const titleAt = ordered.findIndex(o => o.type === 'product_title');
     ordered.splice(titleAt >= 0 ? titleAt + 1 : 0, 0, { type: 'product_rating', on: true, settings: {}, key: 'product_rating' });
   }
+  // The seller's own specifications (Size, Fabric ...) are "shown as a table on the product page", so they appear without anyone adding the block;
+  // it draws nothing for a product without specs. Only a block the seller switched OFF stays off.
+  if (!seen.has('product_specs')) ordered.push({ type: 'product_specs', on: true, settings: {}, key: 'product_specs' });
   const visible = ordered.filter(o => o.on && o.type !== 'product_media');
   return {
     mediaOn: ordered.find(o => o.type === 'product_media')?.on ?? true,
