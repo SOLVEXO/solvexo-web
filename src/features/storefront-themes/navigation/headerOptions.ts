@@ -1,4 +1,5 @@
 ﻿import type { CSSProperties } from 'react';
+import { textCaseOf } from '../textCase';
 import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeTheme';
 import type { Block } from '@/api/services/storefrontTypes';
 import { ts } from '@/utils/tStatic';
@@ -54,7 +55,10 @@ export function headerNavCss(scope: string, o: Pick<HeaderOptions, 'navFontSize'
   const itemHover = `${s} nav a:hover,${s} nav a:focus-visible`;
   if (o.navFontSize !== 'md') rules.push(`${item}{font-size:${NAV_FONT_PX[o.navFontSize]}px!important}`);
   // text-transform inherits, so one rule on <nav> covers every label inside it.
-  if (o.navUppercase) rules.push(`${s} nav{text-transform:uppercase;letter-spacing:.06em}`);
+  // the seller's Text case → Top menu choice wins; the old switch applies only while none is chosen
+  const menuCase = textCaseOf('menu');
+  if (menuCase) { if (menuCase === 'uppercase') rules.push(`${s} nav{letter-spacing:.06em}`); }
+  else if (o.navUppercase) rules.push(`${s} nav{text-transform:uppercase;letter-spacing:.06em}`);
   if (o.navHoverStyle === 'underline') {
     rules.push(`${item}{background-image:linear-gradient(currentColor,currentColor);background-size:0 1.5px;background-repeat:no-repeat;background-position:0 100%;transition:background-size .25s ease;padding-bottom:2px}`);
     rules.push(`${itemHover}{background-size:100% 1.5px}`);

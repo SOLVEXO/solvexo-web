@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
+import { cased, textCaseOf } from '../../textCase';
 import { ts } from '@/utils/tStatic';
 import { Info, Percent, Tag, AlertTriangle, Truck, PartyPopper, X, ChevronLeft, ChevronRight, Copy, Check, type LucideIcon } from 'lucide-react';
 import { getDismissedBannerIds, dismissBanner } from '@/utils/dismissedBanners';
@@ -134,7 +135,7 @@ export function TechAnnouncementBar({
   const palette: CSSProperties = { background: bgColor2 ? `linear-gradient(90deg, ${from}, ${bgColor2})` : from, color: fg };
   const typeStyle: CSSProperties = {
     fontSize: FONT_SIZE[fontSize], fontWeight: bold ? 700 : 500, fontFamily: t.fonts.body,
-    textTransform: uppercase ? 'uppercase' : undefined, letterSpacing: uppercase ? '0.06em' : undefined,
+    textTransform: uppercase && !textCaseOf('announcement') ? 'uppercase' : undefined, letterSpacing: uppercase || textCaseOf('announcement') === 'uppercase' ? '0.06em' : undefined,
   };
   const step = 'grid size-7 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-white/15';
 
@@ -142,7 +143,7 @@ export function TechAnnouncementBar({
     const hasLink = m.ctaLabel && m.ctaLink && SAFE_LINK.test(m.ctaLink);
     return (
       <span key={key} className={`inline-flex items-center gap-2.5 ${marquee ? 'shrink-0 px-8' : 'flex-wrap'}`}>
-        <span>{m.message}</span>
+        <span>{cased('announcement', m.message, uppercase ? 'uppercase' : 'none')}</span>
         {m.couponCode && <CouponButton code={m.couponCode} />}
         {hasLink && (linkStyle === 'button'
           ? <a href={m.ctaLink!} className="shrink-0 font-semibold no-underline" style={{ color: 'inherit', border: '1.5px solid currentColor', borderRadius: 9999, padding: '3px 14px', fontSize: '0.92em' }}>{m.ctaLabel}</a>

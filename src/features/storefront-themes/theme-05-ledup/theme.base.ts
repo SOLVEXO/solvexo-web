@@ -1,5 +1,6 @@
 // Settings engine of the Ledup theme: every shared setting (typography, buttons, cards, grid...) is applied into `baseTheme`.
 // Copy of the shared engine with Ledup's own defaults (Poppins, tight headings, pill inputs).
+import { setTextCases, textCaseOf, caseCss, buttonCaseCss } from '../textCase';
 import { ensureGoogleFont, fontFallback } from '@/utils/googleFonts';
 import { readProductsPerPage } from '../themeManifest';
 import { DEFAULT_SPECS_LOOK, readSpecsLook, type SpecsLook } from '../specsLook';
@@ -223,6 +224,7 @@ export function applyMerchantThemeOverrides(c: BaseMerchantColors | null | undef
     baseTheme.colors.selectedInk = baseTheme.colors.accentInk;
   }
   const ts = c?.themeSettings;
+  setTextCases(ts);
   const toastColor = ts?.toastColor;
   baseTheme.toast.style = ts?.toastStyle === 'light' ? 'light' : 'dark';
   baseTheme.toast.color = typeof toastColor === 'string' && HEX6.test(toastColor) ? toastColor : null;
@@ -343,7 +345,7 @@ export function baseTypographyCss(scope: string): string {
   const btn = `${scope} :is(.lb-pill,.lb-cta)`;
   const rules = [
     `${h}{font-weight:${t.headingWeight}}`,
-    t.headingCase === 'uppercase' ? `${h}{text-transform:uppercase}` : '',
+    textCaseOf('heading') ? caseCss(h, textCaseOf('heading')) : t.headingCase === 'uppercase' ? `${h}{text-transform:uppercase}` : '',
     t.headingTracking !== 'auto' ? `${h}{letter-spacing:${TRACKING_EM[t.headingTracking]}}` : '',
     t.headingScale !== 'medium' ? `${scope} :is(h1,h2){zoom:${HEADING_ZOOM[t.headingScale]}}` : '',
     t.headingLineHeight !== 'auto' ? `${h}{line-height:${LINE_HEIGHT[t.headingLineHeight]}}` : '',
@@ -352,7 +354,7 @@ export function baseTypographyCss(scope: string): string {
     t.bodyScale !== 'medium' ? `${scope} p{zoom:${BODY_ZOOM[t.bodyScale]}}` : '',
     t.linkUnderline !== 'auto' ? `${scope} :is(p,li,dd) a{text-decoration:${t.linkUnderline === 'always' ? 'underline' : 'none'}}` : '',
     t.linkColor ? `${scope} :is(p,li,dd) a{color:${t.linkColor}}` : '',
-    t.buttonCase === 'uppercase' ? '.lb-pill,.lb-cta{text-transform:uppercase;letter-spacing:.06em;font-size:13px}' : '',
+    textCaseOf('button') ? buttonCaseCss('.lb-pill,.lb-cta', textCaseOf('button')) : t.buttonCase === 'uppercase' ? '.lb-pill,.lb-cta{text-transform:uppercase;letter-spacing:.06em;font-size:13px}' : '',
     t.buttonSize !== 'md' ? `${btn}{height:${BUTTON_HEIGHT[t.buttonSize]}}` : '',
     t.buttonHover === 'lift' ? `${btn}:hover:not([disabled]){transform:translateY(-2px)}` : '',
     t.buttonHover === 'grow' ? `${btn}:hover:not([disabled]){transform:scale(1.03)}` : '',

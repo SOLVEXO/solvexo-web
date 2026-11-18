@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { cased, textCaseOf } from '../../textCase';
 import { ts } from '@/utils/tStatic';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
@@ -166,7 +167,7 @@ export function FashionNavbar() {
                 <div key={item.id} className="group relative" data-open={openMenu === item.id} data-dismissed={dismissedMenu === item.id} data-nav-group={item.id}
                   onMouseEnter={() => { if (dismissedMenu === item.id) setDismissedMenu(null); }} onFocus={() => { if (dismissedMenu === item.id) setDismissedMenu(null); }}>
                   <div className={`inline-flex items-center rounded-full transition-colors ${o.navHoverStyle !== 'underline' ? 'group-hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)] group-data-[open=true]:bg-[color-mix(in_srgb,currentColor_8%,transparent)] group-data-[dismissed=true]:bg-transparent!' : ''}`}>
-                  <NavAnchor link={item.link} className={`inline-block whitespace-nowrap rounded-full py-2 text-sm font-medium no-underline ${item.children.length > 0 ? 'pl-4 pr-1' : 'px-4'}`} style={{ color: fg }}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                  <NavAnchor link={item.link} className={`inline-block whitespace-nowrap rounded-full py-2 text-sm font-medium no-underline ${item.children.length > 0 ? 'pl-4 pr-1' : 'px-4'}`} style={{ color: fg }}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : cased('menu', item.label)}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                   {item.children.length > 0 && (
                     <button type="button" aria-expanded={openMenu === item.id} aria-label={openMenu === item.id ? ts('pg.close_label_menu', 'Close {{label}} menu', { label: item.label }) : ts('pg.open_label_menu', 'Open {{label}} menu', { label: item.label })} onPointerDown={e => { lastPointer.current = e.pointerType; }} onClick={e => toggleMenu(item.id, e.currentTarget)}
                       className="mr-2 inline-grid size-7 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 align-middle" style={{ color: fg }}>
@@ -187,7 +188,7 @@ export function FashionNavbar() {
                                 <div>
                                   <MegaHeading label={item.label} badge={item.badge} />
                                   {plain.map(c => (
-                                    <NavAnchor key={c.id} link={c.link} className="block rounded-xl px-3 py-2 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                                    <NavAnchor key={c.id} link={c.link} className="block rounded-xl px-3 py-2 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                                   ))}
                                 </div>
                               )}
@@ -197,7 +198,7 @@ export function FashionNavbar() {
                                   {c.children.map(g => (
                                     <NavAnchor key={g.id} link={g.link} className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>
                                       {g.imageUrl && <img src={g.imageUrl} alt="" loading="lazy" className="shrink-0 object-cover" style={{ width: { square: 28, landscape: 36, portrait: 24 }[t.mega.photo], height: { square: 28, landscape: 26, portrait: 34 }[t.mega.photo], borderRadius: 8, background: t.colors.bgAlt }} />}
-                                      <span>{g.label}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></span>
+                                      <span>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></span>
                                     </NavAnchor>
                                   ))}
                                 </div>
@@ -223,9 +224,9 @@ export function FashionNavbar() {
                       <ul className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16 }}>
                         {item.children.map(c => (
                           <li key={c.id}>
-                            <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{c.label}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                            <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                             {c.children.map(g => (
-                              <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-4 py-1.5 pl-7 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{g.label}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                              <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-4 py-1.5 pl-7 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                             ))}
                           </li>
                         ))}
@@ -292,8 +293,10 @@ export function FashionNavbar() {
 /** Column heading of the mega menu; a column's photo shows as a small picture beside it, so rows always line up. */
 function MegaHeading({ label, link, imageUrl, badge }: { label: string; link?: ResolvedStorefrontNavItem['link']; imageUrl?: string | null; badge?: ResolvedStorefrontNavItem['badge'] }) {
   const size = { square: [40, 40], landscape: [52, 38], portrait: [36, 48] }[t.mega.photo];
-  const upper = t.mega.heading === 'upper';
-  const text = <span className={upper ? 'text-[12px] font-semibold uppercase' : 'text-sm font-semibold'} style={{ color: t.colors.ink, letterSpacing: upper ? '.08em' : undefined }}>{label}<NavBadge badge={badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></span>;
+  // the seller's "Text case → Mega menu headings" choice; unset = the old Column headings switch (capitals by default)
+  const mode = textCaseOf('megaHeading') || (t.mega.heading === 'upper' ? 'uppercase' : 'none');
+  const upper = mode === 'uppercase';
+  const text = <span className={upper ? 'text-[12px] font-semibold' : 'text-sm font-semibold'} style={{ color: t.colors.ink, letterSpacing: upper ? '.08em' : undefined }}>{cased('megaHeading', label, mode)}<NavBadge badge={badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></span>;
   return (
     <div className="mb-2 flex items-center gap-3 px-3" style={{ minHeight: 48 }}>
       {imageUrl && <img src={imageUrl} alt="" loading="lazy" className="shrink-0 object-cover" style={{ width: size[0], height: size[1], borderRadius: 10, background: t.colors.bgAlt }} />}

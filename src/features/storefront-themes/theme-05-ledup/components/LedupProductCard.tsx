@@ -1,4 +1,5 @@
 import type { MouseEvent } from 'react';
+import { cased } from '../../textCase';
 import { Link } from 'react-router-dom';
 import { cardBadgeBox, cardBadgeOf, cardInfoText } from '../../productCardExtras';
 import { badgeAccent } from '../../cardBadgeTheme';
@@ -85,7 +86,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
         {inStock && b.saleBadge && sale.onSale && pct > 0 && <span style={{ ...chip, background: t.colors.danger }}>{b.saleBadgeText === 'label' ? ts('pg.sale', 'Sale') : `-${pct}%`}</span>}
       </div>
       {ownBadge && !badgeOnPhoto && (
-        <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 12, b.cardBadgePosition === 'top-left' && ((!inStock && b.soldOutBadge) || (inStock && b.saleBadge && sale.onSale && pct > 0)) ? 28 : b.cardBadgePosition === 'top-right' && b.cardWishlist && product.variantId ? 38 : 0), ...chip, background: ownBadge.bg, color: ownBadge.ink }}>{ownBadge.text}</span>
+        <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 12, b.cardBadgePosition === 'top-left' && ((!inStock && b.soldOutBadge) || (inStock && b.saleBadge && sale.onSale && pct > 0)) ? 28 : b.cardBadgePosition === 'top-right' && b.cardWishlist && product.variantId ? 38 : 0), ...chip, background: ownBadge.bg, color: ownBadge.ink }}>{cased('badge', ownBadge.text)}</span>
       )}
       {b.cardWishlist && product.variantId && (
         <button type="button" onClick={heart} aria-pressed={wished}
@@ -108,14 +109,14 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
           </div>
         )}
         {ownBadge && badgeOnPhoto && (
-          <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 4), ...chip, background: ownBadge.bg, color: ownBadge.ink }}>{ownBadge.text}</span>
+          <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 4), ...chip, background: ownBadge.bg, color: ownBadge.ink }}>{cased('badge', ownBadge.text)}</span>
         )}
       </Link>
 
       <div className="flex flex-1 flex-col justify-between">
         <div className={center ? 'text-center' : undefined}>
           <h3 className="m-0 line-clamp-2 break-words text-[17px] font-medium leading-snug text-[#4b423b]" title={p.name}>
-            <Link to={to} className="text-inherit no-underline">{p.name}</Link>
+            <Link to={to} className="text-inherit no-underline">{cased('product', p.name)}</Link>
           </h3>
           {b.cardTag && infoText && <p className="mt-1 truncate text-[11px] text-[#a1948c]">{b.cardInfoLine === 'vendor' ? <VendorLink name={product.vendor ?? ''} plain /> : infoText}</p>}
           {b.cardRating && rating > 0 && (

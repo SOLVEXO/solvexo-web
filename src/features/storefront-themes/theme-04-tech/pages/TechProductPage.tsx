@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { cased } from '../../textCase';
 import { useNavigate, useParams } from 'react-router-dom';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { Minus, Plus, ShoppingCart, ZoomIn } from 'lucide-react';
@@ -205,7 +206,7 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
     product_title: () => (
       <div>
         {b.showVendor && detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}><VendorLink name={detail.product.vendor} /></p>}
-        <h1 className="m-0 text-[clamp(24px,3vw,34px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}>{product.name}</h1>
+        <h1 className="m-0 text-[clamp(24px,3vw,34px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}>{cased('product', product.name)}</h1>
       </div>
     ),
     product_rating: () => !b.showReviews ? null : (

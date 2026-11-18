@@ -71,7 +71,7 @@ const V2_FIELDS: FieldSchema[] = [
   },
   {
     key: 'headingCase', kind: 'select', label: 'Heading letters', half: true,
-    options: [{ value: 'default', label: 'Theme default' }, { value: 'uppercase', label: 'CAPITALS' }, { value: 'capitalize', label: 'Each Word Capital' }, { value: 'none', label: 'As typed' }],
+    options: [{ value: 'default', label: 'Theme default' }, { value: 'uppercase', label: 'UPPERCASE' }, { value: 'lowercase', label: 'lowercase' }, { value: 'capitalize', label: 'Capitalize Each Word' }, { value: 'sentence', label: 'Sentence case' }, { value: 'none', label: 'As typed' }],
   },
   {
     key: 'animation', kind: 'select', label: 'Entrance animation',

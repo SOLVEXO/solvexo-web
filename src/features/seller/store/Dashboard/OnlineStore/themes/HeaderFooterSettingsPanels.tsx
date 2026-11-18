@@ -174,7 +174,6 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
             <option value="lg">Large</option>
           </select>
         </label>
-        <SwitchRow label="Capital letters" checked={header.navUppercase === true} onChange={v => set({ navUppercase: v })} />
         <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">When shoppers point at a link</span>
           <select className={SELECT} value={header.navHoverStyle ?? 'none'} onChange={e => set({ navHoverStyle: e.target.value as StorefrontHeader['navHoverStyle'] })}>
@@ -354,11 +353,8 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
       </Group>
       )}
 
-      {(can('headings') || can('socialStyle') || can('socialColour') || can('socialSize')) && (
-      <Group title="Headings and social icons">
-        {can('headings') && (
-          <SwitchRow label="Column headings in capital letters" checked={footer.headingUppercase !== false} onChange={v => set({ headingUppercase: v })} />
-        )}
+      {(can('socialStyle') || can('socialColour') || can('socialSize')) && (
+      <Group title="Social icons">
         {can('socialStyle') && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Social icon style</span>

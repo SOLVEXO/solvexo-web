@@ -52,7 +52,7 @@ export interface ThemeSettingsFieldDef {
   /** A shared `StorefrontColors` key, or `custom.<name>` for a setting only THIS theme defines: it is stored in `StorefrontColors.themeSettings` (no backend change needed) and read in the theme with `customThemeSetting`. */
   key: keyof StorefrontColors | `custom.${string}`;
   label: string;
-  group: 'Colors' | 'Typography' | 'Buttons' | 'Layout & Spacing' | 'Images' | 'Product cards' | 'Product page' | 'Effects' | 'Cart' | 'Pop-up messages' | 'Login popup' | 'Share popup' | 'Mega menu' | 'Pagination' | 'Page background' | 'Specifications table';
+  group: 'Colors' | 'Typography' | 'Text case' | 'Buttons' | 'Layout & Spacing' | 'Images' | 'Product cards' | 'Product page' | 'Effects' | 'Cart' | 'Pop-up messages' | 'Login popup' | 'Share popup' | 'Mega menu' | 'Pagination' | 'Page background' | 'Specifications table';
   control:
     /** A picture the seller uploads or picks from the media library; stored as its https URL text. */
     | { kind: 'image' }

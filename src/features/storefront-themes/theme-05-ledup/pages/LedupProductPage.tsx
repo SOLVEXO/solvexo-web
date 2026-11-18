@@ -1,4 +1,5 @@
 import { VariantOptionPicker } from '../../core/product/VariantOptionPicker';
+import { cased } from '../../textCase';
 import { buildOptionValues, resolveOptionStyle } from '../../core/product/variantOptions';
 import { useProductPickerSettings } from '../../core/product/pickerSettings';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -196,7 +197,7 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
 
           <div className="flex flex-col lg:col-span-6">
             {detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase tracking-wider text-stone-400"><VendorLink name={detail.product.vendor} /></p>}
-            <h1 className="m-0 text-[clamp(28px,3.4vw,40px)] font-medium uppercase leading-tight tracking-normal" style={{ fontFamily: t.fonts.display, color: '#4b423b' }}>{product.name}</h1>
+            <h1 className="m-0 text-[clamp(28px,3.4vw,40px)] font-medium leading-tight tracking-normal" style={{ fontFamily: t.fonts.display, color: '#4b423b' }}>{cased('product', product.name, 'uppercase')}</h1>
             {short && <p className="mt-2 text-base font-normal leading-relaxed text-[#4b423b]">{short}</p>}
             {description && <div className="prose prose-sm mt-6 max-w-none text-[16px] leading-relaxed text-[#6b625b]" dangerouslySetInnerHTML={{ __html: description }} />}
 

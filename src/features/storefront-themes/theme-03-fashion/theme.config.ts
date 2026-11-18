@@ -3,6 +3,7 @@
 // accent word, soft gradients and gentle motion. Merchant overrides (colors, fonts, buttons, spacing) are applied
 // into the singleton below before any child renders, same contract every registered theme follows.
 
+import { setTextCases, textCaseOf, caseCss, buttonCaseCss } from '../textCase';
 import { ensureGoogleFont, fontFallback } from '@/utils/googleFonts';
 import { setVendorPrefix } from '../core/VendorLink';
 import { readProductsPerPage } from '../themeManifest';
@@ -228,6 +229,7 @@ export function applyMerchantThemeOverrides(c: FashionMerchantColors | null | un
     fashionTheme.colors.selectedInk = fashionTheme.colors.accentInk;
   }
   const ts = c?.themeSettings;
+  setTextCases(ts);
   const toastColor = ts?.toastColor;
   fashionTheme.toast.style = ts?.toastStyle === 'light' ? 'light' : 'dark';
   fashionTheme.toast.color = typeof toastColor === 'string' && HEX6.test(toastColor) ? toastColor : null;
@@ -355,7 +357,7 @@ export function fashionTypographyCss(scope: string): string {
   const btn = `${scope} :is(.fx-pill,.fx-cta)`;
   const rules = [
     `${h}{font-weight:${t.headingWeight}}`,
-    t.headingCase === 'uppercase' ? `${h}{text-transform:uppercase}` : '',
+    textCaseOf('heading') ? caseCss(h, textCaseOf('heading')) : t.headingCase === 'uppercase' ? `${h}{text-transform:uppercase}` : '',
     t.headingTracking !== 'auto' ? `${h}{letter-spacing:${TRACKING_EM[t.headingTracking]}}` : '',
     t.headingScale !== 'medium' ? `${scope} :is(h1,h2){zoom:${HEADING_ZOOM[t.headingScale]}}` : '',
     t.headingLineHeight !== 'auto' ? `${h}{line-height:${LINE_HEIGHT[t.headingLineHeight]}}` : '',
@@ -364,7 +366,7 @@ export function fashionTypographyCss(scope: string): string {
     t.bodyScale !== 'medium' ? `${scope} p{zoom:${BODY_ZOOM[t.bodyScale]}}` : '',
     t.linkUnderline !== 'auto' ? `${scope} :is(p,li,dd) a{text-decoration:${t.linkUnderline === 'always' ? 'underline' : 'none'}}` : '',
     t.linkColor ? `${scope} :is(p,li,dd) a{color:${t.linkColor}}` : '',
-    t.buttonCase === 'uppercase' ? '.fx-pill,.fx-cta{text-transform:uppercase;letter-spacing:.06em;font-size:13px}' : '',
+    textCaseOf('button') ? buttonCaseCss('.fx-pill,.fx-cta', textCaseOf('button')) : t.buttonCase === 'uppercase' ? '.fx-pill,.fx-cta{text-transform:uppercase;letter-spacing:.06em;font-size:13px}' : '',
     t.buttonSize !== 'md' ? `${btn}{height:${BUTTON_HEIGHT[t.buttonSize]}}` : '',
     t.buttonHover === 'lift' ? `${btn}:hover:not([disabled]){transform:translateY(-2px)}` : '',
     t.buttonHover === 'grow' ? `${btn}:hover:not([disabled]){transform:scale(1.03)}` : '',

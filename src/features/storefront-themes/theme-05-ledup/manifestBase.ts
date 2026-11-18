@@ -1,4 +1,5 @@
 import type { ThemeManifest, ThemeStylePreset } from '../themeManifest';
+import { TEXT_CASE_FIELDS } from '../textCaseFields';
 import { CARD_BORDER_FIELDS, PAGE_BG_FIELDS } from '../pageBackground';
 import { SPECS_FIELDS } from '../specsLook';
 import { FEATURE_ICON_OPTIONS } from '../featureIcons';
@@ -302,6 +303,7 @@ export const baseManifest: ThemeManifest = {
   ],
 
   themeSettingsFields: [
+    ...TEXT_CASE_FIELDS,
     ...PAGE_BG_FIELDS,
     ...SPECS_FIELDS,
     ...CARD_BORDER_FIELDS,

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { cased, textCaseOf } from '../../textCase';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import type { ResolvedStorefrontNavItem } from '@/features/storefront/StorefrontContext';
@@ -29,8 +30,8 @@ export function LedupMegaMenu({ items, activeId, onClose }: { items: ResolvedSto
           <div className="flex w-1/5 shrink-0 flex-col gap-7 border-e border-[#e2dedb] pe-6">
             {parents.map(it => (
               <button key={it.id} type="button" tabIndex={visible ? 0 : -1} className={`ld-parent ${it.id === current.id ? 'is-active' : ''}`}
-                onMouseEnter={() => setHover({ from: activeId, id: it.id })} onFocus={() => setHover({ from: activeId, id: it.id })} onClick={() => setHover({ from: activeId, id: it.id })}>
-                {it.label}<NavBadge badge={it.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" />
+                style={textCaseOf('menu') ? { textTransform: 'none' } : undefined} onMouseEnter={() => setHover({ from: activeId, id: it.id })} onFocus={() => setHover({ from: activeId, id: it.id })} onClick={() => setHover({ from: activeId, id: it.id })}>
+                {cased('menu', it.label)}<NavBadge badge={it.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" />
               </button>
             ))}
             <a href="/search" onClick={onClose} className="ld-pillbtn mt-auto" tabIndex={visible ? 0 : -1} style={{ color: '#a69d98' }}>
@@ -42,12 +43,12 @@ export function LedupMegaMenu({ items, activeId, onClose }: { items: ResolvedSto
           <div className="grid grid-cols-2 content-start gap-x-10 gap-y-8 xl:grid-cols-3" style={current.megaColumns ? { gridTemplateColumns: `repeat(${current.megaColumns}, minmax(0, 1fr))` } : undefined}>
             {columns.map(col => (
               <div key={col.id} className="flex flex-col gap-2">
-                <NavAnchor link={col.link} onClick={onClose} className="ld-childtitle" tabIndex={visible ? 0 : -1}>{col.title}<NavBadge badge={col.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>
+                <NavAnchor link={col.link} onClick={onClose} className="ld-childtitle" style={textCaseOf('megaHeading') ? { textTransform: 'none' } : undefined} tabIndex={visible ? 0 : -1}>{cased('megaHeading', col.title)}<NavBadge badge={col.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>
                 <ul className="m-0 mt-1 flex list-none flex-col gap-2.5 p-0">
                   {col.links.map(l => (
                     <li key={l.id}>
                       <NavAnchor link={l.link} onClick={onClose} className="ld-grand" tabIndex={visible ? 0 : -1}>
-                        {l.label}<NavBadge badge={l.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /><ArrowRight size={14} className="ld-arrow" aria-hidden />
+                        {cased('megaLink', l.label)}<NavBadge badge={l.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /><ArrowRight size={14} className="ld-arrow" aria-hidden />
                       </NavAnchor>
                     </li>
                   ))}

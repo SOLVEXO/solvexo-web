@@ -1,4 +1,5 @@
 import { useMemo, useState, type MouseEvent } from 'react';
+import { cased } from '../../textCase';
 import { useWholesaleGate } from '../../core/b2b/useWholesale';
 import { cardBadgeBox, cardBadgeOf, cardInfoText } from '../../productCardExtras';
 import { badgeAccent } from '../../cardBadgeTheme';
@@ -92,7 +93,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
       {!inStock && b.soldOutBadge && <span style={{ ...badgeBase, background: t.colors.ink, color: t.colors.bg }}>{ts('product.soldOut', 'Sold out')}</span>}
       {inStock && b.saleBadge && sale.onSale && pct > 0 && <span style={{ ...badgeBase, background: t.colors.danger, color: '#fff' }}>{b.saleBadgeText === 'label' ? ts('pg.sale', 'Sale') : `-${pct}%`}</span>}
       {ownBadge && (
-        <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 8, b.cardBadgePosition === 'top-left' && hasChip ? 28 : 0), padding: '3px 8px', fontSize: 11, fontWeight: 700, lineHeight: 1.3, borderRadius: b.badgeStyle === 'square' ? t.badgeRadiusPx : '9999px', background: ownBadge.bg, color: ownBadge.ink }}>{ownBadge.text}</span>
+        <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 8, b.cardBadgePosition === 'top-left' && hasChip ? 28 : 0), padding: '3px 8px', fontSize: 11, fontWeight: 700, lineHeight: 1.3, borderRadius: b.badgeStyle === 'square' ? t.badgeRadiusPx : '9999px', background: ownBadge.bg, color: ownBadge.ink }}>{cased('badge', ownBadge.text)}</span>
       )}
     </>
   );
@@ -148,7 +149,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
         <div className="flex min-w-0 flex-col gap-2">
           <TechStock inStock={inStock} />
           {b.cardTag && infoText && <p className="m-0 text-xs uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{b.cardInfoLine === 'vendor' ? <VendorLink name={product.vendor ?? ''} plain /> : infoText}</p>}
-          <Link to={to} className="text-sm font-medium no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
+          <Link to={to} className="text-sm font-medium no-underline hover:underline" style={{ color: t.colors.ink }}>{cased('product', p.name)}</Link>
           {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
           {swatchRow}
           {priceBlock}
@@ -171,7 +172,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
       </div>
       {t.showCardRating && <TechStars value={product.averageRating ?? 0} />}
       {b.cardTag && infoText && <p className="m-0 text-[11px] uppercase" style={{ color: t.colors.inkMuted, letterSpacing: '.06em' }}>{b.cardInfoLine === 'vendor' ? <VendorLink name={product.vendor ?? ''} plain /> : infoText}</p>}
-      <Link to={to} className="line-clamp-3 text-[13px] font-medium leading-snug no-underline hover:underline" style={{ color: t.colors.ink }}>{p.name}</Link>
+      <Link to={to} className="line-clamp-3 text-[13px] font-medium leading-snug no-underline hover:underline" style={{ color: t.colors.ink }}>{cased('product', p.name)}</Link>
       <div className="mt-auto flex flex-col gap-3 pt-1">
         {swatchRow}
         {priceBlock}

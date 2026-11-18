@@ -31,6 +31,8 @@ export const SECTION_SPACING_CSS =
   '.sx-hc :is(h1,h2,h3,h4,h5,h6){color:var(--sx-hc)!important}' +
   '.sx-hw :is(h1,h2,h3,h4,h5,h6){font-weight:var(--sx-hw)!important}' +
   '.sx-hcase :is(h1,h2,h3,h4,h5,h6){text-transform:var(--sx-hcase)!important}' +
+  // Sentence case: all small, then the first letter big again
+  '.sx-hcase-s :is(h1,h2,h3,h4,h5,h6)::first-letter{text-transform:uppercase!important}' +
   '.sx-vid{position:relative;isolation:isolate}' +
   '.sx-vid-el{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;pointer-events:none}' +
   '.sx-vid-ov{position:absolute;inset:0;z-index:-1;pointer-events:none}' +
@@ -100,7 +102,7 @@ export function sectionSpacing(settings: Record<string, unknown> | undefined): {
   const textColor = hex(settings?.textColor);
   const headingColor = hex(settings?.headingColor);
   const headingWeight = HEADING_WEIGHT[String(settings?.headingWeight)];
-  const headingCase = settings?.headingCase === 'uppercase' || settings?.headingCase === 'capitalize' || settings?.headingCase === 'none' ? String(settings.headingCase) : undefined;
+  const headingCase = ['uppercase', 'lowercase', 'capitalize', 'sentence', 'none'].includes(String(settings?.headingCase)) ? String(settings?.headingCase) : undefined;
   const sticky = settings?.sticky === true;
   const stickyOffset = num0(settings?.stickyOffset, 300) ?? 0;
   const anim = ANIMATIONS.find(a => a === settings?.animation);
@@ -122,6 +124,7 @@ export function sectionSpacing(settings: Record<string, unknown> | undefined): {
       headingColor ? 'sx-hc' : '',
       headingWeight ? 'sx-hw' : '',
       headingCase ? 'sx-hcase' : '',
+      headingCase === 'sentence' ? 'sx-hcase-s' : '',
       videoUrl ? 'sx-vid' : '',
       anim ? `sx-anim sx-anim-${anim}` : '',
       visibilityClasses(visibility),
@@ -137,7 +140,7 @@ export function sectionSpacing(settings: Record<string, unknown> | undefined): {
       ...(textColor ? { '--sx-tc': textColor, color: textColor } : {}),
       ...(headingColor ? { '--sx-hc': headingColor } : {}),
       ...(headingWeight ? { '--sx-hw': headingWeight } : {}),
-      ...(headingCase ? { '--sx-hcase': headingCase } : {}),
+      ...(headingCase ? { '--sx-hcase': headingCase === 'sentence' ? 'lowercase' : headingCase } : {}),
       ...(sticky ? { position: 'sticky' as const, top: stickyOffset, zIndex: 20 } : {}),
       ...(anim && animDelay ? { '--sx-ad': `${animDelay}ms` } : {}),
       ...(anim && animSpeed ? { '--sx-ad-dur': animSpeed } : {}),

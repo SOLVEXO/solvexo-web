@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { cased, textCaseOf } from '../textCase';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
@@ -73,7 +74,9 @@ export function MobileNavPanel({
     display: 'flex', alignItems: 'center', gap: '10px', width: '100%', textAlign: 'left' as const,
     background: 'transparent', border: 'none', borderBottom: `1px solid ${tokens.colors.border}`, cursor: 'pointer',
     padding: `14px ${tokens.padX}`, color: tokens.colors.ink, fontFamily: tokens.fonts.body, fontSize: tokens.topSize,
-    fontWeight: tokens.topWeight, letterSpacing: tokens.topTracking, textTransform: tokens.topUppercase ? ('uppercase' as const) : undefined,
+    fontWeight: tokens.topWeight, letterSpacing: tokens.topTracking,
+    // static rows (Search / Account / Wishlist): the old capital-letters switch, until the seller picks a Mobile menu case
+    textTransform: !textCaseOf('mobile') && tokens.topUppercase ? ('uppercase' as const) : ('none' as const),
     textDecoration: 'none',
   };
 
@@ -95,17 +98,17 @@ export function MobileNavPanel({
         <nav className="flex flex-col" aria-label={tr('nav.mobile', "Mobile")}>
           {showSearch && (
             <button type="button" onClick={() => { onClose(); onSearch(); }} style={rowStyle}>
-              <Search size={16} /> {tr('nav.search', "Search")}
+              <Search size={16} /> {cased('mobile', tr('nav.search', "Search"), tokens.topUppercase ? 'uppercase' : 'none')}
             </button>
           )}
           {shop && <ShopGroup shop={shop} tokens={tokens} rowStyle={rowStyle} onNavigate={onClose} />}
           {items.map(item => <MobileNavItem key={item.id} item={item} tokens={tokens} onNavigate={onClose} />)}
           {showAccount && (
-            <Link to={accountTo} onClick={onClose} style={rowStyle}><User size={16} /> {tr('nav.account', "Account")}</Link>
+            <Link to={accountTo} onClick={onClose} style={rowStyle}><User size={16} /> {cased('mobile', tr('nav.account', "Account"), tokens.topUppercase ? 'uppercase' : 'none')}</Link>
           )}
           {showWishlist && (
             <Link to="/wishlist" onClick={onClose} style={rowStyle}>
-              <Heart size={16} /> {tr('nav.wishlist', "Wishlist")}{wishlistCount > 0 ? ` (${wishlistCount})` : ''}
+              <Heart size={16} /> {cased('mobile', tr('nav.wishlist', "Wishlist"), tokens.topUppercase ? 'uppercase' : 'none')}{wishlistCount > 0 ? ` (${wishlistCount})` : ''}
             </Link>
           )}
         </nav>
@@ -128,11 +131,11 @@ function ShopGroup({ shop, tokens, rowStyle, onNavigate }: {
   const regionId = useId();
   const sub = (heading: string, links: ShopLink[]) => links.length > 0 && (
     <div className="flex flex-col">
-      <p style={{ margin: 0, padding: `10px ${tokens.padX} 4px`, fontFamily: tokens.fonts.body, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: tokens.colors.inkMuted }}>{heading}</p>
+      <p style={{ margin: 0, padding: `10px ${tokens.padX} 4px`, fontFamily: tokens.fonts.body, fontSize: '10.5px', letterSpacing: '0.08em', color: tokens.colors.inkMuted }}>{cased('mobile', heading, 'uppercase')}</p>
       {links.map(l => (
         <Link key={l.id} to={l.to} onClick={onNavigate} className="no-underline"
           style={{ padding: `9px ${tokens.padX}`, color: tokens.colors.inkMuted, fontFamily: tokens.fonts.body, fontSize: tokens.childSize }}>
-          {l.label}
+          {cased('mobile', l.label)}
         </Link>
       ))}
     </div>
@@ -140,7 +143,7 @@ function ShopGroup({ shop, tokens, rowStyle, onNavigate }: {
   return (
     <div>
       <button type="button" onClick={() => setExpanded(e => !e)} aria-expanded={expanded} aria-controls={regionId} style={{ ...rowStyle, justifyContent: 'space-between' }}>
-        <span>{shop.label}</span>
+        <span>{cased('mobile', shop.label, tokens.topUppercase ? 'uppercase' : 'none')}</span>
         {expanded ? <Minus size={15} /> : <Plus size={15} />}
       </button>
       {expanded && (

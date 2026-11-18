@@ -10,6 +10,9 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 
 /** A value the backend DTO would accept for this field. */
 function validFor(key: string, value: unknown): boolean {
+  // The old heading / button capitals switches are replaced by the Text case dropdowns in Theme settings; a one-click look still sets them as the "Theme default" those dropdowns keep.
+  if (key === 'headingCase') return value === 'none' || value === 'uppercase';
+  if (key === 'buttonCase') return value === 'normal' || value === 'uppercase';
   const f = byKey.get(key);
   if (!f) return false;
   if (f.control.kind === 'font') return (value === null && !!f.control.defaultLabel) || (typeof value === 'string' && findCatalogFont(value) !== undefined);

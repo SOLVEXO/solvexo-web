@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { cased } from '../textCase';
 import { Minus, Plus } from 'lucide-react';
 import type { ResolvedStorefrontNavItem } from '@/features/storefront/StorefrontContext';
 import { NavAnchor } from './NavAnchor';
@@ -57,13 +58,14 @@ export function MobileNavItem({ item, tokens, onNavigate }: {
     fontSize: tokens.topSize,
     fontWeight: tokens.topWeight,
     letterSpacing: tokens.topTracking,
-    textTransform: tokens.topUppercase ? ('uppercase' as const) : undefined,
   };
+  // the seller's "Text case → Mobile menu" choice; unset = the old capital-letters switch for top-level rows
+  const top = (s: string) => cased('mobile', s, tokens.topUppercase ? 'uppercase' : 'none');
 
   if (item.children.length === 0) {
     return (
       <NavAnchor link={item.link} onClick={onNavigate} className="no-underline block" style={{ ...topStyle, padding: `14px ${tokens.padX}`, borderBottom: rowBorder }}>
-        {item.label}
+        {top(item.label)}
       </NavAnchor>
     );
   }
@@ -73,8 +75,8 @@ export function MobileNavItem({ item, tokens, onNavigate }: {
     <div style={{ borderBottom: rowBorder }}>
       <div className="flex items-center justify-between" style={{ paddingLeft: tokens.padX, paddingRight: `calc(${tokens.padX} - 12px)` }}>
         {item.link.to || item.link.href
-          ? <NavAnchor link={item.link} onClick={onNavigate} className="no-underline flex-1" style={{ ...topStyle, padding: '14px 0' }}>{item.label}</NavAnchor>
-          : <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={panelId} className="flex-1 cursor-pointer border-0 bg-transparent text-left" style={{ ...topStyle, padding: '14px 0' }}>{item.label}</button>}
+          ? <NavAnchor link={item.link} onClick={onNavigate} className="no-underline flex-1" style={{ ...topStyle, padding: '14px 0' }}>{top(item.label)}</NavAnchor>
+          : <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={panelId} className="flex-1 cursor-pointer border-0 bg-transparent text-left" style={{ ...topStyle, padding: '14px 0' }}>{top(item.label)}</button>}
         <Toggle expanded={open} label={item.label} controls={panelId} onClick={() => setOpen(o => !o)} tokens={tokens} />
       </div>
 
@@ -87,7 +89,7 @@ export function MobileNavItem({ item, tokens, onNavigate }: {
             if (child.children.length === 0) {
               return (
                 <NavAnchor key={child.id} link={child.link} onClick={onNavigate} className="no-underline block" style={{ ...childStyle, padding: `12px ${tokens.padX}`, borderTop: rowBorder }}>
-                  {child.label}
+                  {cased('mobile', child.label)}
                 </NavAnchor>
               );
             }
@@ -96,8 +98,8 @@ export function MobileNavItem({ item, tokens, onNavigate }: {
               <div key={child.id} style={{ borderTop: rowBorder }}>
                 <div className="flex items-center justify-between" style={{ paddingLeft: tokens.padX, paddingRight: `calc(${tokens.padX} - 12px)` }}>
                   {child.link.to || child.link.href
-                    ? <NavAnchor link={child.link} onClick={onNavigate} className="no-underline flex-1" style={{ ...childStyle, fontWeight: 600, padding: '12px 0' }}>{child.label}</NavAnchor>
-                    : <button type="button" onClick={() => setOpenChildId(childOpen ? null : child.id)} aria-expanded={childOpen} aria-controls={childPanelId} className="flex-1 cursor-pointer border-0 bg-transparent text-left" style={{ ...childStyle, fontWeight: 600, padding: '12px 0' }}>{child.label}</button>}
+                    ? <NavAnchor link={child.link} onClick={onNavigate} className="no-underline flex-1" style={{ ...childStyle, fontWeight: 600, padding: '12px 0' }}>{cased('mobile', child.label)}</NavAnchor>
+                    : <button type="button" onClick={() => setOpenChildId(childOpen ? null : child.id)} aria-expanded={childOpen} aria-controls={childPanelId} className="flex-1 cursor-pointer border-0 bg-transparent text-left" style={{ ...childStyle, fontWeight: 600, padding: '12px 0' }}>{cased('mobile', child.label)}</button>}
                   <Toggle expanded={childOpen} label={child.label} controls={childPanelId} onClick={() => setOpenChildId(childOpen ? null : child.id)} tokens={tokens} />
                 </div>
                 {childOpen && (
@@ -109,7 +111,7 @@ export function MobileNavItem({ item, tokens, onNavigate }: {
                             <span className="block w-full overflow-hidden" style={{ aspectRatio: '1 / 1', borderRadius: tokens.tileRadius, background: tokens.colors.border }}>
                               {g.imageUrl && <img src={g.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover block" />}
                             </span>
-                            <span style={{ fontSize: '11.5px', lineHeight: 1.3, color: tokens.colors.ink }}>{g.label}</span>
+                            <span style={{ fontSize: '11.5px', lineHeight: 1.3, color: tokens.colors.ink }}>{cased('mobile', g.label)}</span>
                           </NavAnchor>
                         ))}
                       </div>
@@ -117,7 +119,7 @@ export function MobileNavItem({ item, tokens, onNavigate }: {
                       <div className="flex flex-col">
                         {child.children.map(g => (
                           <NavAnchor key={g.id} link={g.link} onClick={onNavigate} className="no-underline block" style={{ ...childStyle, color: tokens.colors.inkMuted, padding: '9px 0' }}>
-                            {g.label}
+                            {cased('mobile', g.label)}
                           </NavAnchor>
                         ))}
                       </div>

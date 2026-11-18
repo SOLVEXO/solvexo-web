@@ -1,5 +1,6 @@
 // The shared settings field list, template scopes and defaults of the Tech theme (copied from the Maison manifest, now independent).
 // `theme.manifest.ts` filters and extends it; nothing here is registered by itself.
+import { TEXT_CASE_FIELDS } from '../textCaseFields';
 import type { ThemeManifest, ThemeStylePreset } from '../themeManifest';
 import { CARD_BORDER_FIELDS, PAGE_BG_FIELDS } from '../pageBackground';
 import { SPECS_FIELDS } from '../specsLook';
@@ -81,6 +82,7 @@ export const baseManifest: ThemeManifest = {
   ],
 
   themeSettingsFields: [
+    ...TEXT_CASE_FIELDS,
     { key: 'bgColor', label: 'Background', group: 'Colors', control: { kind: 'color' }, helpText: 'Page background colour.' },
     { key: 'textColor', label: 'Text', group: 'Colors', control: { kind: 'color' }, helpText: 'Main text and headings.' },
     { key: 'primaryColor', label: 'Buttons & accent', group: 'Colors', control: { kind: 'color' }, helpText: 'Buttons, links and accents.' },
@@ -92,9 +94,7 @@ export const baseManifest: ThemeManifest = {
     { key: 'headingFont', label: 'Heading font', group: 'Typography', control: { kind: 'font', defaultLabel: 'Theme default (uses body font)' }, helpText: 'Used for headlines. Theme default uses your body font.' },
 
     { key: 'headingWeight', label: 'Heading weight', group: 'Typography', control: { kind: 'select', options: [{ value: 'regular', label: 'Regular' }, { value: 'medium', label: 'Medium (default)' }, { value: 'semibold', label: 'Semibold' }, { value: 'bold', label: 'Bold' }] }, helpText: 'How bold headlines look.' },
-    { key: 'headingCase', label: 'Heading case', group: 'Typography', control: { kind: 'select', options: [{ value: 'none', label: 'As typed' }, { value: 'uppercase', label: 'UPPERCASE' }] }, helpText: 'Show headlines in capitals.' },
     { key: 'headingTracking', label: 'Heading letter spacing', group: 'Typography', control: { kind: 'select', options: [{ value: 'auto', label: 'Theme default' }, { value: 'tight', label: 'Tight' }, { value: 'normal', label: 'Normal' }, { value: 'wide', label: 'Wide' }] }, helpText: 'Space between the letters of headlines.' },
-    { key: 'buttonCase', label: 'Button text', group: 'Buttons', control: { kind: 'select', options: [{ value: 'normal', label: 'As typed' }, { value: 'uppercase', label: 'UPPERCASE' }] }, helpText: 'Show button labels in capitals.' },
     { key: 'sectionRadius', label: 'Hero & footer corners', group: 'Layout & Spacing', control: { kind: 'select', options: [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large (default)' }] }, helpText: 'Corner roundness of the hero image and the footer panel.' },
     { key: 'buttonStyle', label: 'Style', group: 'Buttons', control: { kind: 'select', options: [{ value: 'solid', label: 'Solid' }, { value: 'outline', label: 'Outline' }, { value: 'soft', label: 'Soft (accent tint)' }] }, helpText: 'Filled, outlined or tinted buttons.' },
     { key: 'buttonRadius', label: 'Corner radius', group: 'Buttons', control: { kind: 'select', options: RADIUS.map(o => (o.value === 'full' ? { ...o, label: 'Pill (default)' } : o)) }, helpText: 'How rounded button corners are.' },
@@ -158,7 +158,6 @@ export const baseManifest: ThemeManifest = {
     { key: 'custom.shareWhatsapp', label: 'WhatsApp', group: 'Share popup', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show this network in the Share popup.' },
     { key: 'custom.megaFeatured', label: 'Featured photo', group: 'Mega menu', control: { kind: 'select', options: SHOW_HIDE }, helpText: "Shows the menu item's own photo as a large panel on the right of its mega menu, with a Shop now button." },
     { key: 'custom.megaColumns', label: 'Columns per row', group: 'Mega menu', control: { kind: 'number', min: 2, max: 6, placeholder: '4' }, helpText: 'More columns than this continue on a new row, aligned under the first.' },
-    { key: 'custom.megaHeading', label: 'Column headings', group: 'Mega menu', control: { kind: 'select', options: [{ value: 'upper', label: 'Capital letters' }, { value: 'normal', label: 'Normal' }] }, helpText: 'How the heading of each column is written.' },
     { key: 'custom.megaPhoto', label: 'Column photo shape', group: 'Mega menu', control: { kind: 'select', options: [{ value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }, { value: 'portrait', label: 'Portrait' }] }, helpText: "A column's photo shows as a small picture beside its heading." },
     { key: 'custom.shareEmail', label: 'Email', group: 'Share popup', control: { kind: 'select', options: SHOW_HIDE }, helpText: 'Show this network in the Share popup.' },
     { key: 'starColor', label: 'Star rating colour', group: 'Colors', control: { kind: 'color', optional: { fallback: '#FB923C' } }, helpText: 'Rating stars on products and reviews.' },

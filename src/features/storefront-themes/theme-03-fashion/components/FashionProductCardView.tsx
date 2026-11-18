@@ -1,4 +1,5 @@
 import { useRef, type MouseEventHandler } from 'react';
+import { cased } from '../../textCase';
 import { imgProps, CARD_IMAGE_WIDTHS, CARD_IMAGE_SIZES } from './imgProps';
 import { ts } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
@@ -66,7 +67,7 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, tagH
         </div>
         {badge && (
           <div style={cardBadgeBox(t.cardBadgePosition, 16, t.cardBadgePosition === 'top-left' ? ((soldOut && t.soldOutBadge) || (!soldOut && onSale) ? 30 : 0) : (wished !== null && t.cardWishlist ? 44 : 0))}>
-            <span data-card-badge className={`${t.badgeStyle === 'square' ? 'rounded-[4px]' : 'rounded-full'} px-2.5 py-0.5 text-xs font-medium`} style={{ background: badge.bg, color: badge.ink }}>{badge.text}</span>
+            <span data-card-badge className={`${t.badgeStyle === 'square' ? 'rounded-[4px]' : 'rounded-full'} px-2.5 py-0.5 text-xs font-medium`} style={{ background: badge.bg, color: badge.ink }}>{cased('badge', badge.text)}</span>
           </div>
         )}
         {onQuickView && !soldOut && (
@@ -85,7 +86,7 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, tagH
           {tag && t.cardTag && (tagHref
             ? <Link to={tagHref} className="w-fit text-xs capitalize no-underline hover:underline" style={{ color: t.colors.inkMuted }}>{tag}</Link>
             : <span className="text-xs capitalize" style={{ color: t.colors.inkMuted }}>{tag}</span>)}
-          <Link to={to} className="no-underline" style={{ color: t.colors.ink }}><h3 className="m-0 line-clamp-2 break-words text-base font-medium md:text-lg" title={name}>{name}</h3></Link>
+          <Link to={to} className="no-underline" style={{ color: t.colors.ink }}><h3 className="m-0 line-clamp-2 break-words text-base font-medium md:text-lg" title={name}>{cased('product', name)}</h3></Link>
           {stars > 0 && t.cardRating && (
             <div className="flex items-center gap-1.5" aria-label={ts('reviews.outOf5', '{{value}} out of 5 stars', { value: stars })}>
               <span className="flex">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={13} fill={i < stars ? t.colors.star : 'none'} stroke="#FB923C" />)}</span>
