@@ -49,8 +49,8 @@ export function ValueInput({ entry, value, onChange }: { entry: MetafieldValueEn
       const { amount, unit } = splitMeasure(entry.type, value);
       return (
         <div className="flex items-center gap-2">
-          <input type="number" step="any" className={inp} value={amount} aria-label={`${entry.name} amount`} onChange={e => onChange(joinMeasure(e.target.value, unit))} />
-          <select className={`${inp} w-[92px] shrink-0`} value={unit} aria-label={`${entry.name} unit`} onChange={e => onChange(joinMeasure(amount, e.target.value))}>
+          <input type="number" step="any" className={`${inp} min-w-0 flex-1`} value={amount} aria-label={`${entry.name} amount`} onChange={e => onChange(joinMeasure(e.target.value, unit))} />
+          <select className={`${inp.replace('w-full ', '')} w-[96px] shrink-0`} value={unit} aria-label={`${entry.name} unit`} onChange={e => onChange(joinMeasure(amount, e.target.value))}>
             {MEASURE_UNITS[entry.type].map(u => <option key={u} value={u}>{u}</option>)}
           </select>
         </div>

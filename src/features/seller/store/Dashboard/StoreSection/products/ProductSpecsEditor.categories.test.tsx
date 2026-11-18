@@ -131,7 +131,7 @@ describe('order of the specs', () => {
   it('dragging one spec onto another moves it there', async () => {
     render(<ProductSpecsEditor storeId="s1" productId="p1" categoryIds={['cl']} />);
     const fit = (await screen.findByLabelText('Drag to move Fit'));
-    const sizeCell = screen.getByLabelText('value of Size').closest('div[class*="relative"]') as HTMLElement;
+    const sizeCell = screen.getByRole('group', { name: 'Size' });
     fireEvent.dragStart(fit, { dataTransfer: { effectAllowed: '' } });
     fireEvent.dragOver(sizeCell);
     fireEvent.drop(sizeCell);

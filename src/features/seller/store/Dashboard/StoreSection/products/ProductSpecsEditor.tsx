@@ -225,29 +225,27 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange, categor
         {defs && visibleDefs.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {visibleDefs.map(d => (
-              <div key={d._id} className="relative" style={{ opacity: dragId === d._id ? 0.5 : 1 }}
+              <div key={d._id} role="group" aria-label={d.name} style={{ opacity: dragId === d._id ? 0.5 : 1 }}
                 onDragOver={e => { if (dragId && dragId !== d._id) e.preventDefault(); }}
                 onDrop={e => { e.preventDefault(); if (dragId) applyOrder(moveBefore(defs ?? [], dragId, d._id)); setDragId(null); }}>
-                <label className="block">
-                  <span className="block text-[12px] font-medium text-charcoal mb-1 pr-16">{canManage && (
+                <div className="mb-1 flex min-h-[28px] items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-[12px] font-medium text-charcoal">{canManage && (
                     <span draggable aria-label={`Drag to move ${d.name}`} title="Drag to change the order" className="mr-1 inline-block cursor-grab align-middle text-slate"
                       onDragStart={e => { setDragId(d._id); e.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => setDragId(null)}><GripVertical size={13} /></span>
                   )}{d.name}{d.required && <span className="text-brand-orange"> *</span>}
                     {(d.categoryIds ?? []).length > 0 && <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10.5px] font-normal text-slate" title="Only for these categories"><Tag size={10} />{categorySummary(d.categoryIds, catOptions) || 'Categories'}</span>}
                   </span>
-                  <ValueInput entry={{ definitionId: d._id, namespace: d.namespace, key: d.key, name: d.name, type: d.type, required: d.required, value: values[valueKey(d)] ?? '' }} value={values[valueKey(d)] ?? ''} onChange={v => change(d, v)} />
-                </label>
-                {canManage && (
-                  <div className="absolute right-0 -top-1">
-                    <ActionMenu ariaLabel={`Manage spec ${d.name}`} items={[
+                  {canManage && (
+                    <ActionMenu ariaLabel={`Manage spec ${d.name}`} triggerClassName="w-7 h-7 shrink-0 rounded-[7px] border border-bone bg-white text-slate flex items-center justify-center cursor-pointer hover:bg-cream" items={[
                       { label: 'Move up', icon: <ArrowUp size={13} />, onClick: () => applyOrder(moveStep(defs ?? [], d._id, -1, shown)) },
                       { label: 'Move down', icon: <ArrowDown size={13} />, onClick: () => applyOrder(moveStep(defs ?? [], d._id, 1, shown)) },
                       { label: 'Choose categories…', icon: <Tag size={13} />, onClick: () => openManage(d, 'categories') },
                       { label: 'Rename', icon: <Pencil size={13} />, onClick: () => openManage(d, 'rename') },
                       { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => openManage(d, 'delete') },
                     ]} />
-                  </div>
-                )}
+                  )}
+                </div>
+                <ValueInput entry={{ definitionId: d._id, namespace: d.namespace, key: d.key, name: d.name, type: d.type, required: d.required, value: values[valueKey(d)] ?? '' }} value={values[valueKey(d)] ?? ''} onChange={v => change(d, v)} />
               </div>
             ))}
             <p className="m-0 text-[11.5px] text-slate sm:col-span-2">A spec you leave empty is not shown in this product&apos;s table. Specs are shared by all your products; use the menu on a spec to move, rename, delete it or limit it to some categories.</p>
