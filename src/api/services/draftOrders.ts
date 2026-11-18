@@ -148,6 +148,8 @@ export interface PublicInvoiceData {
   customerName: string;
   storeName: string;
   storeLogo: string | null;
+  /** The store's brand colour (#rrggbb) for the page, or null = the default colour. */
+  accentColor?: string | null;
   items: { name: string; image: string | null; quantity: number; unitPrice: number }[];
   subtotal: number;
   discountAmount: number;

@@ -26,9 +26,19 @@ interface StripeCardPaymentProps {
    *  still needs to call its own backend confirm endpoint to have the
    *  server verify the charge and flip whatever it gates before trusting it. */
   onConfirmed: () => void;
+  /** The store's brand colour (#rrggbb): the card form's highlight and the pay button. Default = Solvexo's own colour. */
+  accent?: string;
 }
 
-function PayForm({ submitLabel, onConfirmed }: Omit<StripeCardPaymentProps, 'clientSecret'>) {
+const HEX6 = /^#[0-9a-f]{6}$/i;
+/** White or dark text, whichever reads better on the given fill. */
+function inkOn(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2] < 0.5 ? '#FFFFFF' : '#111111';
+}
+
+function PayForm({ submitLabel, onConfirmed, accent }: Omit<StripeCardPaymentProps, 'clientSecret'>) {
   const stripe   = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -69,7 +79,8 @@ function PayForm({ submitLabel, onConfirmed }: Omit<StripeCardPaymentProps, 'cli
         </div>
       )}
 
-      <Button variant="primary" size="lg" fullWidth type="submit" loading={submitting} disabled={!stripe || !elements}>
+      <Button variant="primary" size="lg" fullWidth type="submit" loading={submitting} disabled={!stripe || !elements}
+        style={accent && HEX6.test(accent) ? { background: accent, borderColor: accent, color: inkOn(accent) } : undefined}>
         {submitLabel}
       </Button>
 
@@ -84,7 +95,7 @@ function PayForm({ submitLabel, onConfirmed }: Omit<StripeCardPaymentProps, 'cli
  *  nothing if VITE_STRIPE_PUBLISHABLE_KEY isn't set. Callers should check
  *  isStripeConfigured() first and show a fallback state instead of mounting
  *  this. */
-export function StripeCardPayment({ clientSecret, submitLabel, onConfirmed }: StripeCardPaymentProps) {
+export function StripeCardPayment({ clientSecret, submitLabel, onConfirmed, accent }: StripeCardPaymentProps) {
   const promise = getStripe();
   if (!promise) return null;
 
@@ -96,7 +107,7 @@ export function StripeCardPayment({ clientSecret, submitLabel, onConfirmed }: St
         appearance: {
           theme: 'stripe',
           variables: {
-            colorPrimary: '#D97757',
+            colorPrimary: accent && HEX6.test(accent) ? accent : '#D97757',
             colorText: '#2C2A28',
             colorDanger: '#C13030',
             fontFamily: 'Poppins, system-ui, sans-serif',
@@ -106,7 +117,7 @@ export function StripeCardPayment({ clientSecret, submitLabel, onConfirmed }: St
         },
       }}
     >
-      <PayForm submitLabel={submitLabel} onConfirmed={onConfirmed} />
+      <PayForm submitLabel={submitLabel} onConfirmed={onConfirmed} accent={accent} />
     </Elements>
   );
 }

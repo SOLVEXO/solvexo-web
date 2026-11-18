@@ -11,7 +11,7 @@ vi.mock('@/api/services/draftOrders', () => ({
 }));
 vi.mock('@/components/comman/ui/StripeCardPayment', () => ({
   isStripeConfigured: () => stripeOn,
-  StripeCardPayment: ({ submitLabel, onConfirmed }: { submitLabel: string; onConfirmed: () => void }) => <button type="button" onClick={onConfirmed}>{submitLabel}</button>,
+  StripeCardPayment: ({ submitLabel, onConfirmed, accent }: { submitLabel: string; onConfirmed: () => void; accent?: string }) => <button type="button" data-accent={accent ?? ''} onClick={onConfirmed}>{submitLabel}</button>,
 }));
 
 import PayInvoicePage from './PayInvoicePage';
@@ -44,6 +44,28 @@ describe('Pay invoice page', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Pay .* 100.00/ })); // the card form's own submit (mocked)
     expect(await screen.findByText('Payment received — thank you!')).toBeTruthy();
     expect(screen.queryByText('This invoice has already been paid.')).toBeNull();
+  });
+
+  it('wears the store brand colour: top bar, pay button (readable text) and the card form', async () => {
+    getInvoice.mockResolvedValue({ data: invoice({ accentColor: '#6b2d44' }) });
+    createIntent.mockResolvedValue({ data: { clientSecret: 'cs_1' } });
+    open();
+    const pay = await screen.findByRole('button', { name: /^Pay / });
+    expect(pay.style.background).toBe('rgb(107, 45, 68)');
+    expect(pay.style.color).toBe('rgb(255, 255, 255)'); // white on a dark colour
+    expect((screen.getByTestId('pay-card').firstElementChild as HTMLElement).style.background).toBe('rgb(107, 45, 68)');
+    fireEvent.click(pay);
+    expect((await screen.findByRole('button', { name: /Pay .* 100.00/ })).getAttribute('data-accent')).toBe('#6b2d44');
+  });
+
+  it('a light brand colour gets dark text, and a store with no colour keeps the default orange', async () => {
+    getInvoice.mockResolvedValue({ data: invoice({ accentColor: '#ffe600' }) });
+    open();
+    expect((await screen.findByRole('button', { name: /^Pay / })).style.color).toBe('rgb(17, 17, 17)');
+    cleanup();
+    getInvoice.mockResolvedValue({ data: invoice({ accentColor: null }) });
+    open();
+    expect((await screen.findByRole('button', { name: /^Pay / })).style.background).toBe('rgb(217, 119, 87)');
   });
 
   it('without online card payments it tells the customer to contact the store', async () => {

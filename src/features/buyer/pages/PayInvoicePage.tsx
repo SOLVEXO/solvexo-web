@@ -54,14 +54,22 @@ export default function PayInvoicePage() {
   const alreadyPaid = invoice.isPaid || paid;
   // paid a moment ago on this page vs. an invoice that was already paid when the customer opened the link
   const paidBefore = invoice.isPaid && !paid;
+  // the store's own brand colour (falls back to Solvexo's orange when the store has none)
+  const accent = /^#[0-9a-f]{6}$/i.test(invoice.accentColor ?? '') ? (invoice.accentColor as string) : '#D97757';
+  const accentInk = (() => {
+    const n = parseInt(accent.slice(1), 16);
+    const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2] < 0.5 ? '#FFFFFF' : '#111111';
+  })();
 
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4 py-10">
-      <div className="max-w-md w-full bg-white border border-bone rounded-2xl overflow-hidden">
+      <div className="max-w-md w-full bg-white border border-bone rounded-2xl overflow-hidden" data-testid="pay-card">
+        <div aria-hidden style={{ height: 4, background: accent }} />
         <div className="px-6 py-5 border-b border-bone flex items-center gap-3">
           {invoice.storeLogo
-            ? <div className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center overflow-hidden shrink-0"><img src={invoice.storeLogo} alt={invoice.storeName} className="max-w-full max-h-full object-contain" /></div>
-            : <div className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center"><Package size={18} className="text-brand-orange" /></div>}
+            ? <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0" style={{ background: `${accent}1A` }}><img src={invoice.storeLogo} alt={invoice.storeName} className="max-w-full max-h-full object-contain" /></div>
+            : <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${accent}1A` }}><Package size={18} style={{ color: accent }} /></div>}
           <div>
             <p className="text-[14px] font-bold text-charcoal">{invoice.storeName}</p>
             <p className="text-[11px] text-slate">Invoice for {invoice.customerName}</p>
@@ -105,13 +113,15 @@ export default function PayInvoicePage() {
               clientSecret={clientSecret}
               submitLabel={`Pay ${symbol} ${invoice.total.toFixed(2)}`}
               onConfirmed={() => setPaid(true)}
+              accent={accent}
             />
           ) : (
             <>
               {error && <p className="text-[12px] text-error mb-3">{error}</p>}
               <button
                 type="button" onClick={startPayment} disabled={starting}
-                className="w-full py-3 rounded-lg bg-[#D97757] text-white text-[13px] font-bold cursor-pointer disabled:opacity-60"
+                className="w-full py-3 rounded-lg text-[13px] font-bold cursor-pointer disabled:opacity-60"
+                style={{ background: accent, color: accentInk }}
               >
                 {starting ? 'Starting…' : `Pay ${symbol} ${invoice.total.toFixed(2)}`}
               </button>
