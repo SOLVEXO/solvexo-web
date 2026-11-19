@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { featuredProductsQuery as q, featuredViewAllPath } from './sectionProductQuery';
+import { featuredProductsQuery as q, featuredViewAllPath, needsPick } from './sectionProductQuery';
 
 describe('featuredProductsQuery: the fixed lists (unchanged behaviour)', () => {
   it('maps every older source exactly as before', () => {
@@ -12,9 +12,14 @@ describe('featuredProductsQuery: the fixed lists (unchanged behaviour)', () => {
     expect(q({})).toEqual({ limit: 8, sort: 'newest' });
   });
 
-  it('hand-picked keeps the ids in order; empty falls back to newest', () => {
+  it('hand-picked keeps the ids in order; nothing picked shows nothing (never "all newest")', () => {
     expect(q({ source: 'manual', productIds: ['a', 'b'], limit: 5 })).toEqual({ ids: ['a', 'b'], limit: 5 });
-    expect(q({ source: 'pinned', productIds: [] })).toEqual({ limit: 8, sort: 'newest' });
+    expect(q({ source: 'pinned', productIds: [] })).toEqual({ ids: ['000000000000000000000000'], limit: 8 });
+    expect(q({ source: 'manual' })).toEqual({ ids: ['000000000000000000000000'], limit: 8 });
+    expect(q({ source: 'collection' }).ids).toEqual(['000000000000000000000000']);
+    expect(q({ source: 'category', categoryId: '' }).ids).toEqual(['000000000000000000000000']);
+    expect(needsPick({ source: 'collection', collectionId: 'k1' })).toBe(false);
+    expect(needsPick({ source: 'newArrivals' })).toBe(false);
     expect(q({ source: 'manual', productIds: [1, null, ' x '] as never })).toEqual({ ids: ['x'], limit: 8 });
   });
 

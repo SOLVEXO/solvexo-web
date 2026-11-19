@@ -33,8 +33,25 @@ function rulesQuery(s: Settings, limit: number): PublicStoreProductsParams {
   return q;
 }
 
+/** A valid id that belongs to no product. */
+const NO_PRODUCT_ID = '000000000000000000000000';
+
+/** Shopify rule: a section whose source needs the seller's pick (a collection, a category, hand-picked products) shows NOTHING until
+ *  the seller has picked. It must never quietly fall back to "all newest products": that is how sections the seller never chose
+ *  were filling the storefront. True when the section is still waiting for a pick. */
+export function needsPick(s: Settings): boolean {
+  switch (s.source) {
+    case 'category': return !text(s.categoryId);
+    case 'collection': return !text(s.collectionId);
+    case 'manual':
+    case 'pinned': return strings(s.productIds).length === 0;
+    default: return false;
+  }
+}
+
 export function featuredProductsQuery(s: Settings, defaultLimit = 8): PublicStoreProductsParams {
   const limit = Math.min(24, Math.max(1, Number(s.limit) || defaultLimit));
+  if (needsPick(s)) return { ids: [NO_PRODUCT_ID], limit };
   let q: PublicStoreProductsParams;
   switch (s.source) {
     case 'bestsellers': q = { limit, sort: 'best_selling' }; break;
@@ -45,8 +62,7 @@ export function featuredProductsQuery(s: Settings, defaultLimit = 8): PublicStor
     case 'rules': q = rulesQuery(s, limit); break;
     case 'manual':
     case 'pinned': {
-      const ids = strings(s.productIds);
-      q = ids.length ? { ids, limit } : { limit, sort: 'newest' };
+      q = { ids: strings(s.productIds), limit };
       break;
     }
     default: q = { limit, sort: 'newest' };

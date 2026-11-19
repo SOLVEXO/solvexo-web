@@ -135,8 +135,8 @@ export const SECTION_META: SectionMeta[] = [
         { value: 'collection', label: 'A collection' }, { value: 'manual', label: 'Hand-picked products' },
         { value: 'rules', label: 'Products that match rules' },
       ] },
-      { key: 'categoryId', kind: 'categoryPicker', label: 'Category', showIf: s => s.source === 'category' || s.source === 'rules', hint: 'With rules: only products of this category.' },
-      { key: 'collectionId', kind: 'collectionPicker', label: 'Collection', showIf: s => s.source === 'collection' || s.source === 'rules', hint: 'With rules: only products of this collection.' },
+      { key: 'categoryId', kind: 'categoryPicker', label: 'Category', showIf: s => s.source === 'category' || s.source === 'rules', hint: 'Pick one. Until you do, this section stays hidden on your store. With rules: only products of this category.' },
+      { key: 'collectionId', kind: 'collectionPicker', label: 'Collection', showIf: s => s.source === 'collection' || s.source === 'rules', hint: 'Pick one. Until you do, this section stays hidden on your store. With rules: only products of this collection.' },
       { key: 'ruleTags', kind: 'valueList', listSource: 'tags', label: 'Tags', showIf: s => s.source === 'rules' },
       { key: 'ruleVendors', kind: 'valueList', listSource: 'vendors', label: 'Brand / vendor', showIf: s => s.source === 'rules' },
       { key: 'rulePriceMin', kind: 'number', label: 'Lowest price', min: 0, max: 1000000000, step: 1, half: true, showIf: s => s.source === 'rules', hint: 'In your store currency.' },
@@ -153,7 +153,7 @@ export const SECTION_META: SectionMeta[] = [
       // Real product picker, not a raw comma-separated ID paste field — the
       // last surviving one of those in the whole builder, closed here.
       { key: 'productIds', kind: 'productMultiPicker', label: 'Products', showIf: s => s.source === 'manual' || s.source === 'pinned',
-        hint: 'Shown in this order. With none picked, your older store pin list is used.' },
+        hint: 'Shown in this order. Until you pick products, this section stays hidden on your store.' },
       { key: 'limit', kind: 'number', label: 'How many to show', min: 1, max: 24 },
       { key: 'hideSoldOut', kind: 'checkbox', label: 'Hide sold-out products', defaultOff: true, hint: 'Leaves out products that can not be bought right now.', showIf: s => s.source !== 'rules' },
       { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
