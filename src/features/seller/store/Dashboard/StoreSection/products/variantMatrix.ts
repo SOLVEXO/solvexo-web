@@ -94,3 +94,17 @@ export function mergeExistingRows<Row extends { key: string }>(
   const existingByKey = new Map(existingRows.map(r => [r.key, r]));
   return newCombinations.map(combo => existingByKey.get(combo.key) ?? makeBlankRow(combo));
 }
+
+/** A colour the seller chose for one option value (Shopify: the colour entry behind a Color value). */
+export interface OptionSwatch { option: string; value: string; color: string }
+
+/** Only the swatches whose option + value still exist (the seller may have removed a value after choosing its colour). */
+export function pruneSwatches(optionTypes: OptionType[], swatches: OptionSwatch[]): OptionSwatch[] {
+  return swatches.filter(s => s.color && optionTypes.some(t => t.name === s.option && t.values.includes(s.value)));
+}
+
+/** Set (or clear, with '') the colour of one option value. */
+export function setSwatchColor(swatches: OptionSwatch[], option: string, value: string, color: string): OptionSwatch[] {
+  const rest = swatches.filter(s => !(s.option === option && s.value === value));
+  return color ? [...rest, { option, value, color }] : rest;
+}

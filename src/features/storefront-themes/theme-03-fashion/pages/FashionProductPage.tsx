@@ -242,7 +242,7 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
       <div className="flex flex-col gap-5">
         {optionNames.map(name => (
           <VariantOptionPicker key={name} name={name} current={variant.options?.find(o => o.name === name)?.value}
-            values={buildOptionValues(variants, variant, name, isDigital)} style={s.pickerStyle}
+            values={buildOptionValues(variants, variant, name, isDigital, detail?.product.optionSwatches)} style={s.pickerStyle}
             shape={s.swatchShape === 'square' ? 'square' : 'circle'} size={s.swatchSize === 'sm' || s.swatchSize === 'lg' ? s.swatchSize : 'md'}
             tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, selected: t.colors.selected, selectedInk: t.colors.selectedInk, bg: t.colors.bg, radius: 9999, buttonLook: 'filled' }}
             soldOutLabel={tr('product.soldOut', 'Sold out')} onPick={v => setPicked(p => ({ ...p, [name]: v }))} />

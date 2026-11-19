@@ -1,3 +1,4 @@
+import { useFilteredVariant } from '../../core/product/filteredVariant';
 import type { MouseEvent } from 'react';
 import { cased } from '../../textCase';
 import { Link } from 'react-router-dom';
@@ -47,8 +48,9 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
 
   const shown = currency ?? prefCurrency;
   const base = String(store.baseCurrency ?? shown);
-  const to = `/product/${handleOf(product)}`;
-  const image = product.images?.[0];
+  const filtered = useFilteredVariant(product.variants);
+  const to = `/product/${handleOf(product)}${filtered.variantId ? `?variant=${filtered.variantId}` : ''}`;
+  const image = filtered.image ?? product.images?.[0];
   const price = product.defaultVariantPrice;
   const hasPrice = typeof price === 'number' && price > 0;
   const pills = ledupSpecPills(p.name, product.tags, product.variants);

@@ -1,6 +1,8 @@
 import { useMemo, useState, type MouseEvent } from 'react';
 import { cased } from '../../textCase';
 import { useWholesaleGate } from '../../core/b2b/useWholesale';
+import { cardSwatches } from '../../core/product/cardSwatches';
+import { useFilteredVariant } from '../../core/product/filteredVariant';
 import { cardBadgeBox, cardBadgeOf, cardInfoText } from '../../productCardExtras';
 import { badgeAccent } from '../../cardBadgeTheme';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
@@ -24,10 +26,6 @@ import { TechButton, TechLinkButton, TechStars, TechStock } from '../ui/techUi';
 import { useCompare } from './compare';
 import { TechQuickView } from './product/TechQuickView';
 
-/** True for values the browser can paint as a colour ("Red", "#c2410c"); other option values render as a text chip. */
-function isCssColor(value: string): boolean {
-  return typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('color', value);
-}
 
 /** Card for every real product grid. `layout="list"` is the wide row used by the collection list view. */
 export function TechProductCard({ product, currency, layout = 'grid' }: { product: PublicStoreProduct; currency: string; layout?: 'grid' | 'list' }) {
@@ -47,20 +45,16 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
   const sale = saleInfo({ currency, convert, canConvert, fixedPriceFor }, price, product.compareAtPrice, base, ref);
   const inStock = product.inStock !== false;
   const hasVariant = !!product.variantId;
-  const to = `/product/${handleOf(product)}`;
+  const filtered = useFilteredVariant(product.variants);
+  const to = `/product/${handleOf(product)}${filtered.variantId ? `?variant=${filtered.variantId}` : ''}`;
   const ratio = PRODUCT_CARD_RATIO[b.productImageRatio] ?? PRODUCT_CARD_RATIO.square;
   const [hoverImage, setHoverImage] = useState<string | undefined>();
   const showSwatches = b.colorSwatches; // module singleton: read per render so the editor preview reacts to the setting
   const swatches = useMemo(() => {
     if (!showSwatches) return [];
-    const seen = new Map<string, { value: string; image?: string }>();
-    for (const v of product.variants ?? []) {
-      const color = v.options?.find(o => /^colou?r$/i.test(o.name))?.value;
-      if (color && !seen.has(color.toLowerCase())) seen.set(color.toLowerCase(), { value: color, image: v.images?.find(Boolean) });
-    }
-    return Array.from(seen.values());
-  }, [product.variants, showSwatches]);
-  const image = hoverImage ?? product.images?.[0];
+    return cardSwatches(product);
+  }, [product, showSwatches]);
+  const image = hoverImage ?? filtered.image ?? product.images?.[0];
   const secondImage = b.productImageHover === 'second-image' ? product.images?.[1] : undefined;
   const wished = hasVariant ? isWishlisted(product._id, product.variantId as string) : false;
   const [quick, setQuick] = useState(false);
@@ -122,8 +116,8 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
     <ul className="m-0 flex list-none flex-wrap items-center gap-1.5 p-0" aria-label={ts('pg.available_colours', 'Available colours')}>
       {swatches.slice(0, 5).map(sw => (
         <li key={sw.value} title={sw.value} onMouseEnter={() => setHoverImage(sw.image)} onMouseLeave={() => setHoverImage(undefined)}>
-          {isCssColor(sw.value)
-            ? <span role="img" aria-label={sw.value} className="block size-4 rounded-full" style={{ background: sw.value, border: `1px solid ${t.colors.border}` }} />
+          {sw.color
+            ? <span role="img" aria-label={sw.value} className="block size-4 rounded-full" style={{ background: sw.color, border: `1px solid ${t.colors.border}` }} />
             : <span className="rounded-full px-2 py-0.5 text-[11px]" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.inkMuted }}>{sw.value}</span>}
         </li>
       ))}

@@ -230,7 +230,7 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
       <div className="flex flex-col gap-4">
         {optionNames.map(name => (
           <VariantOptionPicker key={name} name={name} current={variant.options?.find(o => o.name === name)?.value}
-            values={buildOptionValues(variants, variant, name, isDigital)} style={s.pickerStyle}
+            values={buildOptionValues(variants, variant, name, isDigital, detail?.product.optionSwatches)} style={s.pickerStyle}
             shape={s.swatchShape === 'square' ? 'square' : 'circle'} size={s.swatchSize === 'sm' || s.swatchSize === 'lg' ? s.swatchSize : 'md'}
             tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, selected: t.colors.accent, selectedInk: t.colors.accentInk, bg: t.colors.bg, radius: t.fieldRadiusPx, buttonLook: 'outlined', borderWidth: 1.5, legendWeight: 600 }}
             soldOutLabel={ts('product.soldOut', 'Sold out')} onPick={v => setPicked(p => ({ ...p, [name]: v }))} />

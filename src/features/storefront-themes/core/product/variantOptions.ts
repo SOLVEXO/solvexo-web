@@ -15,6 +15,17 @@ export interface OptionValueInfo {
   color: string | null;
   /** The picture that stands for this value: only when EVERY variant with the value shows the same first photo (so a "Size" never borrows the picture of one colour), else null. */
   image: string | null;
+  /** True when the colour is the one the SELLER chose for this value (Shopify's colour entry), not a guess from the name. */
+  custom?: boolean;
+}
+
+/** A colour the seller chose for one option value. */
+export interface SellerSwatch { option: string; value: string; color: string }
+
+/** The colour of an option value: the seller's own choice first, else a guess from the name (Royal Green -> green), else null. */
+export function swatchColor(swatches: SellerSwatch[] | undefined, option: string, value: string): { color: string | null; custom: boolean } {
+  const own = swatches?.find(s => s.option === option && s.value === value)?.color;
+  return own ? { color: own, custom: true } : { color: colorForValue(value), custom: false };
 }
 
 // Common colour names (the CSS colours people actually use in a shop) plus a few frequent extras. Unknown names fall back to text.
@@ -49,7 +60,7 @@ export function colorForValue(raw: string): string | null {
 export const isColorOptionName = (name: string): boolean => /colou?r|shade|rang|رنگ/i.test(name);
 
 /** Every value of one option, in first-seen order, with availability, colour and picture. */
-export function buildOptionValues(variants: ProductVariant[], selected: ProductVariant | null, name: string, isDigital: boolean): OptionValueInfo[] {
+export function buildOptionValues(variants: ProductVariant[], selected: ProductVariant | null, name: string, isDigital: boolean, swatches?: SellerSwatch[]): OptionValueInfo[] {
   const seen = new Set<string>();
   const out: OptionValueInfo[] = [];
   for (const v of variants) {
@@ -59,7 +70,8 @@ export function buildOptionValues(variants: ProductVariant[], selected: ProductV
     const withValue = variants.filter(x => x.options?.find(o => o.name === name)?.value === value);
     const pictures = new Set(withValue.map(x => x.images?.[0] ?? ''));
     const image = pictures.size === 1 && !pictures.has('') ? [...pictures][0] : null;
-    out.push({ value, available: optionValueAvailable(variants, selected, name, value, isDigital), color: colorForValue(value), image });
+    const { color, custom } = swatchColor(swatches, name, value);
+    out.push({ value, available: optionValueAvailable(variants, selected, name, value, isDigital), color, image, custom });
   }
   return out;
 }
@@ -67,7 +79,9 @@ export function buildOptionValues(variants: ProductVariant[], selected: ProductV
 /** The look an option really gets: swatches only for colour-like options, picture tiles only when every value has a picture;
  *  otherwise the buttons, so a "Size" option never turns into empty circles. */
 export function resolveOptionStyle(requested: unknown, name: string, values: OptionValueInfo[]): OptionPickerStyle {
-  const style = (OPTION_PICKER_STYLES as readonly unknown[]).includes(requested) ? (requested as OptionPickerStyle) : 'pills';
+  const chosen = (OPTION_PICKER_STYLES as readonly unknown[]).includes(requested);
+  // Shopify: swatches show by default once the seller has given a value its colour. An explicit choice of the seller always wins.
+  const style = chosen ? (requested as OptionPickerStyle) : values.some(v => v.custom) ? 'swatches' : 'pills';
   if (style === 'swatches') {
     const known = values.filter(v => v.color).length;
     const colourLike = isColorOptionName(name) ? known > 0 : values.length > 0 && known / values.length >= 0.6;

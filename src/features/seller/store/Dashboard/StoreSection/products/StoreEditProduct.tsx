@@ -30,7 +30,7 @@ import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor'
 import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
 import { EntityPickerField } from '@/features/seller/store/Dashboard/OnlineStore/builder/SchemaForm';
 import { ProductSpecsEditor } from './ProductSpecsEditor';
-import { combinationKey, MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
+import { combinationKey, MAX_VARIANT_COMBINATIONS, pruneSwatches, type OptionSwatch, type OptionType, type VariantRow } from './variantMatrix';
 
 type ProductStatus = 'draft' | 'active' | 'scheduled' | 'inactive';
 type LicenseType   = 'personal' | 'single_classroom' | 'school' | 'commercial';
@@ -110,6 +110,7 @@ const blankPhys = {
   // below), not just the one default variant `physFromEntry` used to see.
   optionTypes: [] as OptionType[],
   variantRows: [] as VariantRow[],
+  optionSwatches: [] as OptionSwatch[],
 };
 const blankDig = {
   name: '', description: '', shortDescription: '', tabs: [] as ProductTabInput[], price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
@@ -148,7 +149,7 @@ function physFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
     shippingProfileId: p.shippingProfileId ?? '',
     supplierId: p.supplierId ?? '',
     selling: sellingOptionsFromProduct(p),
-    optionTypes: [], variantRows: [],
+    optionTypes: [], variantRows: [], optionSwatches: [...(p.optionSwatches ?? [])],
   };
 }
 
@@ -346,7 +347,7 @@ export default function StoreEditProduct() {
       const finalStatus = statusOverride ?? (pType === 'physical' ? phys.status : dig.status);
       if (pType === 'physical') {
         const res = await apiEditPhysicalProduct(productId, {
-          productId, name: phys.name, description: phys.description, shortDescription: phys.shortDescription, tabs: phys.tabs,
+          productId, name: phys.name, description: phys.description, shortDescription: phys.shortDescription, tabs: phys.tabs, optionSwatches: pruneSwatches(phys.optionTypes, phys.optionSwatches),
           categoryId: phys.categoryId || null,
           subCategoryId: phys.subCategoryId || null, images: phys.images, videoUrl: phys.videoUrl, videoFirst: phys.videoFirst, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
@@ -874,6 +875,8 @@ export default function StoreEditProduct() {
                     onOptionTypesChange={v => sp('optionTypes', v)}
                     rows={phys.variantRows}
                     onRowsChange={v => sp('variantRows', v)}
+                    swatches={phys.optionSwatches}
+                    onSwatchesChange={v => sp('optionSwatches', v)}
                   />
                 )}
                 {variantStep === 2 && (

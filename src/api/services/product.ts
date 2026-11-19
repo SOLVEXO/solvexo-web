@@ -175,6 +175,7 @@ export interface StoreProduct extends ProductSellingOptions {
   complementaryProductIds?: string[];
   shortDescription?: string;
   tabs?: { title: string; content: string }[];
+  optionSwatches?: { option: string; value: string; color: string }[];
 }
 
 // ── Request payloads ──────────────────────────────────────────────────────────
@@ -182,6 +183,7 @@ export interface StoreProduct extends ProductSellingOptions {
 export interface CreatePhysicalPayload extends ProductSellingOptions {
   shortDescription?: string;
   tabs?: { title: string; content: string }[];
+  optionSwatches?: { option: string; value: string; color: string }[];
   storeId:           string;
   name:              string;
   description:       string;
@@ -251,6 +253,7 @@ export interface EditPhysicalPayload extends ProductSellingOptions {
   complementaryProductIds?: string[];
   shortDescription?: string;
   tabs?: { title: string; content: string }[];
+  optionSwatches?: { option: string; value: string; color: string }[];
   /** Shipping profile id; null = General profile. */
   shippingProfileId?: string | null;
   /** Preferred supplier (a Supplier id of this store); reorder suggestions group by it. */

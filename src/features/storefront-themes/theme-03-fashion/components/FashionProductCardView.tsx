@@ -33,7 +33,7 @@ export interface ProductCardViewProps {
   /** Shows a "Quick view" pill over the image on hover when set. */
   onQuickView?: MouseEventHandler<HTMLButtonElement>;
   /** Colour options of the product; hovering one calls `onSwatch` with that colour's photo (undefined on leave). */
-  swatches?: { value: string; image?: string }[];
+  swatches?: { value: string; color: string | null; image?: string }[];
   onSwatch?: (image?: string) => void;
   /** An uploaded product video (file URL): muted, looping preview played over the photo while the card is hovered. */
   hoverVideo?: string;
@@ -97,8 +97,8 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, tagH
             <ul className="m-0 flex list-none flex-wrap items-center gap-1.5 p-0" aria-label={ts('pg.available_colours', 'Available colours')}>
               {swatches.slice(0, 5).map(sw => (
                 <li key={sw.value} title={sw.value} onMouseEnter={() => onSwatch?.(sw.image)} onMouseLeave={() => onSwatch?.(undefined)}>
-                  {isCssColor(sw.value)
-                    ? <span role="img" aria-label={sw.value} className="block size-4 rounded-full" style={{ background: sw.value, border: `1px solid ${t.colors.border}` }} />
+                  {sw.color
+                    ? <span role="img" aria-label={sw.value} className="block size-4 rounded-full" style={{ background: sw.color, border: `1px solid ${t.colors.border}` }} />
                     : <span className="rounded-full px-2 py-0.5 text-[11px]" style={{ border: `1px solid ${t.colors.border}`, color: t.colors.inkMuted }}>{sw.value}</span>}
                 </li>
               ))}
@@ -123,11 +123,6 @@ export function FashionProductCardView({ to, name, image, secondImage, tag, tagH
       </div>
     </article>
   );
-}
-
-/** True for values the browser can paint as a colour ("Red", "#c2410c"); other option values render as a text chip. */
-function isCssColor(value: string): boolean {
-  return typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('color', value);
 }
 
 function Chip({ tone, children }: { tone: 'sale' | 'dark'; children: React.ReactNode }) {

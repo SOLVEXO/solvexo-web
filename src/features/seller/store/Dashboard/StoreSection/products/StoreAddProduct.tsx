@@ -24,7 +24,7 @@ import { filesPayload, type DigitalFileRow } from './digitalFiles';
 import { Modal } from '@/components/comman/ui/Modal';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor';
-import { MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
+import { MAX_VARIANT_COMBINATIONS, pruneSwatches, type OptionSwatch, type OptionType, type VariantRow } from './variantMatrix';
 
 type ProductType   = 'physical' | 'digital' | 'educational';
 type ProductStatus = 'draft' | 'active' | 'scheduled';
@@ -106,6 +106,7 @@ const initPhys = {
   // the simple single Price/Stock/SKU fields above unchanged.
   optionTypes: [] as OptionType[],
   variantRows: [] as VariantRow[],
+  optionSwatches: [] as OptionSwatch[],
 };
 const initDig = {
   name: '', description: '', shortDescription: '', tabs: [] as ProductTabInput[], price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
@@ -231,7 +232,7 @@ export default function StoreAddProduct() {
               barcode: phys.barcode.trim() || undefined,
             }];
         const res = await apiCreatePhysicalProduct({
-          storeId, name: phys.name, description: phys.description, shortDescription: phys.shortDescription, tabs: phys.tabs,
+          storeId, name: phys.name, description: phys.description, shortDescription: phys.shortDescription, tabs: phys.tabs, optionSwatches: pruneSwatches(phys.optionTypes, phys.optionSwatches),
           categoryId: phys.categoryId || null,
           subCategoryId: phys.subCategoryId || null, images: phys.images, videoUrl: phys.videoUrl, videoFirst: phys.videoFirst, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
@@ -677,6 +678,8 @@ export default function StoreAddProduct() {
                     onOptionTypesChange={v => sp('optionTypes', v)}
                     rows={phys.variantRows}
                     onRowsChange={v => sp('variantRows', v)}
+                    swatches={phys.optionSwatches}
+                    onSwatchesChange={v => sp('optionSwatches', v)}
                   />
                 )}
                 {variantStep === 2 && (

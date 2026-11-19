@@ -217,7 +217,7 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
                 {optionNames.map(name => {
                   const values = Array.from(new Set(variants.map(v => v.options?.find(o => o.name === name)?.value).filter((v): v is string => !!v)));
                   const current = variant.options?.find(o => o.name === name)?.value;
-                  const optionValues = buildOptionValues(variants, variant, name, isDigital);
+                  const optionValues = buildOptionValues(variants, variant, name, isDigital, detail?.product.optionSwatches);
                   // colour options draw as swatches unless the seller picked another look; everything else keeps the pills
                   const lookWanted = picker.pickerStyle ?? 'swatches';
                   if (resolveOptionStyle(lookWanted, name, optionValues) !== 'pills') {

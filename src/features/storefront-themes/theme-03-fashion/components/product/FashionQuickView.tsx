@@ -84,7 +84,7 @@ export function FashionQuickView({ slug, onClose }: { slug: string; onClose: () 
           </p>
           {optionNames.map(name => (
             <VariantOptionPicker key={name} name={name} current={variant.options?.find(o => o.name === name)?.value}
-              values={buildOptionValues(variants, variant, name, isDigital)} style={picker.pickerStyle} shape={picker.shape} size={picker.size}
+              values={buildOptionValues(variants, variant, name, isDigital, detail?.product.optionSwatches)} style={picker.pickerStyle} shape={picker.shape} size={picker.size}
               tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, selected: t.colors.selected, selectedInk: t.colors.selectedInk, bg: t.colors.bg, radius: 9999, buttonLook: 'filled' }}
               soldOutLabel={ts('product.soldOut', 'Sold out')} onPick={v => { setPicked(p => ({ ...p, [name]: v })); setQty(1); }} />
           ))}

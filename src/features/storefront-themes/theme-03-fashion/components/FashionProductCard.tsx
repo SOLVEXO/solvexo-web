@@ -1,5 +1,7 @@
 import { useMemo, useState, type MouseEvent } from 'react';
 import { useWholesaleGate } from '../../core/b2b/useWholesale';
+import { cardSwatches } from '../../core/product/cardSwatches';
+import { useFilteredVariant } from '../../core/product/filteredVariant';
 import { vendorPath } from '@/features/storefront-themes/core/VendorLink';
 import { handleOf } from '@/utils/activeStoreText';
 import type { PublicStoreProduct } from '@/api/services/store';
@@ -35,16 +37,12 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
   const localize = useLocalize();
   const [quick, setQuick] = useState(false);
   const [hoverImage, setHoverImage] = useState<string | undefined>();
+  const filtered = useFilteredVariant(product.variants);
   const showSwatches = t.colorSwatches; // module singleton: read per render so the editor preview reacts to the setting
   const swatches = useMemo(() => {
     if (!showSwatches) return [];
-    const seen = new Map<string, { value: string; image?: string }>();
-    for (const v of product.variants ?? []) {
-      const color = v.options?.find(o => /^colou?r$/i.test(o.name))?.value;
-      if (color && !seen.has(color.toLowerCase())) seen.set(color.toLowerCase(), { value: color, image: v.images?.find(Boolean) });
-    }
-    return Array.from(seen.values());
-  }, [product.variants, showSwatches]);
+    return cardSwatches(product);
+  }, [product, showSwatches]);
 
   const p = localize.product(product);
   const base = String(store.baseCurrency ?? currency);
@@ -72,9 +70,9 @@ export function FashionProductCard({ product, currency }: { product: PublicStore
   return (
     <>
     <FashionProductCardView
-      to={`/product/${handleOf(product)}`}
+      to={`/product/${handleOf(product)}${filtered.variantId ? `?variant=${filtered.variantId}` : ''}`}
       name={p.name}
-      image={hoverImage ?? product.images?.[0]}
+      image={hoverImage ?? filtered.image ?? product.images?.[0]}
       swatches={swatches}
       onSwatch={setHoverImage}
       secondImage={t.productImageHover === 'second-image' ? product.images?.[1] : undefined}

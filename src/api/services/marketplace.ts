@@ -72,6 +72,8 @@ export interface MarketplaceProduct {
   complementaryProductIds?: string[];
   shortDescription?: string;
   tabs?: { title: string; content: string }[];
+  /** Seller-chosen swatch colours of option values (Shopify: the colour entry behind a Color value). */
+  optionSwatches?: { option: string; value: string; color: string }[];
   educationLevel?:   string | null;
   customLevel?:      string | null;
   normalizedCustomLevel?: string | null;

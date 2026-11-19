@@ -654,6 +654,8 @@ export interface PublicStoreProduct {
   slug:        string;
   name:        string;
   vendor?:     string;
+  /** Colours the seller chose for option values (Shopify: the colour entry of a Color value). */
+  optionSwatches?: { option: string; value: string; color: string }[];
   /** Names for the card's info line (filled by the public product list). */
   categoryName?:    string;
   subCategoryName?: string;
@@ -675,7 +677,7 @@ export interface PublicStoreProduct {
   inStock?:            boolean;
   compareAtPrice?:     number | null;
   /** Every active variant (the list endpoint already returns them); used for card swatches. */
-  variants?:           { options?: { name: string; value: string }[]; images?: string[] }[];
+  variants?:           { _id?: string; options?: { name: string; value: string }[]; images?: string[] }[];
 }
 
 export interface PublicStoreProductsData {
