@@ -14,6 +14,9 @@ export interface Coupon {
   /** Saved customer segment: only its members can redeem (null = everyone). */
   customerSegmentId?: string | null;
   usageCount:     number;
+  minQuantity?:   number | null;
+  oncePerCustomer?: boolean;
+  posEnabled?:    boolean;
   /** Coupon is inactive until this date — null means active immediately. */
   startsAt:       string | null;
   expiresAt:      string | null;
@@ -28,6 +31,9 @@ export interface CreateCouponPayload {
   minOrderAmount?: number | null;
   customerSegmentId?: string | null;
   usageLimit?:     number | null;
+  minQuantity?:    number | null;
+  oncePerCustomer?: boolean;
+  posEnabled?:     boolean;
   startsAt?:       string | null;
   expiresAt?:      string | null;
 }
@@ -46,8 +52,8 @@ export function apiCreateCoupon(storeId: string, payload: CreateCouponPayload) {
 }
 
 /** GET /api/marketing/:storeId/coupons */
-export function apiGetCoupons(storeId: string) {
-  return client.get<never, ApiResponse<PaginatedCoupons>>(ENDPOINTS.MARKETING.COUPONS.LIST(storeId));
+export function apiGetCoupons(storeId: string, params?: { page?: number; limit?: number; search?: string }) {
+  return client.get<never, ApiResponse<PaginatedCoupons>>(ENDPOINTS.MARKETING.COUPONS.LIST(storeId), { params });
 }
 
 /** PATCH /api/marketing/:storeId/coupons/:couponId */

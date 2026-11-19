@@ -89,6 +89,7 @@ if (getStoreSlugFromHost() || isCustomDomainCandidate()) {
   void import('@/features/storefront/StorefrontLayout');
   void import('@/features/storefront-themes/ThemedRoute');
 }
+const DiscountLinkPage = lazy(() => import('@/features/storefront/DiscountLinkPage'));
 const MaintenancePage = lazy(() => import('@/features/buyer/pages/MaintenancePage').then(m => ({ default: m.MaintenancePage })));
 
 // ── Seller ────────────────────────────────────────────────────────────────────
@@ -255,6 +256,7 @@ const storefrontRouter = createBrowserRouter([
           { path: 'blogs/:blogSlug', element: <ThemedRoute routeKey="blogIndex" /> },
           { path: 'blogs/:blogSlug/:postSlug', element: <ThemedRoute routeKey="blogPost" /> },
           { path: 'cart', element: <ThemedRoute routeKey="cart" /> },
+          { path: 'discount/:code', element: <DiscountLinkPage /> },
           { path: 'checkout', element: <ThemedRoute routeKey="checkout" /> },
           { path: 'checkout/:checkoutId/return', element: <ThemedRoute routeKey="checkoutReturn" /> },
           { path: 'login', element: <ThemedRoute routeKey="login" /> },

@@ -1,19 +1,13 @@
-import { SegmentSelect } from '@/features/seller/store/Dashboard/StoreSection/customer/SegmentSelect';
 import { useEffect, useRef, useState } from 'react';
 import { useRouteTabs } from '@/hooks/useRouteTabs';
 import { NoTabAccess } from '@/components/comman/ui/NoTabAccess';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { FEATURES } from '@/constants/features';
-import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Trash2, Plus, Target, Zap, type LucideIcon } from 'lucide-react';
+import { Mail, ShoppingCart, Handshake, Trash2, Plus, Target, Zap, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button, PlanFeatureLock } from '@/components/comman/ui';
-import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
 import { currencySymbol } from '@/utils/currency';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
-import {
-  apiGetCoupons, apiCreateCoupon, apiUpdateCoupon, apiDeleteCoupon,
-  type Coupon, type DiscountType,
-} from '@/api/services/marketing';
 import {
   apiGetAbandonedCartSettings, apiUpdateAbandonedCartSettings, apiGetAbandonedCartStats, apiListAbandonedCarts,
   type AbandonedCartSettings, type AbandonedCartStats, type AbandonedCartItem,
@@ -41,10 +35,9 @@ import {
 // backend endpoints. Removed here to stop maintaining two copies of the
 // same feature; the dedicated pages are untouched and still fully wired.
 
-type Tab = 'coupons' | 'email' | 'automations' | 'cart' | 'affiliate' | 'pixels';
+type Tab = 'email' | 'automations' | 'cart' | 'affiliate' | 'pixels';
 
 const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
-  { id: 'coupons',   label: 'Coupons',        Icon: TagIcon      },
   { id: 'email',     label: 'Email Campaigns', Icon: Mail         },
   { id: 'automations', label: 'Automations',   Icon: Zap          },
   { id: 'cart',      label: 'Abandoned Cart',  Icon: ShoppingCart },
@@ -52,8 +45,6 @@ const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   ...(FEATURES.affiliates ? [{ id: 'affiliate' as Tab, label: 'Affiliate', Icon: Handshake }] : []),
   { id: 'pixels',    label: 'Tracking Pixels', Icon: Target       },
 ];
-
-const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', minOrder: '', usageLimit: '', startDate: '', expiryDate: '', segmentId: '' };
 
 const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
 
@@ -176,14 +167,15 @@ function AffiliateFormModal({ storeId, onClose, onSaved }: { storeId: string; on
 
 export function StoreMarketing() {
   const { store, storeId } = useStoreWorkspace();
+  const { tab: rawTab } = useParams<{ tab?: string }>();
   const MARKETING_PERMS: Record<string, string[]> = {
-    coupons: ['discounts.manage'], email: ['marketing.manage'],
+    email: ['marketing.manage'],
     automations: ['marketing.manage'], cart: ['marketing.manage'], affiliate: ['marketing.manage'], pixels: ['settings.pixels.manage'],
   };
   const { visibleTabs, activeTab, openTab, redirectTo, blocked } = useRouteTabs({
     tabs: TABS.map(t => ({ id: t.id, label: t.label })), base: 'marketing', permissions: MARKETING_PERMS,
   });
-  const tab = (activeTab === 'none' ? 'coupons' : activeTab) as Tab;
+  const tab = (activeTab === 'none' ? 'email' : activeTab) as Tab;
   const setTab = (id: Tab) => openTab(id);
   // Every tab below lives in this ONE component (never unmounted on switch) —
   // its own useEffect gates on `tab === 'x'`, but without this guard, that
@@ -191,21 +183,6 @@ export function StoreMarketing() {
   // since `tab` is in its own dependency array. This tracks which tabs have
   // already loaded once so a repeat visit is instant, no refetch/skeleton.
   const loadedTabsRef = useRef(new Set<Tab>());
-
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
-
-  useEffect(() => {
-    if (!storeId) return;
-    setLoading(true);
-    apiGetCoupons(storeId)
-      .then(res => setCoupons(res.data.coupons ?? []))
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load coupons.'))
-      .finally(() => setLoading(false));
-  }, [storeId]);
 
   // Plan entitlements — gates the Abandoned Cart / Email Campaigns tabs below
   // (both are real, fully working features whose only actual restriction is
@@ -505,94 +482,8 @@ export function StoreMarketing() {
     }
   }
 
-  const couponFormRef = useRef<HTMLDivElement>(null);
-
-  function startEdit(c: Coupon) {
-    setError('');
-    setEditingId(c._id);
-    requestAnimationFrame(() => couponFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-    setForm({
-      code: c.code,
-      discountType: c.discountType,
-      value: String(c.discountValue),
-      minOrder: c.minOrderAmount != null ? String(c.minOrderAmount) : '',
-      usageLimit: c.usageLimit != null ? String(c.usageLimit) : '',
-      segmentId: c.customerSegmentId ?? '',
-      startDate: c.startsAt ? c.startsAt.slice(0, 10) : '',
-      expiryDate: c.expiresAt ? c.expiresAt.slice(0, 10) : '',
-    });
-  }
-
-  const [deletingCoupon, setDeletingCoupon] = useState<Coupon | null>(null);
-  const [deleteBusy, setDeleteBusy] = useState(false);
-
-  async function togglePause(c: Coupon) {
-    setError('');
-    try {
-      const res = await apiUpdateCoupon(storeId, c._id, { isActive: !c.isActive });
-      setCoupons(prev => prev.map(x => x._id === c._id ? res.data : x));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update coupon.');
-    }
-  }
-
-  async function handleSubmit() {
-    setError('');
-    if (!form.code.trim()) { setError('Enter a coupon code.'); return; }
-    if (!form.discountType) { setError('Choose a discount type.'); return; }
-    const value = Number(form.value);
-    if (!form.value.trim() || !Number.isFinite(value) || value <= 0) { setError('Enter a discount value greater than 0.'); return; }
-    if (form.discountType === 'percentage' && value > 100) { setError('A percentage discount cannot be more than 100.'); return; }
-    const minOrder = form.minOrder.trim() ? Number(form.minOrder) : null;
-    if (minOrder !== null && (!Number.isFinite(minOrder) || minOrder < 0)) { setError('Minimum order must be 0 or more.'); return; }
-    const usageLimit = form.usageLimit.trim() ? Number(form.usageLimit) : null;
-    if (usageLimit !== null && (!Number.isInteger(usageLimit) || usageLimit < 1)) { setError('Usage limit must be a whole number, 1 or more.'); return; }
-    if (form.startDate && form.expiryDate && form.expiryDate < form.startDate) { setError('The expiry date must be after the start date.'); return; }
-    // When editing, a blank field means "clear it" (null); when creating it just means "not set" (left out).
-    const blank = editingId ? null : undefined;
-    const payload = {
-      code: form.code.trim(),
-      discountType: form.discountType as DiscountType,
-      discountValue: value,
-      minOrderAmount: minOrder ?? blank,
-      usageLimit: usageLimit ?? blank,
-      customerSegmentId: form.segmentId || null,
-      startsAt: form.startDate || blank,
-      expiresAt: form.expiryDate || blank,
-    };
-    try {
-      if (editingId) {
-        const res = await apiUpdateCoupon(storeId, editingId, payload);
-        setCoupons(prev => prev.map(c => c._id === editingId ? res.data : c));
-      } else {
-        const res = await apiCreateCoupon(storeId, payload);
-        setCoupons(prev => [res.data, ...prev]);
-      }
-      setEditingId(null);
-      setForm(emptyForm);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save coupon.');
-    }
-  }
-
-  async function confirmDelete() {
-    if (!deletingCoupon) return;
-    setDeleteBusy(true);
-    setError('');
-    try {
-      await apiDeleteCoupon(storeId, deletingCoupon._id);
-      setCoupons(prev => prev.filter(c => c._id !== deletingCoupon._id));
-      setDeletingCoupon(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete coupon.');
-    } finally {
-      setDeleteBusy(false);
-    }
-  }
-
-  const activeCount = coupons.filter(c => c.isActive && !(c.expiresAt && new Date(c.expiresAt) < new Date())).length;
-  const totalRedemptions = coupons.reduce((sum, c) => sum + c.usageCount, 0);
-
+  // Coupons moved to the Discounts page (Shopify keeps discount codes there) — old bookmarks still land in the right place.
+  if (rawTab === 'coupons') return <Navigate to={`/store/${storeId}/discounts`} replace />;
   if (redirectTo) return <Navigate to={redirectTo} replace />;
   if (blocked) return <NoTabAccess title="Marketing" />;
 
@@ -604,19 +495,6 @@ export function StoreMarketing() {
       />
 
       <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
-
-        {/* Metrics — top-level coupon stats; each tab below (abandoned cart,
-            email campaigns) has its own real stats strip in its own section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
-            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Active Coupons</p>
-            <p className="text-[28px] font-bold text-carbon leading-[1.15]">{activeCount}</p>
-          </div>
-          <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
-            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Total Redemptions</p>
-            <p className="text-[28px] font-bold text-carbon leading-[1.15]">{totalRedemptions}</p>
-          </div>
-        </div>
 
         {/* Tab bar — horizontally scrollable so 9 tabs never wrap/get cut off on narrower screens */}
         <div className="border-b border-bone overflow-x-auto scrollbar-none">
@@ -632,148 +510,6 @@ export function StoreMarketing() {
           </div>
         </div>
 
-        {/* Coupons Tab */}
-        {tab === 'coupons' && (
-          <div className="flex flex-col gap-5">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[15px] font-bold text-carbon">Active Coupons</p>
-              <BulkImportButton
-                entityLabel="coupons"
-                basePath={`/api/marketing/${storeId}/coupons`}
-                onImported={() => { apiGetCoupons(storeId).then(res => setCoupons(res.data.coupons ?? [])).catch(() => {}); }}
-                notes={[
-                  'A code that already exists in this store is skipped, not duplicated. Codes are saved in UPPER-CASE.',
-                  'Discount Type is percentage or fixed (percentage max 100). Dates use YYYY-MM-DD.',
-                ]}
-              />
-            </div>
-
-            {error && <p className="text-xs text-error bg-error-bg rounded-md px-3 py-2">{error}</p>}
-
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 flex flex-col gap-3">
-                    <SkeletonBox width="45%" height={26} rounded="8px" />
-                    <SkeletonBox width="60%" height={16} />
-                    <SkeletonBox width="100%" height={40} rounded="6px" />
-                  </div>
-                ))}
-              </div>
-            ) : coupons.length === 0 ? (
-              <EmptyState
-                icon={<TagIcon size={28} className="text-brand-orange opacity-55" />}
-                title="No coupons yet"
-                description="Create your first coupon using the form below."
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {coupons.map(coupon => (
-                  <div key={coupon._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 transition-transform duration-200 hover:-translate-y-[1px]">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-brand-deep-orange bg-brand-pale-orange">
-                        {coupon.code}
-                      </div>
-                      {(() => {
-                        const isExpired = !!coupon.expiresAt && new Date(coupon.expiresAt) < new Date();
-                        const isScheduled = !isExpired && coupon.isActive && !!coupon.startsAt && new Date(coupon.startsAt) > new Date();
-                        const label = isExpired ? 'Expired' : isScheduled ? 'Scheduled' : coupon.isActive ? 'Active' : 'Paused';
-                        const colors = isExpired ? { bg: '#F0EEE6', fg: '#8C8A82' } : isScheduled ? { bg: '#FBECE4', fg: '#B95A3A' } : coupon.isActive ? { bg: '#E3F4EA', fg: '#1E7A3C' } : { bg: '#F0EEE6', fg: '#5A5852' };
-                        return (
-                          <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: colors.bg, color: colors.fg }}>
-                            {label}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                    <p className="text-[13px] font-semibold text-carbon mb-3">
-                      {coupon.discountType === 'percentage' ? `${coupon.discountValue}% Off` : `${currencySymbol(store?.baseCurrency)} ${coupon.discountValue} Off`}
-                    </p>
-                    <table className="w-full border-collapse text-xs mb-3">
-                      <tbody>
-                        {[
-                          ['Uses', `${coupon.usageCount} / ${coupon.usageLimit ?? 'Unlimited'}`],
-                          ...(coupon.startsAt ? [['Starts', new Date(coupon.startsAt).toLocaleDateString()]] : []),
-                          ['Expires', coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : 'Never'],
-                        ].map(([label, val], i) => (
-                          <tr key={label} style={{ borderBottom: i === 0 ? '1px solid #F0EEE6' : 'none' }}>
-                            <td className="py-1.5 text-slate">{label}</td>
-                            <td className="py-1.5 font-semibold text-carbon text-right">{val}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <div className="flex gap-2">
-                      <button onClick={() => startEdit(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Edit</button>
-                      <button onClick={() => togglePause(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">{coupon.isActive ? 'Pause' : 'Activate'}</button>
-                      <button onClick={() => setDeletingCoupon(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-error cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Delete</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Create / Edit coupon form */}
-            <div ref={couponFormRef} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 scroll-mt-4">
-              <p className="text-sm font-bold text-carbon mb-4">{editingId ? 'Edit Coupon' : 'Create New Coupon'}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-4">
-                <div>
-                  <label className="text-xs font-medium text-graphite mb-[5px] block">Coupon Code</label>
-                  <input placeholder="e.g. SAVE20" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
-                    className={INPUT_CLS} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-graphite mb-[5px] block">Discount Type</label>
-                  <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as DiscountType }))}
-                    className={`${INPUT_CLS} cursor-pointer`}>
-                    <option value="">Select type…</option>
-                    <option value="percentage">Percentage Off</option>
-                    <option value="fixed">Fixed Amount Off</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-graphite mb-[5px] block">Value</label>
-                  <input placeholder="e.g. 20 or 10.00" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))}
-                    className={INPUT_CLS} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-graphite mb-[5px] block">Minimum Order ({currencySymbol(store?.baseCurrency)})</label>
-                  <input placeholder="0.00" value={form.minOrder} onChange={e => setForm(f => ({ ...f, minOrder: e.target.value }))}
-                    className={INPUT_CLS} />
-                </div>
-                <div className="sm:col-span-2"><SegmentSelect storeId={storeId} value={form.segmentId || null} onChange={id => setForm(f => ({ ...f, segmentId: id ?? '' }))} label="Customer eligibility" /></div>
-                <div>
-                  <label className="text-xs font-medium text-graphite mb-[5px] block">Usage Limit</label>
-                  <input placeholder="Leave blank for unlimited" value={form.usageLimit} onChange={e => setForm(f => ({ ...f, usageLimit: e.target.value }))}
-                    className={INPUT_CLS} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-graphite mb-[5px] block">Start Date</label>
-                  <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                    className={INPUT_CLS} />
-                  <p className="text-[10px] text-slate mt-1">Leave blank to activate immediately.</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-graphite mb-[5px] block">Expiry Date</label>
-                  <input type="date" value={form.expiryDate} onChange={e => setForm(f => ({ ...f, expiryDate: e.target.value }))}
-                    className={INPUT_CLS} />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={handleSubmit} className="px-6 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
-                  {editingId ? 'Update Coupon' : 'Create Coupon'}
-                </button>
-                {editingId && (
-                  <button onClick={() => { setEditingId(null); setForm(emptyForm); }} className="px-6 py-2.5 bg-white border border-bone rounded-lg text-[13px] font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Abandoned Cart Recovery Tab */}
         {tab === 'cart' && !entitlementsLoaded ? (
           <SkeletonBox height={280} rounded="10px" />
         ) : tab === 'cart' && cartFeature && !cartFeature.allowed ? (
@@ -1302,19 +1038,6 @@ export function StoreMarketing() {
 
       </div>
 
-      {deletingCoupon && (
-        <Modal title="Delete Coupon" onClose={() => setDeletingCoupon(null)} mobileSheet footer={
-          <>
-            <Button variant="ghost" onClick={() => setDeletingCoupon(null)} disabled={deleteBusy}>Cancel</Button>
-            <Button variant="danger" onClick={confirmDelete} loading={deleteBusy}>Delete Coupon</Button>
-          </>
-        }>
-          <p className="text-[13px] text-charcoal">
-            Delete coupon <strong>{deletingCoupon.code}</strong>? {deletingCoupon.usageCount > 0 && `It has been redeemed ${deletingCoupon.usageCount} time${deletingCoupon.usageCount !== 1 ? 's' : ''}. `}This cannot be undone.
-          </p>
-          {error && <p className="text-[12px] text-error mt-2">{error}</p>}
-        </Modal>
-      )}
     </>
   );
 }

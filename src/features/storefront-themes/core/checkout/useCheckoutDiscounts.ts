@@ -1,4 +1,5 @@
-import { useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { clearSavedDiscountCode, readSavedDiscountCode } from '@/utils/discountLink';
 import { apiApplyCoupon, apiApplyGiftCard, apiRemoveCoupon, apiRemoveGiftCard, type Checkout } from '@/api/services/checkout';
 import { moneyText } from './checkoutMath';
 import { ts } from '@/utils/tStatic';
@@ -26,6 +27,28 @@ export function useCheckoutDiscounts({ checkout, setCheckout, resyncCredit }: Ar
     lock.current = true; setBusy(true);
     try { await fn(); } finally { lock.current = false; setBusy(false); }
   };
+
+  // A code that arrived through a shareable discount link is applied once, by itself, when the checkout opens.
+  const autoAppliedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!checkout || checkout.couponCode || autoAppliedFor.current === checkout._id) return;
+    const saved = readSavedDiscountCode();
+    if (!saved) return;
+    autoAppliedFor.current = checkout._id;
+    void run(async () => {
+      try {
+        const res = await apiApplyCoupon({ checkoutId: checkout._id, code: saved });
+        setCheckout(c => c && { ...c, couponCode: res.data.couponCode, couponDiscountUSD: res.data.couponDiscountUSD, totalAmount: res.data.totalAmount });
+        await resyncCredit();
+        setCouponMsg({ text: ts('pg.applied_you_saved_amount', 'Applied - you saved {{amount}}.', { amount: moneyText(res.data.couponDiscountUSD, checkout.currency) }), tone: 'ok' });
+      } catch {
+        // Not valid for this cart (expired, minimum not met…): the buyer can still type a code themselves.
+      } finally {
+        clearSavedDiscountCode();
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkout?._id]);
 
   const applyCoupon = () => run(async () => {
     const code = couponInput.trim();

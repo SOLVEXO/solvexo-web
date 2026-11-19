@@ -1,8 +1,9 @@
+import { DiscountCodes } from './DiscountCodes';
+import { storeUrlFor } from '@/features/seller/store/Dashboard/Operations/marketing/emailDesign';
 import { CartUpsellCard } from '@/features/seller/store/Dashboard/StoreSection/products/MerchandisingCard';
 import { SegmentSelect } from '@/features/seller/store/Dashboard/StoreSection/customer/SegmentSelect';
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Percent, Tag, PackagePlus, Truck, Trash2, Pencil, Power, PowerOff, ArrowRight, Download, CalendarClock } from 'lucide-react';
+import { Plus, Percent, Tag, PackagePlus, Truck, Trash2, Pencil, Power, PowerOff, Download, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   apiGetDiscounts, apiCreateDiscount, apiUpdateDiscount, apiDeleteDiscount, apiExportDiscountsCsv,
@@ -334,12 +335,14 @@ function DiscountFormModal({
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function StoreDiscounts() {
   const { storeId, store } = useStoreWorkspace();
-  const navigate = useNavigate();
   const storeCurrency = store?.baseCurrency ?? 'USD';
 
   const [discounts, setDiscounts] = useState<AutomaticDiscount[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryTree, setCategoryTree] = useState<CategoryNode[]>([]);
+  // Shopify's Discounts page has two methods: a code the customer types, or an automatic discount.
+  const [method, setMethod] = useState<'codes' | 'automatic'>('codes');
+  const [createCodeOpen, setCreateCodeOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<AutomaticDiscount | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<AutomaticDiscount | null>(null);
@@ -460,13 +463,19 @@ export default function StoreDiscounts() {
     <div>
       <StorePageHeader
         title="Discounts"
-        subtitle="Automatic, no-code discounts — applied instantly, no code for buyers to enter"
+        subtitle="Discount codes your customers enter at checkout, and automatic discounts that apply by themselves"
         actions={(
           <div className="flex items-center gap-2">
-            <Button variant="outline" icon={<Download size={14} />} loading={exporting} onClick={handleExportCsv}>
-              Export
-            </Button>
-            <Button variant="primary" icon={<Plus size={14} />} onClick={() => { setEditing(null); setModalOpen(true); }}>
+            {method === 'automatic' && (
+              <Button variant="outline" icon={<Download size={14} />} loading={exporting} onClick={handleExportCsv}>
+                Export
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              icon={<Plus size={14} />}
+              onClick={() => { if (method === 'codes') setCreateCodeOpen(true); else { setEditing(null); setModalOpen(true); } }}
+            >
               Create discount
             </Button>
           </div>
@@ -492,20 +501,23 @@ export default function StoreDiscounts() {
           </div>
         )}
 
-        <button
-          onClick={() => navigate(`/store/${storeId}/marketing`)}
-          className="w-full flex items-center gap-3 mb-5 bg-white border border-bone rounded-xl px-4 py-3 text-left cursor-pointer hover:bg-cream transition-colors"
-        >
-          <div className="w-8 h-8 rounded-[8px] bg-info-bg flex items-center justify-center shrink-0">
-            <Tag size={14} className="text-info" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-carbon">Looking for discount codes buyers type at checkout?</p>
-            <p className="text-[12px] text-slate">Manage discount codes under Marketing → Coupons.</p>
-          </div>
-          <ArrowRight size={15} className="text-slate shrink-0" />
-        </button>
+        <div role="tablist" aria-label="Discount method" className="flex items-center gap-1 mb-4 border-b border-bone">
+          {([['codes', 'Discount codes'], ['automatic', 'Automatic discounts']] as const).map(([id, label]) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={method === id}
+              onClick={() => setMethod(id)}
+              className={`px-4 py-2.5 text-[13px] font-medium cursor-pointer border-0 bg-transparent -mb-px border-b-2 ${method === id ? 'border-brand-orange text-brand-orange' : 'border-transparent text-slate hover:text-carbon'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
+        {method === 'codes' && <DiscountCodes storeId={storeId} storeCurrency={storeCurrency} storeUrl={storeUrlFor(store as never)} createOpen={createCodeOpen} onCreateClose={() => setCreateCodeOpen(false)} />}
+
+        {method === 'automatic' && (
         <div className="bg-white border border-bone rounded-xl overflow-hidden">
           <Table
             columns={columns}
@@ -520,6 +532,7 @@ export default function StoreDiscounts() {
             }}
           />
         </div>
+        )}
       </div>
 
       {modalOpen && (
