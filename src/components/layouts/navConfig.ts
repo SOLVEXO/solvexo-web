@@ -150,14 +150,15 @@ const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIc
     // Made collapsible for consistency with every other multi-item group —
     // the rest of the old 7-item "Growth" group already moved to the
     // separate collapsible "Growth Tools" group below.
-    group: 'Marketing',
+    group: 'Growth',
     collapsible: true,
     groupIcon: Megaphone,
     items: [
       // Tracking Pixels lives as a tab inside Marketing but is gated on its
       // own distinct `settings.pixels.manage` permission (tracking-pixels
       // .controller.ts) — OR'd in so that permission alone still reaches it.
-      { id: 'marketing',     Icon: Megaphone, label: 'Marketing',     path: 'marketing',     requiredPermission: ['marketing.manage', 'settings.pixels.manage'] },
+      { id: 'growth',        Icon: TrendingUp, label: 'Overview',     path: 'growth',        requiredPermission: ['analytics.view', 'marketing.manage'] },
+      { id: 'marketing',     Icon: Megaphone, label: 'Messaging',     path: 'marketing',     requiredPermission: ['marketing.manage', 'settings.pixels.manage'] },
       { id: 'discounts',     Icon: Percent,   label: 'Discounts',     path: 'discounts',     requiredPermission: 'discounts.manage' },
     ],
   },
@@ -292,7 +293,7 @@ const LAYOUT: { group: string; ids: string[]; collapsible?: boolean; groupIcon?:
   { group: 'Orders', collapsible: true, groupIcon: Package, ids: ['orders', 'draft-orders', 'returns', 'disputes', 'payment-proofs'] },
   { group: 'Products', collapsible: true, groupIcon: ShoppingBag, ids: ['products', 'collections', 'categories', 'inventory', 'gift-cards', 'subscriptions', 'digital'] },
   { group: 'Customers', collapsible: true, groupIcon: Users, ids: ['customers', 'wholesale', 'khata', 'reviews', 'product-questions', 'messages', 'online-store-contact', 'loyalty'] },
-  { group: 'Marketing', collapsible: true, groupIcon: Megaphone, ids: ['marketing', 'messaging', 'creatives', 'seo'] },
+  { group: 'Growth', collapsible: true, groupIcon: TrendingUp, ids: ['growth', 'marketing', 'messaging', 'creatives', 'seo'] },
   { group: 'Discounts', ids: ['discounts'] },
   // Online Store = everything that builds and tunes the storefront; Sales channels = other places the products are sold (feeds, app).
   { group: 'Online Store', collapsible: true, groupIcon: Store, ids: ['online-store-themes', 'online-store-pages', 'online-store-menus', 'online-store-blog', 'online-store-files', 'online-store-translations', 'search-settings', 'experiments'] },

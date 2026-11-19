@@ -123,9 +123,13 @@ export function trackStorefrontPageView(storeId: string, path: string) {
         try { if (new URL(ref).host !== window.location.host) body.referrer = ref; } catch { /* ignore */ }
       }
       const params = new URLSearchParams(window.location.search);
-      for (const [param, field] of [['utm_source', 'utmSource'], ['utm_medium', 'utmMedium'], ['utm_campaign', 'utmCampaign']] as const) {
+      for (const [param, field] of [['utm_source', 'utmSource'], ['utm_medium', 'utmMedium'], ['utm_campaign', 'utmCampaign'], ['utm_term', 'utmTerm'], ['utm_content', 'utmContent']] as const) {
         const v = params.get(param);
         if (v) body[field] = v.slice(0, 100);
+      }
+      // Which ad platform sent the visitor (only the kind of click id is sent, never the id itself).
+      for (const id of ['gclid', 'fbclid', 'ttclid', 'msclkid']) {
+        if (params.has(id)) { body.clickIdType = id; break; }
       }
       try { body.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* ignore */ }
     }
