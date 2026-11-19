@@ -106,8 +106,10 @@ function AutomationCard<S extends Section>({
     try {
       await persist(patch);
       setMessage({ ok: true, text: 'Saved' });
+      return true;
     } catch (err) {
       setMessage({ ok: false, text: err instanceof Error ? err.message : 'Failed to save.' });
+      return false;
     } finally {
       setSaving(false);
     }
@@ -156,7 +158,7 @@ function AutomationCard<S extends Section>({
         <Toggle
           checked={!!d.enabled}
           label={`Turn ${meta.title} ${d.enabled ? 'off' : 'on'}`}
-          onChange={v => { const next = { ...draft, enabled: v }; setDraft(next); save(next); }}
+          onChange={v => { const prev = draft; const next = { ...draft, enabled: v }; setDraft(next); save(next).then(ok => { if (!ok) setDraft(prev); }); }}
         />
       </div>
 

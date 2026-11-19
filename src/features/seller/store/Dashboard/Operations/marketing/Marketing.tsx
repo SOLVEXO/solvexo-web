@@ -4,7 +4,7 @@ import { useRouteTabs } from '@/hooks/useRouteTabs';
 import { NoTabAccess } from '@/components/comman/ui/NoTabAccess';
 import { Navigate } from 'react-router-dom';
 import { FEATURES } from '@/constants/features';
-import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Megaphone, Building2, User, Trash2, Plus, Target, Zap, type LucideIcon } from 'lucide-react';
+import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Trash2, Plus, Target, Zap, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button, PlanFeatureLock } from '@/components/comman/ui';
 import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
@@ -12,8 +12,7 @@ import { currencySymbol } from '@/utils/currency';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import {
   apiGetCoupons, apiCreateCoupon, apiUpdateCoupon, apiDeleteCoupon,
-  apiGetJoinableCampaigns, apiJoinCampaign, apiLeaveCampaign,
-  type Coupon, type DiscountType, type JoinableCampaign,
+  type Coupon, type DiscountType,
 } from '@/api/services/marketing';
 import {
   apiGetAbandonedCartSettings, apiUpdateAbandonedCartSettings, apiGetAbandonedCartStats, apiListAbandonedCarts,
@@ -42,11 +41,10 @@ import {
 // backend endpoints. Removed here to stop maintaining two copies of the
 // same feature; the dedicated pages are untouched and still fully wired.
 
-type Tab = 'coupons' | 'platform' | 'email' | 'automations' | 'cart' | 'affiliate' | 'pixels';
+type Tab = 'coupons' | 'email' | 'automations' | 'cart' | 'affiliate' | 'pixels';
 
 const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'coupons',   label: 'Coupons',        Icon: TagIcon      },
-  { id: 'platform',  label: 'Platform Sales', Icon: Megaphone    },
   { id: 'email',     label: 'Email Campaigns', Icon: Mail         },
   { id: 'automations', label: 'Automations',   Icon: Zap          },
   { id: 'cart',      label: 'Abandoned Cart',  Icon: ShoppingCart },
@@ -62,11 +60,14 @@ const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg ou
 
 function EmailCampaignScheduleModal({ storeId, campaign, onClose, onScheduled }: { storeId: string; campaign: EmailCampaign; onClose: () => void; onScheduled: () => void }) {
   const [scheduledAt, setScheduledAt] = useState('');
+  // Earliest pickable moment (local time), fixed when the dialog opens.
+  const [minLocal] = useState(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   async function submit() {
     if (!scheduledAt) { setError('Please pick a date and time.'); return; }
+    if (new Date(scheduledAt).getTime() <= Date.now()) { setError('Pick a time in the future.'); return; }
     setError('');
     setSaving(true);
     try {
@@ -94,7 +95,7 @@ function EmailCampaignScheduleModal({ storeId, campaign, onClose, onScheduled }:
       <div className="flex flex-col gap-3">
         <div>
           <label className="block text-[12px] font-medium text-charcoal mb-1.5">Send at</label>
-          <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} className={INPUT_CLS} />
+          <input type="datetime-local" value={scheduledAt} min={minLocal} onChange={e => setScheduledAt(e.target.value)} className={INPUT_CLS} />
         </div>
         {error && <p className="text-[12px] text-error">{error}</p>}
       </div>
@@ -176,7 +177,7 @@ function AffiliateFormModal({ storeId, onClose, onSaved }: { storeId: string; on
 export function StoreMarketing() {
   const { store, storeId } = useStoreWorkspace();
   const MARKETING_PERMS: Record<string, string[]> = {
-    coupons: ['discounts.manage'], platform: ['marketing.manage'], email: ['marketing.manage'],
+    coupons: ['discounts.manage'], email: ['marketing.manage'],
     automations: ['marketing.manage'], cart: ['marketing.manage'], affiliate: ['marketing.manage'], pixels: ['settings.pixels.manage'],
   };
   const { visibleTabs, activeTab, openTab, redirectTo, blocked } = useRouteTabs({
@@ -213,42 +214,13 @@ export function StoreMarketing() {
   // stops a seller building/sending on a tab that will fail rather than
   // finding out only after the fact).
   const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
+  const [entitlementsLoaded, setEntitlementsLoaded] = useState(false);
   useEffect(() => {
     if (!storeId) return;
-    apiGetStoreEntitlements(storeId).then(res => setEntitlements(res.data)).catch(() => {});
+    apiGetStoreEntitlements(storeId).then(res => setEntitlements(res.data)).catch(() => {}).finally(() => setEntitlementsLoaded(true));
   }, [storeId]);
   const cartFeature = entitlements?.abandonedCartRecoveryAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
   const emailFeature = entitlements?.emailCampaignsAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
-
-  // Platform-wide sale campaigns (admin-created) this store can opt into
-  const [campaigns, setCampaigns] = useState<JoinableCampaign[]>([]);
-  const [campaignsLoading, setCampaignsLoading] = useState(true);
-  const [campaignsError, setCampaignsError] = useState('');
-  const [campaignBusyId, setCampaignBusyId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!storeId || tab !== 'platform' || loadedTabsRef.current.has('platform')) return;
-    loadedTabsRef.current.add('platform');
-    setCampaignsLoading(true);
-    apiGetJoinableCampaigns(storeId)
-      .then(res => setCampaigns(res.data ?? []))
-      .catch(err => setCampaignsError(err instanceof Error ? err.message : 'Failed to load campaigns.'))
-      .finally(() => setCampaignsLoading(false));
-  }, [storeId, tab]);
-
-  async function toggleCampaign(campaign: JoinableCampaign) {
-    setCampaignBusyId(campaign._id);
-    setCampaignsError('');
-    try {
-      if (campaign.isJoined) await apiLeaveCampaign(storeId, campaign._id);
-      else await apiJoinCampaign(storeId, campaign._id);
-      setCampaigns(prev => prev.map(c => c._id === campaign._id ? { ...c, isJoined: !c.isJoined } : c));
-    } catch (err) {
-      setCampaignsError(err instanceof Error ? err.message : 'Failed to update campaign.');
-    } finally {
-      setCampaignBusyId(null);
-    }
-  }
 
   // Abandoned Cart Recovery
   const [cartSettings, setCartSettings] = useState<AbandonedCartSettings | null>(null);
@@ -259,25 +231,36 @@ export function StoreMarketing() {
   const [cartStats, setCartStats] = useState<AbandonedCartStats | null>(null);
   const [cartItems, setCartItems] = useState<AbandonedCartItem[]>([]);
   const [cartItemsLoading, setCartItemsLoading] = useState(true);
+  const [cartLoadError, setCartLoadError] = useState('');
 
-  useEffect(() => {
-    if (!storeId || tab !== 'cart' || loadedTabsRef.current.has('cart')) return;
-    loadedTabsRef.current.add('cart');
+  function loadCartTab() {
+    setCartLoadError('');
     setCartSettingsLoading(true);
     apiGetAbandonedCartSettings(storeId)
       .then(res => setCartSettings(res.data))
-      .catch(() => {})
+      .catch(err => setCartLoadError(err instanceof Error ? err.message : 'Failed to load abandoned cart settings.'))
       .finally(() => setCartSettingsLoading(false));
     apiGetAbandonedCartStats(storeId).then(res => setCartStats(res.data)).catch(() => {});
     setCartItemsLoading(true);
     apiListAbandonedCarts(storeId, { limit: 20 })
       .then(res => setCartItems(res.data.items ?? []))
-      .catch(() => {})
+      .catch(err => setCartLoadError(err instanceof Error ? err.message : 'Failed to load abandoned carts.'))
       .finally(() => setCartItemsLoading(false));
+  }
+
+  useEffect(() => {
+    if (!storeId || tab !== 'cart' || loadedTabsRef.current.has('cart')) return;
+    loadedTabsRef.current.add('cart');
+    loadCartTab();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, tab]);
 
   async function saveCartSettings() {
     if (!cartSettings) return;
+    if (!Number.isFinite(cartSettings.delayMinutes) || cartSettings.delayMinutes < 5) {
+      setCartSettingsError('Wait at least 5 minutes before sending the reminder.');
+      return;
+    }
     setCartSettingsSaving(true);
     setCartSettingsError('');
     setCartSettingsSaved(false);
@@ -309,9 +292,7 @@ export function StoreMarketing() {
     recovered: { bg: '#EAF7EF', color: '#1E7A3C', label: 'Recovered' },
   };
 
-  // Email Campaigns — distinct state from the platform "Joinable Campaigns"
-  // (`campaigns`/`campaignsLoading`/`campaignsError`/`refreshCampaigns`) above,
-  // which is an unrelated feature (admin sale campaigns a seller opts into).
+  // Email Campaigns
   const [emailCampaigns, setEmailCampaigns] = useState<EmailCampaign[]>([]);
   const [emailCampaignsLoading, setEmailCampaignsLoading] = useState(true);
   const [emailCampaignsError, setEmailCampaignsError] = useState('');
@@ -324,8 +305,8 @@ export function StoreMarketing() {
   function refreshEmailCampaigns() {
     setEmailCampaignsLoading(true);
     apiListEmailCampaigns(storeId, { limit: 50 })
-      .then(res => setEmailCampaigns(res.data.campaigns ?? []))
-      .catch(() => {})
+      .then(res => { setEmailCampaigns(res.data.campaigns ?? []); setEmailCampaignsError(''); })
+      .catch(err => setEmailCampaignsError(err instanceof Error ? err.message : 'Failed to load campaigns.'))
       .finally(() => setEmailCampaignsLoading(false));
   }
 
@@ -337,6 +318,7 @@ export function StoreMarketing() {
   }, [storeId, tab]);
 
   async function handleSendCampaignNow(c: EmailCampaign) {
+    if (!window.confirm(`Send "${c.name}" now? It goes to your real subscribers straight away and cannot be undone.`)) return;
     setEmailCampaignsError('');
     setCampaignActionBusyId(c._id);
     try {
@@ -350,6 +332,7 @@ export function StoreMarketing() {
   }
 
   async function handleDeleteCampaign(c: EmailCampaign) {
+    if (!window.confirm(`Delete the campaign "${c.name}"? This cannot be undone.`)) return;
     setEmailCampaignsError('');
     setCampaignActionBusyId(c._id);
     try {
@@ -482,14 +465,21 @@ export function StoreMarketing() {
   const [pixelSettingsError, setPixelSettingsError] = useState('');
   const [pixelSettingsSaved, setPixelSettingsSaved] = useState(false);
 
-  useEffect(() => {
-    if (!storeId || tab !== 'pixels' || loadedTabsRef.current.has('pixels')) return;
-    loadedTabsRef.current.add('pixels');
+  const [pixelLoadError, setPixelLoadError] = useState('');
+
+  function loadPixelSettings() {
+    setPixelLoadError('');
     setPixelSettingsLoading(true);
     apiGetTrackingPixelSettings(storeId)
       .then(res => setPixelSettings(res.data))
-      .catch(() => {})
+      .catch(err => setPixelLoadError(err instanceof Error ? err.message : 'Failed to load tracking pixel settings.'))
       .finally(() => setPixelSettingsLoading(false));
+  }
+
+  useEffect(() => {
+    if (!storeId || tab !== 'pixels' || loadedTabsRef.current.has('pixels')) return;
+    loadedTabsRef.current.add('pixels');
+    loadPixelSettings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, tab]);
 
@@ -515,8 +505,12 @@ export function StoreMarketing() {
     }
   }
 
+  const couponFormRef = useRef<HTMLDivElement>(null);
+
   function startEdit(c: Coupon) {
+    setError('');
     setEditingId(c._id);
+    requestAnimationFrame(() => couponFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     setForm({
       code: c.code,
       discountType: c.discountType,
@@ -543,17 +537,28 @@ export function StoreMarketing() {
   }
 
   async function handleSubmit() {
-    if (!form.code || !form.discountType || !form.value) return;
     setError('');
+    if (!form.code.trim()) { setError('Enter a coupon code.'); return; }
+    if (!form.discountType) { setError('Choose a discount type.'); return; }
+    const value = Number(form.value);
+    if (!form.value.trim() || !Number.isFinite(value) || value <= 0) { setError('Enter a discount value greater than 0.'); return; }
+    if (form.discountType === 'percentage' && value > 100) { setError('A percentage discount cannot be more than 100.'); return; }
+    const minOrder = form.minOrder.trim() ? Number(form.minOrder) : null;
+    if (minOrder !== null && (!Number.isFinite(minOrder) || minOrder < 0)) { setError('Minimum order must be 0 or more.'); return; }
+    const usageLimit = form.usageLimit.trim() ? Number(form.usageLimit) : null;
+    if (usageLimit !== null && (!Number.isInteger(usageLimit) || usageLimit < 1)) { setError('Usage limit must be a whole number, 1 or more.'); return; }
+    if (form.startDate && form.expiryDate && form.expiryDate < form.startDate) { setError('The expiry date must be after the start date.'); return; }
+    // When editing, a blank field means "clear it" (null); when creating it just means "not set" (left out).
+    const blank = editingId ? null : undefined;
     const payload = {
-      code: form.code,
+      code: form.code.trim(),
       discountType: form.discountType as DiscountType,
-      discountValue: Number(form.value),
-      minOrderAmount: form.minOrder ? Number(form.minOrder) : undefined,
-      usageLimit: form.usageLimit ? Number(form.usageLimit) : undefined,
+      discountValue: value,
+      minOrderAmount: minOrder ?? blank,
+      usageLimit: usageLimit ?? blank,
       customerSegmentId: form.segmentId || null,
-      startsAt: form.startDate || undefined,
-      expiresAt: form.expiryDate || undefined,
+      startsAt: form.startDate || blank,
+      expiresAt: form.expiryDate || blank,
     };
     try {
       if (editingId) {
@@ -585,7 +590,7 @@ export function StoreMarketing() {
     }
   }
 
-  const activeCount = coupons.filter(c => c.isActive).length;
+  const activeCount = coupons.filter(c => c.isActive && !(c.expiresAt && new Date(c.expiresAt) < new Date())).length;
   const totalRedemptions = coupons.reduce((sum, c) => sum + c.usageCount, 0);
 
   if (redirectTo) return <Navigate to={redirectTo} replace />;
@@ -643,6 +648,8 @@ export function StoreMarketing() {
               />
             </div>
 
+            {error && <p className="text-xs text-error bg-error-bg rounded-md px-3 py-2">{error}</p>}
+
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -653,8 +660,6 @@ export function StoreMarketing() {
                   </div>
                 ))}
               </div>
-            ) : error ? (
-              <p className="text-xs text-error">{error}</p>
             ) : coupons.length === 0 ? (
               <EmptyState
                 icon={<TagIcon size={28} className="text-brand-orange opacity-55" />}
@@ -709,7 +714,7 @@ export function StoreMarketing() {
             )}
 
             {/* Create / Edit coupon form */}
-            <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
+            <div ref={couponFormRef} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 scroll-mt-4">
               <p className="text-sm font-bold text-carbon mb-4">{editingId ? 'Edit Coupon' : 'Create New Coupon'}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-4">
                 <div>
@@ -732,11 +737,11 @@ export function StoreMarketing() {
                     className={INPUT_CLS} />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-graphite mb-[5px] block">Minimum Order ($)</label>
+                  <label className="text-xs font-medium text-graphite mb-[5px] block">Minimum Order ({currencySymbol(store?.baseCurrency)})</label>
                   <input placeholder="0.00" value={form.minOrder} onChange={e => setForm(f => ({ ...f, minOrder: e.target.value }))}
                     className={INPUT_CLS} />
                 </div>
-                <div className="col-span-2"><SegmentSelect storeId={storeId} value={form.segmentId || null} onChange={id => setForm(f => ({ ...f, segmentId: id ?? '' }))} label="Customer eligibility" /></div>
+                <div className="sm:col-span-2"><SegmentSelect storeId={storeId} value={form.segmentId || null} onChange={id => setForm(f => ({ ...f, segmentId: id ?? '' }))} label="Customer eligibility" /></div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Usage Limit</label>
                   <input placeholder="Leave blank for unlimited" value={form.usageLimit} onChange={e => setForm(f => ({ ...f, usageLimit: e.target.value }))}
@@ -768,91 +773,13 @@ export function StoreMarketing() {
           </div>
         )}
 
-        {/* Platform Sales Tab — admin-created campaigns this store can opt into */}
-        {tab === 'platform' && (
-          <div className="flex flex-col gap-4">
-            <div>
-              <p className="text-[15px] font-bold text-carbon">Platform Sale Campaigns</p>
-              <p className="text-[12.5px] text-slate mt-0.5">
-                Solvexo-wide sale events. Join one to get your products featured in the marketplace deals banner for its duration.
-              </p>
-            </div>
-
-            {campaignsError && <p className="text-xs text-error">{campaignsError}</p>}
-
-            {campaignsLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <SkeletonBox key={i} height={120} rounded="10px" />
-                ))}
-              </div>
-            ) : campaigns.length === 0 ? (
-              <EmptyState
-                icon={<Megaphone size={28} className="text-brand-orange opacity-55" />}
-                title="No active campaigns right now"
-                description="When the Solvexo team launches a platform-wide sale, it'll show up here for you to join."
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {campaigns.map(c => (
-                  <div key={c._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-sm font-semibold text-carbon">{c.name}</p>
-                      {c.isJoined && c.sponsorType !== 'platform' && (
-                        <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0 ml-2 bg-success-bg text-success">Joined</span>
-                      )}
-                    </div>
-                    {c.description && <p className="text-xs text-slate mb-2">{c.description}</p>}
-                    <p className="text-[11px] text-slate mb-2">
-                      {new Date(c.startDate).toLocaleDateString()} – {new Date(c.endDate).toLocaleDateString()}
-                      {c.discountType && c.discountValue != null && (
-                        <> · {c.discountType === 'percentage' ? `${c.discountValue}% off` : `${currencySymbol(c.currency ?? 'USD')} ${c.discountValue} off`}</>
-                      )}
-                    </p>
-                    {c.sponsorType === 'platform' ? (
-                      <div className="flex items-start gap-1.5 mb-3 px-2.5 py-2 rounded-[7px] bg-success-bg">
-                        <Building2 size={13} className="text-success shrink-0 mt-[1px]" />
-                        <p className="text-[11px] text-success font-medium leading-snug">
-                          Platform sponsored — Solvexo covers this discount. Your store is automatically included, no action needed.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex items-start gap-1.5 mb-3 px-2.5 py-2 rounded-[7px] bg-cream">
-                        <User size={13} className="text-slate shrink-0 mt-[1px]" />
-                        <p className="text-[11px] text-slate leading-snug">
-                          Seller sponsored — this discount comes out of your own payout for orders placed during the sale.
-                        </p>
-                      </div>
-                    )}
-                    {c.sponsorType === 'platform' ? (
-                      <div className="w-full py-2 rounded-[7px] text-xs font-semibold text-center border border-bone bg-cream text-slate">
-                        Automatically Included
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => toggleCampaign(c)}
-                        disabled={campaignBusyId === c._id}
-                        className={`w-full py-2 rounded-[7px] text-xs font-semibold cursor-pointer transition-colors duration-150 border disabled:opacity-50 ${
-                          c.isJoined
-                            ? 'bg-white border-bone text-graphite hover:bg-cream'
-                            : 'bg-brand-orange border-transparent text-white hover:bg-brand-deep-orange'
-                        }`}
-                      >
-                        {campaignBusyId === c._id ? 'Updating…' : c.isJoined ? 'Leave Campaign' : 'Join Campaign'}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Abandoned Cart Recovery Tab */}
-        {tab === 'cart' && cartFeature && !cartFeature.allowed ? (
+        {tab === 'cart' && !entitlementsLoaded ? (
+          <SkeletonBox height={280} rounded="10px" />
+        ) : tab === 'cart' && cartFeature && !cartFeature.allowed ? (
           <PlanFeatureLock
             label="Abandoned Cart Recovery"
-            description="A buyer who leaves items in their cart would get one automatic reminder email once your delay has passed."
+            description="A buyer who leaves items in their cart would get an automatic reminder email once your delay has passed."
             requiredPlan={cartFeature.requiredPlan}
           />
         ) : tab === 'cart' && (
@@ -870,13 +797,20 @@ export function StoreMarketing() {
                   ['Abandoned', cartStats.abandonedCount.toLocaleString()],
                   ['Emails Sent', cartStats.emailsSent.toLocaleString()],
                   ['Clicked', cartStats.clicked.toLocaleString()],
-                  ['Recovered', `${cartStats.recovered.toLocaleString()} · $${cartStats.recoveredRevenue.toFixed(2)}`],
+                  ['Recovered', `${cartStats.recovered.toLocaleString()} · ${currencySymbol(store?.baseCurrency)}${cartStats.recoveredRevenue.toFixed(2)}`],
                 ].map(([label, value]) => (
                   <div key={label} className="bg-white border border-bone rounded-[10px] px-3.5 py-3">
                     <p className="text-[10px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{label}</p>
                     <p className="text-[18px] font-bold text-carbon leading-[1.15]">{value}</p>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {cartLoadError && (
+              <div className="flex items-center justify-between gap-3 bg-error-bg border border-bone rounded-[10px] px-4 py-3">
+                <p className="text-[12px] text-error">{cartLoadError}</p>
+                <Button variant="outline" onClick={loadCartTab}>Retry</Button>
               </div>
             )}
 
@@ -889,7 +823,7 @@ export function StoreMarketing() {
                   <input
                     type="checkbox"
                     checked={cartSettings.enabled}
-                    onChange={e => setCartSettings(s => s && ({ ...s, enabled: e.target.checked }))}
+                    onChange={e => { setCartSettingsSaved(false); setCartSettings(s => s && ({ ...s, enabled: e.target.checked })); }}
                     className="cursor-pointer"
                   />
                 </div>
@@ -899,7 +833,7 @@ export function StoreMarketing() {
                     type="number"
                     min={5}
                     value={cartSettings.delayMinutes}
-                    onChange={e => setCartSettings(s => s && ({ ...s, delayMinutes: Number(e.target.value) }))}
+                    onChange={e => { setCartSettingsSaved(false); setCartSettings(s => s && ({ ...s, delayMinutes: Math.max(0, Math.floor(Number(e.target.value)) || 0) })); }}
                     className={INPUT_CLS}
                   />
                 </div>
@@ -981,7 +915,9 @@ export function StoreMarketing() {
         )}
 
         {/* Email Campaigns Tab */}
-        {tab === 'email' && emailFeature && !emailFeature.allowed ? (
+        {tab === 'email' && !entitlementsLoaded ? (
+          <SkeletonBox height={280} rounded="10px" />
+        ) : tab === 'email' && emailFeature && !emailFeature.allowed ? (
           <PlanFeatureLock
             label="Email Campaigns"
             description="Compose and send a real bulk email to a segment of your own store's customers."
@@ -1015,11 +951,16 @@ export function StoreMarketing() {
               </div>
             )}
 
-            {emailCampaignsError && <p className="text-[12px] text-error">{emailCampaignsError}</p>}
+            {emailCampaignsError && (
+              <div className="flex items-center justify-between gap-3 bg-error-bg border border-bone rounded-[10px] px-4 py-3">
+                <p className="text-[12px] text-error">{emailCampaignsError}</p>
+                <Button variant="outline" onClick={refreshEmailCampaigns}>Retry</Button>
+              </div>
+            )}
 
             {emailCampaignsLoading ? (
               <div className="flex flex-col gap-2">{Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={56} rounded="8px" />)}</div>
-            ) : emailCampaigns.length === 0 ? (
+            ) : emailCampaigns.length === 0 && emailCampaignsError ? null : emailCampaigns.length === 0 ? (
               <EmptyState
                 icon={<Mail size={28} className="text-brand-orange opacity-55" />}
                 title="No campaigns yet"
@@ -1305,6 +1246,13 @@ export function StoreMarketing() {
                 Connect your own Facebook, Google and TikTok ad accounts so their pixels fire real PageView, Add to Cart and Purchase events on your storefront — same as Shopify's Pixels settings. Paste in ids straight from your own ad accounts; Solvexo doesn't need any credentials of its own.
               </p>
             </div>
+
+            {pixelLoadError && (
+              <div className="flex items-center justify-between gap-3 bg-error-bg border border-bone rounded-[10px] px-4 py-3 max-w-[560px]">
+                <p className="text-[12px] text-error">{pixelLoadError}</p>
+                <Button variant="outline" onClick={loadPixelSettings}>Retry</Button>
+              </div>
+            )}
 
             {pixelSettingsLoading ? (
               <SkeletonBox height={280} rounded="10px" />

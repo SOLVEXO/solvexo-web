@@ -25,11 +25,11 @@ export interface CreateCouponPayload {
   code:            string;
   discountType:    DiscountType;
   discountValue:   number;
-  minOrderAmount?: number;
+  minOrderAmount?: number | null;
   customerSegmentId?: string | null;
-  usageLimit?:     number;
-  startsAt?:       string;
-  expiresAt?:      string;
+  usageLimit?:     number | null;
+  startsAt?:       string | null;
+  expiresAt?:      string | null;
 }
 
 export type UpdateCouponPayload = Partial<CreateCouponPayload> & { isActive?: boolean };
