@@ -351,16 +351,50 @@ ${b.buttonLabel ? buttonHtml(b.buttonLabel, '{{productUrl}}', s.accentColor, '#f
   }
 }
 
+// Colors, sizes and fonts are typed in by the seller and end up inside style="..." attributes, so every one of them is
+// coerced to a safe value before rendering — a stray quote in a color field must never be able to break out of the attribute.
+const HEX_COLOR = /^#[0-9a-fA-F]{3,8}$/;
+const safeColor = (v: unknown, fallback: string) => (typeof v === 'string' && HEX_COLOR.test(v.trim()) ? v.trim() : fallback);
+const safeNum = (v: unknown, min: number, max: number, fallback: number) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
+const ALIGNS: BlockAlign[] = ['left', 'center', 'right'];
+
+function safeStyles(s: EmailDesignStyles): EmailDesignStyles {
+  return {
+    background: safeColor(s?.background, DEFAULT_STYLES.background),
+    contentBackground: safeColor(s?.contentBackground, DEFAULT_STYLES.contentBackground),
+    textColor: safeColor(s?.textColor, DEFAULT_STYLES.textColor),
+    accentColor: safeColor(s?.accentColor, DEFAULT_STYLES.accentColor),
+    fontFamily: FONT_OPTIONS.some(f => f.value === s?.fontFamily) ? s.fontFamily : DEFAULT_STYLES.fontFamily,
+    borderRadius: safeNum(s?.borderRadius, 0, 40, DEFAULT_STYLES.borderRadius),
+  };
+}
+
+function safeBlock(b: EmailBlock): EmailBlock {
+  const o: any = { ...b };
+  if ('color' in o) o.color = safeColor(o.color, '#2b2a27');
+  if ('background' in o) o.background = safeColor(o.background, '#ffffff');
+  if ('align' in o && !ALIGNS.includes(o.align)) o.align = 'center';
+  if ('size' in o) o.size = safeNum(o.size, 12, 72, 28);
+  if ('thickness' in o) o.thickness = safeNum(o.thickness, 1, 10, 1);
+  if ('height' in o) o.height = safeNum(o.height, 0, 200, 24);
+  if ('logoWidth' in o) o.logoWidth = safeNum(o.logoWidth, 20, 600, 140);
+  if ('width' in o) o.width = safeNum(o.width, 1, 100, 100); // image width is a percentage
+  return o as EmailBlock;
+}
+
 /** The design → the HTML body stored as the campaign `message`. The server
  *  appends the unsubscribe footer and open pixel at send time. */
 export function renderEmailDesign(design: EmailDesign, ctx: RenderContext): string {
-  const s = design.styles;
+  const s = safeStyles(design.styles);
   const preheader = design.previewText
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;color:${s.background}">${esc(design.previewText)}</div>` : '';
   return `${preheader}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${s.background};font-family:${s.fontFamily}">
 <tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:${s.contentBackground};border-radius:8px;overflow:hidden;font-family:${s.fontFamily};color:${s.textColor}">
-${design.blocks.map(b => renderBlock(b, s, ctx)).join('\n')}
+${design.blocks.map(b => renderBlock(safeBlock(b), s, ctx)).join('\n')}
 <tr><td style="height:16px;font-size:0">&nbsp;</td></tr>
 </table>
 </td></tr></table>`;
@@ -369,8 +403,8 @@ ${design.blocks.map(b => renderBlock(b, s, ctx)).join('\n')}
 /** One block as its own 600px-wide table — the editor canvas stacks these so
  *  each section can be clicked/selected, while looking like the real email. */
 export function renderBlockStandalone(block: EmailBlock, design: EmailDesign, ctx: RenderContext): string {
-  const s = design.styles;
-  const html = renderBlock(block, s, ctx);
+  const s = safeStyles(design.styles);
+  const html = renderBlock(safeBlock(block), s, ctx);
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${s.contentBackground};font-family:${s.fontFamily};color:${s.textColor}">${html || ''}</table>`;
 }
 
