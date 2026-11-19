@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { useState } from 'react';
+import { CardOverridesProvider } from '../../core/product/cardOverrides';
 import { Plus } from 'lucide-react';
 import { renderRichText } from '@/utils/richText';
 import { PreviewBlock } from '../../previewInspector';
@@ -32,7 +33,7 @@ registerLedupSection('collection_list', (section, blocks, colors) => <Collection
 registerLedupSection('gallery_grid', (section, blocks, colors) => <GalleryGridSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('store_locations', (section, blocks, colors) => <StoreLocationsSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('contact_form', (section, blocks, colors) => <ContactFormSection section={section} blocks={blocks} colors={colors} />);
-registerLedupSection('related_products', (section, blocks, colors) => <RelatedProductsSection section={section} blocks={blocks} colors={colors} />);
+registerLedupSection('related_products', (section, blocks, colors) => <CardOverridesProvider settings={section.settings}><RelatedProductsSection section={section} blocks={blocks} colors={colors} /></CardOverridesProvider>);
 registerLedupSection('feature_list', (section, blocks, colors) => <FeatureListSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('team_grid', (section, blocks, colors) => <TeamGridSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('stats_counter', (section, blocks, colors) => <StatsCounterSection section={section} blocks={blocks} colors={colors} />);

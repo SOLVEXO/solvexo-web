@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CardOverridesProvider } from '../../core/product/cardOverrides';
 import { useRef } from 'react';
 import { columnCount, sectionGridColumnsClass } from '@/features/storefront/browse/gridLayout';
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
@@ -136,6 +137,6 @@ function ProductCatalog({ settings: s, colors, sort }: { settings: Record<string
   );
 }
 
-registerFashionSection('featured_products', (section, _b, colors) => <FeaturedProducts settings={section.settings} colors={colors} />);
+registerFashionSection('featured_products', (section, _b, colors) => <CardOverridesProvider settings={section.settings}><FeaturedProducts settings={section.settings} colors={colors} /></CardOverridesProvider>);
 registerFashionSection('featured_category_grid', (section, _b, colors) => <CategoryGrid settings={section.settings} colors={colors} />);
 registerFashionSection('product_catalog', (section, _b, colors) => <ProductCatalog settings={section.settings} colors={colors} />);

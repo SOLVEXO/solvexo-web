@@ -2,6 +2,7 @@ import { useMemo, useState, type MouseEvent } from 'react';
 import { cased } from '../../textCase';
 import { useWholesaleGate } from '../../core/b2b/useWholesale';
 import { cardSwatches } from '../../core/product/cardSwatches';
+import { useCardOverrides } from '../../core/product/cardOverrides';
 import { useFilteredVariant } from '../../core/product/filteredVariant';
 import { cardBadgeBox, cardBadgeOf, cardInfoText } from '../../productCardExtras';
 import { badgeAccent } from '../../cardBadgeTheme';
@@ -93,7 +94,8 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
   );
   // "Adapt to image": the photo sets the box height itself (it must stay in the normal flow, otherwise the box is 0 px tall and nothing shows).
   const adapt = ratio === 'auto';
-  const whole = b.productImageFit === 'whole';
+  const ov = useCardOverrides();
+  const whole = ov.whole ?? b.productImageFit === 'whole';
   const photoCls = adapt ? 'block h-auto w-full' : `absolute inset-0 h-full w-full ${whole ? 'object-contain p-3' : 'object-cover'}`;
   const imageBox = (
     <Link to={to} aria-label={p.name} className="group relative block overflow-hidden" style={{ aspectRatio: adapt ? undefined : ratio, background: t.colors.bgAlt, borderRadius: t.cardRadiusPx }}>
@@ -107,7 +109,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
       <Eye size={16} aria-hidden />
     </button>
   );
-  const heartBtn = hasVariant && b.cardWishlist && (
+  const heartBtn = hasVariant && (ov.wishlist ?? b.cardWishlist) && (
     <button type="button" className="tx-icon-btn" aria-pressed={wished} aria-label={wished ? ts('pg.remove_from_wishlist', 'Remove from wishlist') : ts('pg.add_to_wishlist', 'Add to wishlist')} onClick={heart}>
       <Heart size={16} aria-hidden fill={wished ? 'currentColor' : 'none'} />
     </button>
@@ -134,7 +136,7 @@ export function TechProductCard({ product, currency, layout = 'grid' }: { produc
     ? <TechButton variant="outline" small onClick={add} loading={adding === product.variantId}><ShoppingCart size={15} aria-hidden />{ts('product.addToCart', 'Add to cart')}</TechButton>
     : <TechLinkButton to={to} variant="outline" small>{ts('pg.view_product', 'View product')}</TechLinkButton>;
 
-  const addBtn = b.cardButton ? addBtnBase : null;
+  const addBtn = (ov.button ?? b.cardButton) ? addBtnBase : null;
 
   if (layout === 'list') {
     return (

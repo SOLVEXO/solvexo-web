@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
 import { useRef, useState, type ReactNode } from 'react';
+import { CardOverridesProvider } from '../../core/product/cardOverrides';
 import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -71,7 +72,7 @@ function ProductRow({ settings: s, colors }: { settings: Record<string, any>; co
     </TechSectionShell>
   );
 }
-registerTechSection('featured_products', (section, _b, colors) => <ProductRow settings={section.settings} colors={colors} />);
+registerTechSection('featured_products', (section, _b, colors) => <CardOverridesProvider settings={section.settings}><ProductRow settings={section.settings} colors={colors} /></CardOverridesProvider>);
 
 // ── Theme-defined sections (`theme_section` + `settings.sectionKey`) ────────────────────────────────────
 type Custom = (section: Section, blocks: Block[], colors: BaseColors) => ReactNode;

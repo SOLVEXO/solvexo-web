@@ -34,6 +34,18 @@ export interface SectionMeta {
 const HEADING_FIELD: FieldSchema = { key: 'heading', kind: 'text', label: 'Heading (optional)' };
 function withHeading(fields: FieldSchema[]): FieldSchema[] { return [HEADING_FIELD, ...fields]; }
 
+/** Card options inside one product section (Shopify: they sit in the section, not only in theme settings). "Theme setting" = follow Customize > Product cards. */
+const INHERIT_SHOW_HIDE = [{ value: 'inherit', label: 'Theme setting' }, { value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }];
+function cardLookFields(): FieldSchema[] {
+  return [
+    { key: 'cardImageFit', kind: 'select', label: 'Card image', hint: '"Show the whole image" never crops a product photo.', options: [{ value: 'inherit', label: 'Theme setting' }, { value: 'fill', label: 'Fill the box (edges may be cropped)' }, { value: 'whole', label: 'Show the whole image' }] },
+    { key: 'cardButton', kind: 'select', label: 'Add to cart button', half: true, options: INHERIT_SHOW_HIDE },
+    { key: 'cardViewLink', kind: 'select', label: 'Arrow link', half: true, options: INHERIT_SHOW_HIDE },
+    { key: 'cardWishlist', kind: 'select', label: 'Wishlist heart', half: true, options: INHERIT_SHOW_HIDE },
+    { key: 'cardRating', kind: 'select', label: 'Star rating', half: true, options: INHERIT_SHOW_HIDE },
+  ];
+}
+
 /** The small label above a heading — on/off + own text (blank = the theme's own words). */
 function eyebrowFields(themeDefaultHint: string): FieldSchema[] {
   return [
@@ -157,6 +169,7 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'limit', kind: 'number', label: 'How many to show', min: 1, max: 24 },
       { key: 'hideSoldOut', kind: 'checkbox', label: 'Hide sold-out products', defaultOff: true, hint: 'Leaves out products that can not be bought right now.', showIf: s => s.source !== 'rules' },
       { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
+      ...cardLookFields(),
       ...eyebrowFields('Blank keeps the theme\'s label (e.g. "The considered edit").'),
     ]),
   },
@@ -493,6 +506,7 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'productIds', kind: 'productMultiPicker', label: 'Products', showIf: s => s.source === 'manual', hint: 'Shown in this order, up to 24.' },
       { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       { key: 'limit', kind: 'number', label: 'How many products', min: 2, max: 12, step: 1 },
+      ...cardLookFields(),
     ]),
   },
   {

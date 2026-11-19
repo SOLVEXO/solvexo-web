@@ -1,4 +1,5 @@
 import { useFilteredVariant } from '../../core/product/filteredVariant';
+import { useCardOverrides } from '../../core/product/cardOverrides';
 import type { MouseEvent } from 'react';
 import { cased } from '../../textCase';
 import { Link } from 'react-router-dom';
@@ -48,6 +49,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
 
   const shown = currency ?? prefCurrency;
   const base = String(store.baseCurrency ?? shown);
+  const ov = useCardOverrides();
   const filtered = useFilteredVariant(product.variants);
   const to = `/product/${handleOf(product)}${filtered.variantId ? `?variant=${filtered.variantId}` : ''}`;
   const image = filtered.image ?? product.images?.[0];
@@ -90,7 +92,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
       {ownBadge && !badgeOnPhoto && (
         <span data-card-badge style={{ ...cardBadgeBox(b.cardBadgePosition, 12, b.cardBadgePosition === 'top-left' && ((!inStock && b.soldOutBadge) || (inStock && b.saleBadge && sale.onSale && pct > 0)) ? 28 : b.cardBadgePosition === 'top-right' && b.cardWishlist && product.variantId ? 38 : 0), ...chip, background: ownBadge.bg, color: ownBadge.ink }}>{cased('badge', ownBadge.text)}</span>
       )}
-      {b.cardWishlist && product.variantId && (
+      {(ov.wishlist ?? b.cardWishlist) && product.variantId && (
         <button type="button" onClick={heart} aria-pressed={wished}
           aria-label={wished ? ts('pg.remove_from_wishlist', 'Remove from wishlist') : ts('pg.add_to_wishlist', 'Add to wishlist')}
           className="absolute right-3 top-3 z-[1] flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-600 transition hover:border-[var(--ld-accent)]">
@@ -121,7 +123,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
             <Link to={to} className="text-inherit no-underline">{cased('product', p.name)}</Link>
           </h3>
           {b.cardTag && infoText && <p className="mt-1 truncate text-[11px] text-[#a1948c]">{b.cardInfoLine === 'vendor' ? <VendorLink name={product.vendor ?? ''} plain /> : infoText}</p>}
-          {b.cardRating && rating > 0 && (
+          {(ov.rating ?? b.cardRating) && rating > 0 && (
             <p className="m-0 mt-1.5 flex items-center gap-1 text-[12px] text-[#4b423b]" aria-label={ts('reviews.outOf5', '{{value}} out of 5 stars', { value: rating })} style={center ? { justifyContent: 'center' } : undefined}>
               <Star size={12} fill="#FB923C" stroke="#FB923C" aria-hidden /> <bdi>{(product.averageRating ?? 0).toFixed(1)}</bdi>
             </p>
@@ -133,7 +135,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
           )}
         </div>
 
-        <div className={`mt-3 flex items-center ${b.cardButton ? 'justify-between' : center ? 'justify-center' : 'justify-start'}`}>
+        <div className={`mt-3 flex items-center ${(ov.button ?? b.cardButton) ? 'justify-between' : center ? 'justify-center' : 'justify-start'}`}>
           {hasPrice ? (
             <span className="flex flex-wrap items-baseline gap-x-2 text-sm font-medium text-[#4b423b]">
               <span>{displayMoney({ currency: shown, convert, canConvert }, price, base, ref)}</span>
@@ -142,7 +144,7 @@ export function LedupProductCard({ product, currency, className = '' }: LedupPro
           ) : (
             <span className="text-xs font-medium text-stone-500">{ts('ld.datasheet', 'Datasheet')}</span>
           )}
-          {b.cardButton && <button
+          {(ov.button ?? b.cardButton) && <button
             type="button"
             onClick={quickAdd}
             disabled={!inStock || !product.variantId}
