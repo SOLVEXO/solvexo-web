@@ -14,9 +14,13 @@ export interface MarketingAutomationSettings {
   backInStock: { enabled: boolean; subject: string; message: string; design: object | null; html: string | null };
   priceDrop:   { enabled: boolean; minDropPercent: number; subject: string; message: string; design: object | null; html: string | null };
   winBack:     { enabled: boolean; afterDays: number; subject: string; message: string; discountCode: string | null; design: object | null; html: string | null };
+  /** A thank-you N days after an order. */
+  postPurchase: { enabled: boolean; afterDays: number; subject: string; message: string; discountCode: string | null; design: object | null; html: string | null };
+  /** Customer appreciation (VIP): once, to a customer with at least minOrders orders and minSpent spent (store currency; 0 = no spend rule). */
+  customerAppreciation: { enabled: boolean; minOrders: number; minSpent: number; subject: string; message: string; discountCode: string | null; design: object | null; html: string | null };
 }
 
-export type AutomationType = 'welcome' | 'back_in_stock' | 'price_drop' | 'win_back';
+export type AutomationType = 'welcome' | 'back_in_stock' | 'price_drop' | 'win_back' | 'post_purchase' | 'customer_appreciation';
 
 export interface MarketingAutomationStats {
   last30Days:            Partial<Record<AutomationType, number>>;
@@ -53,7 +57,7 @@ export function apiRequestBackInStock(payload: { storeId: string; productId: str
   return client.post<never, ApiResponse<{ inStock: boolean }>>(ENDPOINTS.MARKETING_AUTOMATIONS.BACK_IN_STOCK, payload);
 }
 
-export type AutomationSection = 'welcome' | 'backInStock' | 'priceDrop' | 'winBack';
+export type AutomationSection = 'welcome' | 'backInStock' | 'priceDrop' | 'winBack' | 'postPurchase' | 'customerAppreciation';
 
 /** "[Test]" copy of one automation email with sample data; `email` defaults to the seller's account email. */
 export function apiSendAutomationTest(storeId: string, section: AutomationSection, email?: string) {

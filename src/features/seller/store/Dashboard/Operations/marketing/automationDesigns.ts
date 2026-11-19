@@ -6,6 +6,8 @@ export const AUTOMATION_MERGE_TAGS: Record<AutomationSection, string[]> = {
   backInStock: ['{{customerName}}', '{{storeName}}', '{{shopUrl}}', '{{productName}}', '{{productPrice}}', '{{productUrl}}'],
   priceDrop:   ['{{customerName}}', '{{storeName}}', '{{shopUrl}}', '{{productName}}', '{{oldPrice}}', '{{newPrice}}', '{{productUrl}}'],
   winBack:     ['{{customerName}}', '{{storeName}}', '{{shopUrl}}', '{{discountCode}}'],
+  postPurchase: ['{{customerName}}', '{{storeName}}', '{{shopUrl}}', '{{orderNumber}}', '{{discountCode}}'],
+  customerAppreciation: ['{{customerName}}', '{{storeName}}', '{{shopUrl}}', '{{discountCode}}'],
 };
 
 function textToEditorHtml(text: string): string {
@@ -37,7 +39,7 @@ export function automationStarterDesign(
     if (current.discountCode) {
       blocks.push(b('discount', {
         code: current.discountCode,
-        title: section === 'welcome' ? 'A welcome gift for you' : 'Come back and save',
+        title: section === 'welcome' ? 'A welcome gift for you' : section === 'customerAppreciation' ? 'Our thank-you to you' : section === 'postPurchase' ? 'A little something for next time' : 'Come back and save',
         description: 'Use this code at checkout.',
       }));
     }

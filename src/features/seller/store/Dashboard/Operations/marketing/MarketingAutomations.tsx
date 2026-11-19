@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Gift, PackageCheck, TrendingDown, HeartHandshake, MailCheck, Palette, Send, type LucideIcon } from 'lucide-react';
+import { Gift, PackageCheck, TrendingDown, HeartHandshake, MailCheck, Palette, Send, ShoppingBag, Crown, type LucideIcon } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmailCampaignEditor } from './EmailCampaignEditor';
 import { AUTOMATION_MERGE_TAGS, automationStarterDesign } from './automationDesigns';
@@ -35,9 +35,19 @@ const META: Record<Section, { type: AutomationType; title: string; Icon: LucideI
     description: "Emails subscribed customers who haven't ordered in a while — once per lapse, so nobody is emailed repeatedly. Checked daily.",
     tags: ['{{customerName}}', '{{storeName}}'],
   },
+  postPurchase: {
+    type: 'post_purchase', title: 'Post-purchase', Icon: ShoppingBag, marketing: true,
+    description: 'A thank-you email to subscribed customers a few days after they order — once per order. The order confirmation itself is not affected. Checked hourly.',
+    tags: ['{{customerName}}', '{{storeName}}', '{{orderNumber}}'],
+  },
+  customerAppreciation: {
+    type: 'customer_appreciation', title: 'Customer appreciation', Icon: Crown, marketing: true,
+    description: 'One thank-you email, ever, to a subscribed customer who reached the number of orders (and amount spent) you set. Checked daily.',
+    tags: ['{{customerName}}', '{{storeName}}'],
+  },
 };
 
-const ORDER: Section[] = ['welcome', 'backInStock', 'priceDrop', 'winBack'];
+const ORDER: Section[] = ['welcome', 'backInStock', 'priceDrop', 'winBack', 'postPurchase', 'customerAppreciation'];
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
@@ -215,7 +225,25 @@ function AutomationCard<S extends Section>({
             <textarea value={String(d.message ?? '')} rows={5} className={`${INPUT_CLS} resize-y`} onChange={e => set('message' as never, e.target.value as never)} />
           </Field>
         )}
-        {(section === 'welcome' || section === 'winBack') && (
+        {section === 'postPurchase' && (
+          <Field label="Send this many days after the order" hint="1–30.">
+            <input type="number" min={1} max={30} value={String(d.afterDays ?? '')} className={`${INPUT_CLS} max-w-[140px]`}
+              onChange={e => set('afterDays' as never, Number(e.target.value) as never)} />
+          </Field>
+        )}
+        {section === 'customerAppreciation' && (
+          <div className="grid grid-cols-2 gap-3 max-w-[420px]">
+            <Field label="Minimum orders" hint="2–50.">
+              <input type="number" min={2} max={50} value={String(d.minOrders ?? '')} className={INPUT_CLS}
+                onChange={e => set('minOrders' as never, Number(e.target.value) as never)} />
+            </Field>
+            <Field label={`Minimum spent (${store?.baseCurrency ?? ''})`} hint="0 = no spending rule.">
+              <input type="number" min={0} value={String(d.minSpent ?? '')} className={INPUT_CLS}
+                onChange={e => set('minSpent' as never, Number(e.target.value) as never)} />
+            </Field>
+          </div>
+        )}
+        {(section === 'welcome' || section === 'winBack' || section === 'postPurchase' || section === 'customerAppreciation') && (
           <Field label="Discount code (optional)" hint="Must be an existing discount code from the Discounts page. Shown as a highlighted code in the email.">
             <input value={String(d.discountCode ?? '')} placeholder="WELCOME10" className={`${INPUT_CLS} max-w-[220px] uppercase`}
               onChange={e => set('discountCode' as never, (e.target.value.trim() ? e.target.value.toUpperCase() : null) as never)} />
@@ -295,7 +323,7 @@ function DoubleOptInCard({ storeId, value, onSaved }: { storeId: string; value: 
   );
 }
 
-/** Marketing → Automations: welcome, back-in-stock, price drop, win-back. */
+/** Automations: welcome, back-in-stock, price drop, win-back, post-purchase, customer appreciation. */
 export function MarketingAutomations({ storeId, emailFeature }: { storeId: string; emailFeature?: { allowed: boolean; requiredPlan: string | null } }) {
   const [settings, setSettings] = useState<MarketingAutomationSettings | null>(null);
   const [stats, setStats] = useState<MarketingAutomationStats | null>(null);
@@ -315,14 +343,14 @@ export function MarketingAutomations({ storeId, emailFeature }: { storeId: strin
       <div>
         <p className="text-[15px] font-bold text-carbon">Automations</p>
         <p className="text-[12.5px] text-slate mt-0.5">
-          Emails that send themselves when something happens. Price drop and win-back only go to your subscribers, and every marketing email has an unsubscribe link.
+          Emails that send themselves when something happens. Everything except back-in-stock only goes to your subscribers, and every marketing email has an unsubscribe link.
         </p>
       </div>
 
       {emailFeature && !emailFeature.allowed && (
         <PlanFeatureLock
-          label="Price drop & win-back automations"
-          description="Welcome and back-in-stock emails work on every plan. Price drop and win-back need a plan with Email Campaigns."
+          label="Marketing automations"
+          description="Welcome and back-in-stock emails work on every plan. Price drop, win-back, post-purchase and customer appreciation need a plan with Email Campaigns."
           requiredPlan={emailFeature.requiredPlan}
         />
       )}
