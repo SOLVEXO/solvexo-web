@@ -20,6 +20,7 @@ import { SpecsTable } from '../../ProductPageParts';
 import { specRows } from '../../specsLook';
 import { baseTheme } from '../theme.base';
 import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
+import { usePixelViewContent } from '@/hooks/marketplace/usePixelViewContent';
 import { useLocalize } from '@/hooks/useLocalize';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { LedupProductTabs } from '../components/LedupProductTabs';
@@ -71,6 +72,7 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
   const variants = useMemo(() => detail?.variants ?? [], [detail?.variants]);
   const isDigital = detail?.product.type === 'digital' || detail?.product.productType === 'digital';
   useRecordProductView(embedded ? undefined : detail?.product._id);
+  usePixelViewContent(embedded ? undefined : detail?.product, detail?.defaultVariant ?? detail?.variants?.[0]);
 
   const [picked, setPicked] = useState<Record<string, string>>({});
   const picker = useProductPickerSettings(store.storeId, detail?.product.templateKey);

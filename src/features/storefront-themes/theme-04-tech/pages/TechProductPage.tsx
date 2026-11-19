@@ -12,6 +12,7 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
+import { usePixelViewContent } from '@/hooks/marketplace/usePixelViewContent';
 import { useLocalize } from '@/hooks/useLocalize';
 import { displayMoney, saleInfo } from '../../core/money';
 import { ProductPageContext } from '../../productContext';
@@ -80,6 +81,7 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
   const variants = useMemo(() => detail?.variants ?? [], [detail?.variants]);
   const isDigital = detail?.product.type === 'digital' || detail?.product.productType === 'digital';
   useRecordProductView(embedded ? undefined : detail?.product._id);
+  usePixelViewContent(embedded ? undefined : detail?.product, detail?.defaultVariant ?? detail?.variants?.[0]);
   const viewedId = detail?.product._id;
   useEffect(() => { if (viewedId && !embedded) recordRecentlyViewed(store.storeId, viewedId); }, [store.storeId, viewedId, embedded]);
 

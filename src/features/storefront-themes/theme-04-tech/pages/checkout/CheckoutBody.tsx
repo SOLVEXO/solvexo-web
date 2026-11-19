@@ -15,7 +15,7 @@ import { useLoad } from '../../../core/pageHooks';
 import { AddressStep } from './AddressStep';
 import { markBuyNowCheckout } from '../../../core/checkout/buyNowMarker';
 import type { PlacedLike } from '../../../core/checkout/checkoutApi';
-import { cartSignature, moneyText, placedTotal, reconcileSummary } from '../../../core/checkout/checkoutMath';
+import { cartSignature, moneyText, placedPixelParams, reconcileSummary } from '../../../core/checkout/checkoutMath';
 import { ContactStep } from './ContactStep';
 import { DiscountPanel } from './DiscountPanel';
 import { OrderNoteField } from './OrderNoteField';
@@ -87,8 +87,7 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
     if (finished.current) return;
     finished.current = true;
     recordConsent();
-    const tot = placedTotal(orders);
-    trackPixelEvent('Purchase', { value: tot.amount, currency: tot.currency, contentIds: orders.map(o => o.orderId) });
+    trackPixelEvent('Purchase', placedPixelParams(orders));
     onPlaced(orders, guest ? guestContact.committedEmail : null);
   }, [recordConsent, onPlaced, guest, guestContact.committedEmail]);
 

@@ -2,7 +2,8 @@ import { getCurrencyDecimals } from '@/utils/currency';
 import type { AddressPayload } from '@/api/services/address';
 
 import { moneyText } from '../money';
-import { ts } from '@/utils/tStatic';
+import { ts } from '@/utils/tStatic';
+import type { PixelEventParams } from '@/utils/trackingPixels';
 export { moneyText };
 
 /** Rounds to the currency's minor unit. */
@@ -82,6 +83,25 @@ export function validateAddress(a: AddressPayload): AddressErrors {
   if (!a.zipCode.trim()) e.zipCode = ts('pg.enter_the_postal_code', 'Enter the postal code.');
   if (!(a.country ?? '').trim()) e.country = ts('pg.select_a_country', 'Select a country.');
   return e;
+}
+
+/**
+ * The Purchase event for placed orders. Ad platforms match a purchase to your product catalog by PRODUCT id, so those are sent
+ * (not order ids); the order number goes along only so a reloaded confirmation page is not counted twice.
+ */
+export function placedPixelParams(orders: {
+  orderId: string; orderNumber?: string; currency: string; summary: { total: number };
+  items?: { productId?: string; name: string; price: number; quantity: number }[];
+}[]): PixelEventParams {
+  const tot = placedTotal(orders);
+  const items = orders.flatMap(o => (o.items ?? []).filter(i => !!i.productId).map(i => ({ id: i.productId as string, name: i.name, price: i.price, quantity: i.quantity })));
+  const numItems = items.reduce((s, i) => s + i.quantity, 0);
+  return {
+    value: tot.amount,
+    currency: tot.currency,
+    ...(items.length ? { items, numItems } : {}),
+    transactionId: orders.map(o => o.orderNumber || o.orderId).join(','),
+  };
 }
 
 /** Sum of the placed orders' totals (each order is in its own permanent currency; the first one labels the sum). */

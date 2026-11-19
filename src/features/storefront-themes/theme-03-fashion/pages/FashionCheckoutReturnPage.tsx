@@ -13,7 +13,7 @@ import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { fashionTheme as t } from '../theme.config';
 import { ErrorState, Page, PillButton } from '../ui/primitives';
 import { isBuyNowCheckout } from '../../core/checkout/buyNowMarker';
-import { placedTotal } from '../../core/checkout/checkoutMath';
+import { placedPixelParams } from '../../core/checkout/checkoutMath';
 import { OrderPlaced } from './checkout/OrderPlaced';
 import { usePaymentStatus } from '../../core/checkout/usePaymentStatus';
 
@@ -36,8 +36,7 @@ export function FashionCheckoutReturnPage() {
     if (checkoutId && isBuyNowCheckout(checkoutId)) refetch(); else void clearCart({ silent: true });
     if (pixelFired.current) return;
     pixelFired.current = true;
-    const tot = placedTotal(orders);
-    trackPixelEvent('Purchase', { value: tot.amount, currency: tot.currency, contentIds: orders.map(o => o.orderId) });
+    trackPixelEvent('Purchase', placedPixelParams(orders));
   }, [checkoutId, clearCart, refetch]);
 
   const poll = usePaymentStatus(checkoutId, { autoStart: true, intervalMs: 2000, timeoutMs: awaitingWallet ? 180_000 : 45_000, onCompleted });

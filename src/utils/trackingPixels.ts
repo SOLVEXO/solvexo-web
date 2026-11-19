@@ -17,7 +17,16 @@ export interface TrackingPixelIds {
   tiktokPixelId:             string | null;
 }
 
-export type PixelEventName = 'PageView' | 'AddToCart' | 'Purchase';
+export type PixelEventName = 'PageView' | 'ViewContent' | 'AddToCart' | 'InitiateCheckout' | 'Purchase';
+
+/** One product line of an event — what the ad platforms need to match it to your product catalog. */
+export interface PixelItem {
+  /** The PRODUCT id (never an order id): this is what Meta / TikTok / Google match against the catalog feed. */
+  id:        string;
+  name?:     string;
+  price?:    number;
+  quantity?: number;
+}
 
 export interface PixelEventParams {
   value?:       number;
@@ -25,6 +34,9 @@ export interface PixelEventParams {
   contentIds?:  string[];
   contentName?: string;
   numItems?:    number;
+  items?:       PixelItem[];
+  /** Purchase: the order number(s), so Google Analytics can de-duplicate a reloaded confirmation page. */
+  transactionId?: string;
 }
 
 declare global {
@@ -78,25 +90,25 @@ export function sanitizePixelIds(settings: TrackingPixelIds): TrackingPixelIds {
   };
 }
 
-let loadedForSession = false;
 let activeSettings: TrackingPixelIds | null = null;
 let activeConsent: CookieConsentCategories = { analytics: true, marketing: true };
+// Which Google ids have been configured on the loaded gtag.js (it can be loaded for analytics first, ads later).
+const gtagConfigured = { analytics: false, ads: false };
 
 /** Injects the base script for each connected platform whose CATEGORY is
- *  consented, once per page session. Real Analytics/Marketing split, not
- *  cosmetic: Google Analytics only loads under `consent.analytics`;
- *  Facebook/Google Ads/TikTok (all ad-retargeting platforms) only load
- *  under `consent.marketing`. Safe to call on every storefront page load —
- *  guarded so a second call (e.g. a client-side route change re-mounting
- *  the layout) never double-injects. Does not itself fire PageView; call
- *  `trackPixelEvent('PageView')` right after this returns. */
+ *  consented. Real Analytics/Marketing split, not cosmetic: Google Analytics
+ *  only loads under `consent.analytics`; Facebook/Google Ads/TikTok (all
+ *  ad-retargeting platforms) only load under `consent.marketing`. Safe to
+ *  call on every storefront page load and every time the visitor's consent
+ *  changes: each platform is only ever injected once, and a platform that
+ *  was not allowed yet (visitor first accepted analytics only) is loaded the
+ *  moment its category is accepted later. Does not itself fire PageView;
+ *  call `trackPixelEvent('PageView')` right after this returns. */
 export function loadPixelScripts(rawSettings: TrackingPixelIds, consent: CookieConsentCategories = { analytics: true, marketing: true }): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   const settings = sanitizePixelIds(rawSettings);
   activeSettings = settings;
   activeConsent = consent;
-  if (loadedForSession) return;
-  loadedForSession = true;
 
   if (consent.marketing && settings.facebookPixelId) {
     injectFacebookPixel(settings.facebookPixelId);
@@ -130,24 +142,28 @@ function injectFacebookPixel(pixelId: string): void {
 }
 
 function injectGoogleGtag(analyticsId: string | null, adsId: string | null): void {
-  if (document.getElementById('solvexo-ga-pixel')) return;
   const loaderId = analyticsId || adsId;
   if (!loaderId) return;
 
-  const script = document.createElement('script');
-  script.id = 'solvexo-ga-pixel';
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(loaderId)}`;
-  document.head.appendChild(script);
+  if (!document.getElementById('solvexo-ga-pixel')) {
+    gtagConfigured.analytics = false;
+    gtagConfigured.ads = false;
+    const script = document.createElement('script');
+    script.id = 'solvexo-ga-pixel';
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(loaderId)}`;
+    document.head.appendChild(script);
 
-  window.dataLayer = window.dataLayer || [];
-  // gtag.js only reads queued commands pushed as the function's own `arguments` object (Google's snippet:
-  // `function gtag(){dataLayer.push(arguments);}`). A rest-parameter array is silently ignored, so no hit is ever sent.
-  // eslint-disable-next-line prefer-rest-params
-  window.gtag = window.gtag || function gtag() { window.dataLayer!.push(arguments); };
-  window.gtag('js', new Date());
-  if (analyticsId) window.gtag('config', analyticsId, { send_page_view: false });
-  if (adsId) window.gtag('config', adsId);
+    window.dataLayer = window.dataLayer || [];
+    // gtag.js only reads queued commands pushed as the function's own `arguments` object (Google's snippet:
+    // `function gtag(){dataLayer.push(arguments);}`). A rest-parameter array is silently ignored, so no hit is ever sent.
+    // eslint-disable-next-line prefer-rest-params
+    window.gtag = window.gtag || function gtag() { window.dataLayer!.push(arguments); };
+    window.gtag('js', new Date());
+  }
+  // Each id is configured once, whenever its consent category becomes available.
+  if (analyticsId && !gtagConfigured.analytics) { window.gtag!('config', analyticsId, { send_page_view: false }); gtagConfigured.analytics = true; }
+  if (adsId && !gtagConfigured.ads) { window.gtag!('config', adsId); gtagConfigured.ads = true; }
 }
 
 function injectTikTokPixel(pixelId: string): void {
@@ -180,9 +196,9 @@ function injectTikTokPixel(pixelId: string): void {
   document.head.appendChild(script);
 }
 
-const FB_EVENT: Record<PixelEventName, string> = { PageView: 'PageView', AddToCart: 'AddToCart', Purchase: 'Purchase' };
-const GA_EVENT: Record<PixelEventName, string> = { PageView: 'page_view', AddToCart: 'add_to_cart', Purchase: 'purchase' };
-const TT_EVENT: Record<PixelEventName, string> = { PageView: 'ViewContent', AddToCart: 'AddToCart', Purchase: 'CompletePayment' };
+const FB_EVENT: Record<PixelEventName, string> = { PageView: 'PageView', ViewContent: 'ViewContent', AddToCart: 'AddToCart', InitiateCheckout: 'InitiateCheckout', Purchase: 'Purchase' };
+const GA_EVENT: Record<PixelEventName, string> = { PageView: 'page_view', ViewContent: 'view_item', AddToCart: 'add_to_cart', InitiateCheckout: 'begin_checkout', Purchase: 'purchase' };
+const TT_EVENT: Record<Exclude<PixelEventName, 'PageView'>, string> = { ViewContent: 'ViewContent', AddToCart: 'AddToCart', InitiateCheckout: 'InitiateCheckout', Purchase: 'CompletePayment' };
 
 /** Fires a real event on every ad platform the seller has connected an id
  *  for; a no-op on any platform whose script never loaded (id not set, or
@@ -190,37 +206,53 @@ const TT_EVENT: Record<PixelEventName, string> = { PageView: 'ViewContent', AddT
 export function trackPixelEvent(eventName: PixelEventName, params: PixelEventParams = {}): void {
   if (typeof window === 'undefined') return;
 
+  const ids = params.items?.map(i => i.id) ?? params.contentIds;
+
   if (window.fbq) {
     window.fbq('track', FB_EVENT[eventName], {
       value: params.value,
       currency: params.currency,
-      content_ids: params.contentIds,
+      content_ids: ids,
+      content_type: ids ? 'product' : undefined,
       content_name: params.contentName,
       num_items: params.numItems,
+      contents: params.items?.map(i => ({ id: i.id, quantity: i.quantity ?? 1, item_price: i.price })),
     });
   }
 
   if (window.gtag) {
+    // GA4 wants item OBJECTS (item_id, item_name, price, quantity) — a list of bare id strings is ignored.
+    const gaItems = params.items
+      ? params.items.map(i => ({ item_id: i.id, item_name: i.name, price: i.price, quantity: i.quantity ?? 1 }))
+      : ids?.map(id => ({ item_id: id }));
     window.gtag('event', GA_EVENT[eventName], {
       value: params.value,
       currency: params.currency,
-      items: params.contentIds,
+      items: gaItems,
+      ...(params.transactionId ? { transaction_id: params.transactionId } : {}),
     });
     if (eventName === 'Purchase' && activeConsent.marketing && activeSettings?.googleAdsId && activeSettings?.googleAdsConversionLabel) {
       window.gtag('event', 'conversion', {
         send_to: `${activeSettings.googleAdsId}/${activeSettings.googleAdsConversionLabel}`,
         value: params.value,
         currency: params.currency,
+        ...(params.transactionId ? { transaction_id: params.transactionId } : {}),
       });
     }
   }
 
   if (window.ttq) {
-    window.ttq.track(TT_EVENT[eventName], {
-      value: params.value,
-      currency: params.currency,
-      content_id: params.contentIds?.[0],
-      contents: params.contentIds?.map(id => ({ content_id: id })),
-    });
+    if (eventName === 'PageView') {
+      window.ttq.page();
+    } else {
+      window.ttq.track(TT_EVENT[eventName], {
+        value: params.value,
+        currency: params.currency,
+        content_type: ids ? 'product' : undefined,
+        contents: params.items
+          ? params.items.map(i => ({ content_id: i.id, content_name: i.name, price: i.price, quantity: i.quantity ?? 1 }))
+          : ids?.map(id => ({ content_id: id })),
+      });
+    }
   }
 }

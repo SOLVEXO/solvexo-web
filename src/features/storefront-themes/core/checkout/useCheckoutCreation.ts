@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateA
 import { ts } from '@/utils/tStatic';
 import {
   apiAddShippingToCheckout, apiCreateCheckout, type Checkout, type CheckoutSummary, type ShippingSelectionPayload,
-} from '@/api/services/checkout';
+} from '@/api/services/checkout';
+import { trackPixelEvent } from '@/utils/trackingPixels';
 
 export type CardOrCod = 'stripe' | 'cash_on_delivery' | 'b2b_terms';
 
@@ -52,6 +53,7 @@ export function useCheckoutCreation(input: CreationInput) {
   const inputRef = useRef(input);
   useEffect(() => { inputRef.current = input; });
   const startedRef = useRef<string | null>(null);
+  const initiatedRef = useRef(false); // InitiateCheckout is sent once per visit, not on every re-created checkout (address / rate changes)
 
   useEffect(() => {
     if (!runKey) return;
@@ -94,6 +96,15 @@ export function useCheckoutCreation(input: CreationInput) {
           };
         }
         p.onCurrency?.(checkout.currency);
+        if (!initiatedRef.current) {
+          initiatedRef.current = true;
+          trackPixelEvent('InitiateCheckout', {
+            value: checkout.totalAmount,
+            currency: checkout.currency,
+            items: (checkout.items ?? []).map(i => ({ id: i.productId, name: i.name, quantity: i.quantity })),
+            numItems: (checkout.items ?? []).reduce((s, i) => s + i.quantity, 0),
+          });
+        }
         setLive({ key: runKey, checkout, summary, allowed: p.isDigital ? methods.filter(m => m === 'stripe') : methods });
       } catch (err) {
         setFailure({ key: runKey, message: err instanceof Error ? err.message : ts('pg.failed_to_start_checkout', 'Failed to start checkout.') });

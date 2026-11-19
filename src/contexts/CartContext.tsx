@@ -10,7 +10,19 @@ import {
   getGuestCartItems, addGuestCartItem, updateGuestCartQty, setGuestCartItemQuantity, removeGuestCartItem, clearGuestCart,
 } from '@/utils/guestCart';
 import { useToast } from '@/contexts/ToastContext';
-import { trackPixelEvent } from '@/utils/trackingPixels';
+import { trackPixelEvent, type PixelEventParams } from '@/utils/trackingPixels';
+
+/** The AddToCart event for one line: what was added, what it cost and in which currency (so ad platforms can value the event). */
+function addToCartPixelParams(productId: string, quantity: number, line?: { name?: string; unitPrice?: number | null; currency?: string | null }): PixelEventParams {
+  const price = typeof line?.unitPrice === 'number' ? line.unitPrice : undefined;
+  return {
+    value: price !== undefined ? Math.round(price * quantity * 100) / 100 : undefined,
+    currency: line?.currency ?? undefined,
+    contentIds: [productId],
+    items: [{ id: productId, name: line?.name, price, quantity }],
+    numItems: quantity,
+  };
+}
 import { ts } from '@/utils/tStatic';
 
 // ── localStorage: variantId → type map ────────────────────────────────────────
@@ -214,7 +226,9 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
       await refreshGuestCartDisplay();
       setAdding(null);
       toast.success(ts('pg.added_to_cart', 'Added to cart'));
-      trackPixelEvent('AddToCart', { contentIds: [productId] });
+      const cached = productCacheRef.current.get(productId);
+      const variant = cached?.variants.find(v => v._id === productVariantId);
+      trackPixelEvent('AddToCart', addToCartPixelParams(productId, quantity, cached && variant ? { name: cached.product.name, unitPrice: variant.price, currency: variant.currency } : undefined));
       return true;
     }
 
@@ -224,7 +238,8 @@ export function CartProvider({ storeId, children }: { storeId?: string; children
       const res = await apiAddToCart(productId, productVariantId, storeId, quantity);
       setCart(mergeTypes(res.data));
       toast.success(ts('pg.added_to_cart', 'Added to cart'));
-      trackPixelEvent('AddToCart', { contentIds: [productId] });
+      const line = res.data.items?.find(i => i.productVariantId === productVariantId);
+      trackPixelEvent('AddToCart', addToCartPixelParams(productId, quantity, line ? { name: line.name, unitPrice: line.unitPrice ?? line.price, currency: line.currency } : undefined));
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to add item to cart.';

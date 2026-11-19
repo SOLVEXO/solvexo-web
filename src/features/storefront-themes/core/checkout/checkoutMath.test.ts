@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cartSignature, isStaleCheckoutError, moneyText, parseBuyNow, placedTotal, reconcileSummary, roundMoney, validateAddress } from './checkoutMath';
+import { cartSignature, isStaleCheckoutError, moneyText, parseBuyNow, placedPixelParams, placedTotal, reconcileSummary, roundMoney, validateAddress } from './checkoutMath';
 
 const base = { currency: 'USD', subtotal: 100, shipping: 10, tax: 8, coupon: 0, giftCard: 0, storeCredit: 0, total: 118 };
 
@@ -85,5 +85,24 @@ describe('validateAddress', () => {
 describe('placedTotal', () => {
   it('sums orders and labels with the first currency', () => {
     expect(placedTotal([{ currency: 'USD', summary: { total: 10 } }, { currency: 'USD', summary: { total: 5.5 } }])).toEqual({ amount: 15.5, currency: 'USD' });
+  });
+});
+
+describe('placedPixelParams (the Purchase event sent to ad pixels)', () => {
+  it('sends PRODUCT ids (never order ids), the total, the item count and the order numbers', () => {
+    const p = placedPixelParams([
+      { orderId: 'o1', orderNumber: 'N1', currency: 'PKR', summary: { total: 300 }, items: [{ productId: 'p1', name: 'A', price: 100, quantity: 2 }, { name: 'no id', price: 1, quantity: 1 }] },
+      { orderId: 'o2', currency: 'PKR', summary: { total: 50 }, items: [{ productId: 'p2', name: 'B', price: 50, quantity: 1 }] },
+    ]);
+    expect(p.value).toBe(350);
+    expect(p.currency).toBe('PKR');
+    expect(p.items?.map(i => i.id)).toEqual(['p1', 'p2']);
+    expect(p.numItems).toBe(3);
+    expect(p.transactionId).toBe('N1,o2');
+  });
+  it('still reports the value when the items are not known', () => {
+    const p = placedPixelParams([{ orderId: 'o9', currency: 'USD', summary: { total: 10 } }]);
+    expect(p.items).toBeUndefined();
+    expect(p.value).toBe(10);
   });
 });
