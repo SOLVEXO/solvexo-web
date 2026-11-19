@@ -15,6 +15,23 @@ function textToEditorHtml(text: string): string {
   return text.split(/\n{2,}/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
 }
 
+/** A first design for an abandoned checkout email, built from its current subject / message / discount code. */
+export function abandonedCartStarterDesign(current: { subject: string; message: string; discountCode?: string | null }, logo: string | null): EmailDesign {
+  const styles = { ...DEFAULT_STYLES };
+  const b = <T extends EmailBlock['type']>(type: T, patch: Partial<Extract<EmailBlock, { type: T }>> = {}) =>
+    ({ ...createBlock(type, styles), ...patch }) as EmailBlock;
+  const blocks: EmailBlock[] = [
+    b('header', { logoUrl: logo }),
+    b('heading', { text: current.subject }),
+    b('text', { html: textToEditorHtml(current.message.split('{{cartUrl}}').join('').trim()), align: 'center' }),
+  ];
+  if (current.discountCode) blocks.push(b('discount', { code: current.discountCode, title: 'Your code', description: 'Use this code at checkout.' }));
+  blocks.push(b('button', { label: 'Return to your cart', link: '{{cartUrl}}' }));
+  return { version: 1, previewText: '', styles, blocks };
+}
+
+export const ABANDONED_CART_MERGE_TAGS = ['{{customerName}}', '{{storeName}}', '{{cartUrl}}', '{{discountCode}}'];
+
 /** A first design for an automation that has none yet — built from its
  *  current subject/message/discount code, so opening the editor starts from
  *  what the seller already has. */

@@ -1,8 +1,65 @@
 import { useState } from 'react';
-import { apiSendAbandonedCartTest, type AbandonedCartSettings } from '@/api/services/abandonedCart';
+import { Palette } from 'lucide-react';
+import { apiSendAbandonedCartTest, apiUpdateAbandonedCartSettings, type AbandonedCartSettings } from '@/api/services/abandonedCart';
 import { Button } from '@/components/comman/ui';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { EmailCampaignEditor } from './EmailCampaignEditor';
+import { ABANDONED_CART_MERGE_TAGS, abandonedCartStarterDesign } from './automationDesigns';
+import { isEmailDesign } from './emailDesign';
 
 const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
+
+/** "Design email" for one of the two reminders: opens the same drag-and-drop editor the automations use. */
+function DesignRow({ storeId, which, settings, onChange }: { storeId: string; which: 'first' | 'second'; settings: AbandonedCartSettings; onChange: (patch: Partial<AbandonedCartSettings>) => void }) {
+  const { store } = useStoreWorkspace();
+  const [open, setOpen] = useState(false);
+  const first = which === 'first';
+  const design = first ? settings.design : settings.secondDesign;
+  const subject = (first ? settings.subject : settings.secondSubject) ?? '';
+  const message = (first ? settings.message : settings.secondMessage) ?? '';
+  const designed = isEmailDesign(design);
+
+  async function persist(patch: Parameters<typeof apiUpdateAbandonedCartSettings>[1]) {
+    const res = await apiUpdateAbandonedCartSettings(storeId, patch);
+    onChange(res.data);
+  }
+
+  return (
+    <div className="rounded-lg border border-bone bg-[#faf9f6] px-3 py-2.5 flex flex-wrap items-center gap-2">
+      <Palette size={15} className="text-brand-deep-orange" />
+      <p className="text-[12px] text-charcoal flex-1 min-w-[160px]">{designed ? 'This email uses a custom design.' : 'Make this email look like your brand with the drag-and-drop designer.'}</p>
+      <Button size="xs" variant="outline" onClick={() => setOpen(true)}>{designed ? 'Edit design' : 'Design email'}</Button>
+      {designed && (
+        <Button size="xs" variant="ghost" onClick={async () => {
+          if (!window.confirm('Switch back to the simple text email? Your design will be removed.')) return;
+          try { await persist(first ? { design: null, html: null } : { secondDesign: null, secondHtml: null }); } catch { /* the page keeps the design */ }
+        }}>Use simple text</Button>
+      )}
+      {open && (
+        <EmailCampaignEditor
+          storeId={storeId}
+          store={store}
+          campaign={null}
+          onClose={() => setOpen(false)}
+          automation={{
+            title: first ? 'Abandoned checkout email' : 'Abandoned checkout — second reminder',
+            subject,
+            design: isEmailDesign(design) ? design : abandonedCartStarterDesign({ subject, message, discountCode: settings.discountCode ?? null }, store?.logo ?? null),
+            mergeTags: ABANDONED_CART_MERGE_TAGS,
+            onSave: async ({ subject: s, design: dsg, html }) => {
+              await persist(first ? { subject: s, design: dsg, html } : { secondSubject: s, secondDesign: dsg, secondHtml: html });
+            },
+            onSendTest: async (email) => {
+              // The test sends the saved FIRST email; the second one looks the same apart from its text.
+              const res = await apiSendAbandonedCartTest(storeId, email);
+              return res.message || 'Test email sent.';
+            },
+          }}
+        />
+      )}
+    </div>
+  );
+}
 
 /** The settings added to Abandoned Cart Recovery: a discount code shown in the reminder, and an optional second reminder. */
 export function AbandonedCartExtras({ storeId, settings, onChange }: { storeId: string; settings: AbandonedCartSettings; onChange: (patch: Partial<AbandonedCartSettings>) => void }) {
@@ -35,6 +92,11 @@ export function AbandonedCartExtras({ storeId, settings, onChange }: { storeId: 
         <p className="text-[11px] text-slate mt-1">Same choice as Shopify's “To:” field. With “All customers”, check the marketing rules that apply where your customers live. Anyone who unsubscribed is never emailed.</p>
       </div>
 
+      <div className="border-t border-bone pt-3.5 flex flex-col gap-2">
+        <p className="text-xs font-medium text-graphite">First email design</p>
+        <DesignRow storeId={storeId} which="first" settings={settings} onChange={onChange} />
+      </div>
+
       <div className="border-t border-bone pt-3.5">
         <label htmlFor="ac-discount" className="text-xs font-medium text-graphite mb-[5px] block">Discount code in the reminder (optional)</label>
         <input
@@ -59,6 +121,7 @@ export function AbandonedCartExtras({ storeId, settings, onChange }: { storeId: 
 
         {second && (
           <>
+            <DesignRow storeId={storeId} which="second" settings={settings} onChange={onChange} />
             <div>
               <label htmlFor="ac-second-hours" className="text-xs font-medium text-graphite mb-[5px] block">Send it this many hours after the first one</label>
               <input

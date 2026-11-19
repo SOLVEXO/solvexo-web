@@ -15,10 +15,15 @@ export interface AbandonedCartSettings {
   secondReminderDelayHours?: number;
   secondSubject?: string;
   secondMessage?: string;
+  /** Designed versions (EmailDesign JSON + its rendered HTML); null = the plain text above is used. */
+  design?: object | null;
+  html?: string | null;
+  secondDesign?: object | null;
+  secondHtml?: string | null;
 }
 
 export type UpdateAbandonedCartSettingsPayload = Partial<Pick<AbandonedCartSettings,
-  'enabled' | 'audience' | 'delayMinutes' | 'subject' | 'message' | 'discountCode' | 'secondReminderEnabled' | 'secondReminderDelayHours' | 'secondSubject' | 'secondMessage'>>;
+  'enabled' | 'audience' | 'delayMinutes' | 'subject' | 'message' | 'discountCode' | 'secondReminderEnabled' | 'secondReminderDelayHours' | 'secondSubject' | 'secondMessage' | 'design' | 'html' | 'secondDesign' | 'secondHtml'>>;
 
 export interface AbandonedCartStats {
   abandonedCount:   number;
