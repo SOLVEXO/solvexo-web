@@ -27,6 +27,7 @@ import { loadPixelScripts, trackPixelEvent, type CookieConsentCategories } from 
 import { setStorefrontAnalyticsConsent, trackStorefrontPageView } from '@/utils/storefrontAnalytics';
 import { loadExperiments, reportExposure, useExperimentAssignments } from '@/features/storefront-themes/core/experiments/experimentsStore';
 import { CookieConsentBanner } from './CookieConsentBanner';
+import { SignupPopup } from './SignupPopup';
 import { FloatingContactBar } from './FloatingContactBar';
 import { FEATURES } from '@/constants/features';
 import { captureAffiliateRef } from '@/utils/affiliateAttribution';
@@ -392,6 +393,7 @@ export function StorefrontLayout() {
           {store.floatingContact?.enabled && (
             <FloatingContactBar config={store.floatingContact} brandColor={cfg.primaryColor} font={cfg.font} radius={cfg.buttonRadiusPx} />
           )}
+          <SignupPopup storeId={store.storeId} brandColor={cfg.primaryColor} font={cfg.font} radius={cfg.buttonRadiusPx} />
           {store.cookieBannerEnabled && !cookieConsent && (
             <CookieBanner
               message={store.cookieBannerMessage}

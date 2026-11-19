@@ -4,7 +4,7 @@ import {
   Settings, ClipboardList, Megaphone, Star, Search, Wallet, Inbox,
   Truck, MessageSquare, FolderTree, Undo2, AlertTriangle, Layers, Image as ImageIcon, FileText,
   LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree,
-  Store, TrendingUp, Landmark, LifeBuoy, Languages, Share2, Boxes,
+  Store, TrendingUp, Landmark, LifeBuoy, Languages, Share2, Boxes, Mail,
 } from 'lucide-react';
 import type { AppRole } from '@/api/services/auth';
 import type { EntitlementsSummary } from '@/api/services/platformPlans';
@@ -158,6 +158,7 @@ const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIc
       // own distinct `settings.pixels.manage` permission (tracking-pixels
       // .controller.ts) — OR'd in so that permission alone still reaches it.
       { id: 'growth',        Icon: TrendingUp, label: 'Overview',     path: 'growth',        requiredPermission: ['analytics.view', 'marketing.manage'] },
+      { id: 'forms',         Icon: Mail,      label: 'Forms',         path: 'forms',         requiredPermission: 'marketing.manage' },
       { id: 'marketing',     Icon: Megaphone, label: 'Messaging',     path: 'marketing',     requiredPermission: ['marketing.manage', 'settings.pixels.manage'] },
       { id: 'discounts',     Icon: Percent,   label: 'Discounts',     path: 'discounts',     requiredPermission: 'discounts.manage' },
     ],
@@ -293,7 +294,7 @@ const LAYOUT: { group: string; ids: string[]; collapsible?: boolean; groupIcon?:
   { group: 'Orders', collapsible: true, groupIcon: Package, ids: ['orders', 'draft-orders', 'returns', 'disputes', 'payment-proofs'] },
   { group: 'Products', collapsible: true, groupIcon: ShoppingBag, ids: ['products', 'collections', 'categories', 'inventory', 'gift-cards', 'subscriptions', 'digital'] },
   { group: 'Customers', collapsible: true, groupIcon: Users, ids: ['customers', 'wholesale', 'khata', 'reviews', 'product-questions', 'messages', 'online-store-contact', 'loyalty'] },
-  { group: 'Growth', collapsible: true, groupIcon: TrendingUp, ids: ['growth', 'marketing', 'messaging', 'creatives', 'seo'] },
+  { group: 'Growth', collapsible: true, groupIcon: TrendingUp, ids: ['growth', 'marketing', 'forms', 'messaging', 'creatives', 'seo'] },
   { group: 'Discounts', ids: ['discounts'] },
   // Online Store = everything that builds and tunes the storefront; Sales channels = other places the products are sold (feeds, app).
   { group: 'Online Store', collapsible: true, groupIcon: Store, ids: ['online-store-themes', 'online-store-pages', 'online-store-menus', 'online-store-blog', 'online-store-files', 'online-store-translations', 'search-settings', 'experiments'] },

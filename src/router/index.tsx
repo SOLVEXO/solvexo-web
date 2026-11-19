@@ -166,6 +166,7 @@ const StoreReviews = lazy(() => import('@/features/seller/store/Dashboard/Operat
 const InventoryHub = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/InventoryHub').then(m => ({ default: m.InventoryHub })));
 const SupplierDetailPage = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/SupplierDetailPage'));
 const StockCountSession = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/StockCountSession'));
+const StoreSignupForm = lazy(() => import('@/features/seller/store/Dashboard/Growth/SignupFormPage').then(m => ({ default: m.StoreSignupForm })));
 const StoreGrowth = lazy(() => import('@/features/seller/store/Dashboard/Growth/GrowthHub').then(m => ({ default: m.StoreGrowth })));
 const StoreMarketing = lazy(() => import('@/features/seller/store/Dashboard/Operations/marketing/Marketing').then(m => ({ default: m.StoreMarketing })));
 const StoreLoyalty = lazy(() => import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty').then(m => ({ default: m.StoreLoyalty })));
@@ -520,6 +521,7 @@ const mainRouter = createBrowserRouter([
           { path: 'inventory/suppliers/:supplierId',   element: <SupplierDetailPage /> },
           { path: 'inventory/reports',                 element: <InventoryHub forcedTab="reports" /> },
           { path: 'growth/:tab?',                     element: <StoreGrowth /> },
+          { path: 'forms',                            element: <StoreSignupForm /> },
           { path: 'marketing/:tab?',                  element: <StoreMarketing /> },
           { path: 'discounts',                        element: <StoreDiscounts /> },
           { path: 'metafields',                       element: <MetafieldDefinitionsPage /> },
