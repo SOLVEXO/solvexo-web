@@ -92,6 +92,7 @@ export function StoreProfileTab() {
   const [tagline,      setTagline]      = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [mailingAddress, setMailingAddress] = useState('');
   const [reviewModerationEnabled, setReviewModerationEnabled] = useState(false);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [timezone, setTimezone] = useState('');
@@ -112,6 +113,7 @@ export function StoreProfileTab() {
     setTagline(store.tagline ?? '');
     setContactEmail(store.contactEmail ?? '');
     setContactPhone(store.contactPhone ?? '');
+    setMailingAddress(store.mailingAddress ?? '');
     setReviewModerationEnabled(!!store.reviewModerationEnabled);
     setLowStockThreshold(store.lowStockThreshold ?? 10);
     setTimezone(store.timezone ?? '');
@@ -125,7 +127,7 @@ export function StoreProfileTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, timezone: timezone || null, ...(country && country !== (store?.country ?? '') ? { country } : {}), currencyDisplay, defaultLanguage, reviewModerationEnabled, lowStockThreshold, logo, faviconUrl: faviconUrl || null });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, mailingAddress, timezone: timezone || null, ...(country && country !== (store?.country ?? '') ? { country } : {}), currencyDisplay, defaultLanguage, reviewModerationEnabled, lowStockThreshold, logo, faviconUrl: faviconUrl || null });
       refetch();
       setSaveMsg({ ok: true, text: 'Store profile updated successfully.' });
     } catch (err) {
@@ -144,6 +146,7 @@ export function StoreProfileTab() {
       tagline !== (store.tagline ?? '') ||
       contactEmail !== (store.contactEmail ?? '') ||
       contactPhone !== (store.contactPhone ?? '') ||
+      mailingAddress !== (store.mailingAddress ?? '') ||
       timezone !== (store.timezone ?? '') ||
       country !== (store.country ?? '') ||
       currencyDisplay !== (store.currencyDisplay ?? 'symbol') ||
@@ -220,6 +223,11 @@ export function StoreProfileTab() {
               <input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+1 555 123 4567" className={inputCls} />
             </Field>
           </div>
+
+          <Field label="Mailing address">
+            <input value={mailingAddress} onChange={e => setMailingAddress(e.target.value)} placeholder="Street, city, postal code, country" maxLength={300} className={inputCls} />
+            <p className="text-[11px] text-slate mt-1">Printed at the bottom of your marketing emails — many countries' email rules ask for a postal address. This is not your private verification address.</p>
+          </Field>
 
           <Field label="Store country">
             <select value={country} onChange={e => setCountry(e.target.value)} disabled={isStaffSession()} className={inputCls} aria-label="Store country">

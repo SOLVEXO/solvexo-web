@@ -109,6 +109,8 @@ export interface UpdateStorePayload {
   tagline?:      string;
   contactEmail?: string;
   contactPhone?: string;
+  /** Postal address printed in the footer of marketing emails. */
+  mailingAddress?: string | null;
   sellerType?:  SellerType;
   productTypes?: ProductType[];
   codEnabled?:  boolean;
@@ -169,6 +171,8 @@ export interface StoreData {
   tagline:      string | null;
   contactEmail: string | null;
   contactPhone: string | null;
+  /** Postal address printed in the footer of marketing emails (typed by the seller; never the private verification address). */
+  mailingAddress?: string | null;
   /** Store-configurable "low stock" cutoff used by InventoryService's stats/alerts — was previously a fixed 10 for every store. */
   lowStockThreshold: number;
   /** The DEFAULT flat percentage — used only when no `taxRegions` entry (or live TaxJar quote) matches the buyer's destination. 0 = no tax. */
