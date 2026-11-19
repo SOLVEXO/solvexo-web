@@ -100,3 +100,26 @@ export function apiSendEmailCampaignTest(storeId: string, campaignId: string, em
 export function apiScheduleEmailCampaign(storeId: string, campaignId: string, scheduledAt: string) {
   return client.post<never, ApiResponse<EmailCampaign>>(ENDPOINTS.EMAIL_CAMPAIGNS.SCHEDULE(storeId, campaignId), { scheduledAt });
 }
+
+export interface EmailCampaignReport {
+  _id: string;
+  name: string;
+  subject: string;
+  status: EmailCampaignStatus;
+  sentAt: string | null;
+  recipients: number;
+  sent: number;
+  failed: number;
+  opens: number;
+  clicks: number;
+  openRate: number;
+  clickRate: number;
+  /** The utm_campaign tag its links carry — find the sales it brought in under Growth. */
+  utmCampaign: string;
+  topLinks: { url: string; clicks: number }[];
+}
+
+/** GET /api/email-campaigns/:storeId/:campaignId/report */
+export function apiGetEmailCampaignReport(storeId: string, campaignId: string) {
+  return client.get<never, { success: boolean; data: EmailCampaignReport }>(`/api/email-campaigns/${storeId}/${campaignId}/report`);
+}

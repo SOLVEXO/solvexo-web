@@ -1,12 +1,40 @@
-import type { AbandonedCartSettings } from '@/api/services/abandonedCart';
+import { useState } from 'react';
+import { apiSendAbandonedCartTest, type AbandonedCartSettings } from '@/api/services/abandonedCart';
+import { Button } from '@/components/comman/ui';
 
 const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
 
 /** The settings added to Abandoned Cart Recovery: a discount code shown in the reminder, and an optional second reminder. */
-export function AbandonedCartExtras({ settings, onChange }: { settings: AbandonedCartSettings; onChange: (patch: Partial<AbandonedCartSettings>) => void }) {
+export function AbandonedCartExtras({ storeId, settings, onChange }: { storeId: string; settings: AbandonedCartSettings; onChange: (patch: Partial<AbandonedCartSettings>) => void }) {
   const second = settings.secondReminderEnabled === true;
+  const [testEmail, setTestEmail] = useState('');
+  const [testing, setTesting] = useState(false);
+  const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function sendTest() {
+    setTesting(true);
+    setTestMsg(null);
+    try {
+      const res = await apiSendAbandonedCartTest(storeId, testEmail.trim() || undefined);
+      setTestMsg({ ok: true, text: res.message || 'Test email sent.' });
+    } catch (e) {
+      setTestMsg({ ok: false, text: e instanceof Error ? e.message : 'Could not send the test email.' });
+    } finally {
+      setTesting(false);
+    }
+  }
+
   return (
     <>
+      <div className="border-t border-bone pt-3.5">
+        <label htmlFor="ac-audience" className="text-xs font-medium text-graphite mb-[5px] block">Send to</label>
+        <select id="ac-audience" value={settings.audience ?? 'subscribed'} onChange={e => onChange({ audience: e.target.value as 'subscribed' | 'all' })} className={INPUT_CLS}>
+          <option value="subscribed">Customers who accept marketing</option>
+          <option value="all">All customers</option>
+        </select>
+        <p className="text-[11px] text-slate mt-1">Same choice as Shopify's “To:” field. With “All customers”, check the marketing rules that apply where your customers live. Anyone who unsubscribed is never emailed.</p>
+      </div>
+
       <div className="border-t border-bone pt-3.5">
         <label htmlFor="ac-discount" className="text-xs font-medium text-graphite mb-[5px] block">Discount code in the reminder (optional)</label>
         <input
@@ -17,7 +45,7 @@ export function AbandonedCartExtras({ settings, onChange }: { settings: Abandone
           maxLength={60}
           className={INPUT_CLS}
         />
-        <p className="text-[11px] text-slate mt-1">Type a code you already made under Marketing → Coupons. It is shown in the email as “Your code”. Leave empty for no discount.</p>
+        <p className="text-[11px] text-slate mt-1">Type a code you already made under Discounts. It is shown in the email as “Your code”. Leave empty for no discount.</p>
       </div>
 
       <div className="border-t border-bone pt-3.5 flex flex-col gap-3.5">
@@ -55,6 +83,16 @@ export function AbandonedCartExtras({ settings, onChange }: { settings: Abandone
             </div>
           </>
         )}
+      </div>
+
+      <div className="border-t border-bone pt-3.5">
+        <label htmlFor="ac-test-email" className="text-xs font-medium text-graphite mb-[5px] block">Send a test email (saved settings)</label>
+        <div className="flex gap-2">
+          <input id="ac-test-email" type="email" value={testEmail} onChange={e => setTestEmail(e.target.value)} placeholder="Leave empty to use your store's contact email" className={INPUT_CLS} />
+          <Button variant="outline" onClick={sendTest} loading={testing}>Send test</Button>
+        </div>
+        {testMsg && <p className={`text-[12px] mt-1.5 ${testMsg.ok ? 'text-success' : 'text-error'}`}>{testMsg.text}</p>}
+        <p className="text-[11px] text-slate mt-1">The test uses your last saved settings — save first if you just changed the message.</p>
       </div>
     </>
   );

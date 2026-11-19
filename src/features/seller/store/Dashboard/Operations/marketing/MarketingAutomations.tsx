@@ -216,7 +216,7 @@ function AutomationCard<S extends Section>({
           </Field>
         )}
         {(section === 'welcome' || section === 'winBack') && (
-          <Field label="Discount code (optional)" hint="Must be an existing coupon code from the Coupons tab. Shown as a highlighted code in the email.">
+          <Field label="Discount code (optional)" hint="Must be an existing discount code from the Discounts page. Shown as a highlighted code in the email.">
             <input value={String(d.discountCode ?? '')} placeholder="WELCOME10" className={`${INPUT_CLS} max-w-[220px] uppercase`}
               onChange={e => set('discountCode' as never, (e.target.value.trim() ? e.target.value.toUpperCase() : null) as never)} />
           </Field>

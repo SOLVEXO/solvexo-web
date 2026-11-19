@@ -4,6 +4,8 @@ import { ENDPOINTS } from '../endpoints';
 export interface AbandonedCartSettings {
   storeId:      string;
   enabled:      boolean;
+  /** Who gets the reminder: customers who agreed to marketing emails (default) or every shopper who left a checkout. */
+  audience?:    'subscribed' | 'all';
   delayMinutes: number;
   subject:      string;
   message:      string;
@@ -16,7 +18,7 @@ export interface AbandonedCartSettings {
 }
 
 export type UpdateAbandonedCartSettingsPayload = Partial<Pick<AbandonedCartSettings,
-  'enabled' | 'delayMinutes' | 'subject' | 'message' | 'discountCode' | 'secondReminderEnabled' | 'secondReminderDelayHours' | 'secondSubject' | 'secondMessage'>>;
+  'enabled' | 'audience' | 'delayMinutes' | 'subject' | 'message' | 'discountCode' | 'secondReminderEnabled' | 'secondReminderDelayHours' | 'secondSubject' | 'secondMessage'>>;
 
 export interface AbandonedCartStats {
   abandonedCount:   number;
@@ -52,6 +54,11 @@ interface PaginatedAbandonedCarts {
  *  comment on why recovery is on by default). */
 export function apiGetAbandonedCartSettings(storeId: string) {
   return client.get<never, ApiResponse<AbandonedCartSettings>>(ENDPOINTS.ABANDONED_CART.SETTINGS(storeId));
+}
+
+/** POST /api/abandoned-cart/:storeId/test — sends the reminder (sample data) to the given address or the store's contact email. */
+export function apiSendAbandonedCartTest(storeId: string, email?: string) {
+  return client.post<never, ApiResponse<null>>(`/api/abandoned-cart/${storeId}/test`, email ? { email } : {});
 }
 
 /** PATCH /api/abandoned-cart/:storeId/settings */

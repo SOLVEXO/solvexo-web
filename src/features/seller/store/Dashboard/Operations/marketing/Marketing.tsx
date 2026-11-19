@@ -17,6 +17,7 @@ import {
   type EmailCampaign, type EmailCampaignAudience, type EmailCampaignStatus,
 } from '@/api/services/emailCampaigns';
 import { EmailCampaignTestModal } from './EmailCampaignTestModal';
+import { EmailCampaignReportModal } from './EmailCampaignReportModal';
 import { EmailCampaignEditor } from './EmailCampaignEditor';
 import { MarketingAutomations } from './MarketingAutomations';
 import { AbandonedCartExtras } from './AbandonedCartExtras';
@@ -278,6 +279,7 @@ export function StoreMarketing() {
   const [schedulingCampaign, setSchedulingCampaign] = useState<EmailCampaign | null>(null);
   const [campaignActionBusyId, setCampaignActionBusyId] = useState<string | null>(null);
   const [testingCampaign, setTestingCampaign] = useState<EmailCampaign | null>(null);
+  const [reportCampaign, setReportCampaign] = useState<EmailCampaign | null>(null);
 
   function refreshEmailCampaigns() {
     setEmailCampaignsLoading(true);
@@ -591,7 +593,7 @@ export function StoreMarketing() {
                   />
                   <p className="text-[11px] text-slate mt-1">Use {'{{customerName}}'}, {'{{storeName}}'} and {'{{cartUrl}}'} — replaced automatically when each email is sent.</p>
                 </div>
-                <AbandonedCartExtras settings={cartSettings} onChange={patch => setCartSettings(s => s && ({ ...s, ...patch }))} />
+                <AbandonedCartExtras storeId={storeId} settings={cartSettings} onChange={patch => setCartSettings(s => s && ({ ...s, ...patch }))} />
                 {cartSettingsError && <p className="text-[12px] text-error">{cartSettingsError}</p>}
                 {cartSettingsSaved && <p className="text-[12px] text-success">Saved.</p>}
                 <div>
@@ -745,6 +747,9 @@ export function StoreMarketing() {
                                   <button onClick={() => setSchedulingCampaign(c)} disabled={busy} className="text-[11px] font-semibold text-charcoal hover:underline disabled:opacity-50">Schedule</button>
                                 </>
                               )}
+                              {['sending', 'sent'].includes(c.status) && (
+                                <button onClick={() => setReportCampaign(c)} className="text-[11px] font-semibold text-brand-orange hover:underline">Report</button>
+                              )}
                               <button onClick={() => setTestingCampaign(c)} className="text-[11px] font-semibold text-charcoal hover:underline">Send test</button>
                               {['draft', 'scheduled'].includes(c.status) && (
                                 <button onClick={() => handleDeleteCampaign(c)} disabled={busy} className="text-slate hover:text-error disabled:opacity-50" title="Delete">
@@ -775,6 +780,10 @@ export function StoreMarketing() {
 
         {testingCampaign && (
           <EmailCampaignTestModal storeId={storeId} campaign={testingCampaign} onClose={() => setTestingCampaign(null)} />
+        )}
+
+        {reportCampaign && (
+          <EmailCampaignReportModal storeId={storeId} campaign={reportCampaign} onClose={() => setReportCampaign(null)} />
         )}
 
         {tab === 'automations' && <MarketingAutomations storeId={storeId} emailFeature={emailFeature} />}

@@ -117,7 +117,7 @@ export function AnnouncementForm({ value, onChange }: { value: Value; onChange: 
         <label className="flex flex-col gap-1.5">
           <span className={LABEL}>Discount code (optional)</span>
           <input value={b.couponCode ?? ''} maxLength={40} placeholder="WELCOME10" onChange={e => patchBlock(selected, { couponCode: e.target.value.toUpperCase().replace(/\s/g, '') || null })} className={INPUT} />
-          <span className="text-[10.5px] text-slate">Shoppers see the code with a Copy button. Create the code itself under Marketing → Discounts.</span>
+          <span className="text-[10.5px] text-slate">Shoppers see the code with a Copy button. Create the code itself under Discounts.</span>
         </label>
         <div className="flex items-center gap-4">
           <button type="button" onClick={() => { const next = [...blocks]; next.splice(selected + 1, 0, { ...b }); setBlocks(next); setSelected(selected + 1); }}

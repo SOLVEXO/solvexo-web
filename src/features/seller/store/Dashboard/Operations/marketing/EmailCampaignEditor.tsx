@@ -289,7 +289,7 @@ function BlockSettings({ block, storeId, onChange }: { block: EmailBlock; storeI
     case 'discount':
       return (
         <div className="flex flex-col gap-4">
-          <Field label="Discount code" hint="Use a code you created under Marketing → Coupons.">{id => <input id={id} value={block.code} onChange={e => set({ code: e.target.value.toUpperCase() })} className={`${INPUT} uppercase`} />}</Field>
+          <Field label="Discount code" hint="Use a code you created under Discounts.">{id => <input id={id} value={block.code} onChange={e => set({ code: e.target.value.toUpperCase() })} className={`${INPUT} uppercase`} />}</Field>
           <Field label="Title">{id => <input id={id} value={block.title} onChange={e => set({ title: e.target.value })} className={INPUT} />}</Field>
           <Field label="Description">{id => <input id={id} value={block.description} onChange={e => set({ description: e.target.value })} className={INPUT} />}</Field>
         </div>

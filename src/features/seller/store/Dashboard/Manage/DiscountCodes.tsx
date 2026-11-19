@@ -14,7 +14,7 @@ import {
 } from '@/api/services/marketing';
 
 // Discount CODES (the buyer types them at checkout) — the "Discount code" method of Shopify's Discounts page. The other method,
-// automatic discounts, is on the same page (StoreDiscounts). Same backend as the old Marketing → Coupons tab.
+// automatic discounts, is on the same page (StoreDiscounts). (They used to live under Marketing → Coupons.)
 
 const PAGE_SIZE = 20;
 
