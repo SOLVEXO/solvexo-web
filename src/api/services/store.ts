@@ -1,7 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 import { apiUploadPrivateFile } from '../upload';
-import type { ActiveCampaignBadge } from './marketplace';
 import type { ContentTranslations } from '@/utils/localize';
 
 export type SellerType  = 'creator' | 'educator' | 'retailer' | 'brand_business' | 'freelancer' | 'mix';
@@ -578,7 +577,6 @@ export interface PublicStoreData {
   sellsDigital?:  boolean;
   badges:         string[];
   createdAt:      string;
-  activeCampaign: ActiveCampaignBadge | null;
   announcementBar: (Omit<StoreAnnouncementBar, 'isActive' | 'startAt' | 'endAt' | 'messageHidden' | 'preset'>) | null;
   /** Real storefront access gate — 'public' (default) means every visitor
    *  sees the real site, same as before this field existed. See
@@ -672,7 +670,6 @@ export interface PublicStoreProduct {
   /** True when any active variant can be bought (unlimited or stock > 0). */
   inStock?:            boolean;
   compareAtPrice?:     number | null;
-  activeCampaign?:     ActiveCampaignBadge | null;
   /** Every active variant (the list endpoint already returns them); used for card swatches. */
   variants?:           { options?: { name: string; value: string }[]; images?: string[] }[];
 }

@@ -5,7 +5,6 @@ export function useProductsByCategory(
   page = 1, limit = 10, categoryId?: string,
   productType?: 'physical' | 'digital' | 'educational',
   educationLevel?: string, normalizedCustomLevel?: string,
-  campaignId?: string,
   minPrice?: number, maxPrice?: number, minRating?: number, sortBy?: MarketplaceSortBy,
   // False while a caller is still resolving something the fetch depends on
   // (e.g. a category slug → id lookup) — skips the request entirely and
@@ -26,7 +25,7 @@ export function useProductsByCategory(
     let cancelled = false;
     setLoading(true);
     setError('');
-    apiGetAllProducts(page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, campaignId, minPrice, maxPrice, minRating, sortBy)
+    apiGetAllProducts(page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, minPrice, maxPrice, minRating, sortBy)
       .then(res => {
         if (!cancelled) {
           setProducts(res.data?.products ?? []);
@@ -39,7 +38,7 @@ export function useProductsByCategory(
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, campaignId, minPrice, maxPrice, minRating, sortBy, enabled, reloadKey]);
+  }, [page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, minPrice, maxPrice, minRating, sortBy, enabled, reloadKey]);
 
   return { products, total, loading, error, refetch };
 }

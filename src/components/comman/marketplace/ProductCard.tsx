@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { clsx } from 'clsx';
 import { Modal } from '@/components/comman/ui/Modal';
-import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck, Store, Check, AlertCircle } from 'lucide-react';
+import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, BadgeCheck, Store, Check, AlertCircle } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { currencySymbol } from '@/utils/currency';
@@ -201,19 +201,6 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   // incorrectly showed it as out of stock / disabled Add to Cart.
   const stock = isDigital || defaultVariant?.unlimitedStock ? Infinity : (defaultVariant?.stock ?? 0);
 
-  // Two distinct signals, both worth surfacing: a plain compareAtPrice
-  // markdown (this item itself is discounted) and an active platform/seller
-  // sale campaign (a time-boxed event this item is part of) — a flame marks
-  // the campaign badge so it doesn't read as a duplicate of the plain one.
-  // A no-discount "featured" campaign with no value isn't essential enough
-  // to earn a badge on its own.
-  const campaign = product.activeCampaign;
-  const campaignAmount = campaign?.discountType && campaign.discountValue != null
-    ? (campaign.discountType === 'percentage'
-        ? `${campaign.discountValue}%`
-        : `${priceSymbol} ${convert(campaign.discountValue, campaign.currency ?? 'USD')}`)
-    : null;
-
   return (
     <>
     <div
@@ -289,15 +276,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
               -{pctOff}%
             </span>
           )}
-          {campaignAmount && (
-            <span
-              title={campaign ? `${campaign.name} — ends ${new Date(campaign.endDate).toLocaleDateString()}` : undefined}
-              className="flex items-center gap-[3px] px-[6px] py-[2px] rounded-md text-[9px] font-bold bg-brand-orange text-white"
-            >
-              <Flame size={10} className="fill-white shrink-0" />
-              -{campaignAmount}
-            </span>
-          )}
+
         </div>
 
         {/* Top-right: wishlist — small, always reachable (not hover-only, so it works on touch) */}

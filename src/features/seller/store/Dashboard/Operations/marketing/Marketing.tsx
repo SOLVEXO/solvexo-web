@@ -487,12 +487,12 @@ export function StoreMarketing() {
   // Coupons moved to the Discounts page (Shopify keeps discount codes there) — old bookmarks still land in the right place.
   if (rawTab === 'coupons') return <Navigate to={`/store/${storeId}/discounts`} replace />;
   if (redirectTo) return <Navigate to={redirectTo} replace />;
-  if (blocked) return <NoTabAccess title="Messaging" />;
+  if (blocked) return <NoTabAccess title="Email & automations" />;
 
   return (
     <>
       <StorePageHeader
-        title="Messaging"
+        title="Email & automations"
         subtitle="Email campaigns, automations, abandoned cart recovery and tracking pixels."
       />
 

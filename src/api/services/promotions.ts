@@ -135,16 +135,8 @@ export interface CalendarPromotionItem {
   status: PromotionRequestStatus;
 }
 
-export interface CalendarCampaignItem {
-  _id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-}
-
 export function apiAdminPromotionCalendar(from: string, to: string) {
-  return client.get<never, { success: boolean; data: { promotions: CalendarPromotionItem[]; campaigns: CalendarCampaignItem[] } }>(ENDPOINTS.PROMOTIONS.ADMIN.CALENDAR, {
+  return client.get<never, { success: boolean; data: { promotions: CalendarPromotionItem[] } }>(ENDPOINTS.PROMOTIONS.ADMIN.CALENDAR, {
     params: { from, to },
   });
 }

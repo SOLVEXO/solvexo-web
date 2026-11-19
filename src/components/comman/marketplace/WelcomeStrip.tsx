@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { ShieldCheck, Store, GraduationCap, Tag } from 'lucide-react';
-import { Modal, DealsBanner } from '@/components/comman/ui';
+import { Modal } from '@/components/comman/ui';
 import { CategoriesMegaContent } from './MegaMenuBar';
 import { BannerCarousel, type BannerCarouselItem } from './BannerCarousel';
 import type { CategoryNode } from '@/api/services/categories';
 
 // ── "Welcome to Solvexo" discovery strip — Categories for you, the real
-// marketplace Hero Banner, and the real DealsBanner side by side in one row,
+// marketplace Hero Banner side by side in one row,
 // in the spirit of Alibaba's homepage welcome section. Clicking a category
 // opens the same categories/subcategories/popular-products mega-panel the
 // navbar's own "All Categories" dropdown already uses (`CategoriesMegaContent`,
@@ -66,7 +66,7 @@ export function WelcomeStrip({
          when there's no hero to fill it. */}
       <div className={clsx(
         'grid grid-cols-1 lg:grid-rows-[220px] gap-4',
-        hasHero ? 'lg:grid-cols-[0.8fr_1.4fr_1fr]' : 'lg:grid-cols-[0.8fr_1fr]',
+        hasHero ? 'lg:grid-cols-[0.8fr_1.4fr]' : 'lg:grid-cols-[0.8fr]',
       )}>
         {/* Categories for you — click opens the full categories/subcategories/
            popular-products mega-panel as a big modal. */}
@@ -116,10 +116,6 @@ export function WelcomeStrip({
           </div>
         )}
 
-        {/* DealsBanner — the real campaign banner, right beside the hero, not
-           stacked below it. Just the campaign image (compact mode), filling
-           the card the same way. */}
-        <DealsBanner compact className="min-h-[200px] lg:h-full" />
       </div>
 
       {/* Categories mega-modal — the exact same panel the navbar's "All

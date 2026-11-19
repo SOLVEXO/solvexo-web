@@ -206,7 +206,7 @@ export function GrowthCampaigns({ storeId, storeUrl }: { storeId: string; storeU
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-[12.5px] text-slate max-w-[560px]">
           A campaign groups one marketing effort. Visits are counted for it when they arrive through a link tagged with its campaign tag.
-          Emails sent from Messaging are tagged automatically with the email campaign's name.
+          Emails sent from Email & automations are tagged automatically with the email campaign's name.
         </p>
         <div className="flex items-center gap-2">
           <RangeSelect value={range} onChange={v => { setLoading(true); setError(''); setRange(v); }} />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BarChart2 } from 'lucide-react';
 import { Select, Table, type TableColumn } from '@/components/comman/ui';
 import { formatMoney } from '@/utils/currency';
@@ -70,7 +71,10 @@ export function GrowthAttribution({ storeId }: { storeId: string }) {
         </div>
         <div className="ml-auto"><RangeSelect value={range} onChange={v => { busy(); setRange(v); }} /></div>
       </div>
-      <p className="text-[12.5px] text-slate">{MODEL_HELP[model]}</p>
+      <p className="text-[12.5px] text-slate">
+        {MODEL_HELP[model]}{' '}
+        <Link to={`/store/${storeId}/analytics`} className="font-semibold text-brand-orange hover:underline">Open Analytics</Link> for the full traffic and sales reports.
+      </p>
 
       {error && <ErrorBanner message={error} onRetry={retry} />}
 

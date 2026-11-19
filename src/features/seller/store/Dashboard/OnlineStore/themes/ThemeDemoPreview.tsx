@@ -22,7 +22,7 @@ function buildDemoContextValue(demoStore: ThemeDemoPreviewData['demoStore']): St
     logo: null,description: demoStore.description, tagline: demoStore.tagline,
     contactEmail: null, contactPhone: null, categoryId: null, followersCount: 0, averageRating: 0, reviewCount: 0,
     builderConfig: null, baseCurrency: 'USD', enabledCurrencies: null, sellerType: null, badges: [], createdAt: new Date().toISOString(),
-    activeCampaign: null, announcementBar: null, privacyMode: 'public', faviconUrl: null,
+    announcementBar: null, privacyMode: 'public', faviconUrl: null,
     cookieBannerEnabled: false, cookieBannerMessage: null, cookieBannerPosition: 'bottom_bar', cookieBannerColorMode: 'dark', showDoNotSellLink: false, guestCheckoutEnabled: false,
     primaryDomain: null, canonicalHost: null,
   };

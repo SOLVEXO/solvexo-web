@@ -33,6 +33,7 @@ export function TrafficSourcesCard({ storeId, range }: { storeId: string; range:
       <div className="px-4 py-3 border-b border-[#f3f2ec] flex items-center gap-2.5 shrink-0">
         <div className="w-7 h-7 rounded-lg bg-[#eef2ff] text-[#4F46E5] flex items-center justify-center shrink-0"><Megaphone size={13} /></div>
         <p className="flex-1 text-[13px] font-bold text-charcoal">Traffic sources</p>
+        <button type="button" onClick={() => navigate(`/store/${storeId}/growth/attribution`)} className="text-[13px] sm:text-[11.5px] pointer-coarse:py-1 font-semibold text-slate hover:text-brand-orange bg-transparent border-none cursor-pointer">Attribution →</button>
         <button type="button" onClick={() => navigate(`/store/${storeId}/analytics`)} className="text-[13px] sm:text-[11.5px] pointer-coarse:py-1 font-semibold text-slate hover:text-brand-orange bg-transparent border-none cursor-pointer">Analytics →</button>
       </div>
       <div className="px-4 py-3 flex-1">

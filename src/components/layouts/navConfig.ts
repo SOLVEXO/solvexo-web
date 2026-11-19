@@ -159,7 +159,7 @@ const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIc
       // .controller.ts) — OR'd in so that permission alone still reaches it.
       { id: 'growth',        Icon: TrendingUp, label: 'Overview',     path: 'growth',        requiredPermission: ['analytics.view', 'marketing.manage'] },
       { id: 'forms',         Icon: Mail,      label: 'Forms',         path: 'forms',         requiredPermission: 'marketing.manage' },
-      { id: 'marketing',     Icon: Megaphone, label: 'Messaging',     path: 'marketing',     requiredPermission: ['marketing.manage', 'settings.pixels.manage'] },
+      { id: 'marketing',     Icon: Megaphone, label: 'Email & automations',     path: 'marketing',     requiredPermission: ['marketing.manage', 'settings.pixels.manage'] },
       { id: 'discounts',     Icon: Percent,   label: 'Discounts',     path: 'discounts',     requiredPermission: 'discounts.manage' },
     ],
   },

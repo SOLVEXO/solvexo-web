@@ -50,20 +50,6 @@ export type ProductPreviewData =
   | { type: 'video'; url: string;     expiresAt: number }
   | { type: 'audio'; url: string;     expiresAt: number };
 
-// A product's store can be opted into more than one platform sale campaign,
-// but the backend already resolves that down to the single best-for-buyer
-// one (see MarketingService.pickPrimaryCampaignForBadge) — the frontend just
-// renders whatever it's given, never picks among candidates itself.
-export interface ActiveCampaignBadge {
-  campaignId:    string;
-  name:          string;
-  discountType:  'percentage' | 'fixed' | null;
-  discountValue: number | null;
-  /** Only meaningful when discountType === 'fixed' — always 'USD' (the platform pivot). */
-  currency:      string | null;
-  endDate:       string;
-}
-
 export interface MarketplaceProduct {
   _id:               string;
   /** Brand / vendor label and seller-set selling options. */
@@ -110,7 +96,6 @@ export interface MarketplaceProduct {
   variants:          ProductVariant[];
   sellerName?:       string;
   sellerVerified?:   boolean;
-  activeCampaign?:   ActiveCampaignBadge | null;
   /** Which of the store's own Product alternate templates (`collection-template` module, `resourceType:'product'`) this product's detail page renders its surrounding sections through — see `StorefrontProductPage`. Defaults to `'default'` when absent (pre-existing data). */
   templateKey?:      string;
 }
@@ -144,7 +129,6 @@ export function apiGetAllProducts(
   page = 1, limit = 10, categoryId?: string,
   productType?: 'physical' | 'digital' | 'educational',
   educationLevel?: string, normalizedCustomLevel?: string,
-  campaignId?: string,
   minPrice?: number, maxPrice?: number, minRating?: number, sortBy?: MarketplaceSortBy,
 ) {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
@@ -152,7 +136,6 @@ export function apiGetAllProducts(
   if (productType) params.set('productType', productType);
   if (educationLevel) params.set('educationLevel', educationLevel);
   if (normalizedCustomLevel) params.set('normalizedCustomLevel', normalizedCustomLevel);
-  if (campaignId) params.set('campaignId', campaignId);
   if (minPrice != null) params.set('minPrice', String(minPrice));
   if (maxPrice != null) params.set('maxPrice', String(maxPrice));
   if (minRating != null) params.set('minRating', String(minRating));

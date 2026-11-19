@@ -86,7 +86,7 @@ export { ComingSoonBanner }                  from './ComingSoonBanner';
 
 export { StoreAnnouncementBar }               from './StoreAnnouncementBar';
 
-export { DealsBanner, useCountdown, CountdownUnit } from './DealsBanner';
+export { useCountdown, CountdownUnit } from './Countdown';
 
 export { NotificationBell }                  from './NotificationBell';
 export { NotificationsPanel }                 from './NotificationsPanel';

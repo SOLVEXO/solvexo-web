@@ -452,24 +452,10 @@ export const ENDPOINTS = {
       UPDATE: (storeId: string, couponId: string) => `/api/marketing/${storeId}/coupons/${couponId}`,
       DELETE: (storeId: string, couponId: string) => `/api/marketing/${storeId}/coupons/${couponId}`,
     },
-    CAMPAIGNS: {
-      LIST: (storeId: string) => `/api/marketing/${storeId}/campaigns`,
-      JOIN: (storeId: string, campaignId: string) => `/api/marketing/${storeId}/campaigns/${campaignId}/join`,
-      LEAVE:(storeId: string, campaignId: string) => `/api/marketing/${storeId}/campaigns/${campaignId}/leave`,
-    },
 
-    // Public — buyer marketplace/homepage deal banner
-    PUBLIC_CAMPAIGNS: '/api/public/marketing/campaigns',
-
-    // Admin — platform-wide sale campaigns + platform-issued coupons
+    // Admin — platform-issued coupons
     ADMIN: {
-      CAMPAIGNS: {
-        CREATE:     '/api/admin/marketing/campaigns',
-        LIST:       '/api/admin/marketing/campaigns',
-        UPDATE:     (id: string) => `/api/admin/marketing/campaigns/${id}`,
-        SET_STATUS: (id: string) => `/api/admin/marketing/campaigns/${id}/status`,
-        DELETE:     (id: string) => `/api/admin/marketing/campaigns/${id}`,
-      },
+
       COUPONS: {
         CREATE: '/api/admin/marketing/coupons',
         LIST:   '/api/admin/marketing/coupons',
