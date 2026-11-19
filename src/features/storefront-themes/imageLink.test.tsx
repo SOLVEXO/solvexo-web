@@ -62,3 +62,24 @@ describe('Image Banner with a link but no button', () => {
     });
   }
 });
+
+describe('Image Banner "Show the image only"', () => {
+  const colors = { ink: '#111', bgAlt: '#eee' } as never;
+  const section = (settings: Record<string, unknown>) => ({ _id: 'x', type: 'image_banner', settings: { imageUrl: 'https://x.test/a.jpg', heading: 'Big sale', subheading: 'Today', ctaText: 'Shop', ctaLink: { linkType: 'home' }, ...settings } }) as never;
+  for (const [name, Banner] of [['Fashion', FashionBanner], ['Tech', TechBanner], ['LedUp', LedupBanner]] as const) {
+    it(`${name}: no heading, text, button or dark layer; the whole image can still be a link`, () => {
+      const { container } = wrap(<Banner section={section({ imageOnly: true, imageLinkOn: true, imageLink: { linkType: 'collection' } })} colors={colors} blocks={[]} />);
+      expect(container.querySelector('h2')).toBeNull();
+      expect(container.querySelector('p')).toBeNull();
+      expect(container.textContent).not.toContain('Shop');
+      expect(container.querySelector('[aria-hidden="true"]')).toBeNull();
+      expect(container.querySelectorAll('a').length).toBe(1);
+      expect(container.querySelector('img')).not.toBeNull();
+    });
+    it(`${name}: switch off = text and button come back`, () => {
+      const { container } = wrap(<Banner section={section({ imageOnly: false })} colors={colors} blocks={[]} />);
+      expect(container.querySelector('h2')?.textContent).toBe('Big sale');
+      expect(container.textContent).toContain('Shop');
+    });
+  }
+});

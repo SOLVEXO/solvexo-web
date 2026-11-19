@@ -38,7 +38,8 @@ function SlideText({ block, color, onImage }: { block: Block; color: string; onI
   );
 }
 
-const hasText = (b: Block) => !!(b.settings.heading || b.settings.subheading || b.settings.ctaText);
+/** "Image only" slide: the picture already carries its own design, so no heading, text, button or dark layer is drawn on it. */
+const hasText = (b: Block) => b.settings.imageOnly !== true && !!(b.settings.heading || b.settings.subheading || b.settings.ctaText);
 
 function Slide({ block, height, active, eager, below, whole }: { block: Block; height: string | undefined; active: boolean; eager: boolean; below: boolean; /** Show the whole picture (never cropped) instead of filling the box. */ whole: boolean }) {
   const s = block.settings;
@@ -54,7 +55,7 @@ function Slide({ block, height, active, eager, below, whole }: { block: Block; h
             style={adapt || whole ? undefined : { objectPosition: focalOf(s.focalPoint) }} />
         </>
       )}
-      <div className="absolute inset-0" style={{ background: typeof s.overlayOpacity === 'number' ? `rgba(0,0,0,${Math.min(80, Math.max(0, s.overlayOpacity)) / 100})` : 'linear-gradient(90deg, rgba(0,0,0,.52) 0%, rgba(0,0,0,.18) 55%, rgba(0,0,0,0) 100%)' }} />
+      {s.imageOnly !== true && <div className="absolute inset-0" style={{ background: typeof s.overlayOpacity === 'number' ? `rgba(0,0,0,${Math.min(80, Math.max(0, s.overlayOpacity)) / 100})` : 'linear-gradient(90deg, rgba(0,0,0,.52) 0%, rgba(0,0,0,.18) 55%, rgba(0,0,0,0) 100%)' }} />}
       {hasText(block) && (
         // "Below image" on phones: no text over the picture there (it appears under it instead, see Hero).
         <div className={`absolute inset-0 ${below ? 'hidden md:flex' : 'flex'} items-end md:items-center`}>

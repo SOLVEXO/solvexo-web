@@ -555,21 +555,22 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', hint: 'The part of the image that must stay visible when it is cropped.' },
       { key: 'imageLinkOn', kind: 'checkbox', label: 'Make the whole image a link', defaultOff: true },
       { key: 'imageLink', kind: 'link', label: 'Image link', showIf: s => s.imageLinkOn === true },
-      { key: 'heading', kind: 'text', label: 'Heading' },
-      { key: 'subheading', kind: 'text', label: 'Text' },
-      { key: 'ctaText', kind: 'text', label: 'Button text' },
-      { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
+      { key: 'imageOnly', kind: 'checkbox', label: 'Show the image only (no text, button or dark layer)', defaultOff: true, hint: 'Use this when your picture already has its own words and button. Nothing is drawn on top of it and the dark layer is removed. Tip: turn on "Make the whole image a link" so shoppers can click it.' },
+      { key: 'heading', kind: 'text', label: 'Heading', showIf: s => s.imageOnly !== true },
+      { key: 'subheading', kind: 'text', label: 'Text', showIf: s => s.imageOnly !== true },
+      { key: 'ctaText', kind: 'text', label: 'Button text', showIf: s => s.imageOnly !== true },
+      { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => s.imageOnly !== true && !!s.ctaText },
       { key: 'heightPreset', kind: 'select', label: 'Banner height', options: [
         { value: 'adapt', label: 'Adapt to image' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
       ] },
-      { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, options: [
+      { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, showIf: s => s.imageOnly !== true, options: [
         { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' },
       ] },
-      { key: 'contentPosition', kind: 'select', label: 'Text position', half: true, options: [
+      { key: 'contentPosition', kind: 'select', label: 'Text position', half: true, showIf: s => s.imageOnly !== true, options: [
         { value: 'top', label: 'Top' }, { value: 'middle', label: 'Middle' }, { value: 'bottom', label: 'Bottom' },
       ] },
-      { key: 'overlayOpacity', kind: 'number', label: 'Image overlay opacity (%)', min: 0, max: 80, step: 5 },
-      { key: 'textColor', kind: 'color', label: 'Text colour' },
+      { key: 'overlayOpacity', kind: 'number', label: 'Image overlay opacity (%)', min: 0, max: 80, step: 5, showIf: s => s.imageOnly !== true },
+      { key: 'textColor', kind: 'color', label: 'Text colour', showIf: s => s.imageOnly !== true },
     ],
   },
   // ── Core/locked sections (Phase 4) — always pre-seeded, never manually
@@ -762,18 +763,19 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
   hero_slide: [
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
     { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', hint: 'The part of the image that must stay visible when it is cropped (small screens, fixed heights).' },
-    { key: 'heading', kind: 'text', label: 'Heading' },
-    { key: 'subheading', kind: 'text', label: 'Subheading' },
+    { key: 'imageOnly', kind: 'checkbox', label: 'Show the image only (no text, button or dark layer)', defaultOff: true, hint: 'Use this when your picture already has its own words and button. Nothing is drawn on top of it and the dark layer is removed. Tip: turn on "Make the whole slide a link" so shoppers can click it.' },
+    { key: 'heading', kind: 'text', label: 'Heading', showIf: s => s.imageOnly !== true },
+    { key: 'subheading', kind: 'text', label: 'Subheading', showIf: s => s.imageOnly !== true },
     { key: 'slideLinkOn', kind: 'checkbox', label: 'Make the whole slide a link', defaultOff: true },
     { key: 'slideLink', kind: 'link', label: 'Slide link', showIf: s => s.slideLinkOn === true },
-    { key: 'ctaText', kind: 'text', label: 'Button text', hint: 'Leave empty for no button.' },
-    { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
+    { key: 'ctaText', kind: 'text', label: 'Button text', hint: 'Leave empty for no button.', showIf: s => s.imageOnly !== true },
+    { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => s.imageOnly !== true && !!s.ctaText },
     // Alignment + text colour work in both themes. Overlay only exists where text sits ON the image (another theme); Maison's split layout ignores it.
-    { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, options: [
+    { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, showIf: s => s.imageOnly !== true, options: [
       { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' },
     ] },
-    { key: 'overlayOpacity', kind: 'number', label: 'Image overlay opacity (%)', half: true, min: 0, max: 80, step: 5, hint: 'Darkens the image behind the text. Only themes that put text over the image use it . Blank = theme default.' },
-    { key: 'textColor', kind: 'color', label: 'Text colour' },
+    { key: 'overlayOpacity', kind: 'number', label: 'Image overlay opacity (%)', half: true, showIf: s => s.imageOnly !== true, min: 0, max: 80, step: 5, hint: 'Darkens the image behind the text. Only themes that put text over the image use it . Blank = theme default.' },
+    { key: 'textColor', kind: 'color', label: 'Text colour', showIf: s => s.imageOnly !== true },
   ],
   // "Dynamic Sources" — dynamicSourceKey, when set, binds this block's
   // `text` to one of the store's own real custom fields instead of a
