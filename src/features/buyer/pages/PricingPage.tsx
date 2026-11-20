@@ -129,6 +129,7 @@ export function PricingPage() {
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [email, setEmail] = useState('');
   const [openPlan, setOpenPlan] = useState<string | null>(null);
+  let openRest: { key: string; name: string; lines: string[] } = { key: '', name: '', lines: [] };
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -226,12 +227,13 @@ export function PricingPage() {
                 const popular = !!plan.badge;
                 const { now, was, percentOff } = displayPrice(plan, billing);
                 const prev = i > 0 ? plans[i - 1] : null;
+                const { name, description, badge } = copy(plan);
                 const allFeatures = planFeatures(plan, prev, pageLang);
                 const shown = i === 0 ? 10 : 15; // first card shows 10 lines, the others 15; the rest opens under the link
                 const features = allFeatures.slice(0, shown);
                 const overflow = allFeatures.slice(shown);
                 const isOpen = openPlan === plan._id;
-                const { name, description, badge } = copy(plan);
+                if (isOpen && openRest.key !== plan._id) openRest = { key: plan._id, name, lines: overflow.map(f => f.title) };
                 const intro = billing === 'monthly' && plan.introOfferEnabled && plan.introPriceUSD != null && plan.introDurationCycles != null;
                 const fee = plan.limits?.transactionFeeRate;
                 return (
@@ -292,19 +294,11 @@ export function PricingPage() {
                       ))}
                     </ul>
 
-                    <button type="button" aria-expanded={isOpen}
-                      onClick={() => setOpenPlan(isOpen ? null : plan._id)}
+                    <button type="button" aria-expanded={isOpen} aria-controls="included-panel"
+                      onClick={() => { setOpenPlan(isOpen ? null : plan._id); if (!isOpen) setTimeout(() => document.getElementById('included-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
                       className="mt-2 text-start text-[13px] font-semibold underline underline-offset-4 cursor-pointer bg-transparent border-0 p-0" style={{ color: ACCENT }}>
                       {isOpen ? fx.hideIncluded : fx.moreIncluded(overflow.length + includedItems.length)} {isOpen ? '▴' : '▾'}
                     </button>
-                    {isOpen && (
-                      <ul className="mt-2 list-none p-0">
-                        {[...overflow.map(f => f.title), ...includedItems].map(x => (
-                          <li key={x} className="flex gap-2.5 py-[4px] text-[12.5px] leading-[1.45]"><Tick /><span>{x}</span></li>
-                        ))}
-                      </ul>
-                    )}
-
                     {typeof fee === 'number' && (
                       <p className="mt-auto pt-3.5 text-[12px] leading-[1.6]" style={{ color: MUTED, borderTop: `1px dashed ${LINE}` }}>
                         {t.otherGateways}<strong className="font-semibold" style={{ color: INK }}>{pct(fee)}</strong><br />
@@ -324,7 +318,15 @@ export function PricingPage() {
       </section>
 
       {/* Included in every plan: opened from the "+ N more included features" link on each card (kept in the page for search engines) */}
-      <div id="included-panel">
+      <div id="included-panel" hidden={!openPlan}>
+      {openRest.lines.length > 0 && (
+        <section className="px-4 md:px-8 pt-16 max-w-[1240px] mx-auto">
+          <h3 className="mb-3 text-center text-[18px] font-semibold">{openRest.name}</h3>
+          <ul className="list-none m-0 p-0 mx-auto max-w-[520px] rounded-[14px] bg-white px-[18px] py-2" style={{ border: `1px solid ${LINE}` }}>
+            {openRest.lines.map(x => <li key={x} className="flex gap-2.5 py-[6px] text-[13.5px]"><Tick /><span>{x}</span></li>)}
+          </ul>
+        </section>
+      )}
       <section className="px-4 md:px-8 pt-20 max-w-[1240px] mx-auto">
         <p className="text-center text-[13px] font-semibold uppercase tracking-[0.14em]" style={{ color: ACCENT }}>{t.everyKicker}</p>
         <h2 className="mt-2.5 mb-2 text-center text-[28px] md:text-[32px] font-semibold tracking-[-0.02em]">{t.everyTitle}</h2>
