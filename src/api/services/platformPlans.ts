@@ -98,6 +98,8 @@ export interface StorePlatformSubscription {
   pendingPlanChange?: { kind: 'first_purchase' | 'trial_conversion' | 'upgrade'; planId: string; interval: 'monthly' | 'yearly'; amountUSD: number } | null;
   /** Why the last payment attempt failed (cleared on success). */
   lastBillingError?: string | null;
+  /** Set when support gave this store its plan for free (the seller never sees who or why). */
+  complimentary?: { active: boolean; since: string } | null;
   /** Set when Stripe's price could not be synced after a plan change (admin should reconcile). */
   billingSyncError?: string | null;
   plan?: PlatformPlan | null;
@@ -176,6 +178,8 @@ export interface SellerPlatformOverview {
     subscriptionStatus: string;
     /** Set when Stripe price sync failed after a plan change — needs manual reconcile. */
     billingSyncError?: string | null;
+    /** The plan was given by an admin (no billing). */
+    isComplimentary?: boolean;
     nextBillingDate: string | null;
     totalPaidUSD: number;
   }>;
@@ -448,8 +452,26 @@ export function apiAdminExtendSubscription(storeId: string, days: number, reason
   return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/admin/stores/${storeId}/extend`, { days, reason });
 }
 
-export function apiAdminAssignPlan(storeId: string, planId: string, reason?: string) {
-  return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/admin/stores/${storeId}/assign-plan`, { planId, reason });
+/** Gives a store a complimentary plan (no charge). `reason` is required; `reviewAt` (ISO) is when an admin should decide to keep or end it. */
+export function apiAdminAssignPlan(storeId: string, planId: string, reason: string, reviewAt?: string | null) {
+  return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/admin/stores/${storeId}/assign-plan`, { planId, reason, ...(reviewAt ? { reviewAt } : {}) });
+}
+
+export interface ComplimentaryPlanRow {
+  storeId: string; storeName: string; sellerId: string; planName: string; planPriceUSD: number; reason: string;
+  grantedBy: string; grantedAt: string; reviewAt: string | null; daysToReview: number | null;
+  reviewState: 'none' | 'ok' | 'soon' | 'overdue'; status: string;
+}
+export interface ComplimentaryList { items: ComplimentaryPlanRow[]; count: number; dueSoon: number; overdue: number; monthlyValueUSD: number }
+
+export function apiAdminListComplimentary() {
+  return client.get<never, ApiResponse<ComplimentaryList>>(`${BASE}/admin/stores/complimentary/list`);
+}
+export function apiAdminRemoveComplimentary(storeId: string, reason?: string) {
+  return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/admin/stores/${storeId}/complimentary/remove`, { reason });
+}
+export function apiAdminSetComplimentaryReview(storeId: string, reviewAt: string | null) {
+  return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/admin/stores/${storeId}/complimentary/review`, { reviewAt });
 }
 
 export function apiAdminLockStore(storeId: string, reason?: string) {

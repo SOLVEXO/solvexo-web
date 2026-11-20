@@ -14,6 +14,7 @@ import { BillingTimeline } from '@/components/comman/billing/BillingTimeline';
 import { apiGetBillingTimeline, apiExportBillingTimeline, type BillingTimelineParams } from '@/api/services/billingTimeline';
 import { confirmPaymentIntentWithSecret } from '@/components/comman/ui/StripeCardPayment';
 import { completePlanChange, shouldBillImmediately } from '@/utils/planChangeFlow';
+import { PLAN_STATUS_TONE_CLASS, planStatusLabel } from '@/utils/planStatus';
 import { Textarea } from '@/components/comman/ui/Input';
 import {
   apiBrowsePlatformPlans, apiGetStorePlatformPlan, apiGetStoreEntitlements, apiChangePlatformPlan, apiConfirmPendingPlanChange,
@@ -523,24 +524,27 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
             icon={<CircleDollarSign size={14} />}
             description={(
               <>
-                {current.amountUSD > 0 ? `$${current.amountUSD.toFixed(2)}/${current.billingInterval === 'yearly' ? 'yr' : 'mo'} · ` : ''}
-                {isCancelPending ? 'Ends' : 'Renews'} {new Date(isCancelPending ? current.currentPeriodEnd : current.nextBillingDate).toLocaleDateString()}
+                {current.complimentary
+                  ? 'Provided by Solvexo support — no billing'
+                  : (<>
+                    {current.amountUSD > 0 ? `$${current.amountUSD.toFixed(2)}/${current.billingInterval === 'yearly' ? 'yr' : 'mo'} · ` : ''}
+                    {isCancelPending ? 'Ends' : 'Renews'} {new Date(isCancelPending ? current.currentPeriodEnd : current.nextBillingDate).toLocaleDateString()}
+                  </>)}
               </>
             )}
           >
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
-              <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${
-                isPastDue || isTrialEnded ? 'bg-error-bg text-error' : isCancelPending ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success'
-              }`}>
-                {isCancelPending ? 'Canceling' : isTrialEnded ? 'Trial ended' : current.status === 'trialing' ? 'Trial' : current.status}
-              </span>
+              {(() => {
+                const st = planStatusLabel(current.status, { cancelPending: isCancelPending, complimentary: !!current.complimentary });
+                return <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full ${PLAN_STATUS_TONE_CLASS[st.tone]}`}>{st.label}</span>;
+              })()}
               <div className="flex items-center gap-2 flex-wrap">
                 {canManage && current.stripeCustomerId && (
                   <Button size="sm" variant="outline" icon={<CreditCard size={13} />} loading={portalBusy} onClick={openBillingPortal}>
                     Payment method
                   </Button>
                 )}
-                {canManage && current.amountUSD > 0 && (
+                {canManage && current.amountUSD > 0 && !current.complimentary && (
                   isCancelPending ? (
                     <Button size="sm" variant="outline" icon={<RotateCcw size={13} />} loading={reactivateBusy} onClick={submitReactivate}>
                       Reactivate

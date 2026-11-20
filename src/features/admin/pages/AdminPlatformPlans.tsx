@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { clsx } from 'clsx';
+import { complimentaryReviewAt } from '@/utils/planStatus';
 import { Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers, RotateCcw, Clock, Sparkles, Unlock, Lock, CalendarPlus, ArrowRightLeft } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
@@ -604,7 +605,9 @@ function SubscribersModal({ plan, allPlans, onClose }: { plan: PlatformPlan; all
         await apiAdminExtendSubscription(sub.storeId, days, actionReason.trim() || undefined);
       } else if (action === 'assign') {
         if (!actionPlanId) { setActionError('Choose a plan to assign.'); setActionBusy(false); return; }
-        await apiAdminAssignPlan(sub.storeId, actionPlanId, actionReason.trim() || undefined);
+        if (actionReason.trim().length < 3) { setActionError('Say why this store gets a complimentary plan (required).'); setActionBusy(false); return; }
+        // Complimentary plan: reviewed again in 90 days (Billing → store → Assign plan lets you pick another review date).
+        await apiAdminAssignPlan(sub.storeId, actionPlanId, actionReason.trim(), complimentaryReviewAt('90'));
       }
       setActionTarget(null);
       refresh();
@@ -729,7 +732,7 @@ function SubscribersModal({ plan, allPlans, onClose }: { plan: PlatformPlan; all
                 <p className="text-[11px] text-slate mt-1">No charge is made — any live Stripe subscription for this store is cancelled first.</p>
               </div>
             )}
-            <Textarea label="Reason (logged for support/audit, not shown to the seller verbatim)" value={actionReason} onChange={e => setActionReason(e.target.value)} rows={2} />
+            <Textarea label={actionTarget.action === 'assign' ? 'Reason (required — kept on the store, review in 90 days)' : 'Reason (logged for support/audit, not shown to the seller verbatim)'} value={actionReason} onChange={e => setActionReason(e.target.value)} rows={2} />
             {actionError && <p className="text-[12px] text-error">{actionError}</p>}
           </div>
         </Modal>

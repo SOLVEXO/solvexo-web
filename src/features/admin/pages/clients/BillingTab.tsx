@@ -12,6 +12,7 @@ import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErro
 import { formatCurrency, formatDate } from '@/components/comman/analytics/format';
 import { Layers, Lock, Unlock, RefreshCw, Layers as PlanIcon, Receipt, Undo2, History } from 'lucide-react';
 import { BillingTimeline } from '@/components/comman/billing/BillingTimeline';
+import { COMPLIMENTARY_REVIEW_OPTIONS, complimentaryReviewAt } from '@/utils/planStatus';
 import { apiAdminGetBillingTimeline, apiAdminExportBillingTimeline, type BillingTimelineParams } from '@/api/services/billingTimeline';
 
 interface BillingTabProps {
@@ -164,6 +165,7 @@ export function BillingTab({ sellerId }: BillingTabProps) {
   const [planId, setPlanId] = useState('');
   const [days, setDays] = useState(30);
   const [reason, setReason] = useState('');
+  const [reviewOpt, setReviewOpt] = useState('30');
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState('');
 
@@ -176,6 +178,7 @@ export function BillingTab({ sellerId }: BillingTabProps) {
     setPlanId('');
     setDays(30);
     setReason('');
+    setReviewOpt('30');
     setActionError('');
   }
 
@@ -186,7 +189,8 @@ export function BillingTab({ sellerId }: BillingTabProps) {
     try {
       if (action.kind === 'assign-plan') {
         if (!planId) { setActionError('Choose a plan.'); setSubmitting(false); return; }
-        await apiAdminAssignPlan(action.store.storeId, planId, reason || undefined);
+        if (reason.trim().length < 3) { setActionError('Say why this store gets a complimentary plan.'); setSubmitting(false); return; }
+        await apiAdminAssignPlan(action.store.storeId, planId, reason.trim(), complimentaryReviewAt(reviewOpt));
       } else if (action.kind === 'extend') {
         await apiAdminExtendSubscription(action.store.storeId, days, reason || undefined);
       } else if (action.kind === 'lock') {
@@ -216,6 +220,7 @@ export function BillingTab({ sellerId }: BillingTabProps) {
     { key: 'subscriptionStatus', header: 'Billing Status', render: (s) => (
       <span className="inline-flex items-center gap-1.5">
         <StatusBadge status={s.subscriptionStatus} size="sm" />
+        {s.isComplimentary && <Badge size="sm" color="blue">Complimentary</Badge>}
         {s.billingSyncError && <Badge size="sm" color="red"><span title={s.billingSyncError}>Stripe sync error</span></Badge>}
       </span>
     ) },
@@ -288,6 +293,12 @@ export function BillingTab({ sellerId }: BillingTabProps) {
                   <option value="">Select a plan…</option>
                   {plans.map((p) => <option key={p._id} value={p._id}>{p.name}{p.isFree ? ' (Free)' : ''}</option>)}
                 </select>
+                <p className="mt-2 text-[11.5px] leading-[1.5] text-slate">This is a <strong>complimentary</strong> plan: no charge, never renewed, never locked for payment. The store sees "Provided by Solvexo support".</p>
+                <label htmlFor="billing-review" className="mt-3 block text-[11.5px] font-medium text-charcoal mb-1.5">Review date</label>
+                <select id="billing-review" value={reviewOpt} onChange={(e) => setReviewOpt(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white">
+                  {COMPLIMENTARY_REVIEW_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                </select>
+                <p className="mt-1 text-[11px] text-slate">Admins get a reminder a week before this date. Nothing is removed automatically.</p>
               </div>
             )}
             {action.kind === 'extend' && (
@@ -304,7 +315,7 @@ export function BillingTab({ sellerId }: BillingTabProps) {
               </div>
             )}
             <div>
-              <label htmlFor="billing-action-reason" className="block text-[11.5px] font-medium text-charcoal mb-1.5">Reason <span className="text-slate font-normal">(optional, logged for audit)</span></label>
+              <label htmlFor="billing-action-reason" className="block text-[11.5px] font-medium text-charcoal mb-1.5">Reason {action.kind === 'assign-plan' ? <span className="text-error font-normal">(required — kept on the store)</span> : <span className="text-slate font-normal">(optional, logged for audit)</span>}</label>
               <textarea
                 id="billing-action-reason"
                 rows={2}

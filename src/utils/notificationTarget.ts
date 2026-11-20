@@ -17,6 +17,7 @@ export function notificationTarget(n: Pick<NotificationItem, 'type' | 'storeId' 
       admin_refund_request: '/admin/finance',
       admin_payout_request: '/admin/finance',
       admin_platform_billing_failed: '/admin/billing',
+      admin_complimentary_review: '/admin/billing',
       admin_promotion_request: '/admin/billing',
       admin_store_app_request: '/admin/store-app-requests',
       admin_contact_message: '/admin/contact',
