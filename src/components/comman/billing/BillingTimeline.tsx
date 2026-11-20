@@ -156,7 +156,7 @@ export function BillingTimeline({ load, exportCsv, refreshKey = 0, audience = 's
     const w = window.open('', '_blank', 'noopener,width=900,height=1000');
     if (!w) { setError('Allow pop-ups to print the statement.'); return; }
     const label = period === 'all' ? 'All time' : (months.find(m => m.value === period)?.label ?? (period === 'this_month' ? 'This month' : period === 'last_month' ? 'Last month' : 'Last 90 days'));
-    w.document.write(buildStatementHtml(data, storeName ?? 'Store', label));
+    w.document.write(buildStatementHtml(data, data.storeName || storeName || 'Store', label));
     w.document.close();
     w.focus();
     w.print();

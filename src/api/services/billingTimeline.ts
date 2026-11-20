@@ -21,6 +21,8 @@ export interface BillingTimelineEvent {
   internal?: { providerChargeId?: string | null; stripeInvoiceId?: string | null; providerRefundId?: string | null };
 }
 export interface BillingTimelineData {
+  /** The store's name, for the printed statement header. */
+  storeName?: string | null;
   summary: {
     currency: 'USD'; lifetimePaidUSD: number; refundedUSD: number; netLifetimeUSD: number; thisMonthUSD: number; taxPaidUSD: number;
     breakdown: { plans: number; addons: number; transactionFees: number; refunds: number };
