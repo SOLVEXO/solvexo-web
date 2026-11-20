@@ -48,9 +48,31 @@ function loadRatesOnce(): Promise<CurrentRatesMap | null> {
   return ratesPromise;
 }
 
-/** Dashboard / gate / checkout: the local currency for THIS store's country (display only — billing stays US$). */
-export function useLocalCurrencyForCountry(country: string | null | undefined): LocalCurrency | null {
+// The visitor's IP country, once per page load (Vercel function /api/geo). null when unavailable (local dev, blocked).
+let geoPromise: Promise<string | null> | null = null;
+function loadGeoOnce(): Promise<string | null> {
+  if (!geoPromise) {
+    geoPromise = fetch('/api/geo', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then((j: { country?: string | null } | null) => (typeof j?.country === 'string' ? j.country : null))
+      .catch(() => null);
+  }
+  return geoPromise;
+}
+
+/**
+ * Dashboard / gate / checkout: the visitor's IP country decides (Pakistan → Rs), exactly like the pricing page; when the IP
+ * country cannot be read it falls back to the store's own country. Display only — billing is unchanged.
+ */
+export function useLocalCurrencyForCountry(storeCountry: string | null | undefined): LocalCurrency | null {
   const [rates, setRates] = useState<CurrentRatesMap | null>(null);
+  const [ipCountry, setIpCountry] = useState<string | null | undefined>(undefined); // undefined = still asking
+  useEffect(() => {
+    let alive = true;
+    loadGeoOnce().then(c => { if (alive) setIpCountry(c); });
+    return () => { alive = false; };
+  }, []);
+  const country = ipCountry ?? storeCountry; // IP first; the store's country only when the IP is unknown
   const wanted = currencyCodeForCountry(country);
   useEffect(() => {
     if (!wanted) return;
@@ -58,7 +80,44 @@ export function useLocalCurrencyForCountry(country: string | null | undefined): 
     loadRatesOnce().then(r => { if (alive) setRates(r); });
     return () => { alive = false; };
   }, [wanted]);
-  return pickLocalCurrencyForCountry(country, rates);
+  return ipCountry === undefined ? null : pickLocalCurrencyForCountry(country, rates);
+}
+
+const usdText = (n: number) => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
+
+/** "$29" without a local currency, "Rs 8,020" with one. */
+export function priceOnly(usd: number, local: LocalCurrency | null): string {
+  return local ? formatLocal(usd, local) : usdText(usd);
+}
+
+/** The one-line note under local prices (null without a local currency). */
+export function localPriceNote(local: LocalCurrency | null): string | null {
+  if (!local) return null;
+  return `Prices in ${local.code === 'PKR' ? 'Rs' : local.code} are approximate and follow the exchange rate.`;
+}
+
+/**
+ * Wraps the English checkout wording so every "$29" in a price phrase becomes the local amount ("Rs 8,020"; a trailing
+ * " USD" is dropped). The Arabic site is left alone (its own wording).
+ */
+const PRICE_KEYS = [
+  'money', 'moPrice', 'billedYearly', 'introThen', 'perYearRenews', 'perMonthThen', 'amountPerYear', 'amountPerMonth',
+  'yearlySubline', 'introSubline', 'monthlySubline', 'payLabel', 'startFor',
+] as const;
+const USD_AMOUNT = /\$(\d+(?:\.\d+)?)(?: USD)?/g;
+
+export function localizeCheckoutText<T extends Record<string, unknown>>(t: T, local: LocalCurrency | null): T {
+  if (!local) return t;
+  const out: Record<string, unknown> = { ...t };
+  for (const key of PRICE_KEYS) {
+    const fn = t[key];
+    if (typeof fn !== 'function') continue;
+    out[key] = (...args: unknown[]) => {
+      const text = (fn as (...a: unknown[]) => unknown)(...args);
+      return typeof text === 'string' ? text.replace(USD_AMOUNT, (_m, n: string) => priceOnly(Number(n), local)) : text;
+    };
+  }
+  return out as T;
 }
 
 export function useLocalCurrency(): LocalCurrency | null {

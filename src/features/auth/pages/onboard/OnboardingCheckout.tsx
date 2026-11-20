@@ -17,9 +17,7 @@ import { useSiteText } from '@/i18n/site/useSiteText';
 import { useSiteLang } from '@/i18n/site/siteLangContext';
 import { planDisplayName } from './onboardingPlans';
 import { ONBOARDING_CHECKOUT_TEXT } from './OnboardingCheckout.text';
-import type { LocalCurrency } from '@/features/buyer/pages/pricing/localPrice';
-import { LocalPriceNote } from '@/components/comman/LocalPriceNote';
-import { localizeCheckoutText } from '@/utils/localPlanPrice';
+import { localizeCheckoutText, localPriceNote, type LocalCurrency } from '@/features/buyer/pages/pricing/localPrice';
 
 type CheckoutText = typeof ONBOARDING_CHECKOUT_TEXT.en;
 
@@ -286,7 +284,7 @@ export function OnboardingCheckoutPage({
                   {t.agreeCharge(yearly ? t.amountPerYear(yearlyTotal) : t.amountPerMonth(monthly), planName, fd(firstFullCharge))}
                 </p>
                 {taxStoreId && <PlatformTaxNote storeId={taxStoreId} amountUSD={dueToday} className="text-[12px] text-charcoal text-center mt-1" />}
-                <LocalPriceNote local={local} className="text-[11px] leading-[1.5] text-slate text-center mt-1.5" />
+                {local && <p className="text-[11px] leading-[1.5] text-slate text-center mt-1.5">{localPriceNote(local)}</p>}
               </div>
             ) : (
               <div className="flex items-center justify-center py-16">
@@ -554,7 +552,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
             ))}
           </div>
 
-          <LocalPriceNote local={local} className="mt-14 text-[12.5px] leading-[1.6] text-charcoal max-w-[900px]" />
+          {local && <p className="mt-14 text-[12.5px] leading-[1.6] text-charcoal max-w-[900px]">{localPriceNote(local)}</p>}
           <p className={local ? 'mt-2 text-[12px] text-slate leading-[1.6] max-w-[900px]' : 'mt-14 text-[12px] text-slate leading-[1.6] max-w-[900px]'}>
             {t.footer}
           </p>

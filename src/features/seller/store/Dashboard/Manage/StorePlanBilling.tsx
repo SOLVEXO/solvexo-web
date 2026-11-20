@@ -13,9 +13,7 @@ import { usePlatformCardOnFile } from '@/hooks/usePlatformCardOnFile';
 import { confirmPaymentIntentWithSecret } from '@/components/comman/ui/StripeCardPayment';
 import { completePlanChange, shouldBillImmediately } from '@/utils/planChangeFlow';
 import { PLAN_STATUS_TONE_CLASS, planStatusLabel } from '@/utils/planStatus';
-import { useLocalCurrencyForCountry } from '@/features/buyer/pages/pricing/localPrice';
-import { LocalPriceNote } from '@/components/comman/LocalPriceNote';
-import { priceOnly, priceWithUsd } from '@/utils/localPlanPrice';
+import { localPriceNote, priceOnly, useLocalCurrencyForCountry } from '@/features/buyer/pages/pricing/localPrice';
 import { Textarea } from '@/components/comman/ui/Input';
 import {
   apiBrowsePlatformPlans, apiGetStorePlatformPlan, apiGetStoreEntitlements, apiChangePlatformPlan, apiConfirmPendingPlanChange,
@@ -409,7 +407,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                   : !current.platformPlanId && current.status !== 'trialing'
                   ? 'Choose a plan below to keep selling'
                   : (<>
-                    {current.amountUSD > 0 ? `${priceWithUsd(current.amountUSD, local)}/${current.billingInterval === 'yearly' ? 'yr' : 'mo'} · ` : ''}
+                    {current.amountUSD > 0 ? `${priceOnly(current.amountUSD, local)}/${current.billingInterval === 'yearly' ? 'yr' : 'mo'} · ` : ''}
                     {isCancelPending ? 'Ends' : 'Renews'} {new Date(isCancelPending ? current.currentPeriodEnd : current.nextBillingDate).toLocaleDateString()}
                   </>)}
               </>
@@ -488,12 +486,12 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
                     {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : interval === 'yearly' ? `${priceOnly(yearlyMonthlyEquivalent(plan), local)}/mo` : `${priceOnly(price ?? 0, local)}/mo`}
                   </p>
                   {interval === 'yearly' && !plan.isFree && !plan.isCustomPricing && (
-                    <p className="text-[11.5px] text-slate -mt-0.5">Billed {priceWithUsd(yearlyTotal(plan), local)} yearly{savings > 0 ? ` · save ${savings}%` : ''}</p>
+                    <p className="text-[11.5px] text-slate -mt-0.5">Billed {priceOnly(yearlyTotal(plan), local)} yearly{savings > 0 ? ` · save ${savings}%` : ''}</p>
                   )}
                   {/* Intro offer (monthly only — same rule the backend applies when it creates the subscription). */}
                   <p className="text-[11.5px] font-medium text-success mb-2 min-h-[16px]">
                     {interval === 'monthly' && !isCurrent && !plan.isFree && plan.introOfferEnabled && plan.introPriceUSD != null && plan.introDurationCycles != null
-                      ? `Start at ${priceWithUsd(plan.introPriceUSD, local)}/mo for ${plan.introDurationCycles} month${plan.introDurationCycles === 1 ? '' : 's'}, then ${priceOnly(plan.monthlyPriceUSD ?? 0, local)}/mo`
+                      ? `Start at ${priceOnly(plan.introPriceUSD, local)}/mo for ${plan.introDurationCycles} month${plan.introDurationCycles === 1 ? '' : 's'}, then ${priceOnly(plan.monthlyPriceUSD ?? 0, local)}/mo`
                       : ' '}
                   </p>
                   <ul className="flex flex-col gap-1.5 mb-4 p-0 list-none flex-1">
@@ -520,7 +518,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
               );
             })}
           </div>
-          <LocalPriceNote local={local} className="mt-4 text-[11.5px] leading-[1.5] text-slate" />
+          {local && <p className="mt-4 text-[11.5px] leading-[1.5] text-slate">{localPriceNote(local)}</p>}
         </SettingsCard>
 
         <SettingsCard
@@ -566,7 +564,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
             <div className="bg-cream border border-bone rounded-lg p-3.5 flex flex-col gap-[6px]">
               <div className="flex justify-between text-[12.5px]">
                 <span className="text-slate">New plan price</span>
-                <span className="text-charcoal font-medium">{priceWithUsd(preview.newAmountUSD, local)}/{preview.newBillingInterval === 'yearly' ? 'yr' : 'mo'}</span>
+                <span className="text-charcoal font-medium">{priceOnly(preview.newAmountUSD, local)}/{preview.newBillingInterval === 'yearly' ? 'yr' : 'mo'}</span>
               </div>
               <div className="flex justify-between text-[12.5px]">
                 <span className="text-slate">Starts on</span>
@@ -580,27 +578,27 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
             <div className="bg-cream border border-bone rounded-lg p-3.5 flex flex-col gap-[6px]">
               <div className="flex justify-between text-[12.5px]">
                 <span className="text-slate">New plan price</span>
-                <span className="text-charcoal font-medium">{priceWithUsd(preview.newAmountUSD, local)}/{preview.newBillingInterval === 'yearly' ? 'yr' : 'mo'}</span>
+                <span className="text-charcoal font-medium">{priceOnly(preview.newAmountUSD, local)}/{preview.newBillingInterval === 'yearly' ? 'yr' : 'mo'}</span>
               </div>
               {preview.unusedCreditFromCurrentPlanUSD > 0 && (
                 <div className="flex justify-between text-[12.5px]">
                   <span className="text-slate">Unused credit ({preview.remainingDaysInCurrentPeriod} day{preview.remainingDaysInCurrentPeriod === 1 ? '' : 's'} left)</span>
-                  <span className="text-success">−{priceWithUsd(preview.unusedCreditFromCurrentPlanUSD, local)}</span>
+                  <span className="text-success">−{priceOnly(preview.unusedCreditFromCurrentPlanUSD, local)}</span>
                 </div>
               )}
               {preview.existingCreditBalanceUSD > 0 && (
                 <div className="flex justify-between text-[12.5px]">
                   <span className="text-slate">Existing account credit</span>
-                  <span className="text-success">−{priceWithUsd(preview.existingCreditBalanceUSD, local)}</span>
+                  <span className="text-success">−{priceOnly(preview.existingCreditBalanceUSD, local)}</span>
                 </div>
               )}
               <div className="flex justify-between text-[13.5px] font-bold pt-[6px] mt-[2px] border-t border-bone">
                 <span className="text-carbon">{preview.creditAppliedToBalanceUSD > 0 ? 'Credited to your account' : 'Due today'}</span>
                 <span className={preview.creditAppliedToBalanceUSD > 0 ? 'text-success' : 'text-brand-orange'}>
-                  {priceWithUsd(preview.creditAppliedToBalanceUSD > 0 ? preview.creditAppliedToBalanceUSD : preview.amountDueTodayUSD, local)}
+                  {priceOnly(preview.creditAppliedToBalanceUSD > 0 ? preview.creditAppliedToBalanceUSD : preview.amountDueTodayUSD, local)}
                 </span>
               </div>
-              <LocalPriceNote local={local} className="text-[11px] leading-[1.5] text-slate pt-[6px]" />
+              {local && <p className="text-[11px] leading-[1.5] text-slate pt-[6px]">{localPriceNote(local)}</p>}
             </div>
           ) : null}
 
