@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAnalyticsQuery } from '@/hooks/useAnalyticsQuery';
 import { useClientBilling } from '@/hooks/admin/useAdminClients';
 import {
@@ -10,7 +10,9 @@ import { Table, StatusBadge, Badge, ActionMenu, Modal, Button, SkeletonBox } fro
 import type { TableColumn, ActionMenuItem } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatCurrency, formatDate } from '@/components/comman/analytics/format';
-import { Layers, Lock, Unlock, RefreshCw, Layers as PlanIcon, Receipt, Undo2 } from 'lucide-react';
+import { Layers, Lock, Unlock, RefreshCw, Layers as PlanIcon, Receipt, Undo2, History } from 'lucide-react';
+import { BillingTimeline } from '@/components/comman/billing/BillingTimeline';
+import { apiAdminGetBillingTimeline, apiAdminExportBillingTimeline, type BillingTimelineParams } from '@/api/services/billingTimeline';
 
 interface BillingTabProps {
   sellerId: string;
@@ -26,6 +28,17 @@ type ActionKind = 'assign-plan' | 'extend' | 'lock' | 'unlock';
 // `GET admin/stores/:storeId/invoices` route (SellerPlatformSubscriptionsService.adminListInvoices)
 // — the seller-facing one 403s for an admin caller (ownership check can
 // never pass), so this couldn't just reuse apiGetStoreInvoices. ────────────
+// One store's complete payment history, trial → today, with failed attempts, refunds, card and provider references.
+function TimelineModal({ store, onClose }: { store: StoreBillingRow; onClose: () => void }) {
+  const load = useCallback((p: BillingTimelineParams) => apiAdminGetBillingTimeline(store.storeId, p), [store.storeId]);
+  const exportCsv = useCallback((p: BillingTimelineParams) => apiAdminExportBillingTimeline(store.storeId, p), [store.storeId]);
+  return (
+    <Modal mobileSheet width={860} title={`Payment timeline — ${store.storeName}`} onClose={onClose}>
+      <div className="-mx-5 -my-4"><BillingTimeline audience="admin" storeName={store.storeName} load={load} exportCsv={exportCsv} /></div>
+    </Modal>
+  );
+}
+
 function InvoicesModal({ store, onClose }: { store: StoreBillingRow; onClose: () => void }) {
   const { data, loading, error, refetch } = useAnalyticsQuery(
     (p: { storeId: string }) => apiAdminListInvoices(p.storeId, { limit: 20 }),
@@ -147,6 +160,7 @@ export function BillingTab({ sellerId }: BillingTabProps) {
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [action, setAction] = useState<{ kind: ActionKind; store: StoreBillingRow } | null>(null);
   const [invoicesFor, setInvoicesFor] = useState<StoreBillingRow | null>(null);
+  const [timelineFor, setTimelineFor] = useState<StoreBillingRow | null>(null);
   const [planId, setPlanId] = useState('');
   const [days, setDays] = useState(30);
   const [reason, setReason] = useState('');
@@ -212,6 +226,7 @@ export function BillingTab({ sellerId }: BillingTabProps) {
       header: 'Actions',
       render: (s) => {
         const items: ActionMenuItem[] = [
+          { label: 'Payment timeline', icon: <History size={13} />, onClick: () => setTimelineFor(s) },
           { label: 'View invoices', icon: <Receipt size={13} />, onClick: () => setInvoicesFor(s) },
           { label: 'Assign plan', icon: <PlanIcon size={13} />, onClick: () => openAction('assign-plan', s) },
           { label: 'Extend subscription', icon: <RefreshCw size={13} />, onClick: () => openAction('extend', s) },
@@ -304,6 +319,7 @@ export function BillingTab({ sellerId }: BillingTabProps) {
       )}
 
       {invoicesFor && <InvoicesModal store={invoicesFor} onClose={() => setInvoicesFor(null)} />}
+      {timelineFor && <TimelineModal store={timelineFor} onClose={() => setTimelineFor(null)} />}
     </>
   );
 }

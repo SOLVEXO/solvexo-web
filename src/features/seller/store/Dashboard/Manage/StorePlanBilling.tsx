@@ -10,6 +10,8 @@ import { SettingsCard } from '@/components/comman/settings';
 import { Modal } from '@/components/comman/ui/Modal';
 import { AddPlatformCardModal } from '@/components/layouts/AddPlatformCardModal';
 import { usePlatformCardOnFile } from '@/hooks/usePlatformCardOnFile';
+import { BillingTimeline } from '@/components/comman/billing/BillingTimeline';
+import { apiGetBillingTimeline, apiExportBillingTimeline, type BillingTimelineParams } from '@/api/services/billingTimeline';
 import { confirmPaymentIntentWithSecret } from '@/components/comman/ui/StripeCardPayment';
 import { completePlanChange, shouldBillImmediately } from '@/utils/planChangeFlow';
 import { Textarea } from '@/components/comman/ui/Input';
@@ -191,6 +193,8 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
   const [invoicesLoading, setInvoicesLoading] = useState(true);
   const [invoicesError, setInvoicesError] = useState('');
   const [invoiceNonce, setInvoiceNonce] = useState(0);
+  const loadTimeline = useCallback((p: BillingTimelineParams) => apiGetBillingTimeline(storeId, p), [storeId]);
+  const exportTimeline = useCallback((p: BillingTimelineParams) => apiExportBillingTimeline(storeId, p), [storeId]);
   // Staff with only 'View billing and receive billing emails' get a read-only page (backend enforces too).
   const canManage = hasNavPermission(TokenStorage.getUser() as Parameters<typeof hasNavPermission>[0], 'settings.billing.manage');
   const [loading, setLoading] = useState(true);
@@ -661,6 +665,16 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
               ))}
             </div>
           )}
+        </SettingsCard>
+
+        <SettingsCard
+          title="Billing activity"
+          description="Every plan change, payment, failed attempt, refund, add-on and fee bill for this store — with the card used and a line-by-line breakdown."
+          icon={<ReceiptText size={14} />}
+          divided
+          bodyClassName="px-0 pb-0"
+        >
+          <BillingTimeline load={loadTimeline} exportCsv={exportTimeline} refreshKey={invoiceNonce} />
         </SettingsCard>
 
         <SettingsCard
