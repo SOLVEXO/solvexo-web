@@ -12,11 +12,11 @@ const plan = (over: Partial<PlatformPlan>): PlatformPlan => ({
 const basic = plan({ name: 'Basic', monthlyPriceUSD: 6, yearlyPriceUSD: 60, compareAtMonthlyPriceUSD: 10, compareAtYearlyPriceUSD: 100, limits: {
   maxProducts: 25, maxStaffAccounts: 1, maxPosLocations: 1, aiCreditsPerMonth: 0, maxMarkets: 3, maxActiveStoreBanners: -1, maxActivePromotions: -1,
   customDomainAllowed: true, emailCampaignsAllowed: true, advancedSeoToolsAllowed: true, abandonedCartRecoveryAllowed: true, customRedirectsAllowed: true,
-  b2bWholesaleAllowed: true, maxB2BCatalogs: 1, monthlyEmailSends: 2000, transactionFeeRate: 0.02,
+  b2bWholesaleAllowed: false, maxB2BCatalogs: 1, monthlyEmailSends: 2000, transactionFeeRate: 0.02,
 } });
 const grow = plan({ name: 'Grow', monthlyPriceUSD: 29, yearlyPriceUSD: 282, compareAtMonthlyPriceUSD: 49, compareAtYearlyPriceUSD: 470, limits: {
   ...basic.limits, maxProducts: -1, maxStaffAccounts: 5, maxPosLocations: 3, aiCreditsPerMonth: 0, maxMarkets: 5, maxB2BCatalogs: 3, monthlyEmailSends: 10000,
-  loyaltyProgramAllowed: true, seoAiSuggestionsAllowed: false, prioritySupport: true,
+  b2bWholesaleAllowed: true, loyaltyProgramAllowed: true, seoAiSuggestionsAllowed: false, prioritySupport: true,
   digitalMembershipsAllowed: true, digitalLicensesAllowed: true, digitalCoursesAllowed: true, transactionFeeRate: 0.01,
 } });
 const advanced = plan({ name: 'Advanced', limits: {
@@ -30,10 +30,10 @@ describe('pricing page plan features', () => {
     expect(titles(basic)).toEqual([
       'Sell up to 25 products', '1 extra staff login', '1 shop location with the POS till',
       'Recover abandoned carts', 'Your own web address', 'Email marketing', 'SEO tools', 'Custom redirects',
-      '2,000 marketing emails a month', 'B2B wholesale prices', 'Accept up to 3 currencies',
+      '2,000 marketing emails a month', 'Accept up to 3 currencies',
     ]);
     expect(planFeatures(basic).find(f => f.title === 'Your own web address')?.hint).toContain('yourshop.com');
-    expect(planFeatures(basic).find(f => f.title === 'B2B wholesale prices')?.hint).toContain('this plan allows 1');
+    expect(titles(basic)).not.toContain('B2B wholesale prices'); // wholesale starts at Grow
   });
 
   it('every line on every plan card carries an explanation for the ? icon', () => {
@@ -59,7 +59,7 @@ describe('pricing page plan features', () => {
   it('lists only what is new or bigger on the next plan', () => {
     expect(titles(grow, basic)).toEqual([
       'Unlimited products', '5 staff logins', '3 shop / warehouse locations',
-      'Loyalty points', '10,000 marketing emails a month', '3 wholesale catalogs',
+      'Loyalty points', '10,000 marketing emails a month', 'B2B wholesale prices',
       'Sell memberships, license keys & courses', 'Accept up to 5 currencies', 'Priority support',
     ]);
   });
