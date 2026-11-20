@@ -58,7 +58,7 @@ describe('pricing page plan features', () => {
   it('lists only what is new or bigger on the next plan', () => {
     expect([...titles(grow, basic)].sort()).toEqual([
       'Unlimited products', '5 staff logins', '3 shop / warehouse locations',
-      'Loyalty points', 'B2B wholesale prices', '3 wholesale catalogs', 'Sell memberships', 'Sell license keys', 'Sell courses',
+      'Loyalty points', 'B2B wholesale prices', '3 wholesale catalogs', 'Sell digital memberships', 'Sell software license keys', 'Sell online courses',
       '10,000 marketing emails a month', 'Accept up to 5 currencies', 'Lower gateway fee: 1% (was 2%)', 'Priority support',
     ].sort());
   });
@@ -73,7 +73,7 @@ describe('pricing page plan features', () => {
   it('shows premium-only items on the plan that first has them', () => {
     const t = titles(advanced, grow);
     expect(t).toEqual(expect.arrayContaining(['Webhooks & API', 'Live courier rates at checkout', 'Google Search Console connection']));
-    expect(t).not.toContain('Sell memberships');
+    expect(t).not.toContain('Sell digital memberships');
   });
 
   it('never lists a feature the plan does not include', () => {
