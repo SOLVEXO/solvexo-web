@@ -23,7 +23,7 @@ export function RevenueTab({ params, compareToPreviousPeriod }: { params: BaseAn
     { metric: 'One-Time Order Revenue', current: formatCurrency(b.oneTimeOrderRevenue), previous: formatCurrency(b.previousPeriod.oneTimeOrderRevenue) },
     { metric: 'Custom Commission', current: formatCurrency(b.platformCommissionRevenue), previous: formatCurrency(b.previousPeriod.platformCommissionRevenue) },
     { metric: 'Payment Processing Fees', current: formatCurrency(b.paymentProcessingFees), previous: formatCurrency(b.previousPeriod.paymentProcessingFees) },
-    { metric: 'Platform Revenue (plans + add-ons + fees)', current: formatCurrency(b.totalPlatformRevenue), previous: formatCurrency(b.previousPeriod.totalPlatformRevenue) },
+    { metric: 'Platform Revenue (plans + fees)', current: formatCurrency(b.totalPlatformRevenue), previous: formatCurrency(b.previousPeriod.totalPlatformRevenue) },
     { metric: 'Total Marketplace Revenue', current: formatCurrency(b.totalMarketplaceRevenue), previous: formatCurrency(b.previousPeriod.totalMarketplaceRevenue) },
   ] : [];
 
@@ -62,11 +62,10 @@ export function RevenueTab({ params, compareToPreviousPeriod }: { params: BaseAn
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <DonutChart
             title="Platform Revenue Composition"
-            subtitle="Seller plans, add-ons, transaction fees & custom commission"
+            subtitle="Seller plans, transaction fees & custom commission"
             centerLabel="Platform"
             data={[
               { label: 'Seller Plans', value: breakdown.data.planRevenue ?? 0 },
-              { label: 'Add-ons', value: breakdown.data.addonRevenue ?? 0 },
               { label: 'Transaction Fees', value: breakdown.data.transactionFeeRevenue ?? 0 },
               { label: 'Custom Commission', value: breakdown.data.platformCommissionRevenue },
             ]}
@@ -74,7 +73,7 @@ export function RevenueTab({ params, compareToPreviousPeriod }: { params: BaseAn
 
           <div className="grid grid-cols-1 gap-3">
             <MetricCard label="One-Time Order Revenue" value={formatCurrency(breakdown.data.oneTimeOrderRevenue)} sub="Belongs to sellers, not the platform" />
-            <MetricCard label="Platform Revenue" value={formatCurrency(breakdown.data.totalPlatformRevenue)} sub="Seller plans + add-ons + collected transaction fees (same as Finance)" />
+            <MetricCard label="Platform Revenue" value={formatCurrency(breakdown.data.totalPlatformRevenue)} sub="Seller plans + collected transaction fees (same as Finance)" />
             <MetricCard label="Custom Commission" value={formatCurrency(breakdown.data.platformCommissionRevenue)} sub="Only sellers with an admin-agreed rate" />
             <MetricCard label="Marketplace Order Revenue" value={formatCurrency(breakdown.data.totalMarketplaceRevenue)} sub="Net order revenue across all stores (minus refunds)" />
           </div>

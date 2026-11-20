@@ -1,10 +1,10 @@
 import client from '../client';
 
-// Finance record of a store's Solvexo billing: plan changes, payments, failed attempts, refunds, add-ons, fees.
+// Finance record of a store's Solvexo billing: plan changes, payments, failed attempts, refunds, fees.
 const BASE = '/api/platform-plans';
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 
-export type BillingTimelineKind = 'trial_started' | 'trial_ended' | 'plan_change' | 'credit' | 'payment' | 'payment_failed' | 'refund' | 'addon' | 'transaction_fee';
+export type BillingTimelineKind = 'trial_started' | 'trial_ended' | 'plan_change' | 'credit' | 'payment' | 'payment_failed' | 'refund' | 'transaction_fee';
 export interface BillingTimelineLineItem { kind: string; label: string; amountUSD: number }
 export interface BillingTimelineEvent {
   id: string; at: string; kind: BillingTimelineKind; status: 'success' | 'failed' | 'pending' | 'info' | 'refunded';
@@ -25,7 +25,7 @@ export interface BillingTimelineData {
   storeName?: string | null;
   summary: {
     currency: 'USD'; lifetimePaidUSD: number; refundedUSD: number; netLifetimeUSD: number; thisMonthUSD: number; taxPaidUSD: number;
-    breakdown: { plans: number; addons: number; transactionFees: number; refunds: number };
+    breakdown: { plans: number; transactionFees: number; refunds: number };
     creditBalanceUSD: number; card: { brand: string; last4: string } | null; failedPaymentsLast30Days: number;
     pendingPlanChange: { planName: string; kind: string; amountUSD: number } | null; lastBillingError: string | null;
     current: { status: string; planName: string | null; interval: string; amountUSD: number; nextBillingDate: string | null; trialEndsAt: string | null } | null;

@@ -37,7 +37,7 @@ export const ADMIN_WIDGET_DEFS: AdminWidgetDef[] = [
   },
   {
     id: 'platform_revenue', title: 'Solvexo revenue', category: 'Subscription revenue', perm: 'finance.view',
-    description: 'Plan fees, add-ons and transaction fees collected, with plan tax shown separately.', sizes: ['third', 'medium', 'large'], defaultSize: 'third',
+    description: 'Plan fees and transaction fees collected, with plan tax shown separately.', sizes: ['third', 'medium', 'large'], defaultSize: 'third',
     settings: [{ key: 'range', label: 'Period', options: RANGE_OPTIONS }], defaultSettings: { range: '30d' },
   },
   { id: 'plan_distribution', title: 'Plan distribution', category: 'Subscription revenue', perm: 'billing.manage', description: 'Paying stores and MRR per platform plan.', sizes: ['third', 'medium', 'large'], defaultSize: 'third' },

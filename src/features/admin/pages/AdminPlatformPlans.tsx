@@ -1,27 +1,21 @@
 import { useEffect, useState, useCallback } from 'react';
 import { clsx } from 'clsx';
 import { complimentaryReviewAt } from '@/utils/planStatus';
-import { Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers, RotateCcw, Clock, Sparkles, Unlock, Lock, CalendarPlus, ArrowRightLeft } from 'lucide-react';
+import { Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Layers, RotateCcw, Clock, Sparkles, Unlock, Lock, CalendarPlus, ArrowRightLeft } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { Input, Textarea } from '@/components/comman/ui/Input';
-import { SkeletonBox, Table, MetricCard, Card, Badge, AdminPageHeader, EmptyState, type TableColumn } from '@/components/comman/ui';
+import { SkeletonBox, MetricCard, Card, Badge, AdminPageHeader, EmptyState } from '@/components/comman/ui';
 import { Toggle } from '@/components/comman/ui/Toggle';
 import { ActionMenu } from '@/components/comman/ui/ActionMenu';
 import {
   apiAdminListPlatformPlans, apiAdminCreatePlatformPlan, apiAdminUpdatePlatformPlan, apiAdminArchivePlatformPlan,
-  apiAdminGetPlatformPlanRevenue, apiAdminGetPlatformPlanSubscribers, apiAdminListAddonPurchases,
+  apiAdminGetPlatformPlanRevenue, apiAdminGetPlatformPlanSubscribers,
   apiAdminRefundPlatformInvoice, apiAdminGetTrialSettings, apiAdminUpdateTrialSettings,
   apiAdminUnlockStore, apiAdminExtendSubscription, apiAdminAssignPlan, apiAdminLockStore,
-  type PlatformPlan, type PlatformPlanLimits, type StorePlatformSubscription, type AddonPurchase, type TrialSettings,
+  type PlatformPlan, type PlatformPlanLimits, type StorePlatformSubscription, type TrialSettings,
 } from '@/api/services/platformPlans';
-
-const ADDON_LABELS: Record<string, string> = {
-  extra_ai_credits: 'Extra AI Credits', extra_staff_seat: 'Extra Staff Seat',
-  priority_marketplace_placement: 'Priority Marketplace Placement',
-  advanced_tax_compliance: 'Advanced Tax Compliance', sms_notifications: 'SMS Notifications',
-};
 
 const DEFAULT_LIMITS: PlatformPlanLimits = {
   maxProducts: 25, maxStaffAccounts: 1, maxPosLocations: 1, aiCreditsPerMonth: 0, transactionFeeRate: 0.05,
@@ -741,39 +735,6 @@ function SubscribersModal({ plan, allPlans, onClose }: { plan: PlatformPlan; all
   );
 }
 
-// ── Add-on purchases panel ────────────────────────────────────────────────────
-function AddonsPanel() {
-  const [addons, setAddons] = useState<AddonPurchase[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    apiAdminListAddonPurchases({ limit: 50 }).then(res => setAddons(res.data.addons ?? [])).finally(() => setLoading(false));
-  }, []);
-
-  const columns: TableColumn<AddonPurchase>[] = [
-    { key: 'storeId', header: 'Store', render: a => <span className="text-charcoal">{a.storeId.slice(-6).toUpperCase()}</span> },
-    { key: 'addonType', header: 'Add-on', render: a => <span className="text-graphite">{ADDON_LABELS[a.addonType] ?? a.addonType}</span> },
-    { key: 'quantity', header: 'Qty', render: a => <span className="text-graphite">{a.quantity}</span> },
-    { key: 'priceUSD', header: 'Amount', render: a => <span className="font-semibold text-success">${(a.priceUSD ?? 0).toFixed(2)}{a.recurring ? '/mo' : ''}</span> },
-    { key: 'status', header: 'Status', render: a => <Badge color={a.status === 'active' ? 'green' : a.status === 'canceled' ? 'gray' : 'orange'} size="sm" className="capitalize">{a.status}</Badge> },
-    { key: 'createdAt', header: 'Date', render: a => <span className="text-slate whitespace-nowrap">{new Date(a.createdAt).toLocaleDateString()}</span> },
-  ];
-
-  return (
-    <Table
-      columns={columns}
-      data={addons}
-      keyExtractor={a => a._id}
-      loading={loading}
-      emptyState={{
-        icon: <Package size={28} className="text-slate/50" />,
-        title: 'No add-on purchases yet.',
-        description: 'When a seller buys extra AI credits, staff seats, or other add-ons, they’ll show up here.',
-      }}
-    />
-  );
-}
-
 interface AdminPlatformPlansProps {
   /** true when rendered as a tab inside AdminBilling.tsx — suppresses this
    *  page's own title/header since the parent page already owns those (same
@@ -790,7 +751,6 @@ export function AdminPlatformPlans({ embedded = false }: AdminPlatformPlansProps
   const [editing, setEditing] = useState<PlatformPlan | 'new' | null>(null);
   const [duplicateSource, setDuplicateSource] = useState<PlatformPlan | null>(null);
   const [viewingSubscribersFor, setViewingSubscribersFor] = useState<PlatformPlan | null>(null);
-  const [showAddons, setShowAddons] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true); setError('');
@@ -850,35 +810,10 @@ export function AdminPlatformPlans({ embedded = false }: AdminPlatformPlansProps
         <AdminPageHeader
           title="Platform Plans"
           subtitle="Manage prices, intro offers and limits for the platform's plans. What each plan includes is defined by the platform."
-          actions={
-            <>
-              <Button variant="outline" size="sm" icon={<Package size={13} />} onClick={() => setShowAddons(s => !s)}>
-                {showAddons ? 'Hide Add-ons' : 'Add-on Purchases'}
-              </Button>
-            </>
-          }
         />
       )}
-      {embedded && (
-        <div className="px-4 sm:px-7 pt-5 flex items-center justify-end gap-2">
-          <Button variant="outline" size="sm" icon={<Package size={13} />} onClick={() => setShowAddons(s => !s)}>
-            {showAddons ? 'Hide Add-ons' : 'Add-on Purchases'}
-          </Button>
-        </div>
-      )}
-
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">{error}</p>}
-
-        {showAddons && (
-          <Card padding="none" className="overflow-hidden">
-            <div className="px-5 py-[14px] border-b border-bone flex items-center gap-2">
-              <Package size={15} className="text-brand-orange shrink-0" />
-              <p className="text-[14px] font-bold text-charcoal">Add-on Purchases</p>
-            </div>
-            <AddonsPanel />
-          </Card>
-        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {(loading && !revenue)

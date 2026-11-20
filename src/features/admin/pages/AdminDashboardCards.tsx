@@ -103,7 +103,7 @@ function MerchantGrowth({ range }: { range: AnalyticsRangePreset }) {
 function PlatformRevenue({ range }: { range: AnalyticsRangePreset }) {
   const load = useKeyedLoad(() => apiAdminFinancePlatformRevenue({ range }), `rev:${range}`);
   const rows = (d: NonNullable<typeof load.data>['data']) => [
-    ['Plan fees (net of refunds)', d.planRevenue.netUSD], ['Add-ons', d.addons.grossUSD], ['Transaction fees collected', d.transactionFees.collectedUSD],
+    ['Plan fees (net of refunds)', d.planRevenue.netUSD], ['Transaction fees collected', d.transactionFees.collectedUSD],
   ] as [string, number][];
   return (
     <Panel title="Solvexo revenue" icon={<DollarSign size={14} />} to={{ label: 'Finance', path: '/admin/finance' }}>

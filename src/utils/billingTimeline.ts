@@ -17,7 +17,7 @@ export function periodRange(period: PeriodKey, now = new Date()): { from?: strin
 
 export const KIND_FILTERS: Array<{ id: string; label: string; kinds: BillingTimelineKind[] }> = [
   { id: 'all', label: 'All activity', kinds: [] },
-  { id: 'payments', label: 'Payments', kinds: ['payment', 'addon', 'transaction_fee'] },
+  { id: 'payments', label: 'Payments', kinds: ['payment', 'transaction_fee'] },
   { id: 'plans', label: 'Plan changes', kinds: ['trial_started', 'trial_ended', 'plan_change', 'credit'] },
   { id: 'failed', label: 'Failed', kinds: ['payment_failed'] },
   { id: 'refunds', label: 'Refunds', kinds: ['refund'] },

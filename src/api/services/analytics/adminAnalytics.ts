@@ -126,7 +126,6 @@ export interface AdminRevenueBreakdownPreviousPeriod {
   platformCommissionRevenue: number;
   paymentProcessingFees: number;
   planRevenue?: number;
-  addonRevenue?: number;
   transactionFeeRevenue?: number;
   totalPlatformRevenue: number;
   totalMarketplaceRevenue: number;
@@ -138,7 +137,6 @@ export interface AdminRevenueBreakdownData {
   platformCommissionRevenue: number;
   paymentProcessingFees: number;
   planRevenue?: number;
-  addonRevenue?: number;
   transactionFeeRevenue?: number;
   totalPlatformRevenue: number;
   totalMarketplaceRevenue: number;

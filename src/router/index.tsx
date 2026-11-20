@@ -131,6 +131,7 @@ const StoreCategories = lazy(() => import('@/features/seller/store/Dashboard/Man
 const StoreCollections = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCollections'));
 const FilesLibrary = lazy(() => import('@/features/seller/store/Dashboard/Manage/FilesLibrary'));
 const StorePlanBilling = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
+const StoreBillingActivity = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreBillingActivity'));
 const DigitalHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/digital/DigitalHub'));
 const MemberSecurityPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/security/SecurityPage'));
 const ProductQuestionsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/productQuestions/ProductQuestionsPage'));
@@ -472,6 +473,7 @@ const mainRouter = createBrowserRouter([
           { path: 'files',                            element: <FilesLibrary /> },
           { path: 'faqs',                             element: <StoreFaqs /> },
           { path: 'plan-billing',                     element: <StorePlanBilling /> },
+          { path: 'billing-activity',                 element: <StoreBillingActivity /> },
           // "Verify your business" lives in the Settings hub as its own tab;
           // this keeps the old URL (notification links, sellerRouting) working.
           { path: 'verification',                     element: <Navigate to="../settings/verification" replace /> },

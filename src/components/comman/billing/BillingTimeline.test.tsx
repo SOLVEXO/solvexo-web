@@ -6,7 +6,7 @@ import type { BillingTimelineData } from '@/api/services/billingTimeline';
 const data: BillingTimelineData = {
   summary: {
     currency: 'USD', lifetimePaidUSD: 101, refundedUSD: 10, netLifetimeUSD: 91, thisMonthUSD: 60, taxPaidUSD: 6,
-    breakdown: { plans: 89, addons: 10, transactionFees: 2, refunds: -10 }, creditBalanceUSD: 5,
+    breakdown: { plans: 89, transactionFees: 2, refunds: -10 }, creditBalanceUSD: 5,
     card: { brand: 'visa', last4: '4242' }, failedPaymentsLast30Days: 1,
     pendingPlanChange: { planName: 'Pro', kind: 'first_purchase', amountUSD: 79 }, lastBillingError: 'Insufficient funds',
     current: { status: 'active', planName: 'Grow', interval: 'monthly', amountUSD: 29, nextBillingDate: null, trialEndsAt: null },

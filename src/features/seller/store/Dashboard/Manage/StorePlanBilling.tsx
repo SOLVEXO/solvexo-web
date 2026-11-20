@@ -1,17 +1,15 @@
 import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import {
-  Check, Zap, Users, Package, Sparkles, MonitorSmartphone, AlertTriangle, Clock, CreditCard,
+  Check, Users, Package, Sparkles, MonitorSmartphone, AlertTriangle, Clock, CreditCard,
   XCircle, RotateCcw, Loader2, LayoutGrid, Percent, ReceiptText, CircleDollarSign, type LucideIcon,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { StorePageHeader, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
 import { TokenStorage } from '@/api/services/auth';
 import { Button } from '@/components/comman/ui/Button';
 import { SettingsCard } from '@/components/comman/settings';
 import { Modal } from '@/components/comman/ui/Modal';
-import { AddPlatformCardModal } from '@/components/layouts/AddPlatformCardModal';
 import { usePlatformCardOnFile } from '@/hooks/usePlatformCardOnFile';
-import { BillingTimeline } from '@/components/comman/billing/BillingTimeline';
-import { apiGetBillingTimeline, apiExportBillingTimeline, type BillingTimelineParams } from '@/api/services/billingTimeline';
 import { confirmPaymentIntentWithSecret } from '@/components/comman/ui/StripeCardPayment';
 import { completePlanChange, shouldBillImmediately } from '@/utils/planChangeFlow';
 import { PLAN_STATUS_TONE_CLASS, planStatusLabel } from '@/utils/planStatus';
@@ -19,10 +17,9 @@ import { Textarea } from '@/components/comman/ui/Input';
 import {
   apiBrowsePlatformPlans, apiGetStorePlatformPlan, apiGetStoreEntitlements, apiChangePlatformPlan, apiConfirmPendingPlanChange,
   apiPreviewPlatformPlanChange, apiCancelScheduledPlanChange, apiCancelPlatformPlan, apiReactivatePlatformPlan, apiCreatePlatformBillingPortalSession,
-  apiPurchaseAddon, apiListStoreAddons, apiCancelAddon, apiGetStoreInvoices, apiGetAddonCatalog, apiGetTransactionFees,
-  type PlatformPlan, type StorePlatformSubscription, type EntitlementsSummary, type AddonPurchase, type AddonType,
-  type AddonCatalogItem,
-  type PlatformPlanInvoice, type PlanChangePreview, type TransactionFeesOverview,
+  apiGetTransactionFees,
+  type PlatformPlan, type StorePlatformSubscription, type EntitlementsSummary,
+  type PlanChangePreview, type TransactionFeesOverview,
 } from '@/api/services/platformPlans';
 
 import { yearlyTotal, yearlyMonthlyEquivalent, yearlySavingsPercent, formatUsd } from '@/utils/planPricing';
@@ -30,36 +27,9 @@ import { yearlyTotal, yearlyMonthlyEquivalent, yearlySavingsPercent, formatUsd }
 // Shopify-style select-plan + Stripe checkout, loaded only when a seller actually needs a card.
 import { PlatformTaxNote } from '@/components/comman/PlatformTaxNote';
 import { salesMailto } from '@/utils/contact';
-import { openSolvexoInvoice } from '@/utils/solvexoInvoice';
-import { useToast } from '@/contexts/ToastContext';
 import { FeeBillPayment } from './FeeBillPayment';
 const PlanCheckoutFlow = lazy(() => import('@/components/layouts/PlanCheckoutFlow'));
 
-const INVOICES_PER_PAGE = 10;
-
-const INVOICE_STATUS_STYLE: Record<string, string> = {
-  paid: 'bg-success-bg text-success',
-  pending: 'bg-warning-bg text-warning',
-  failed: 'bg-error-bg text-error',
-  refunded: 'bg-bone text-slate',
-  partially_refunded: 'bg-bone text-slate',
-};
-
-// Labels for every add-on that can appear on a past purchase. Only what
-// GET /addons/catalog returns can be bought now (Extra AI Credits) — the
-// others were discontinued; Shopify doesn't sell them as platform add-ons.
-const ADDON_LABELS: Record<AddonType, string> = {
-  extra_ai_credits: 'Extra AI Credits (+500)',
-  extra_staff_seat: 'Extra Staff Seat',
-  priority_marketplace_placement: 'Priority Marketplace Placement',
-  advanced_tax_compliance: 'Advanced Tax Compliance',
-  sms_notifications: 'SMS Notifications',
-};
-
-/** One key per confirm attempt — reused if that same purchase is retried, so it can't charge twice. */
-function newAddonIdempotencyKey(storeId: string, addonType: string): string {
-  return `platform-addon-${storeId}-${addonType}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
 
 const FEE_BILL_STATUS_STYLE: Record<string, string> = {
   paid: 'bg-success-bg text-success',
@@ -177,47 +147,23 @@ function UsageBar({ label, used, max, Icon }: { label: string; used: number; max
 
 export default function StorePlanBilling({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId } = useStoreWorkspace();
-  const toast = useToast();
-  const [invoiceOpening, setInvoiceOpening] = useState<string | null>(null);
-  const showInvoice = async (invoiceId: string) => {
-    setInvoiceOpening(invoiceId);
-    try { await openSolvexoInvoice(storeId, invoiceId); } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not open the invoice.'); } finally { setInvoiceOpening(null); }
-  };
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [current, setCurrent] = useState<StorePlatformSubscription | null>(null);
   const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
-  const [addons, setAddons] = useState<AddonPurchase[]>([]);
-  const [invoices, setInvoices] = useState<PlatformPlanInvoice[]>([]);
-  const [invoicePage, setInvoicePage] = useState(1);
-  const [invoicePages, setInvoicePages] = useState(1);
-  const [invoiceTotal, setInvoiceTotal] = useState(0);
-  const [invoicesLoading, setInvoicesLoading] = useState(true);
-  const [invoicesError, setInvoicesError] = useState('');
-  const [invoiceNonce, setInvoiceNonce] = useState(0);
-  const loadTimeline = useCallback((p: BillingTimelineParams) => apiGetBillingTimeline(storeId, p), [storeId]);
-  const exportTimeline = useCallback((p: BillingTimelineParams) => apiExportBillingTimeline(storeId, p), [storeId]);
   // Staff with only 'View billing and receive billing emails' get a read-only page (backend enforces too).
   const canManage = hasNavPermission(TokenStorage.getUser() as Parameters<typeof hasNavPermission>[0], 'settings.billing.manage');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [changingId, setChangingId] = useState<string | null>(null);
   const [interval, setInterval_] = useState<'monthly' | 'yearly'>('monthly');
-  const [addonModal, setAddonModal] = useState(false);
-  const [catalog, setCatalog] = useState<AddonCatalogItem[] | null>(null);
-  const [catalogError, setCatalogError] = useState('');
-  const [buyingAddon, setBuyingAddon] = useState<AddonCatalogItem | null>(null);
-  const addonIdempotencyKeyRef = useRef<string | null>(null);
   const [confirmingPlan, setConfirmingPlan] = useState<PlatformPlan | null>(null);
   // Set when the seller picks a paid plan that needs a card — opens the full checkout.
   const [checkoutPlanId, setCheckoutPlanId] = useState<string | null>(null);
-  // Add-ons charge the card on file — when there isn't one, ask for it first.
-  const { cardOnFile, refresh: refreshCardOnFile } = usePlatformCardOnFile();
-  const [addCardOpen, setAddCardOpen] = useState(false);
+  // A store with no card on file needs the full checkout to buy a plan (the proration modal can only charge a saved card).
+  const { cardOnFile } = usePlatformCardOnFile();
   const [preview, setPreview] = useState<PlanChangePreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [cancelingAddon, setCancelingAddon] = useState<AddonPurchase | null>(null);
   const [actionError, setActionError] = useState('');
-  const [addonBusy, setAddonBusy] = useState(false);
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelBusy, setCancelBusy] = useState(false);
@@ -228,32 +174,14 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
   const load = useCallback(() => {
     if (!storeId) return;
     setLoading(true); setError('');
-    Promise.all([apiBrowsePlatformPlans(), apiGetStorePlatformPlan(storeId), apiGetStoreEntitlements(storeId), apiListStoreAddons(storeId)])
-      .then(([plansRes, curRes, entRes, addonRes]) => {
-        setPlans(plansRes.data); setCurrent(curRes.data); setEntitlements(entRes.data); setAddons(addonRes.data);
+    Promise.all([apiBrowsePlatformPlans(), apiGetStorePlatformPlan(storeId), apiGetStoreEntitlements(storeId)])
+      .then(([plansRes, curRes, entRes]) => {
+        setPlans(plansRes.data); setCurrent(curRes.data); setEntitlements(entRes.data);
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load plan & billing.'))
       .finally(() => setLoading(false));
-    setInvoicePage(1); setInvoiceNonce(n => n + 1);
   }, [storeId]);
   useEffect(load, [load]);
-
-  // Billing history is paged server-side; refetched on page change, retry, or after any plan/add-on change (load()).
-  useEffect(() => {
-    if (!storeId) return;
-    let cancelled = false;
-    setInvoicesLoading(true); setInvoicesError('');
-    apiGetStoreInvoices(storeId, { page: invoicePage, limit: INVOICES_PER_PAGE })
-      .then(res => {
-        if (cancelled) return;
-        setInvoices(res.data.invoices); setInvoiceTotal(res.data.total); setInvoicePages(Math.max(1, res.data.pages));
-        // A page past the end (e.g. after a refund/void shrinks the list) falls back to the last real page.
-        if (res.data.invoices.length === 0 && res.data.total > 0 && invoicePage > 1) setInvoicePage(Math.max(1, res.data.pages));
-      })
-      .catch(err => { if (!cancelled) setInvoicesError(err instanceof Error ? err.message : 'Failed to load billing history.'); })
-      .finally(() => { if (!cancelled) setInvoicesLoading(false); });
-    return () => { cancelled = true; };
-  }, [storeId, invoicePage, invoiceNonce]);
 
   // A fresh key per confirm-modal open (not per component mount — this page
   // stays mounted across many unrelated plan-change attempts over time, so a
@@ -352,59 +280,6 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'No billing portal is available yet — subscribe to a paid plan first.');
       setPortalBusy(false);
-    }
-  }
-
-  // Opens the picker and loads the real catalog (with prices) fresh each time.
-  function openAddonPicker() {
-    setActionError('');
-    setCatalog(null); setCatalogError('');
-    setAddonModal(true);
-    apiGetAddonCatalog()
-      .then(res => setCatalog(res.data))
-      .catch(err => setCatalogError(err instanceof Error ? err.message : 'Failed to load add-ons.'));
-  }
-
-  function openAddonConfirm(item: AddonCatalogItem) {
-    addonIdempotencyKeyRef.current = newAddonIdempotencyKey(storeId, item.addonType);
-    setActionError('');
-    setBuyingAddon(item);
-  }
-
-  function closeAddonFlow() {
-    setAddonModal(false);
-    setBuyingAddon(null);
-    addonIdempotencyKeyRef.current = null;
-  }
-
-  async function handlePurchaseAddon(skipCardCheck = false) {
-    if (!buyingAddon) return;
-    if (!skipCardCheck && cardOnFile === false) { setAddCardOpen(true); return; }
-    setAddonBusy(true);
-    setActionError('');
-    try {
-      await apiPurchaseAddon(storeId, buyingAddon.addonType, 1, addonIdempotencyKeyRef.current ?? undefined);
-      closeAddonFlow();
-      load();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Failed to purchase add-on.');
-    } finally {
-      setAddonBusy(false);
-    }
-  }
-
-  async function submitCancelAddon() {
-    if (!cancelingAddon) return;
-    setAddonBusy(true);
-    setActionError('');
-    try {
-      await apiCancelAddon(storeId, cancelingAddon._id);
-      setCancelingAddon(null);
-      load();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Failed to cancel add-on.');
-    } finally {
-      setAddonBusy(false);
     }
   }
 
@@ -526,6 +401,8 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
               <>
                 {current.complimentary
                   ? 'Provided by Solvexo support — no billing'
+                  : !current.platformPlanId && current.status !== 'trialing'
+                  ? 'Choose a plan below to keep selling'
                   : (<>
                     {current.amountUSD > 0 ? `$${current.amountUSD.toFixed(2)}/${current.billingInterval === 'yearly' ? 'yr' : 'mo'} · ` : ''}
                     {isCancelPending ? 'Ends' : 'Renews'} {new Date(isCancelPending ? current.currentPeriodEnd : current.nextBillingDate).toLocaleDateString()}
@@ -641,105 +518,12 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         </SettingsCard>
 
         <SettingsCard
-          title="Add-ons"
-          icon={<Zap size={14} />}
-          divided
-          description="Extra capacity or features bought on top of your plan — charged to your card on file."
-          actions={canManage ? <Button size="sm" icon={<Zap size={13} />} onClick={openAddonPicker}>Buy add-on</Button> : undefined}
-          bodyClassName="px-0 pb-0"
-        >
-          {addons.length === 0 ? (
-            <p className="px-5 py-6 text-center text-[13px] text-slate">No add-on purchases yet.</p>
-          ) : (
-            <div className="flex flex-col">
-              {addons.map(a => (
-                <div key={a._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-fog last:border-b-0">
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-charcoal">{ADDON_LABELS[a.addonType] ?? a.addonType}</p>
-                    <p className="text-[11px] text-slate">
-                      Qty {a.quantity} · ${(a.priceUSD ?? 0).toFixed(2)}{a.recurring ? '/mo' : ' one-time'} · {new Date(a.createdAt).toLocaleDateString()}
-                      {a.status === 'canceled' && <span> · Canceled</span>}
-                    </p>
-                  </div>
-                  {/* Only a still-active monthly add-on has anything left to cancel — a one-time purchase was already delivered. */}
-                  {canManage && a.recurring && a.status === 'active' && (
-                    <button onClick={() => { setCancelingAddon(a); setActionError(''); }} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer shrink-0">Cancel</button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </SettingsCard>
-
-        <SettingsCard
-          title="Billing activity"
-          description="Every plan change, payment, failed attempt, refund, add-on and fee bill for this store — with the card used and a line-by-line breakdown."
+          title="Billing activity & invoices"
           icon={<ReceiptText size={14} />}
-          divided
-          bodyClassName="px-0 pb-0"
+          description="Every plan change, payment, failed attempt and refund, plus your invoices — with the card used and a line-by-line breakdown."
+          actions={<Link to={`/store/${storeId}/billing-activity`}><Button size="sm" variant="outline" icon={<ReceiptText size={13} />}>View billing activity</Button></Link>}
         >
-          <BillingTimeline load={loadTimeline} exportCsv={exportTimeline} refreshKey={invoiceNonce} />
-        </SettingsCard>
-
-        <SettingsCard
-          title="Billing History"
-          icon={<ReceiptText size={14} />}
-          divided
-          bodyClassName="px-0 pb-0"
-        >
-          {invoicesLoading ? null : invoicesError ? (
-            <div role="alert" className="px-5 py-5 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-[13px] text-error">{invoicesError}</p>
-              <Button size="sm" variant="outline" onClick={() => setInvoiceNonce(n => n + 1)}>Retry</Button>
-            </div>
-          ) : invoices.length === 0 ? (
-            <p className="px-5 py-6 text-center text-[13px] text-slate">No invoices yet.</p>
-          ) : (
-            <>
-              <div className="flex flex-col">
-                {invoices.map(inv => (
-                  <div key={inv._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-fog last:border-b-0">
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-charcoal">{inv.invoiceNumber}</p>
-                      <p className="text-[11px] text-slate">
-                        {new Date(inv.createdAt).toLocaleDateString()} · ${inv.amountUSD.toFixed(2)}
-                        {(inv.taxAmountUSD ?? 0) > 0 && (
-                          <span> (${(inv.subtotalUSD ?? inv.amountUSD - (inv.taxAmountUSD ?? 0)).toFixed(2)} + ${(inv.taxAmountUSD ?? 0).toFixed(2)} {inv.taxLabel ?? 'Tax'}{inv.taxRatePercent ? ` ${inv.taxRatePercent}%` : ''})</span>
-                        )}
-                        {inv.refundedAmountUSD > 0 && <span className="text-error"> · ${inv.refundedAmountUSD.toFixed(2)} refunded</span>}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2.5 shrink-0">
-                      <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${INVOICE_STATUS_STYLE[inv.status] ?? 'bg-bone text-slate'}`}>
-                        {inv.status.replace('_', ' ')}
-                      </span>
-                      {inv.status !== 'failed' && (
-                        <button type="button" onClick={() => showInvoice(inv._id)} disabled={invoiceOpening === inv._id}
-                          className="text-[11px] font-semibold text-brand-orange hover:underline disabled:opacity-60">
-                          {invoiceOpening === inv._id ? 'Opening…' : 'Invoice'}
-                        </button>
-                      )}
-                      {(inv.hostedInvoiceUrl || inv.invoicePdfUrl) && (
-                        <a href={inv.status === 'failed' ? (inv.hostedInvoiceUrl ?? inv.invoicePdfUrl ?? '#') : (inv.invoicePdfUrl ?? inv.hostedInvoiceUrl ?? '#')} target="_blank" rel="noreferrer"
-                          className="text-[11px] font-semibold text-brand-orange hover:underline">
-                          {inv.status === 'failed' ? 'Pay now' : 'Download'}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {invoicePages > 1 && (
-                <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-fog">
-                  <span className="text-[11.5px] text-slate" aria-live="polite">Page {invoicePage} of {invoicePages} · {invoiceTotal} invoices</span>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" disabled={invoicePage <= 1} onClick={() => setInvoicePage(p => Math.max(1, p - 1))}>Previous</Button>
-                    <Button size="sm" variant="outline" disabled={invoicePage >= invoicePages} onClick={() => setInvoicePage(p => Math.min(invoicePages, p + 1))}>Next</Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+          <p className="text-[12.5px] text-slate">Open the full record in one place: the timeline on one side, your invoices on the other. You can filter by month and export it as CSV.</p>
         </SettingsCard>
 
         <TransactionFeesCard storeId={storeId} />
@@ -754,53 +538,6 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
             onClose={() => setCheckoutPlanId(null)}
           />
         </Suspense>
-      )}
-
-      {addonModal && !buyingAddon && (
-        <Modal title="Buy an add-on" width={420} onClose={closeAddonFlow}>
-          <div className="flex flex-col gap-2">
-            {catalogError && <p className="text-[12px] text-error">{catalogError}</p>}
-            {catalog?.length === 0 && <p className="text-[13px] text-slate">No add-ons are available right now.</p>}
-            {catalog?.map(item => (
-              <button key={item.addonType} onClick={() => openAddonConfirm(item)}
-                className="text-left px-3.5 py-3 rounded-lg bg-cream border border-bone cursor-pointer hover:border-brand-orange/40">
-                <span className="flex items-baseline justify-between gap-3">
-                  <span className="text-[13px] font-medium text-charcoal">{item.label}</span>
-                  <span className="text-[13px] font-semibold text-carbon whitespace-nowrap">${item.priceUSD.toFixed(2)}{item.recurring ? '/mo' : ''}</span>
-                </span>
-                <span className="block text-[11.5px] text-slate mt-0.5">{item.description}</span>
-              </button>
-            ))}
-          </div>
-        </Modal>
-      )}
-
-      {buyingAddon && (
-        <Modal title="Confirm purchase" width={420} onClose={closeAddonFlow}
-          footer={<>
-            <Button variant="outline" onClick={() => { setBuyingAddon(null); setActionError(''); }} disabled={addonBusy}>Back</Button>
-            <Button onClick={() => handlePurchaseAddon()} loading={addonBusy}>{cardOnFile === false ? 'Add card & pay' : 'Pay'} ${buyingAddon.priceUSD.toFixed(2)}</Button>
-          </>}
-        >
-          <p className="text-[13px] text-charcoal">
-            <strong>{buyingAddon.label}</strong> — {buyingAddon.unitLabel}
-          </p>
-          <p className="text-[12.5px] text-slate mt-1.5">
-            {buyingAddon.recurring
-              ? `$${buyingAddon.priceUSD.toFixed(2)} will be charged to your card on file now and every month until you cancel.`
-              : `$${buyingAddon.priceUSD.toFixed(2)} will be charged to your card on file now. One-time charge — no subscription.`}
-          </p>
-          <PlatformTaxNote storeId={storeId} amountUSD={buyingAddon.priceUSD} className="text-[12.5px] text-charcoal mt-1.5" />
-          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
-        </Modal>
-      )}
-
-      {addCardOpen && buyingAddon && (
-        <AddPlatformCardModal
-          reason={`Add a card to buy ${buyingAddon.label} ($${buyingAddon.priceUSD.toFixed(2)}). It will be charged right after you save it.`}
-          onClose={() => setAddCardOpen(false)}
-          onSaved={() => { setAddCardOpen(false); refreshCardOnFile(); void handlePurchaseAddon(true); }}
-        />
       )}
 
       {confirmingPlan && (
@@ -915,19 +652,6 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         </Modal>
       )}
 
-      {cancelingAddon && (
-        <Modal title="Cancel Add-on" width={420} onClose={() => setCancelingAddon(null)}
-          footer={<>
-            <Button variant="outline" onClick={() => setCancelingAddon(null)} disabled={addonBusy}>Back</Button>
-            <Button variant="danger" onClick={submitCancelAddon} loading={addonBusy}>Cancel Add-on</Button>
-          </>}
-        >
-          <p className="text-[13px] text-charcoal">
-            Cancel <strong>{ADDON_LABELS[cancelingAddon.addonType]}</strong>? This takes effect immediately.
-          </p>
-          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
-        </Modal>
-      )}
     </>
   );
 }

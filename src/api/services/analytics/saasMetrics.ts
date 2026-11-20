@@ -55,7 +55,7 @@ export const apiGetActivationFunnel = (months: number) =>
   client.get<never, { success: boolean; data: ActivationFunnel }>(`${ENDPOINTS.ANALYTICS.ADMIN.ACTIVATION_FUNNEL}?months=${months}`);
 
 // ── Revenue model (SaaS Metrics → Revenue model; finance.view). Must match admin-finance/revenue-model.{util,service}.ts. ──
-export type RevenueStream = 'plans' | 'transactionFees' | 'commission' | 'addons' | 'posPlans' | 'promotions';
+export type RevenueStream = 'plans' | 'transactionFees' | 'commission' | 'posPlans' | 'promotions';
 export interface RevenueModel {
   months: number; from: string;
   summary: {

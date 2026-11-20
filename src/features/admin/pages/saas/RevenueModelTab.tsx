@@ -21,7 +21,6 @@ const STREAMS: { key: RevenueStream; label: string; color: string }[] = [
   { key: 'plans', label: 'Plan fees', color: '#2a78d6' },
   { key: 'transactionFees', label: 'Transaction fees', color: '#eb6834' },
   { key: 'commission', label: 'Sales commission', color: '#1baf7a' },
-  { key: 'addons', label: 'Add-ons', color: '#eda100' },
   { key: 'posPlans', label: 'POS plans', color: '#e87ba4' },
   { key: 'promotions', label: 'Paid promotions', color: '#008300' },
 ];
@@ -65,7 +64,7 @@ export function RevenueModelTab() {
         <MetricCard label="Solvexo revenue" value={s ? usd(s.totalRevenue) : ''} sub={s ? `${usd(s.thisMonthSoFar)} this month so far` : undefined} loading={loading && !data} />
         <MetricCard label="Take rate" value={s ? pct(s.takeRatePercent, 2) : ''} sub="Solvexo revenue ÷ merchant sales" loading={loading && !data} />
         <MetricCard label="Kept from each sale" value={s ? pct(s.transactionalTakeRatePercent, 2) : ''} sub="Commission + transaction fees ÷ sales" loading={loading && !data} />
-        <MetricCard label="From subscriptions" value={s ? pct(s.subscriptionSharePercent, 0) : ''} sub="Plans, add-ons, POS; the rest is per sale" loading={loading && !data} />
+        <MetricCard label="From subscriptions" value={s ? pct(s.subscriptionSharePercent, 0) : ''} sub="Plans and POS; the rest is per sale" loading={loading && !data} />
         <MetricCard label="Revenue per paying store" value={s ? (s.revenuePerPayingStore === null ? '—' : usd(s.revenuePerPayingStore, 2)) : ''} sub={s ? `${s.payingStores} stores paid Solvexo` : undefined} loading={loading && !data} />
       </div>
 
@@ -176,7 +175,7 @@ export function RevenueModelTab() {
           <Info size={13} className="shrink-0 mt-px" />
           <span>
             Revenue is what Solvexo collected, in USD: plan fees (net of refunds and tax), transaction fees on collected bills, commission on sales
-            paid through Solvexo, add-ons, POS plans and paid promotions. Merchant sales are non-cancelled order subtotals, as in Analytics.
+            paid through Solvexo, POS plans and paid promotions. Merchant sales are non-cancelled order subtotals, as in Analytics.
             Not included: {data.notes.excluded.join('; ')}.
             {data.notes.unconvertedCurrencies?.length ? ` Amounts in ${data.notes.unconvertedCurrencies.join(', ')} have no exchange rate and are left out.` : ''}
           </span>

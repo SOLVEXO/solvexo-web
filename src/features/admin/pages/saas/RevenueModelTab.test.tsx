@@ -10,7 +10,7 @@ vi.mock('@/api/services/analytics/saasMetrics', () => api);
 import { RevenueModelTab } from './RevenueModelTab';
 
 const streams = (o: Partial<Record<RevenueStream, number>>): Record<RevenueStream, number> =>
-  ({ plans: 0, transactionFees: 0, commission: 0, addons: 0, posPlans: 0, promotions: 0, ...o });
+  ({ plans: 0, transactionFees: 0, commission: 0, posPlans: 0, promotions: 0, ...o });
 const fixture: RevenueModel = {
   months: 12, from: '2025-11-01T00:00:00Z',
   summary: {

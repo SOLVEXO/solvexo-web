@@ -5,7 +5,7 @@ import { apiConfirmOnboardingPaymentMethod, apiCreateOnboardingSetupIntent } fro
 import { StripeCardSetup, isStripeConfigured } from '@/features/auth/pages/onboard/StripeCardSetup';
 
 /** Saves a card for the seller's Solvexo billing (same Stripe customer the plan
- *  checkout uses) — for things that charge "the card on file", like add-ons,
+ *  checkout uses) — for things that charge "the card on file",
  *  when there isn't one yet. Calls `onSaved` once Stripe and our backend agree. */
 export function AddPlatformCardModal({ onSaved, onClose, reason }: {
   onSaved: () => void; onClose: () => void;
@@ -49,7 +49,7 @@ export function AddPlatformCardModal({ onSaved, onClose, reason }: {
           <StripeCardSetup
             clientSecret={clientSecret}
             submitLabel="Save card"
-            footnote="Secured by Stripe — used for your Solvexo plan and add-ons"
+            footnote="Secured by Stripe — used for your Solvexo plan"
             onConfirmed={handleConfirmed}
           />
           {saving && <p className="text-[11px] text-slate mt-2 text-center">Saving your card…</p>}

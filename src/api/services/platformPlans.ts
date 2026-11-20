@@ -45,28 +45,6 @@ export interface PlatformPlan {
   gracePeriodDays: number;
 }
 
-/** Every add-on type that can appear on an old purchase record. Only
- *  `PurchasableAddonType` can be bought now — the rest were discontinued. */
-export type AddonType = 'extra_ai_credits' | 'extra_staff_seat' | 'priority_marketplace_placement' | 'advanced_tax_compliance' | 'sms_notifications';
-export type PurchasableAddonType = 'extra_ai_credits';
-
-/** One row of GET /addons/catalog — the real price, straight from the backend. */
-export interface AddonCatalogItem {
-  addonType: PurchasableAddonType;
-  priceUSD: number;
-  recurring: boolean;
-  unitLabel: string;
-  label: string;
-  description: string;
-}
-
-/** Mirrors platform-addon-purchase.schema.ts — the charged total is `priceUSD` (there is no `amountUSD` field). */
-export interface AddonPurchase {
-  _id: string; storeId: string; addonType: AddonType; quantity: number;
-  priceUSD: number; recurring: boolean; nextBillingDate: string | null;
-  status: 'active' | 'canceled'; createdAt: string;
-}
-
 export interface PlatformPlanInvoice {
   _id: string; storeId: string; sellerId: string; platformPlanId: string;
   invoiceNumber: string; type: 'initial' | 'recurring' | 'proration';
@@ -349,27 +327,6 @@ export function apiCreatePlatformBillingPortalSession(storeId: string, returnUrl
   return client.post<never, ApiResponse<{ url: string }>>(`${BASE}/${storeId}/billing-portal`, { returnUrl });
 }
 
-/** Add-ons a seller can buy right now, with their real prices. */
-export function apiGetAddonCatalog() {
-  return client.get<never, ApiResponse<AddonCatalogItem[]>>(`${BASE}/addons/catalog`);
-}
-
-/** `idempotencyKey` — one per confirm attempt, reused on retries, so a slow request retried can't charge twice (the endpoint has IdempotencyInterceptor). */
-export function apiPurchaseAddon(storeId: string, addonType: PurchasableAddonType, quantity = 1, idempotencyKey?: string) {
-  return client.post<never, ApiResponse<AddonPurchase>>(
-    `${BASE}/${storeId}/addons`, { addonType, quantity },
-    idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined,
-  );
-}
-
-export function apiListStoreAddons(storeId: string) {
-  return client.get<never, ApiResponse<AddonPurchase[]>>(`${BASE}/${storeId}/addons`);
-}
-
-export function apiCancelAddon(storeId: string, addonId: string) {
-  return client.delete<never, ApiResponse<never>>(`${BASE}/${storeId}/addons/${addonId}`);
-}
-
 // ── Admin ─────────────────────────────────────────────────────────────────────
 export interface CreatePlatformPlanPayload {
   name: string; description?: string; badge?: string; sortOrder?: number;
@@ -429,14 +386,6 @@ export function apiAdminArchivePlatformPlan(id: string, force = false) {
 export function apiAdminGetPlatformPlanRevenue(query: { range?: string } = {}) {
   const qs = query.range ? `?range=${query.range}` : '';
   return client.get<never, ApiResponse<{ mrr: number; arr: number; activeSubscribers: number; planBreakdown: Array<{ planName: string; subscriberCount: number; mrrUSD: number }> }>>(`${BASE}/admin/revenue${qs}`);
-}
-
-export function apiAdminListAddonPurchases(query: { page?: number; limit?: number } = {}) {
-  const qs = new URLSearchParams();
-  if (query.page) qs.set('page', String(query.page));
-  if (query.limit) qs.set('limit', String(query.limit));
-  const s = qs.toString();
-  return client.get<never, ApiResponse<{ pagination: { page: number; limit: number; total: number; pages: number }; addons: AddonPurchase[] }>>(`${BASE}/admin/addons${s ? `?${s}` : ''}`);
 }
 
 export function apiAdminRefundPlatformInvoice(invoiceId: string, amountUSD?: number, reason?: string) {

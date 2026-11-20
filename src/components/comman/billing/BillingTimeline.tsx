@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowLeftRight, Ban, CircleCheck, CircleDollarSign, CircleX, Clock, CreditCard, Download, FileText, Flag, Package, Percent,
+  ArrowLeftRight, Ban, CircleCheck, CircleDollarSign, CircleX, Clock, CreditCard, Download, FileText, Flag, Percent,
   RotateCcw, Sparkles, Wallet, ChevronDown, Printer, type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
@@ -14,17 +14,19 @@ interface Props {
   load: (p: BillingTimelineParams) => Promise<{ data: BillingTimelineData }>;
   /** Fetches the CSV text for the same filter. */
   exportCsv: (p: BillingTimelineParams) => Promise<{ data: { filename: string; csv: string } }>;
-  /** Bump to refetch after a plan/add-on change elsewhere on the page. */
+  /** Bump to refetch after a plan change elsewhere on the page. */
   refreshKey?: number;
   /** Admin sees provider references (charge / invoice ids) in the details. */
   audience?: 'seller' | 'admin';
   /** Shown at the top of the printed statement. */
   storeName?: string;
+  /** Half-width column: summary tiles stay 2-up instead of 4-up. */
+  compact?: boolean;
 }
 
 const KIND_ICON: Record<BillingTimelineEvent['kind'], LucideIcon> = {
   trial_started: Sparkles, trial_ended: Flag, plan_change: ArrowLeftRight, credit: Wallet, payment: CircleCheck, payment_failed: CircleX,
-  refund: RotateCcw, addon: Package, transaction_fee: Percent,
+  refund: RotateCcw, transaction_fee: Percent,
 };
 const STATUS_DOT: Record<BillingTimelineEvent['status'], string> = {
   success: 'bg-success-bg text-success', failed: 'bg-error-bg text-error', pending: 'bg-warning-bg text-warning',
@@ -112,10 +114,10 @@ function EventRow({ e, audience }: { e: BillingTimelineEvent; audience: 'seller'
 
 /**
  * Complete billing record for one store: summary tiles, filters, a monthly statement strip, the chronological timeline
- * (trial → plan changes → payments with card and line items → failed attempts with reasons → refunds → add-ons → fee bills)
+ * (trial → plan changes → payments with card and line items → failed attempts with reasons → refunds → fee bills)
  * and CSV export. Shared by the seller's Plan & Billing page and the admin's per-store view.
  */
-export function BillingTimeline({ load, exportCsv, refreshKey = 0, audience = 'seller', storeName }: Props) {
+export function BillingTimeline({ load, exportCsv, refreshKey = 0, audience = 'seller', storeName, compact = false }: Props) {
   const [period, setPeriod] = useState<PeriodKey>('all');
   const [filterId, setFilterId] = useState('all');
   const [data, setData] = useState<BillingTimelineData | null>(null);
@@ -170,11 +172,11 @@ export function BillingTimeline({ load, exportCsv, refreshKey = 0, audience = 's
   return (
     <div className="flex flex-col">
       {/* Summary */}
-      <div className="grid grid-cols-1 gap-2.5 px-5 pt-4 min-[480px]:grid-cols-2 lg:grid-cols-4">
+      <div className={`grid grid-cols-1 gap-2.5 px-5 pt-4 min-[480px]:grid-cols-2${compact ? '' : ' lg:grid-cols-4'}`}>
         {loading && !s ? Array.from({ length: 4 }, (_, i) => <SkeletonBox key={i} height="72px" rounded="10px" />) : s && (
           <>
             <SummaryTile icon={Wallet} label="Paid to Solvexo (all time)" value={money(s.netLifetimeUSD)}
-              hint={s.refundedUSD > 0 ? `${money(s.lifetimePaidUSD)} paid · ${money(s.refundedUSD)} refunded` : `Plans ${money(s.breakdown.plans)} · Add-ons ${money(s.breakdown.addons)} · Fees ${money(s.breakdown.transactionFees)}`} />
+              hint={s.refundedUSD > 0 ? `${money(s.lifetimePaidUSD)} paid · ${money(s.refundedUSD)} refunded` : `Plans ${money(s.breakdown.plans)} · Fees ${money(s.breakdown.transactionFees)}`} />
             <SummaryTile icon={CircleDollarSign} label="This month" value={money(s.thisMonthUSD)} hint={s.taxPaidUSD > 0 ? `Includes ${money(s.taxPaidUSD)} tax (all time)` : undefined} />
             <SummaryTile icon={Wallet} label="Account credit" value={money(s.creditBalanceUSD)} hint={s.creditBalanceUSD > 0 ? 'Applied to your next charge' : 'No credit balance'} />
             <SummaryTile icon={CreditCard} label="Card used" value={s.card ? cardLabel(s.card) : '—'}
