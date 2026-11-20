@@ -49,7 +49,6 @@ export const PRICING_TEXT = siteText({
         ? 'No. Solvexo takes no commission and no fee on cash on delivery, bank transfer or in-person sales. A small third-party transaction fee (lower on bigger plans — see the comparison above) applies only if you accept payments through a payment gateway such as Safepay.'
         : 'No. There is no commission on card payments processed through Solvexo Payments — you only pay the card processing fee — and no fee on cash on delivery, bank transfer or in-person sales. A small third-party transaction fee (lower on bigger plans — see the comparison above) applies only if you accept payments through another payment gateway with your own account, such as Stripe or PayPal.' },
       { q: 'Is there a free trial?', a: `Yes — every new store gets a free ${trialDurationDays}-day trial with full platform access the moment it's created, no credit card required. Choose a plan whenever you're ready.` },
-      { q: 'How do AI credits work?', a: 'AI credits are spent on AI SEO suggestions: the AI proposes a page title and description for one of your products, you read it first, and only click Use this if you like it. Each suggestion costs 5 credits. Your plan\'s credits renew on the 1st of every month and unused ones do not carry over. If you need more, you can buy 500 extra credits for US$10 — credits you buy do not expire at the end of the month. Every free trial includes 50 credits.' },
       { q: 'What payment methods do you accept?', a: 'We accept all major credit and debit cards. Payments are processed securely by Stripe — we never see or store your card number.' },
     ],
     everyPlan: [
@@ -174,7 +173,6 @@ export const PRICING_TEXT = siteText({
         ? 'لا. لا تأخذ Solvexo أي عمولة ولا رسوم على الدفع عند الاستلام أو التحويل البنكي أو البيع في المتجر. تُطبَّق رسوم معاملات صغيرة (أقل في الباقات الأكبر، راجع جدول المقارنة أعلاه) فقط إذا استقبلت المدفوعات عبر بوابة دفع مثل Safepay.'
         : 'لا. لا توجد عمولة على مدفوعات البطاقات عبر Solvexo Payments (تدفع رسوم معالجة البطاقة فقط)، ولا رسوم على الدفع عند الاستلام أو التحويل البنكي أو البيع في المتجر. تُطبَّق رسوم معاملات صغيرة (أقل في الباقات الأكبر، راجع جدول المقارنة أعلاه) فقط إذا استقبلت المدفوعات عبر بوابة دفع أخرى بحسابك الخاص مثل Stripe أو PayPal.' },
       { q: 'هل توجد تجربة مجانية؟', a: `نعم. يحصل كل متجر جديد على تجربة مجانية لمدة ${arDays(trialDurationDays)} مع وصول كامل إلى المنصة فور إنشائه، دون الحاجة إلى بطاقة ائتمان. اختر باقتك متى أصبحت جاهزًا.` },
-      { q: 'كيف يعمل رصيد الذكاء الاصطناعي؟', a: 'يُصرف الرصيد على اقتراحات SEO بالذكاء الاصطناعي: يقترح الذكاء الاصطناعي عنوان صفحة ووصفًا لأحد منتجاتك، تقرؤه أولًا، ولا تضغط «استخدم هذا» إلا إذا أعجبك. يكلّف كل اقتراح 5 أرصدة. يتجدد رصيد باقتك في الأول من كل شهر ولا يُرحَّل ما لم يُستخدم. وإذا احتجت إلى المزيد يمكنك شراء 500 رصيد إضافي بـ 10 دولارات أمريكية، والأرصدة التي تشتريها لا تنتهي بنهاية الشهر. تتضمن كل تجربة مجانية 50 رصيدًا.' },
       { q: 'ما طرق الدفع التي تقبلونها؟', a: 'نقبل جميع بطاقات الائتمان والخصم الرئيسية. تتم معالجة المدفوعات بأمان عبر Stripe، ولا نرى رقم بطاقتك ولا نحتفظ به.' },
     ],
     everyPlan: [

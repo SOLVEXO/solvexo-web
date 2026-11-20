@@ -36,21 +36,12 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null, lan
       : l.maxPosLocations === 1 ? t.oneLocation : t.locations(l.maxPosLocations!),
       hint: unlimited(l.maxPosLocations) ? t.unlimitedLocationsHint : t.locationsHint(l.maxPosLocations!) });
   }
-  // Credits are spent only by AI SEO suggestions, so a plan that does not have them shows no credits line at all.
-  if (l.seoAiSuggestionsAllowed && (!p.seoAiSuggestionsAllowed || more(l.aiCreditsPerMonth, p.aiCreditsPerMonth))) {
-    out.push({
-      title: unlimited(l.aiCreditsPerMonth) ? t.unlimitedAi : t.ai(l.aiCreditsPerMonth!),
-      hint: unlimited(l.aiCreditsPerMonth) ? t.aiUnlimitedHint : t.aiLimitedHint,
-    });
-  }
   if (on('abandonedCartRecoveryAllowed')) out.push({ title: t.abandoned, hint: t.abandonedHint });
   if (on('loyaltyProgramAllowed')) out.push({ title: t.loyalty, hint: t.loyaltyHint });
-  if (on('whiteLabelAllowed')) out.push({ title: t.whiteLabel, hint: t.whiteLabelHint });
   if (on('calculatedShippingRatesAllowed')) out.push({ title: t.courierRates, hint: t.courierRatesHint });
   if (on('customDomainAllowed')) out.push({ title: t.domain, hint: t.domainHint });
   if (on('emailCampaignsAllowed')) out.push({ title: t.email, hint: t.emailHint });
   if (on('advancedSeoToolsAllowed')) out.push({ title: t.seo, hint: t.seoHint });
-  if (on('seoAiSuggestionsAllowed')) out.push({ title: t.seoAi, hint: t.seoAiHint });
   if (on('customRedirectsAllowed')) out.push({ title: t.redirects, hint: t.redirectsHint });
   if (on('searchConsoleIntegrationAllowed')) out.push({ title: t.searchConsole, hint: t.searchConsoleHint });
 

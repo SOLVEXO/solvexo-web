@@ -623,7 +623,6 @@ function getUsageWarning(entitlements: EntitlementsSummary | null): { label: str
   if (!entitlements) return null;
   const candidates = [
     { label: 'product limit', used: entitlements.maxProducts.used, max: entitlements.maxProducts.limit },
-    { label: 'AI credits', used: Math.max(0, entitlements.aiCredits.monthlyAllowance - entitlements.aiCredits.balance), max: entitlements.aiCredits.monthlyAllowance },
     { label: 'staff account limit', used: entitlements.maxStaffAccounts.used, max: entitlements.maxStaffAccounts.limit },
     { label: 'POS location limit', used: entitlements.maxPosLocations.used, max: entitlements.maxPosLocations.limit },
   ];

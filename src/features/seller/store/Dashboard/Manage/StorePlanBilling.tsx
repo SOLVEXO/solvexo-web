@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import {
-  Check, Users, Package, Sparkles, MonitorSmartphone, AlertTriangle, Clock, CreditCard,
+  Check, Users, Package, MonitorSmartphone, AlertTriangle, Clock, CreditCard,
   XCircle, RotateCcw, Loader2, LayoutGrid, Percent, ReceiptText, CircleDollarSign, type LucideIcon,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -440,12 +440,6 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UsageBar label="Products" used={entitlements.maxProducts.used} max={entitlements.maxProducts.limit} Icon={Package} />
               <UsageBar label="Staff Accounts" used={entitlements.maxStaffAccounts.used} max={entitlements.maxStaffAccounts.limit} Icon={Users} />
-              <UsageBar
-                label="AI Credits (balance)"
-                used={entitlements.aiCredits.monthlyAllowance === -1 ? entitlements.aiCredits.balance : Math.max(0, entitlements.aiCredits.monthlyAllowance - entitlements.aiCredits.balance)}
-                max={entitlements.aiCredits.monthlyAllowance}
-                Icon={Sparkles}
-              />
               <UsageBar label="POS Locations" used={entitlements.maxPosLocations.used} max={entitlements.maxPosLocations.limit} Icon={MonitorSmartphone} />
             </div>
           </SettingsCard>

@@ -66,13 +66,9 @@ function compareGroups(t: PricingText): Group[] {
       { label: r.pagesBlog, get: () => true },
       { label: r.translations, get: () => true },
     ] },
-    { title: g.ai, rows: [
-      { label: r.aiCredits, get: p => (p.limits.seoAiSuggestionsAllowed ? c(p.limits.aiCreditsPerMonth) : false) },
-    ] },
     { title: g.hosting, rows: [
       { label: r.hostingSsl, get: () => true },
       { label: r.domain, get: p => flag(p.limits.customDomainAllowed) },
-      { label: r.branding, get: p => flag(p.limits.whiteLabelAllowed) },
     ] },
     { title: g.marketing, rows: [
       { label: r.discounts, get: () => true },
@@ -92,7 +88,6 @@ function compareGroups(t: PricingText): Group[] {
     { title: g.seo, rows: [
       { label: r.seoBuiltIn, get: () => true },
       { label: r.seoAdvanced, get: p => flag(p.limits.advancedSeoToolsAllowed) },
-      { label: r.seoAi, get: p => flag(p.limits.seoAiSuggestionsAllowed) },
       { label: r.searchConsole, get: p => flag(p.limits.searchConsoleIntegrationAllowed) },
       { label: r.redirects, get: p => flag(p.limits.customRedirectsAllowed) },
     ] },

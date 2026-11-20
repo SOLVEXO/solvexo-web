@@ -10,17 +10,17 @@ const plan = (over: Partial<PlatformPlan>): PlatformPlan => ({
 });
 
 const basic = plan({ name: 'Basic', monthlyPriceUSD: 6, yearlyPriceUSD: 60, compareAtMonthlyPriceUSD: 10, compareAtYearlyPriceUSD: 100, limits: {
-  maxProducts: 25, maxStaffAccounts: 1, maxPosLocations: 1, aiCreditsPerMonth: 100, maxMarkets: 3, maxActiveStoreBanners: -1, maxActivePromotions: -1,
+  maxProducts: 25, maxStaffAccounts: 1, maxPosLocations: 1, aiCreditsPerMonth: 0, maxMarkets: 3, maxActiveStoreBanners: -1, maxActivePromotions: -1,
   customDomainAllowed: true, emailCampaignsAllowed: true, advancedSeoToolsAllowed: true, abandonedCartRecoveryAllowed: true, customRedirectsAllowed: true,
   b2bWholesaleAllowed: true, maxB2BCatalogs: 1, monthlyEmailSends: 2000, transactionFeeRate: 0.02,
 } });
 const grow = plan({ name: 'Grow', monthlyPriceUSD: 29, yearlyPriceUSD: 282, compareAtMonthlyPriceUSD: 49, compareAtYearlyPriceUSD: 470, limits: {
-  ...basic.limits, maxProducts: -1, maxStaffAccounts: 5, maxPosLocations: 3, aiCreditsPerMonth: 500, maxMarkets: 5, maxB2BCatalogs: 3, monthlyEmailSends: 10000,
-  loyaltyProgramAllowed: true, seoAiSuggestionsAllowed: true, prioritySupport: true,
+  ...basic.limits, maxProducts: -1, maxStaffAccounts: 5, maxPosLocations: 3, aiCreditsPerMonth: 0, maxMarkets: 5, maxB2BCatalogs: 3, monthlyEmailSends: 10000,
+  loyaltyProgramAllowed: true, seoAiSuggestionsAllowed: false, prioritySupport: true,
   digitalMembershipsAllowed: true, digitalLicensesAllowed: true, digitalCoursesAllowed: true, transactionFeeRate: 0.01,
 } });
 const advanced = plan({ name: 'Advanced', limits: {
-  ...grow.limits, maxStaffAccounts: 15, maxB2BCatalogs: 10, monthlyEmailSends: 50000, whiteLabelAllowed: true, apiWebhooksAllowed: true, searchConsoleIntegrationAllowed: true,
+  ...grow.limits, maxStaffAccounts: 15, maxB2BCatalogs: 10, monthlyEmailSends: 50000, whiteLabelAllowed: false, apiWebhooksAllowed: true, searchConsoleIntegrationAllowed: true,
   calculatedShippingRatesAllowed: true, transactionFeeRate: 0.006,
 } });
 const titles = (p: PlatformPlan, prev?: PlatformPlan) => planFeatures(p, prev).map(f => f.title);
@@ -43,12 +43,12 @@ describe('pricing page plan features', () => {
     }
   });
 
-  it('AI credits are shown only on a plan that has AI SEO suggestions, and the hint says what they are for', () => {
-    expect(titles(basic).some(t => /AI credits/i.test(t))).toBe(false); // credits are spent only by AI SEO suggestions
-    const credits = planFeatures(grow, basic).find(f => /AI credits/i.test(f.title));
-    expect(credits?.title).toBe('500 AI credits a month');
-    expect(credits?.hint).toContain('AI SEO suggestions');
-    expect(credits?.hint).toContain('5 credits');
+  it('no plan card ever advertises AI credits, AI SEO suggestions or white-label branding (they are not sold)', () => {
+    const all = [...titles(basic), ...titles(grow, basic), ...titles(advanced, grow)].join(' | ');
+    expect(all).not.toMatch(/AI credits|AI SEO|Solvexo branding|white-label/i);
+    // even if an old plan row still carried the flags, nothing is printed for them
+    const stale = plan({ limits: { ...grow.limits, aiCreditsPerMonth: 500, seoAiSuggestionsAllowed: true, whiteLabelAllowed: true } });
+    expect(titles(stale, basic).join(' | ')).not.toMatch(/AI credits|AI SEO|Solvexo branding/i);
   });
 
   it('never prints banner or promotion lines, even when they are unlimited', () => {
@@ -58,15 +58,15 @@ describe('pricing page plan features', () => {
 
   it('lists only what is new or bigger on the next plan', () => {
     expect(titles(grow, basic)).toEqual([
-      'Unlimited products', '5 staff logins', '3 shop / warehouse locations', '500 AI credits a month',
-      'Loyalty points', 'AI SEO suggestions', '10,000 marketing emails a month', '3 wholesale catalogs',
+      'Unlimited products', '5 staff logins', '3 shop / warehouse locations',
+      'Loyalty points', '10,000 marketing emails a month', '3 wholesale catalogs',
       'Sell memberships, license keys & courses', 'Accept up to 5 currencies', 'Priority support',
     ]);
   });
 
   it('shows premium-only items on the plan that first has them', () => {
     const t = titles(advanced, grow);
-    expect(t).toEqual(expect.arrayContaining(['Remove Solvexo branding', 'Webhooks & API', 'Live courier rates at checkout', 'Google Search Console connection']));
+    expect(t).toEqual(expect.arrayContaining(['Webhooks & API', 'Live courier rates at checkout', 'Google Search Console connection']));
     expect(t).not.toContain('Sell memberships, license keys & courses');
   });
 

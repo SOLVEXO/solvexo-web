@@ -323,7 +323,6 @@ const COMPARE: { group: keyof CheckoutText['groups']; rows: { key: keyof Checkou
     { key: 'themes', get: ALL },
     { key: 'pages', get: ALL },
     { key: 'customDomain', get: p => flag(p.limits.customDomainAllowed) },
-    { key: 'whiteLabel', get: p => flag(p.limits.whiteLabelAllowed) },
   ] },
   { group: 'products', rows: [
     { key: 'products', get: (p, t) => num(p.limits.maxProducts, t) },
@@ -355,16 +354,12 @@ const COMPARE: { group: keyof CheckoutText['groups']; rows: { key: keyof Checkou
   { group: 'seo', rows: [
     { key: 'seoAudit', get: p => flag(p.limits.advancedSeoToolsAllowed) },
     { key: 'redirects', get: p => flag(p.limits.customRedirectsAllowed) },
-    { key: 'seoAi', get: p => flag(p.limits.seoAiSuggestionsAllowed) },
     { key: 'searchConsole', get: p => flag(p.limits.searchConsoleIntegrationAllowed) },
   ] },
   { group: 'shipping', rows: [
     { key: 'shippingZones', get: ALL },
     { key: 'carrierRates', get: p => flag(p.limits.calculatedShippingRatesAllowed) },
     { key: 'markets', get: (p, t) => num(p.limits.maxMarkets, t) },
-  ] },
-  { group: 'ai', rows: [
-    { key: 'aiCredits', get: (p, t) => (p.limits.seoAiSuggestionsAllowed ? num(p.limits.aiCreditsPerMonth, t) : false) },
   ] },
   { group: 'apps', rows: [
     { key: 'integrations', get: ALL },
