@@ -14,6 +14,8 @@ import { useLogout } from '@/hooks/auth/useLogout';
 import { useMyStores } from '@/hooks/store/useMyStores';
 import { rememberStore } from '@/utils/storePlanState';
 import { isPlanGateStatus, planProblemBanner } from '@/utils/planChangeFlow';
+import { useLocalCurrencyForCountry } from '@/features/buyer/pages/pricing/localPrice';
+import { priceOnly } from '@/utils/localPlanPrice';
 import { useFavicon } from '@/hooks/useFavicon';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { NotificationBell, Modal, Button, CopyIconButton } from '@/components/comman/ui';
@@ -1271,6 +1273,8 @@ export function TrialBillingPill() {
   // Shopify's own "Get 3 months for $1/month" rather than just a countdown.
   // Never a specific plan name, since trial has no plan attached yet.
   const [bestIntroOffer, setBestIntroOffer] = useState<{ priceUSD: number; durationCycles: number } | null>(null);
+  // Display only: the offer in the store's local currency (Pakistan → Rs); billing stays in US$.
+  const pillLocal = useLocalCurrencyForCountry(useStoreWorkspace().store?.country);
 
   useEffect(() => {
     if (!storeId) return;
@@ -1315,7 +1319,7 @@ export function TrialBillingPill() {
         />
         <span className="text-[12px] font-medium whitespace-nowrap">
           {bestIntroOffer
-            ? `Get ${bestIntroOffer.durationCycles} month${bestIntroOffer.durationCycles === 1 ? '' : 's'} for $${bestIntroOffer.priceUSD}/mo`
+            ? `Get ${bestIntroOffer.durationCycles} month${bestIntroOffer.durationCycles === 1 ? '' : 's'} for ${priceOnly(bestIntroOffer.priceUSD, pillLocal)}/mo`
             : `Trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`}
         </span>
         <span className="px-3 py-[6px] rounded-full bg-white text-carbon text-[11.5px] font-semibold whitespace-nowrap">

@@ -18,6 +18,7 @@ import { PasteImageUrl } from '@/components/comman/ui';
 import { apiGetEnabledCurrencies, apiSuggestLocation, apiUpdateStore, type SellerType, type ProductType, type StoreData, type SupportedCurrency } from '@/api/services/store';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { completePlanChange } from '@/utils/planChangeFlow';
+import { useLocalCurrencyForCountry } from '@/features/buyer/pages/pricing/localPrice';
 import { confirmPaymentIntentWithSecret } from '@/components/comman/ui/StripeCardPayment';
 import {
   apiGetOnboardingProgress, apiSaveOnboardingDraft,
@@ -570,6 +571,8 @@ export function OnboardingPage() {
   // Step4's/the ready screen's "you'll launch on X" copy. Same public
   // endpoint the Pricing page uses.
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
+  // Display only: plan prices in the seller's local currency (e.g. Rs for Pakistan); billing stays in US$.
+  const localCurrency = useLocalCurrencyForCountry(form.country);
   useEffect(() => {
     apiBrowsePlatformPlans().then(res => setPlans(res.data)).catch(() => {});
   }, []);
@@ -814,6 +817,7 @@ export function OnboardingPage() {
           billing={billing}
           paidPlanId={form.paidPlanId}
           trialDurationDays={trialDurationDays}
+          localCurrency={localCurrency}
           onSubscribe={handleSubscribe}
           onContinue={() => advanceWith({ ...form, selectedPlanId: checkoutPlan?._id ?? null }, 3)}
           onStartTrial={() => advanceWith({ ...form, selectedPlanId: null }, 3)}
@@ -827,6 +831,7 @@ export function OnboardingPage() {
               plans={plans}
               selectedPlanId={form.selectedPlanId}
               billing={billing}
+              localCurrency={localCurrency}
               onBillingChange={b => setForm(f => ({ ...f, billing: b }))}
               onClose={() => navigate(onboardUrl(2), { replace: true })}
               onSelect={planId => { setForm({ ...form, selectedPlanId: planId }); navigate(onboardUrl(2), { replace: true }); }}

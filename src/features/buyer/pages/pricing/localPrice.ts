@@ -29,6 +29,38 @@ export function pickLocalCurrency(pathname: string, rates: CurrentRatesMap | nul
   return code && typeof rate === 'number' && rate > 0 ? { code, ratePerUSD: rate } : null;
 }
 
+/** Currency for a store's country (ISO alpha-2, any case) — the dashboard has no /pk/ URL, so it uses the store's own country. */
+export function currencyCodeForCountry(country: string | null | undefined): string | null {
+  return country ? COUNTRY_CURRENCY[country.trim().toLowerCase()] ?? null : null;
+}
+
+/** Local currency for a store's country, or null (US$ only) when the country has none or the FX service has no rate for it. */
+export function pickLocalCurrencyForCountry(country: string | null | undefined, rates: CurrentRatesMap | null): LocalCurrency | null {
+  const code = currencyCodeForCountry(country);
+  const rate = code && code !== 'USD' ? rates?.[code]?.ratePerUSD : null;
+  return code && typeof rate === 'number' && rate > 0 ? { code, ratePerUSD: rate } : null;
+}
+
+// One fetch per page load, shared by every price on the screen.
+let ratesPromise: Promise<CurrentRatesMap | null> | null = null;
+function loadRatesOnce(): Promise<CurrentRatesMap | null> {
+  if (!ratesPromise) ratesPromise = apiGetCurrentRates().then(res => res.data ?? null).catch(() => { ratesPromise = null; return null; });
+  return ratesPromise;
+}
+
+/** Dashboard / gate / checkout: the local currency for THIS store's country (display only — billing stays US$). */
+export function useLocalCurrencyForCountry(country: string | null | undefined): LocalCurrency | null {
+  const [rates, setRates] = useState<CurrentRatesMap | null>(null);
+  const wanted = currencyCodeForCountry(country);
+  useEffect(() => {
+    if (!wanted) return;
+    let alive = true;
+    loadRatesOnce().then(r => { if (alive) setRates(r); });
+    return () => { alive = false; };
+  }, [wanted]);
+  return pickLocalCurrencyForCountry(country, rates);
+}
+
 export function useLocalCurrency(): LocalCurrency | null {
   const [rates, setRates] = useState<CurrentRatesMap | null>(null);
   const wanted = typeof window !== 'undefined' ? localCurrencyCode(window.location.pathname) : null;

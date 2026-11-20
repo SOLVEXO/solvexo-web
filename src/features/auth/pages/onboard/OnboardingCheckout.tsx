@@ -17,6 +17,9 @@ import { useSiteText } from '@/i18n/site/useSiteText';
 import { useSiteLang } from '@/i18n/site/siteLangContext';
 import { planDisplayName } from './onboardingPlans';
 import { ONBOARDING_CHECKOUT_TEXT } from './OnboardingCheckout.text';
+import type { LocalCurrency } from '@/features/buyer/pages/pricing/localPrice';
+import { LocalPriceNote } from '@/components/comman/LocalPriceNote';
+import { localizeCheckoutText } from '@/utils/localPlanPrice';
 
 type CheckoutText = typeof ONBOARDING_CHECKOUT_TEXT.en;
 
@@ -34,8 +37,10 @@ const fmtDate = (d: Date, locale = 'en-US') => d.toLocaleDateString(locale, { mo
 // the store if it doesn't exist yet and buys the plan with billImmediately.
 export function OnboardingCheckoutPage({
   plans, selectedPlanId, billing, paidPlanId, trialDurationDays, hasCardOnFile = false,
-  onSubscribe, onContinue, onStartTrial, onViewPlans, onBack, taxStoreId, headerExtra,
+  onSubscribe, onContinue, onStartTrial, onViewPlans, onBack, taxStoreId, headerExtra, localCurrency,
 }: {
+  /** The store's local currency (Pakistan → Rs): prices show in it, with the US$ that is really billed next to it. */
+  localCurrency?: LocalCurrency | null;
   /** Extra controls in the top bar (the blocking plan gate puts the store switcher + Log out here). */
   headerExtra?: ReactNode;
   /** The store being billed: when given, the exact Solvexo tax on today's charge is shown. */
@@ -49,8 +54,10 @@ export function OnboardingCheckoutPage({
   onContinue: () => void; onStartTrial?: () => void; onViewPlans: () => void; onBack?: () => void;
 }) {
   const plan = pickCheckoutPlan(plans, selectedPlanId);
-  const t = useSiteText(ONBOARDING_CHECKOUT_TEXT);
+  const tBase = useSiteText(ONBOARDING_CHECKOUT_TEXT);
   const { pageLang } = useSiteLang();
+  const local = pageLang === 'en' ? localCurrency ?? null : null;
+  const t = localizeCheckoutText(tBase, local);
   const planName = plan ? planDisplayName(plan, pageLang) : '';
   const fd = (d: Date) => fmtDate(d, t.dateLocale);
   const stripeReady = isStripeConfigured();
@@ -279,6 +286,7 @@ export function OnboardingCheckoutPage({
                   {t.agreeCharge(yearly ? t.amountPerYear(yearlyTotal) : t.amountPerMonth(monthly), planName, fd(firstFullCharge))}
                 </p>
                 {taxStoreId && <PlatformTaxNote storeId={taxStoreId} amountUSD={dueToday} className="text-[12px] text-charcoal text-center mt-1" />}
+                <LocalPriceNote local={local} className="text-[11px] leading-[1.5] text-slate text-center mt-1.5" />
               </div>
             ) : (
               <div className="flex items-center justify-center py-16">
@@ -388,7 +396,9 @@ function CellView({ v }: { v: Cell }) {
 // rounded sheet below it holding the plan cards (one card per plan) and, under
 // them, the "Compare plans" table — bare rows, a sticky header with the select
 // buttons, filled check marks. Only the actions use Solvexo orange.
-export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingChange, onSelect, onClose, title, headerExtra }: {
+export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingChange, onSelect, onClose, title, headerExtra, localCurrency }: {
+  /** The store's local currency (Pakistan → Rs): prices show in it, with the US$ that is really billed in the note. */
+  localCurrency?: LocalCurrency | null;
   /** Extra controls on the right of the top bar (the blocking plan gate puts the store switcher + Log out here). */
   headerExtra?: ReactNode;
   plans: PlatformPlan[]; selectedPlanId: string | null;
@@ -397,8 +407,10 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
   /** Omit to hide the close button (a blocking gate has nothing to go back to). */
   onClose?: () => void; title?: string;
 }) {
-  const t = useSiteText(ONBOARDING_CHECKOUT_TEXT);
+  const tBase = useSiteText(ONBOARDING_CHECKOUT_TEXT);
   const { pageLang } = useSiteLang();
+  const local = pageLang === 'en' ? localCurrency ?? null : null;
+  const t = localizeCheckoutText(tBase, local);
   const nameOf = (p: PlatformPlan) => planDisplayName(p, pageLang);
   // Plan descriptions and bullets come from the API in English: on the Arabic page they keep their own
   // (left-to-right) word order and punctuation, aligned right with the rest of the card.
@@ -495,7 +507,7 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
                   </div>
                   <p {...apiText} className={clsx('text-[13px] text-slate mt-1 mb-4 min-h-[36px] leading-[1.4]', apiText.className)}>{p.description ?? ' '}</p>
                   <div className="flex items-baseline gap-[6px] mb-1">
-                    {intro && <span className="text-[15px] text-slate line-through">${monthly}</span>}
+                    {intro && <span className="text-[15px] text-slate line-through">{local ? t.money(monthly) : `$${monthly}`}</span>}
                     <span className="text-[26px] font-semibold text-carbon leading-none">{p.isCustomPricing ? t.custom : p.isFree ? t.free : t.money(intro ? intro.price : perMonth)}</span>
                     {!p.isFree && !p.isCustomPricing && <span className="text-[12px] text-slate">{t.perMonthUnit}</span>}
                   </div>
@@ -542,7 +554,8 @@ export function OnboardingPlansPage({ plans, selectedPlanId, billing, onBillingC
             ))}
           </div>
 
-          <p className="mt-14 text-[12px] text-slate leading-[1.6] max-w-[900px]">
+          <LocalPriceNote local={local} className="mt-14 text-[12.5px] leading-[1.6] text-charcoal max-w-[900px]" />
+          <p className={local ? 'mt-2 text-[12px] text-slate leading-[1.6] max-w-[900px]' : 'mt-14 text-[12px] text-slate leading-[1.6] max-w-[900px]'}>
             {t.footer}
           </p>
         </motion.div>

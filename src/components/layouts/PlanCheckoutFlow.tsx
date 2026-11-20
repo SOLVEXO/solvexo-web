@@ -7,6 +7,8 @@ import {
 } from '@/api/services/platformPlans';
 import { confirmPaymentIntentWithSecret } from '@/components/comman/ui/StripeCardPayment';
 import { completePlanChange, shouldBillImmediately } from '@/utils/planChangeFlow';
+import { useStoreWorkspaceOptional } from '@/components/layouts/StoreLayout';
+import { useLocalCurrencyForCountry } from '@/features/buyer/pages/pricing/localPrice';
 import { OnboardingCheckoutPage, OnboardingPlansPage } from '@/features/auth/pages/onboard/OnboardingCheckout';
 import { pickCheckoutPlan, type OnboardingBilling } from '@/features/auth/pages/onboard/onboardingPlans';
 
@@ -36,6 +38,9 @@ export default function PlanCheckoutFlow({
   /** Omit for a blocking gate (nothing to go back to). */
   onClose?: () => void;
 }) {
+  // Display only: a Pakistani store sees Rs prices (its own country, not the visitor's IP); billing stays in US$.
+  const workspace = useStoreWorkspaceOptional();
+  const localCurrency = useLocalCurrencyForCountry(workspace?.store?.country);
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [trialDays, setTrialDays] = useState(3);
   // null until we know whether the seller already has a card saved, so the
@@ -114,6 +119,7 @@ export default function PlanCheckoutFlow({
           paidPlanId={paidPlanId}
           trialDurationDays={trialDays}
           hasCardOnFile={cardOnFile}
+          localCurrency={localCurrency}
           taxStoreId={storeId}
           onSubscribe={subscribe}
           onContinue={finish}
@@ -130,6 +136,7 @@ export default function PlanCheckoutFlow({
             plans={plans}
             selectedPlanId={selectedPlanId}
             billing={billing}
+            localCurrency={localCurrency}
             onBillingChange={setBilling}
             onSelect={planId => { setSelectedPlanId(planId); setView('checkout'); }}
             onClose={onClose}
