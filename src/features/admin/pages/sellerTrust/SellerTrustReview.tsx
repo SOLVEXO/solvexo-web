@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, Bell, CheckCircle2, ExternalLink, FileText, History, MessageCircle, MessageSquareWarning,
+  ArrowLeft, Bell, CheckCircle2, ExternalLink, FilePen, FileText, History, MessageCircle, MessageSquareWarning,
   ScanSearch, ShieldAlert, ShieldCheck, UserRound, XCircle,
 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -12,7 +12,7 @@ import { whatsappHref } from '@/utils/whatsapp';
 import { AdminPageHeader, Badge, Button, Modal, SkeletonBox, StatusBadge, Textarea } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import {
-  apiGetSellerTrustStore, apiTrustApprove, apiTrustMarkUnderReview, apiTrustNtnCheck, apiTrustReject, apiTrustRequestInfo,
+  apiGetSellerTrustStore, apiTrustApprove, apiTrustApproveChange, apiTrustRejectChange, apiTrustMarkUnderReview, apiTrustNtnCheck, apiTrustReject, apiTrustRequestInfo,
   type NtnCheckResult, type SellerTrustDetail,
 } from '@/api/services/admin/adminSellerTrust';
 import { NtnValue, PayoutHoldModal, PayoutHoldNote, RiskPill, RiskSignals, VerificationPill } from './TrustBits';
@@ -54,7 +54,7 @@ function Rows({ rows }: { rows: [string, ReactNode][] }) {
 
 const orNot = (v: string | null | undefined) => v || <span className="text-slate">Not provided</span>;
 
-type Dialog = null | 'approve' | 'info' | 'reject' | 'hold';
+type Dialog = null | 'approve' | 'info' | 'reject' | 'hold' | 'changeApprove' | 'changeReject';
 
 /** Seller trust → one store: everything the seller submitted, documents, NTN check, answers, risk and history,
  *  with the review actions. */
@@ -101,6 +101,59 @@ export function SellerTrustReview() {
   }
 
   return <ReviewBody d={d} back={back} canManage={canManage} dialog={dialog} setDialog={setDialog} text={text} setText={setText} busy={busy} run={run} trust={trust} />;
+}
+
+const CONTACT_LABEL: Record<string, string> = { name: 'Contact name', designation: 'Contact designation', email: 'Contact email', phone: 'Contact phone' };
+
+/** Current vs requested, one row per thing the seller wants to change (and a row per new file). */
+function ChangeRows({ d }: { d: SellerTrustDetail }) {
+  const change = d.change;
+  if (!change) return null;
+  const v = d.verification;
+  const country = (d.country ?? 'PK').toUpperCase();
+  const rows: { label: string; current: ReactNode; next: ReactNode }[] = [];
+  (Object.keys(change.fields) as (keyof typeof change.fields)[]).forEach(k => {
+    if (k === 'director') {
+      Object.entries(change.fields.director ?? {}).forEach(([dk, nv]) => rows.push({
+        label: dk === 'name' ? 'Director name' : 'Director ID number', current: orNot((v.director as Record<string, string | null> | null | undefined)?.[dk]), next: orNot(nv),
+      }));
+    } else if (k === 'authorizedContact') {
+      Object.entries(change.fields.authorizedContact ?? {}).forEach(([ck, nv]) => rows.push({
+        label: CONTACT_LABEL[ck] ?? ck, current: orNot((v.authorizedContact as Record<string, string | undefined> | null)?.[ck]), next: orNot(nv),
+      }));
+    } else {
+      rows.push({
+        label: k === 'taxId' ? taxIdLabel(country) : fieldLabel(k),
+        current: orNot(v[k as keyof typeof v] as string | null), next: orNot(change.fields[k]),
+      });
+    }
+  });
+  change.documents.forEach(doc => {
+    const live = d.documents.find(x => x.type === doc.type);
+    rows.push({
+      label: docLabel(doc.type),
+      current: live?.fileName ?? <span className="text-slate">Not provided</span>,
+      next: doc.viewUrl
+        ? <a href={doc.viewUrl} target="_blank" rel="noopener noreferrer" className="text-brand-orange font-semibold hover:underline inline-flex items-center gap-1">{doc.fileName ?? 'New file'} <ExternalLink size={11} /></a>
+        : (doc.fileName ?? 'New file'),
+    });
+  });
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-[12.5px]">
+        <thead><tr className="text-left text-slate text-[11px] uppercase tracking-wide"><th className="py-1.5 pe-3 font-semibold">Detail</th><th className="py-1.5 pe-3 font-semibold">Now</th><th className="py-1.5 font-semibold">Requested</th></tr></thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.label} className="border-t border-bone/70 align-top">
+              <td className="py-[7px] pe-3 text-slate">{r.label}</td>
+              <td className="py-[7px] pe-3 text-charcoal break-words">{r.current}</td>
+              <td className="py-[7px] text-charcoal font-medium break-words">{r.next}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function ReviewBody({ d, back, canManage, dialog, setDialog, text, setText, busy, run, trust }: {
@@ -155,6 +208,8 @@ function ReviewBody({ d, back, canManage, dialog, setDialog, text, setText, busy
               [`${taxLabel} on invoices`, d.invoiceTaxId || <span className="text-slate">Store Settings: empty</span>],
               ['Business address', orNot(v.businessAddress)],
               ['Authorized contact', contact?.name ? [contact.name, contact.designation, contact.email, contact.phone].filter(Boolean).join(' · ') : orNot(null)],
+              ['Declaration', v.consent ? `Accepted ${fmtDateTime(v.consent.acceptedAt)} (version ${v.consent.version})` : <span className="text-slate">Not recorded (submitted before the declaration existed)</span>],
+              ...(d.businessType && d.businessType !== 'individual' ? [['Director or partner', v.director?.name ? [v.director.name, v.director.idNumber].filter(Boolean).join(' · ') : orNot(null)] as [string, ReactNode]] : []),
               ...(d.categoryName ? [['Store category', d.categoryName] as [string, ReactNode]] : []),
             ]} />
             {d.rejectionReason && d.verificationStatus === 'rejected' && (
@@ -165,7 +220,10 @@ function ReviewBody({ d, back, canManage, dialog, setDialog, text, setText, busy
           {pk && (
             <Panel title="NTN check" icon={<ScanSearch size={15} />}>
               <p className="text-[12.5px] text-graphite leading-[1.6]">
-                FBR has no public API. Open FBR's Active Taxpayer List, search <strong className="tabular-nums">{v.taxId || 'the NTN'}</strong>, then record what you found. We save who checked it and when.
+                Solvexo only checks that the NTN is written correctly. Whether it exists and is active is not known: FBR has no public API. Open FBR's Active Taxpayer List page and check <strong className="tabular-nums">{v.taxId || 'the NTN'}</strong>, then record what you found. We save who checked it and when.
+              </p>
+              <p className="text-[12px] text-slate leading-[1.6]">
+                By SMS: send "ATL" then a space and the 13-digit CNIC (individuals), or the 7-digit NTN (companies and AOPs), to <strong>9966</strong>.
               </p>
               {ntnCheck && (
                 <p className="text-[12px] text-graphite">
@@ -189,6 +247,35 @@ function ReviewBody({ d, back, canManage, dialog, setDialog, text, setText, busy
                   </div>
                 )}
               </div>
+            </Panel>
+          )}
+
+          {d.change && (
+            <Panel title="Change request" icon={<FilePen size={15} />}
+              aside={<Badge color={d.change.status === 'pending' ? 'orange' : d.change.status === 'approved' ? 'green' : 'red'} size="sm">{d.change.status === 'pending' ? 'Waiting for review' : d.change.status === 'approved' ? 'Approved' : 'Rejected'}</Badge>}>
+              <ChangeRows d={d} />
+              {d.change.sellerNote && <p className="text-[12.5px] text-graphite">Seller's note: {d.change.sellerNote}</p>}
+              {d.change.status === 'rejected' && d.change.rejectionReason && <p className="text-[12.5px] text-graphite">Rejected: {d.change.rejectionReason}</p>}
+              {d.change.consent && <p className="text-[11px] text-slate">Declaration accepted {fmtDateTime(d.change.consent.acceptedAt)} (version {d.change.consent.version}).</p>}
+              {d.change.status === 'pending' && (
+                <>
+                  <p className="text-[11px] text-slate">Nothing is live yet: the seller's current details and Verified badge stay until you approve. Links expire after a few minutes.</p>
+                  {canManage && (dialog === 'changeApprove' ? (
+                    <div role="alertdialog" aria-label="Confirm change approval" className="rounded-lg border border-success/30 bg-success-bg px-3 py-2.5 flex flex-col gap-2">
+                      <p className="text-[12.5px] text-charcoal">Approve this change? The new details and files go live now. The old files that were replaced are deleted. The store stays verified.</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="primary" loading={busy === 'changeApprove'} onClick={() => run('changeApprove', () => apiTrustApproveChange(d.storeId), 'Change approved and applied.')}>Yes, approve change</Button>
+                        <Button size="sm" variant="ghost" onClick={closeDialog}>Cancel</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 flex-wrap">
+                      <Button size="sm" variant="primary" icon={<CheckCircle2 size={13} />} onClick={() => setDialog('changeApprove')}>Approve change</Button>
+                      <Button size="sm" variant="danger" icon={<XCircle size={13} />} onClick={() => setDialog('changeReject')}>Reject change</Button>
+                    </div>
+                  ))}
+                </>
+              )}
             </Panel>
           )}
 
@@ -223,7 +310,7 @@ function ReviewBody({ d, back, canManage, dialog, setDialog, text, setText, busy
           <Panel title="Decision" icon={<CheckCircle2 size={15} />}>
             <Rows rows={[
               ['Deadline', verified ? 'Verified' : d.deadline.dueAt ? `${fmtDate(d.deadline.dueAt)}${left ? ` (${left})` : ''}` : d.deadline.enforcementStarted ? '—' : 'Enforcement not started'],
-              ['Marketplace', d.deadline.limited ? <span className="text-error font-medium">Limited: hidden, payouts held</span> : 'Normal'],
+              ['Marketplace', d.deadline.limited ? <span className="text-error font-medium">Limited: hidden, held balance not paid out</span> : 'Normal'],
               ['Payouts', held ? <span className="text-error font-medium">On hold</span> : d.stripeConnect ? 'Stripe Connect (paid by Stripe)' : 'Normal'],
               ['Last reminder', d.lastTrustReminderAt ? fmtDateTime(d.lastTrustReminderAt) : 'Never'],
             ]} />
@@ -305,17 +392,19 @@ function ReviewBody({ d, back, canManage, dialog, setDialog, text, setText, busy
         </div>
       </div>
 
-      {(dialog === 'info' || dialog === 'reject') && (
+      {(dialog === 'info' || dialog === 'reject' || dialog === 'changeReject') && (
         <Modal
-          title={dialog === 'info' ? 'Ask for more info' : 'Reject verification'}
+          title={dialog === 'info' ? 'Ask for more info' : dialog === 'changeReject' ? 'Reject change request' : 'Reject verification'}
           onClose={closeDialog}
           footer={<>
             <Button variant="ghost" onClick={closeDialog}>Cancel</Button>
-            <Button variant={dialog === 'reject' ? 'danger' : 'primary'} disabled={text.trim().length < 5} loading={busy === dialog}
-              onClick={() => (dialog === 'info'
+            <Button variant={dialog === 'info' ? 'primary' : 'danger'} disabled={text.trim().length < 5} loading={busy === dialog}
+              onClick={() => (dialog === 'changeReject'
+                ? run('changeReject', () => apiTrustRejectChange(d.storeId, text.trim()), 'Change request rejected.')
+                : dialog === 'info'
                 ? run('info', () => apiTrustRequestInfo(d.storeId, text.trim()), 'Request sent to the seller.')
                 : run('reject', () => apiTrustReject(d.storeId, text.trim()), 'Verification rejected.'))}>
-              {dialog === 'info' ? 'Send request' : 'Reject'}
+              {dialog === 'info' ? 'Send request' : dialog === 'changeReject' ? 'Reject change' : 'Reject'}
             </Button>
           </>}
         >
@@ -323,7 +412,9 @@ function ReviewBody({ d, back, canManage, dialog, setDialog, text, setText, busy
             <p className="text-[12.5px] text-graphite leading-[1.6]">
               {dialog === 'info'
                 ? 'The seller sees this message on their verification page and gets an email. Their submission goes back to them until they resubmit.'
-                : 'The seller sees this reason and can fix it and resubmit. The store keeps working (own store, POS, cash on delivery), limited as unverified.'}
+                : dialog === 'changeReject'
+                  ? 'The seller sees this reason. Their current details and the Verified badge stay exactly as they are, and the files they uploaded for this request are deleted.'
+                  : 'The seller sees this reason and can fix it and resubmit. The store keeps working (own store, POS, cash on delivery), limited as unverified.'}
             </p>
             <Textarea
               label={dialog === 'info' ? 'Message to the seller' : 'Reason'}

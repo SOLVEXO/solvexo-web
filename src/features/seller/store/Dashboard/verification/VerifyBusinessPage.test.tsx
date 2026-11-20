@@ -61,7 +61,7 @@ describe('VerifyBusinessPage', () => {
     const ntn = screen.getByPlaceholderText('1234567-8');
     fireEvent.change(ntn, { target: { value: '123' } });
     fireEvent.blur(ntn);
-    expect(screen.getAllByText(/7 digits and a check digit/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/7 digits plus 1 last digit/).length).toBeGreaterThan(0);
 
     fireEvent.change(ntn, { target: { value: '45218732' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
@@ -70,7 +70,7 @@ describe('VerifyBusinessPage', () => {
   });
 
   it('shows the API error message when a save is refused', async () => {
-    api.update.mockRejectedValue(new Error('NTN must be 7 digits and a check digit, like 1234567-8'));
+    api.update.mockRejectedValue(new Error('NTN must be 7 digits plus 1 last digit, like 1234567-8'));
     renderPage(verification());
     fireEvent.click(await screen.findByRole('button', { name: 'Save draft' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('NTN must be 7 digits');
@@ -93,9 +93,20 @@ describe('VerifyBusinessPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cosmetics or skin care' }));
     expect(screen.getByText(/DRAP registration/)).toBeInTheDocument();
     expect(screen.getByText(/Product licence/, { selector: 'p' })).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText(/I confirm the details and documents/));
     fireEvent.click(screen.getByRole('button', { name: /Submit for review/ }));
-    await waitFor(() => expect(api.submit).toHaveBeenCalledWith('s1'));
+    await waitFor(() => expect(api.submit).toHaveBeenCalledWith('s1', true));
     expect(api.update).toHaveBeenCalledWith('s1', expect.objectContaining({ businessProfile: expect.objectContaining({ regulatedCategories: ['cosmetics'] }) }));
+  });
+
+  it('will not submit until the declaration is ticked, and links to the privacy policy', async () => {
+    renderPage(verification());
+    fireEvent.click(await screen.findByRole('button', { name: /Products and services/ }));
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy-policy');
+    fireEvent.click(screen.getByRole('button', { name: /Submit for review/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('tick the declaration');
+    expect(api.update).not.toHaveBeenCalled();
+    expect(api.submit).not.toHaveBeenCalled();
   });
 
   it('lists what the API says is missing when submit is refused', async () => {
@@ -105,6 +116,7 @@ describe('VerifyBusinessPage', () => {
     }));
     renderPage(verification());
     fireEvent.click(await screen.findByRole('button', { name: /Products and services/ }));
+    fireEvent.click(screen.getByLabelText(/I confirm the details and documents/));
     fireEvent.click(screen.getByRole('button', { name: /Submit for review/ }));
     expect(await screen.findByRole('alert')).toHaveTextContent('NTN, Address proof');
   });
@@ -162,5 +174,42 @@ describe('DashboardVerificationBanner', () => {
     const { container } = render(<MemoryRouter><DashboardVerificationBanner storeId="s1" /></MemoryRouter>);
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('VerifyBusinessPage: STRN', () => {
+  it('asks "Are you registered for sales tax?"; STRN is optional until the seller answers yes', async () => {
+    api.update.mockResolvedValue({ success: true });
+    renderPage(verification());
+    expect(await screen.findByText('STRN (optional)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'Yes' }));
+    expect(screen.getByText('STRN', { selector: 'label, label *' })).toBeInTheDocument();
+    expect(screen.queryByText('STRN (optional)')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(api.update).toHaveBeenCalledWith('s1', expect.objectContaining({ businessProfile: { salesTaxRegistered: true } })));
+  });
+
+  it('when the admin requires the STRN for everyone it is required whatever the answer', async () => {
+    renderPage(verification({ requirements: { ...REQ, requiredFields: [...REQ.requiredFields, 'strn'] } as SellerVerification['requirements'] }));
+    expect(await screen.findByText('STRN', { selector: 'label, label *' })).toBeInTheDocument();
+    expect(screen.queryByText('STRN (optional)')).not.toBeInTheDocument();
+  });
+});
+
+describe('VerifyBusinessPage: director or partner', () => {
+  it('a company is asked for its director; an individual is not', async () => {
+    renderPage(verification({ businessType: 'company', verificationLevel: 'business', requirements: { ...REQ, businessType: 'company', verificationLevel: 'business', requiredFields: [...REQ.requiredFields, 'registrationNumber', 'director.name', 'director.idNumber'] } as SellerVerification['requirements'] }));
+    expect(await screen.findByText('Director or partner')).toBeInTheDocument();
+    cleanup();
+    renderPage(verification());
+    await screen.findByText('CNIC number');
+    expect(screen.queryByText('Director or partner')).not.toBeInTheDocument();
+  });
+
+  it('saves the director with step 1', async () => {
+    api.update.mockResolvedValue({ success: true });
+    renderPage(verification({ businessType: 'company', verificationLevel: 'business', director: { name: 'Bilal Khan', idNumber: '35202-1234567-1' } }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(api.update).toHaveBeenCalledWith('s1', expect.objectContaining({ director: { name: 'Bilal Khan', idNumber: '35202-1234567-1' } })));
   });
 });

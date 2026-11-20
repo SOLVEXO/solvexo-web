@@ -3,8 +3,9 @@ import type {
   BusinessProfileAnswers, NtnCheckResult, RiskLevel, RiskSeverity, VerificationStatus,
 } from '@/api/services/admin/adminSellerTrust';
 
-/** FBR has no public API: an admin checks the NTN on FBR's own page, then records the result. */
-export const FBR_NTN_CHECK_URL = 'https://e.fbr.gov.pk/esbn/Verification.aspx';
+/** FBR has no public API: an admin checks the NTN on FBR's official "Active Taxpayer List" page (online search, SMS or the
+ *  downloadable list), then records the result. The old e.fbr.gov.pk/esbn/Verification.aspx page now returns an error. */
+export const FBR_NTN_CHECK_URL = 'https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169';
 
 export const GCC = ['AE', 'SA', 'QA', 'KW', 'BH', 'OM'];
 
@@ -64,6 +65,7 @@ export const docLabel = (t: string) => DOC_LABEL[t] ?? t.replace(/_/g, ' ');
 export const FIELD_LABEL: Record<string, string> = {
   legalBusinessName: 'Legal name', businessAddress: 'Business address', idDocumentType: 'ID type',
   'authorizedContact.name': 'Contact name', 'authorizedContact.email': 'Contact email', 'authorizedContact.phone': 'Contact phone',
+  'director.name': 'Director or partner name', 'director.idNumber': 'Director or partner ID number',
   registrationNumber: 'Registration / trade licence no.', taxId: 'Tax number', cnicNumber: 'CNIC', strn: 'STRN',
   businessProfile: 'Products and services answers',
 };
@@ -73,6 +75,7 @@ export const HISTORY_LABEL: Record<string, string> = {
   submitted: 'Submitted for review', resubmitted: 'Resubmitted', under_review: 'Marked under review',
   approved: 'Approved', rejected: 'Rejected', info_requested: 'Asked for more info',
   ntn_checked: 'NTN checked', payout_hold: 'Payouts held', payout_release: 'Payout hold released', reminder_sent: 'Reminder sent',
+  reminder_auto: 'Automatic reminder sent', documents_expired: 'Unsubmitted documents deleted', retention_erased: 'Data erased after the retention period', change_requested: 'Asked to change details', change_approved: 'Change approved', change_rejected: 'Change rejected', change_cancelled: 'Change request withdrawn',
 };
 export const historyLabel = (a: string) => HISTORY_LABEL[a] ?? a.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
 

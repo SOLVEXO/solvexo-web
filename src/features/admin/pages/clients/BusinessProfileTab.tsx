@@ -117,7 +117,7 @@ function StoreTrustCard({ store, sellerPhone, canManage, actions, onOpenReview }
     ['Seller type', store.businessType ? BUSINESS_TYPE[store.businessType] : 'Not chosen'],
     ['Category', store.categoryName || '—'],
     ['Deadline', verified ? 'Verified' : store.dueAt ? `${fmtDate(store.dueAt)}${left ? ` (${left})` : ''}` : 'No deadline yet (enforcement not started)'],
-    ['Marketplace', store.limited ? <span className="text-error font-medium">Limited: hidden, payouts held</span> : 'Normal'],
+    ['Marketplace', store.limited ? <span className="text-error font-medium">Limited: hidden, held balance not paid out</span> : 'Normal'],
   ];
 
   return (

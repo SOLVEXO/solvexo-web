@@ -38,12 +38,16 @@ export interface SellerTrustSummary {
   mediumRisk: number;
   waitingReview: number;
   deadlinePassed: number;
-  enforcement: { startedAt: string | null; graceDays: number; firstDueAt: string | null };
+  /** Verified stores with a change request waiting for review. */
+  changeRequests?: number;
+  enforcement: { startedAt: string | null; graceDays: number; firstDueAt: string | null; requireStrnForPk?: boolean; kycRetentionYears?: number; kycDraftRetentionDays?: number };
 }
 
 // ── Store list ───────────────────────────────────────────────────────────────
 
 export interface SellerTrustQuery {
+  /** Only verified stores with a change request waiting for review. */
+  changePending?: 'yes';
   search?: string;
   country?: string;
   ntn?: YesNo;
@@ -75,6 +79,8 @@ export interface SellerTrustRow {
   dueAt: string | null;
   limited: boolean;
   payoutHold: PayoutHold | null;
+  /** A verified seller sent a change request that is waiting for review. */
+  changePending?: boolean;
   /** Regulated categories the seller declared (cosmetics, medicines, food, mobile_phones). */
   categories: string[];
   createdAt: string;
@@ -133,6 +139,9 @@ export interface SellerTrustDetail {
     businessAddress: string | null;
     idDocumentType: 'cnic' | 'passport' | 'national_id' | null;
     authorizedContact: { name?: string; designation?: string; email?: string; phone?: string } | null;
+    director?: { name: string | null; idNumber: string | null } | null;
+    /** The seller's declaration at submit time (when and which wording version). */
+    consent?: { acceptedAt: string; version: string } | null;
     businessProfile: BusinessProfileAnswers | null;
     ntnCheck: { checkedAt: string; checkedBy: string | null; checkedByName?: string | null; result: NtnCheckResult } | null;
     history: VerificationHistoryEntry[];
@@ -148,12 +157,29 @@ export interface SellerTrustDetail {
   /** Stripe Connect stores are paid by Stripe directly: a hold covers Solvexo-held balances only. */
   stripeConnect: boolean;
   lastTrustReminderAt?: string | null;
+  /** A verified seller's waiting / decided change request, with expiring links to the new files. */
+  change?: TrustChangeRequest | null;
+}
+
+export interface TrustChangeRequest {
+  status: 'pending' | 'approved' | 'rejected';
+  /** Only the keys the seller wants to change (plus `authorizedContact` with only its changed keys). */
+  fields: Partial<Record<'legalBusinessName' | 'registrationNumber' | 'taxId' | 'strn' | 'cnicNumber' | 'businessAddress', string | null>> & {
+    authorizedContact?: { name?: string; designation?: string; email?: string; phone?: string };
+    director?: { name?: string | null; idNumber?: string | null };
+  };
+  documents: { type: string; fileName: string | null; uploadedAt: string | null; viewUrl: string | null }[];
+  sellerNote: string | null;
+  requestedAt: string | null;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+  consent: { acceptedAt: string; version: string } | null;
 }
 
 // ── Settings ─────────────────────────────────────────────────────────────────
 
-export interface SellerTrustSettings { enforcementStartedAt: string | null; graceDays: number; firstDueAt?: string | null }
-export interface SellerTrustSettingsPatch { enforcementStartedAt?: 'now' | null; graceDays?: number }
+export interface SellerTrustSettings { enforcementStartedAt: string | null; graceDays: number; firstDueAt?: string | null; requireStrnForPk?: boolean; kycRetentionYears?: number; kycDraftRetentionDays?: number }
+export interface SellerTrustSettingsPatch { enforcementStartedAt?: 'now' | null; graceDays?: number; requireStrnForPk?: boolean; kycRetentionYears?: number; kycDraftRetentionDays?: number }
 
 // ── Client business profile (Clients → client → Business profile) ───────────
 
@@ -285,3 +311,11 @@ export async function apiExportClients(q: { search?: string; status?: string } &
   const blob = await client.get<never, Blob>(ENDPOINTS.USERS.ADMIN.EXPORT, { params: clean({ role: 'seller', ...q }), responseType: 'blob' });
   downloadBlob(blob, `solvexo-clients-${today()}.csv`);
 }
+
+// ── API: change requests of verified sellers ─────────────────────────────────
+
+export const apiTrustApproveChange = (storeId: string) =>
+  client.post<never, ApiResponse<unknown>>(ENDPOINTS.SELLER_TRUST.CHANGE_APPROVE(storeId));
+
+export const apiTrustRejectChange = (storeId: string, reason: string) =>
+  client.post<never, ApiResponse<unknown>>(ENDPOINTS.SELLER_TRUST.CHANGE_REJECT(storeId), { reason });

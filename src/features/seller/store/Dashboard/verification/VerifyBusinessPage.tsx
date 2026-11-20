@@ -13,10 +13,11 @@ import { Button, Field, Input, Textarea, Select, Badge, TagInput, SkeletonBox } 
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreVerification } from './useStoreVerification';
 import { VerificationBanner } from './VerificationBanner';
+import { ChangeRequestPanel } from './ChangeRequestPanel';
 import {
   countryGroup, draftFromVerification, profileFromVerification, detailsPayload, formatProblem,
   computeMissing, documentChecklist, documentLabel, fieldLabel, isEditable, latestInfoRequest,
-  QUESTION_LABELS, LICENCE_HINTS, CNIC_HINT, formatDueDate,
+  QUESTION_LABELS, LICENCE_HINTS, CNIC_HINT, formatDueDate, DECLARATION_TEXT,
   type DetailsDraft,
 } from './verificationForm';
 
@@ -227,6 +228,7 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
   const [profile, setProfile] = useState<BusinessProfile>(() => profileFromVerification(v));
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [declared, setDeclared] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [uploadingType, setUploadingType] = useState<VerificationDocType | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -241,18 +243,34 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
   const goTo = (s: Step) => { setMsg(null); setStep(s); };
 
   // The API returns requirements for the SAVED business type; the seller may have just changed it.
-  const req = useMemo(() => {
+  const reqBase = useMemo(() => {
     if (!draft.businessType || draft.businessType === v.businessType) return requirementsFromApi;
     const business = draft.businessType !== 'individual';
     const extraFields = business && group !== 'GCC' && !requirementsFromApi.requiredFields.includes('registrationNumber') ? ['registrationNumber'] : [];
     const extraDocs = business && !requirementsFromApi.requiredDocuments.includes('business_registration') ? ['business_registration' as const] : [];
+    const directorFields = ['director.name', 'director.idNumber'];
+    // A company or partnership names its director; switching back to an individual drops that requirement.
+    const baseFields = business ? requirementsFromApi.requiredFields : requirementsFromApi.requiredFields.filter(f => !directorFields.includes(f));
+    const extraDirector = business ? directorFields.filter(f => !baseFields.includes(f)) : [];
     return {
       ...requirementsFromApi,
       businessType: draft.businessType as BusinessType,
-      requiredFields: [...requirementsFromApi.requiredFields, ...extraFields],
+      requiredFields: [...baseFields, ...extraFields, ...extraDirector],
       requiredDocuments: [...requirementsFromApi.requiredDocuments, ...extraDocs],
     };
   }, [draft.businessType, v.businessType, requirementsFromApi, group]);
+
+  // Pakistan STRN: the API requires it for everyone when the admin switch is on, or for a seller who answered "yes,
+  // sales-tax registered". The saved "yes" is already inside the API's list, so a changed answer is re-derived here.
+  const strnRequired = useMemo(() => {
+    if (group !== 'PK') return false;
+    const forEveryone = requirementsFromApi.requiredFields.includes('strn') && v.businessProfile?.salesTaxRegistered !== true;
+    return forEveryone || profile.salesTaxRegistered === true;
+  }, [group, requirementsFromApi, v.businessProfile, profile.salesTaxRegistered]);
+  const req = useMemo(() => {
+    const others = reqBase.requiredFields.filter(f => f !== 'strn');
+    return { ...reqBase, requiredFields: strnRequired ? [...others, 'strn'] : others };
+  }, [reqBase, strnRequired]);
 
   const docsByType = useMemo(() => new Map(v.documents.map(d => [d.type, d])), [v.documents]);
   const uploaded = useMemo(() => new Set(v.documents.filter(d => d.state === 'uploaded').map(d => d.type)), [v.documents]);
@@ -268,7 +286,7 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
   async function saveDetails(next?: Step) {
     setSaving(true); setMsg(null);
     try {
-      await apiUpdateStoreVerification(storeId, detailsPayload(draft, country));
+      await apiUpdateStoreVerification(storeId, detailsPayload(draft, country, profile.salesTaxRegistered));
       setMsg({ ok: true, text: 'Saved.' });
       if (next !== undefined) goTo(next);
     } catch (err) {
@@ -300,11 +318,12 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
   }
 
   async function submit() {
+    if (!declared) { setMsg({ ok: false, text: 'Please tick the declaration before you submit.' }); return; }
     setSubmitting(true); setMsg(null);
     try {
       // Save step 1 and step 3 first so the API checks exactly what is on screen.
       await apiUpdateStoreVerification(storeId, { ...detailsPayload(draft, country), businessProfile: profile });
-      await apiSubmitStoreVerification(storeId);
+      await apiSubmitStoreVerification(storeId, true);
       toast.success(v.verificationStatus === 'not_started' ? 'Submitted for review.' : 'Resubmitted for review.');
       reload();
     } catch (err) {
@@ -359,6 +378,7 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
       {/* The status card below already explains review / needs-info / rejected; the banner covers the deadline before submit. */}
       {v.verificationStatus === 'not_started' && <VerificationBanner storeId={storeId} verification={v} onPage />}
       <StatusCard v={v} />
+      {v.verificationStatus === 'verified' && <ChangeRequestPanel storeId={storeId} v={v} reload={reload} />}
 
       <Stepper step={step} onStep={goTo} done={stepDone} />
 
@@ -416,12 +436,19 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
                     <p className="mb-[14px] text-[11px] text-slate">
                       {useCnicAsNtn
                         ? 'Your CNIC is used as your NTN.'
-                        : <>NTN has 7 digits and a check digit, like 1234567-8.</>}
+                        : <>NTN has 7 digits plus 1 last digit, like 1234567-8.</>}
                       {' '}Not registered with FBR yet? <a href={FBR_IRIS_URL} target="_blank" rel="noopener noreferrer" className="text-brand-deep-orange font-medium">Register free on FBR IRIS</a>.
                     </p>
                   )}
                 </div>
-                <Field label="STRN (optional)" hint="Sales tax registration number, if you have one.">
+                <div className="sm:col-span-2 mb-[14px]">
+                  <p className="text-[12px] font-medium text-charcoal mb-1.5">Are you registered for sales tax (STRN)?</p>
+                  <ChipGroup label="Sales tax registered" value={profile.salesTaxRegistered} onChange={x => setP('salesTaxRegistered', x)} disabled={!editable} options={[
+                    { value: true, label: 'Yes' }, { value: false, label: 'No' },
+                  ]} />
+                </div>
+                <Field label={strnRequired ? 'STRN' : 'STRN (optional)'} required={strnRequired}
+                  hint={strnRequired ? 'Your sales tax registration number.' : 'Only if you are registered for sales tax.'}>
                   <Input value={draft.strn} onChange={e => set('strn', e.target.value)} maxLength={20} />
                 </Field>
                 {(isRequired('registrationNumber') || (draft.businessType && draft.businessType !== 'individual')) && (
@@ -471,19 +498,33 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
               <Textarea rows={2} value={draft.businessAddress} onChange={e => set('businessAddress', e.target.value)} maxLength={300} />
             </Field>
 
+            {draft.businessType && draft.businessType !== 'individual' && (
+              <>
+                <p className="text-[12px] font-semibold text-charcoal mt-1 mb-2">Director or partner</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                  <Field label="Name" required={isRequired('director.name')} hint="The owner, director or partner behind the business.">
+                    <Input value={draft.directorName} maxLength={100} onChange={e => set('directorName', e.target.value)} autoComplete="off" />
+                  </Field>
+                  <Field label={group === 'PK' ? 'CNIC number' : 'ID number'} required={isRequired('director.idNumber')} hint={group === 'PK' ? CNIC_HINT : 'Emirates ID, national ID or passport number.'}>
+                    <Input value={draft.directorIdNumber} maxLength={group === 'PK' ? 17 : 30} inputMode={group === 'PK' ? 'numeric' : undefined} onChange={e => set('directorIdNumber', e.target.value)} />
+                  </Field>
+                </div>
+              </>
+            )}
+
             <p className="text-[12px] font-semibold text-charcoal mt-1 mb-2">Authorized contact</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
               <Field label="Name" required={isRequired('authorizedContact.name')}>
-                <Input value={draft.contactName} onChange={e => set('contactName', e.target.value)} autoComplete="name" />
+                <Input value={draft.contactName} maxLength={100} onChange={e => set('contactName', e.target.value)} autoComplete="name" />
               </Field>
               <Field label="Designation" required={isRequired('authorizedContact.designation')}>
-                <Input value={draft.contactDesignation} onChange={e => set('contactDesignation', e.target.value)} placeholder="Owner, director…" />
+                <Input value={draft.contactDesignation} maxLength={100} onChange={e => set('contactDesignation', e.target.value)} placeholder="Owner, director…" />
               </Field>
               <Field label="Email" required={isRequired('authorizedContact.email')}>
-                <Input type="email" value={draft.contactEmail} onChange={e => set('contactEmail', e.target.value)} autoComplete="email" />
+                <Input type="email" value={draft.contactEmail} maxLength={254} onChange={e => set('contactEmail', e.target.value)} autoComplete="email" />
               </Field>
               <Field label="Phone / WhatsApp" required={isRequired('authorizedContact.phone')}>
-                <Input type="tel" value={draft.contactPhone} onChange={e => set('contactPhone', e.target.value)} autoComplete="tel" placeholder={group === 'PK' ? '0300 1234567' : ''} />
+                <Input type="tel" value={draft.contactPhone} maxLength={30} onChange={e => set('contactPhone', e.target.value)} autoComplete="tel" placeholder={group === 'PK' ? '0300 1234567' : ''} />
               </Field>
             </div>
 
@@ -649,6 +690,13 @@ function VerifyBusinessForm({ storeId, v, reload, requirementsFromApi }: {
                 ) : (
                   <p className="flex items-center gap-1.5 text-[12.5px] text-success"><Check size={14} /> Everything is filled in. Solvexo will check it after you submit.</p>
                 )}
+                <label htmlFor="verification-declaration" className="flex items-start gap-2.5 rounded-xl border border-bone px-3.5 py-3 text-[12.5px] text-charcoal leading-relaxed cursor-pointer">
+                  <input id="verification-declaration" type="checkbox" className="mt-[3px] accent-brand-orange shrink-0" checked={declared} onChange={e => setDeclared(e.target.checked)} />
+                  <span>
+                    {DECLARATION_TEXT}{' '}
+                    <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-brand-deep-orange font-medium underline">Privacy Policy</a>
+                  </span>
+                </label>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex-1 min-w-[160px]">{footerMsg}</div>
                   <div className="flex gap-2">

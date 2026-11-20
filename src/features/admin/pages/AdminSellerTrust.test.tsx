@@ -92,6 +92,65 @@ describe('AdminSellerTrust', () => {
     await waitFor(() => expect(api.apiUpdateSellerTrustSettings).toHaveBeenCalledWith({ enforcementStartedAt: null }));
   });
 
+  it('the STRN rule: optional by default, switched on only after an in-page confirm', async () => {
+    api.apiUpdateSellerTrustSettings.mockResolvedValue({ success: true, data: { requireStrnForPk: true } });
+    setup();
+    const panel = await screen.findByRole('region', { name: 'STRN rule' });
+    expect(within(panel).getByText('Only if sales-tax registered')).toBeInTheDocument();
+    fireEvent.click(within(panel).getByRole('button', { name: 'Require STRN from everyone' }));
+    expect(api.apiUpdateSellerTrustSettings).not.toHaveBeenCalled();
+    fireEvent.click(within(within(panel).getByRole('alertdialog', { name: 'Confirm STRN rule' })).getByRole('button', { name: 'Yes, require it' }));
+    await waitFor(() => expect(api.apiUpdateSellerTrustSettings).toHaveBeenCalledWith({ requireStrnForPk: true }));
+  });
+
+  it('the STRN rule can be switched back off in one click', async () => {
+    api.apiUpdateSellerTrustSettings.mockResolvedValue({ success: true, data: { requireStrnForPk: false } });
+    setup(summaryFixture({ enforcement: { startedAt: null, graceDays: 30, firstDueAt: null, requireStrnForPk: true } }));
+    const panel = await screen.findByRole('region', { name: 'STRN rule' });
+    expect(within(panel).getByText('Required for everyone')).toBeInTheDocument();
+    fireEvent.click(within(panel).getByRole('button', { name: 'Make STRN optional again' }));
+    await waitFor(() => expect(api.apiUpdateSellerTrustSettings).toHaveBeenCalledWith({ requireStrnForPk: false }));
+  });
+
+  it('the Change requests view lists verified stores with a waiting change request', async () => {
+    setup(summaryFixture({ changeRequests: 2 }));
+    await screen.findAllByText('GlowSkin Store');
+    fireEvent.click(screen.getByRole('button', { name: /Change requests \(2\)/ }));
+    await waitFor(() => expect(api.apiListSellerTrustStores).toHaveBeenLastCalledWith(expect.objectContaining({ changePending: 'yes' })));
+    expect(api.apiListSellerTrustStores).toHaveBeenLastCalledWith(expect.not.objectContaining({ status: 'pending' }));
+  });
+
+  it('a store with a waiting change request carries a "Change requested" badge', async () => {
+    api.apiGetSellerTrustSummary.mockResolvedValue({ success: true, data: summaryFixture() });
+    api.apiListSellerTrustStores.mockResolvedValue({ success: true, data: listFixture([rowFixture({ changePending: true })]) });
+    render(<MemoryRouter initialEntries={['/admin/seller-trust']}><Routes><Route path="/admin/seller-trust" element={<AdminSellerTrust />} /></Routes></MemoryRouter>);
+    expect((await screen.findAllByText('Change requested')).length).toBeGreaterThan(0);
+  });
+
+  it('document retention shows 6 years / 90 days by default and saves only what changed', async () => {
+    api.apiUpdateSellerTrustSettings.mockResolvedValue({ success: true, data: { kycRetentionYears: 7 } });
+    setup();
+    const panel = await screen.findByRole('region', { name: 'Document retention' });
+    expect(within(panel).getByLabelText('Closed stores: keep for (years)')).toHaveValue(6);
+    expect(within(panel).getByLabelText('Never submitted or rejected: delete after (days)')).toHaveValue(90);
+    expect(within(panel).queryByRole('button', { name: 'Save retention' })).not.toBeInTheDocument();
+    fireEvent.change(within(panel).getByLabelText('Closed stores: keep for (years)'), { target: { value: '7' } });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Save retention' }));
+    await waitFor(() => expect(api.apiUpdateSellerTrustSettings).toHaveBeenCalledWith({ kycRetentionYears: 7 }));
+  });
+
+  it('document retention refuses values outside the allowed range', async () => {
+    setup(summaryFixture({ enforcement: { startedAt: null, graceDays: 30, firstDueAt: null, kycRetentionYears: 6, kycDraftRetentionDays: 90 } }));
+    const panel = await screen.findByRole('region', { name: 'Document retention' });
+    fireEvent.change(within(panel).getByLabelText('Never submitted or rejected: delete after (days)'), { target: { value: '3' } });
+    expect(within(panel).getByRole('button', { name: 'Save retention' })).toBeDisabled();
+    expect(within(panel).getByText('7 to 365')).toBeInTheDocument();
+    fireEvent.change(within(panel).getByLabelText('Never submitted or rejected: delete after (days)'), { target: { value: '90' } });
+    fireEvent.change(within(panel).getByLabelText('Closed stores: keep for (years)'), { target: { value: '0' } });
+    expect(within(panel).getByText('1 to 15')).toBeInTheDocument();
+    expect(api.apiUpdateSellerTrustSettings).not.toHaveBeenCalled();
+  });
+
   it('sends reminders to everyone matching the filters after confirming', async () => {
     api.apiTrustRemind.mockResolvedValue({ success: true, data: { sent: 1, skipped: 1 } });
     setup();

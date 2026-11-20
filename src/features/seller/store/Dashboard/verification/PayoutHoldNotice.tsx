@@ -12,7 +12,7 @@ export function PayoutHoldNotice({ storeId }: { storeId: string }) {
       <div className="flex items-start gap-2.5 min-w-0">
         <ShieldAlert size={16} className="text-error shrink-0 mt-[1px]" />
         <p className="text-[12.5px] text-charcoal leading-[1.5]">
-          <strong>Payouts are on hold until your business is verified.</strong> Card and online payments stay in your balance; cash on delivery is not affected.
+          <strong>Payouts are on hold until your business is verified.</strong> This covers any balance Solvexo holds for you. Payments that go straight to you (your own Stripe account or gateway) and cash on delivery are not affected.
         </p>
       </div>
       <Link to={`/store/${storeId}/settings/verification`} className="text-[12.5px] font-semibold text-brand-deep-orange underline shrink-0">

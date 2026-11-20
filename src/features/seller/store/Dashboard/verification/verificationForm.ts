@@ -26,7 +26,7 @@ export function normalizeCnic(value: string): string | null {
   return `${d.slice(0, 5)}-${d.slice(5, 12)}-${d.slice(12)}`;
 }
 
-/** NTN: 7 digits + a check digit (`1234567-8`, `12345678` accepted) → `1234567-8`, or a 13-digit CNIC used as NTN
+/** NTN: 7 digits + 1 last digit (format only, not verified with FBR) (`1234567-8`, `12345678` accepted) → `1234567-8`, or a 13-digit CNIC used as NTN
  *  (FBR issues individuals' NTNs on their CNIC) → `12345-1234567-1`; null otherwise. Mirrors the API. */
 export function normalizeNtn(value: string): string | null {
   const asCnic = normalizeCnic(value);
@@ -37,7 +37,7 @@ export function normalizeNtn(value: string): string | null {
 }
 
 export const CNIC_HINT = '13 digits, as on your card, like 12345-1234567-1';
-export const NTN_HINT = 'NTN has 7 digits and a check digit, like 1234567-8. If FBR issued your NTN on your CNIC, enter your 13-digit CNIC.';
+export const NTN_HINT = 'NTN has 7 digits plus 1 last digit, like 1234567-8. If FBR issued your NTN on your CNIC, enter your 13-digit CNIC.';
 
 /** Inline format message for a field, or null when it looks right (or is empty). */
 export function formatProblem(field: 'cnicNumber' | 'taxId', value: string, country: string | null | undefined): string | null {
@@ -62,11 +62,14 @@ export interface DetailsDraft {
   contactDesignation: string;
   contactEmail: string;
   contactPhone: string;
+  /** Company / partnership: the director or partner behind the business. */
+  directorName: string;
+  directorIdNumber: string;
 }
 
 export const EMPTY_PROFILE: BusinessProfile = {
   sourcing: null, sellsBrandedGoods: null, regulatedCategories: [], premises: null, yearsSelling: null,
-  otherChannels: [], couriers: [], dispatchTime: null, returnPolicy: null, monthlyOrders: null, bankAccountInOwnName: null,
+  otherChannels: [], couriers: [], dispatchTime: null, returnPolicy: null, monthlyOrders: null, bankAccountInOwnName: null, salesTaxRegistered: null,
 };
 
 export function draftFromVerification(v: SellerVerification): DetailsDraft {
@@ -84,6 +87,8 @@ export function draftFromVerification(v: SellerVerification): DetailsDraft {
     contactDesignation: v.authorizedContact?.designation ?? '',
     contactEmail: v.authorizedContact?.email ?? '',
     contactPhone: v.authorizedContact?.phone ?? '',
+    directorName: v.director?.name ?? '',
+    directorIdNumber: v.director?.idNumber ?? '',
   };
 }
 
@@ -99,7 +104,7 @@ export function profileFromVerification(v: SellerVerification): BusinessProfile 
 }
 
 /** PATCH body for step 1. PK: the ID number goes as `cnicNumber` (normalised when valid), and the ID type is always CNIC. */
-export function detailsPayload(d: DetailsDraft, country: string | null | undefined) {
+export function detailsPayload(d: DetailsDraft, country: string | null | undefined, salesTaxRegistered?: boolean | null) {
   const pk = countryGroup(country) === 'PK';
   const t = (s: string) => s.trim();
   const payload: Record<string, unknown> = {
@@ -112,11 +117,17 @@ export function detailsPayload(d: DetailsDraft, country: string | null | undefin
     },
   };
   if (d.businessType) payload.businessType = d.businessType;
+  // A company or partnership names the director or partner behind it (PK: a CNIC, normalised when valid).
+  if (d.businessType && d.businessType !== 'individual') {
+    payload.director = { name: t(d.directorName), idNumber: pk ? (normalizeCnic(d.directorIdNumber) ?? t(d.directorIdNumber)) : t(d.directorIdNumber) };
+  }
   if (pk) {
     payload.idDocumentType = 'cnic';
     payload.cnicNumber = normalizeCnic(d.idNumber) ?? t(d.idNumber);
     payload.taxId = normalizeNtn(d.taxId) ?? t(d.taxId);
     payload.strn = t(d.strn);
+    // "Are you sales-tax registered?" sits next to the STRN on step 1, so it is saved with this step.
+    if (typeof salesTaxRegistered === 'boolean') payload.businessProfile = { salesTaxRegistered };
   } else {
     if (d.idDocumentType) payload.idDocumentType = d.idDocumentType;
     // The API keeps the owner's ID number in `cnicNumber` for every country (free text outside Pakistan).
@@ -191,6 +202,8 @@ const DRAFT_PATH: Record<string, (d: DetailsDraft) => string> = {
   'authorizedContact.designation': d => d.contactDesignation,
   'authorizedContact.email': d => d.contactEmail,
   'authorizedContact.phone': d => d.contactPhone,
+  'director.name': d => d.directorName,
+  'director.idNumber': d => d.directorIdNumber,
 };
 
 export interface MissingItems {
@@ -206,7 +219,9 @@ export function computeMissing(
   profile: BusinessProfile,
   uploaded: Set<VerificationDocType>,
 ): MissingItems {
-  const fields = req.requiredFields.filter(path => {
+  // A Pakistani seller who says they are sales-tax registered must give an STRN (the API re-checks this).
+  const strnNeeded = countryGroup(req.country) === 'PK' && profile.salesTaxRegistered === true && !req.requiredFields.includes('strn');
+  const fields = (strnNeeded ? [...req.requiredFields, 'strn'] : req.requiredFields).filter(path => {
     if (path.startsWith('businessProfile.')) return false;
     const read = DRAFT_PATH[path];
     return read ? !read(draft).trim() : false;
@@ -232,6 +247,8 @@ export function fieldLabel(path: string, country: string | null | undefined): st
     case 'taxId': return group === 'PK' ? 'NTN' : group === 'GCC' ? 'VAT TRN' : 'Tax ID';
     case 'registrationNumber': return group === 'PK' ? 'SECP or firm registration number' : group === 'GCC' ? 'Trade licence number' : 'Registration number';
     case 'strn': return 'STRN';
+    case 'director.name': return 'Director or partner name';
+    case 'director.idNumber': return group === 'PK' ? 'Director or partner CNIC' : 'Director or partner ID number';
     case 'authorizedContact.name': return 'Contact name';
     case 'authorizedContact.designation': return 'Contact designation';
     case 'authorizedContact.email': return 'Contact email';
@@ -265,6 +282,7 @@ export const QUESTION_LABELS: Record<keyof BusinessProfile, string> = {
   returnPolicy: 'Return policy',
   monthlyOrders: 'Expected orders per month',
   bankAccountInOwnName: 'Bank account name',
+  salesTaxRegistered: 'Sales tax registration',
 };
 
 /** Which licence a regulated category needs, shown next to the upload. */
@@ -305,6 +323,10 @@ export function formatDueDate(dueAt: string | null | undefined): string {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/** The declaration the seller ticks before submitting. The API stores which version of this wording was accepted
+ *  (`VERIFICATION_DECLARATION_VERSION` in solvexo-api/src/store/verification-requirements.config.ts): change both together. */
+export const DECLARATION_TEXT = 'I confirm the details and documents I have given are true and belong to me or my business. I agree that Solvexo may store them securely and review them to verify my business, and share them with a tax or legal authority where the law requires.';
+
 // ── Banner copy (dashboard + top of the verification page) ────────────────────
 
 export interface BannerState {
@@ -316,7 +338,7 @@ export interface BannerState {
   dismissible: boolean;
 }
 
-export const LIMITS_SENTENCE = 'your store is hidden from the Solvexo marketplace and card payouts are held. Cash on delivery and your own store link keep working.';
+export const LIMITS_SENTENCE = 'your store is hidden from the Solvexo marketplace and payouts of any balance Solvexo holds for you are paused. Payments that go straight to you, cash on delivery and your own store link keep working.';
 
 /** What to tell the seller about verification right now; null = say nothing. */
 export function bannerState(v: Pick<SellerVerification, 'verificationStatus' | 'deadline' | 'history' | 'rejectionReason'>, now: Date = new Date()): BannerState | null {

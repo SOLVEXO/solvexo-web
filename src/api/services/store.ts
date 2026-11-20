@@ -1008,6 +1008,8 @@ export interface BusinessProfile {
   returnPolicy:         ReturnPolicy | null;
   monthlyOrders:        MonthlyOrders | null;
   bankAccountInOwnName: boolean | null;
+  /** Pakistan: "Are you registered for sales tax?" A yes makes the STRN required. */
+  salesTaxRegistered:   boolean | null;
 }
 
 export interface VerificationAuthorizedContact {
@@ -1066,6 +1068,8 @@ export interface SellerVerification {
   businessAddress:    string | null;
   idDocumentType:     IdDocumentType | null;
   authorizedContact:  VerificationAuthorizedContact | null;
+  /** Company / partnership: the director or partner behind the business. */
+  director?:          { name: string | null; idNumber: string | null } | null;
   businessProfile?:   Partial<BusinessProfile> | null;
   documents:          VerificationDocumentRow[];
   missingFields:      string[];
@@ -1076,6 +1080,39 @@ export interface SellerVerification {
   rejectionReason:    string | null;
   requirements?:      VerificationRequirements;
   deadline?:          VerificationDeadline;
+  /** A verified seller's waiting or decided change request (see ChangeRequestPanel); null when none. */
+  change?:            VerificationChange | null;
+}
+
+export type VerificationChangeStatus = 'pending' | 'approved' | 'rejected';
+
+/** The values a verified seller asked to change (only keys that differ) and the new files. */
+export interface VerificationChange {
+  status:          VerificationChangeStatus;
+  fields:          Partial<Record<'legalBusinessName' | 'registrationNumber' | 'taxId' | 'strn' | 'cnicNumber' | 'businessAddress', string | null>> & {
+    authorizedContact?: Partial<VerificationAuthorizedContact>;
+    director?: { name?: string; idNumber?: string };
+  };
+  documents:       { type: VerificationDocType; fileName: string | null; uploadedAt: string | null; viewUrl: string | null }[];
+  sellerNote:      string | null;
+  requestedAt:     string | null;
+  reviewedAt:      string | null;
+  rejectionReason: string | null;
+  consent:         { acceptedAt: string; version: string } | null;
+}
+
+export interface RequestVerificationChangePayload {
+  legalBusinessName?:  string | null;
+  registrationNumber?: string | null;
+  taxId?:              string | null;
+  strn?:               string | null;
+  cnicNumber?:         string | null;
+  businessAddress?:    string | null;
+  authorizedContact?:  Partial<VerificationAuthorizedContact>;
+  director?:           { name?: string; idNumber?: string };
+  documents?:          { type: VerificationDocType; publicId: string; resourceType: string; fileName: string }[];
+  note?:               string | null;
+  declarationAccepted: boolean;
 }
 
 export interface UpdateVerificationPayload {
@@ -1088,6 +1125,7 @@ export interface UpdateVerificationPayload {
   businessAddress?:    string;
   idDocumentType?:     IdDocumentType;
   authorizedContact?:  Partial<VerificationAuthorizedContact>;
+  director?:           { name?: string; idNumber?: string };
   businessProfile?:    Partial<BusinessProfile>;
 }
 
@@ -1128,6 +1166,16 @@ export async function apiUploadVerificationDocument(storeId: string, type: Verif
 
 /** POST /api/store/:storeId/verification/submit  (seller only). A 400 lists
  *  `missingFields` / `missingDocuments` in the error's `details`. */
-export function apiSubmitStoreVerification(storeId: string) {
-  return client.post<never, { success: boolean; message?: string }>(ENDPOINTS.STORE.VERIFICATION_SUBMIT(storeId), {});
+export function apiSubmitStoreVerification(storeId: string, declarationAccepted: boolean) {
+  return client.post<never, { success: boolean; message?: string }>(ENDPOINTS.STORE.VERIFICATION_SUBMIT(storeId), { declarationAccepted });
+}
+
+/** POST /api/store/:storeId/verification/change  (seller only, VERIFIED stores). Only what changed needs to be sent. */
+export function apiRequestVerificationChange(storeId: string, body: RequestVerificationChangePayload) {
+  return client.post<never, { success: boolean; message?: string }>(ENDPOINTS.STORE.VERIFICATION_CHANGE(storeId), body);
+}
+
+/** DELETE /api/store/:storeId/verification/change  (seller only): withdraw the waiting request. */
+export function apiCancelVerificationChange(storeId: string) {
+  return client.delete<never, { success: boolean; message?: string }>(ENDPOINTS.STORE.VERIFICATION_CHANGE(storeId));
 }

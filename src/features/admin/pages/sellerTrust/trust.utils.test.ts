@@ -41,6 +41,6 @@ describe('seller trust utils', () => {
   });
 
   it('keeps the FBR check page in one constant', () => {
-    expect(FBR_NTN_CHECK_URL).toBe('https://e.fbr.gov.pk/esbn/Verification.aspx');
+    expect(FBR_NTN_CHECK_URL).toBe('https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169');
   });
 });

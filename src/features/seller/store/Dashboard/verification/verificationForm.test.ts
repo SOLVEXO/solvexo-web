@@ -9,7 +9,7 @@ import {
 const draft = (over: Partial<DetailsDraft> = {}): DetailsDraft => ({
   businessType: 'individual', legalBusinessName: 'Noor Fabrics', idDocumentType: 'cnic', idNumber: '35202-1234567-1',
   taxId: '4521873-2', registrationNumber: '', strn: '', businessAddress: 'Lahore', contactName: 'Ayesha',
-  contactDesignation: 'Owner', contactEmail: 'a@x.pk', contactPhone: '0300 1234567', ...over,
+  contactDesignation: 'Owner', contactEmail: 'a@x.pk', contactPhone: '0300 1234567', directorName: '', directorIdNumber: '', ...over,
 });
 
 const base = (over: Partial<SellerVerification> = {}): SellerVerification => ({
@@ -27,7 +27,7 @@ describe('format validators (mirror the API)', () => {
     expect(normalizeCnic('35202A1234567-1')).toBeNull();
   });
 
-  it('normalises an NTN to 7 digits + check digit', () => {
+  it('normalises an NTN to 7 digits + 1 last digit', () => {
     expect(normalizeNtn('12345678')).toBe('1234567-8');
     expect(normalizeNtn('1234567-8')).toBe('1234567-8');
     expect(normalizeNtn('1234567')).toBeNull();
@@ -168,5 +168,63 @@ describe('status and banner', () => {
     expect(s?.body).toContain('Upload the PTA letter');
     expect(bannerState(base({ verificationStatus: 'pending' }), now)).toBeNull();
     expect(bannerState(base({ verificationStatus: 'pending', deadline: { enforcementStarted: true, limited: true, dueAt: null } }), now)?.tone).toBe('info');
+  });
+});
+
+describe('Pakistan STRN (sales tax registered)', () => {
+  const req = { country: 'PK', businessType: 'individual', verificationLevel: 'basic', requiredFields: ['legalBusinessName', 'taxId', 'cnicNumber'], requiredDocuments: [], optionalDocuments: [] } as never;
+  const profile = (over = {}) => ({ ...EMPTY_PROFILE, ...over });
+
+  it('STRN is not asked for unless the seller says they are sales-tax registered', () => {
+    expect(computeMissing(req, draft({ strn: '' }), profile(), new Set()).fields).not.toContain('strn');
+    expect(computeMissing(req, draft({ strn: '' }), profile({ salesTaxRegistered: false }), new Set()).fields).not.toContain('strn');
+  });
+
+  it('a "yes" makes an empty STRN missing, and a filled one satisfies it', () => {
+    expect(computeMissing(req, draft({ strn: '' }), profile({ salesTaxRegistered: true }), new Set()).fields).toContain('strn');
+    expect(computeMissing(req, draft({ strn: '17-00-1234-567-89' }), profile({ salesTaxRegistered: true }), new Set()).fields).not.toContain('strn');
+  });
+
+  it('an STRN the API already requires (admin switch) stays required whatever the answer', () => {
+    const forced = { ...(req as object), requiredFields: ['taxId', 'strn'] } as never;
+    expect(computeMissing(forced, draft({ strn: '' }), profile({ salesTaxRegistered: false }), new Set()).fields).toContain('strn');
+  });
+
+  it('is only asked in Pakistan', () => {
+    const ae = { ...(req as object), country: 'AE' } as never;
+    expect(computeMissing(ae, draft({ strn: '' }), profile({ salesTaxRegistered: true }), new Set()).fields).not.toContain('strn');
+  });
+
+  it('step 1 saves the answer with the details (PK only, and only once answered)', () => {
+    expect(detailsPayload(draft(), 'PK', true).businessProfile).toEqual({ salesTaxRegistered: true });
+    expect(detailsPayload(draft(), 'PK', false).businessProfile).toEqual({ salesTaxRegistered: false });
+    expect(detailsPayload(draft(), 'PK', null)).not.toHaveProperty('businessProfile');
+    expect(detailsPayload(draft(), 'PK')).not.toHaveProperty('businessProfile');
+    expect(detailsPayload(draft(), 'AE', true)).not.toHaveProperty('businessProfile');
+  });
+});
+
+describe('Director or partner (company / partnership)', () => {
+  const company = { country: 'PK', businessType: 'company', verificationLevel: 'business', requiredFields: ['legalBusinessName', 'director.name', 'director.idNumber'], requiredDocuments: [], optionalDocuments: [] } as never;
+
+  it('an empty director name and ID are missing for a company, and filled ones are not', () => {
+    const empty = computeMissing(company, draft({ businessType: 'company' }), EMPTY_PROFILE, new Set()).fields;
+    expect(empty).toEqual(expect.arrayContaining(['director.name', 'director.idNumber']));
+    const filled = computeMissing(company, draft({ businessType: 'company', directorName: 'Bilal Khan', directorIdNumber: '35202-1234567-1' }), EMPTY_PROFILE, new Set()).fields;
+    expect(filled).not.toContain('director.name');
+    expect(filled).not.toContain('director.idNumber');
+  });
+
+  it('step 1 sends the director for a company (PK CNIC normalised) and never for an individual', () => {
+    expect(detailsPayload(draft({ businessType: 'company', directorName: ' Bilal Khan ', directorIdNumber: '3520212345671' }), 'PK').director)
+      .toEqual({ name: 'Bilal Khan', idNumber: '35202-1234567-1' });
+    expect(detailsPayload(draft({ businessType: 'partnership', directorName: 'A', directorIdNumber: 'P123' }), 'AE').director).toEqual({ name: 'A', idNumber: 'P123' });
+    expect(detailsPayload(draft({ businessType: 'individual', directorName: 'A', directorIdNumber: '1' }), 'PK')).not.toHaveProperty('director');
+  });
+
+  it('the draft is filled from what was saved', () => {
+    const d = draftFromVerification(base({ director: { name: 'Bilal Khan', idNumber: '35202-1234567-1' } }));
+    expect(d).toMatchObject({ directorName: 'Bilal Khan', directorIdNumber: '35202-1234567-1' });
+    expect(draftFromVerification(base()).directorName).toBe('');
   });
 });

@@ -30,7 +30,7 @@ const SORT_OPTIONS = [
   { value: 'created', label: 'Newest stores first' },
 ];
 
-type View = 'all' | 'queue';
+type View = 'all' | 'queue' | 'changes';
 
 // ── Progress bar segments: always a word next to the colour. ─────────────────
 const PROGRESS: { key: string; label: string; bar: string; count: (s: SellerTrustSummary) => number }[] = [
@@ -105,7 +105,7 @@ function EnforcementPanel({ summary, canManage, onChanged }: { summary: SellerTr
       {started ? (
         <p className="text-[12.5px] text-graphite leading-[1.6]">
           Started {fmtDate(e.startedAt)}. Existing stores have {e.graceDays} days, so the first deadline is <strong>{fmtDate(e.firstDueAt)}</strong>.
-          Stores created after the start are limited until verified. Limited stores are hidden from the marketplace, get no badge and their payouts are held; their own store and cash on delivery keep working.
+          Stores created after the start are limited until verified. Limited stores are hidden from the marketplace, get no badge and payouts of any balance Solvexo holds for them are paused; payments that go straight to the seller (Stripe Connect, their own gateway, cash on delivery) and their own store keep working.
         </p>
       ) : (
         <p className="text-[12.5px] text-graphite leading-[1.6]">
@@ -151,6 +151,116 @@ function EnforcementPanel({ summary, canManage, onChanged }: { summary: SellerTr
   );
 }
 
+// ── Pakistan STRN rule: optional unless the seller says they are sales-tax registered; this switch makes it mandatory. ────
+function StrnRulePanel({ summary, canManage, onChanged }: { summary: SellerTrustSummary; canManage: boolean; onChanged: () => void }) {
+  const toast = useToast();
+  const required = summary.enforcement.requireStrnForPk === true;
+  const [confirm, setConfirm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function set(next: boolean) {
+    setSaving(true);
+    try {
+      await apiUpdateSellerTrustSettings({ requireStrnForPk: next });
+      toast.success(next ? 'STRN is now required from every Pakistani seller.' : 'STRN is optional again.');
+      setConfirm(false);
+      onChanged();
+    } catch (err) {
+      toast.error(errMsg(err, 'Could not update the STRN rule.'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-3" aria-label="STRN rule">
+      <div className="flex items-center gap-2 flex-wrap">
+        <ShieldCheck size={15} className="text-brand-orange" />
+        <h2 className="text-[13.5px] font-semibold text-charcoal">Pakistan STRN</h2>
+        <Badge color={required ? 'green' : 'gray'} size="sm" dot>{required ? 'Required for everyone' : 'Only if sales-tax registered'}</Badge>
+      </div>
+      <p className="text-[12.5px] text-graphite leading-[1.6]">
+        {required
+          ? 'Every Pakistani seller must give an STRN before they can submit verification.'
+          : 'A Pakistani seller gives an STRN only if they say they are registered for sales tax. Turn this on if FBR requires an STRN from every online seller.'}
+      </p>
+      {canManage && !confirm && (
+        <div>
+          <Button size="sm" variant={required ? 'ghost' : 'outline'} onClick={() => (required ? set(false) : setConfirm(true))} loading={saving && required}>
+            {required ? 'Make STRN optional again' : 'Require STRN from everyone'}
+          </Button>
+        </div>
+      )}
+      {confirm && (
+        <div role="alertdialog" aria-label="Confirm STRN rule" className="rounded-lg border border-warning/30 bg-warning-bg px-4 py-3 flex flex-col gap-2">
+          <p className="text-[12.5px] text-charcoal leading-[1.6]">
+            Require an STRN from every Pakistani seller? Sellers who have not given one cannot submit, and a pending submission without an STRN cannot be approved until the seller adds it (use "Ask for more information").
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="primary" loading={saving} onClick={() => set(true)}>Yes, require it</Button>
+            <Button size="sm" variant="ghost" onClick={() => setConfirm(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── Document retention: how long verification files are kept. The periods are a legal decision, so they are settings. ────
+function RetentionPanel({ summary, canManage, onChanged }: { summary: SellerTrustSummary; canManage: boolean; onChanged: () => void }) {
+  const toast = useToast();
+  const years0 = summary.enforcement.kycRetentionYears ?? 6;
+  const days0 = summary.enforcement.kycDraftRetentionDays ?? 90;
+  const [years, setYears] = useState(String(years0));
+  const [days, setDays] = useState(String(days0));
+  const [saving, setSaving] = useState(false);
+
+  const y = Number(years);
+  const d = Number(days);
+  const validYears = Number.isInteger(y) && y >= 1 && y <= 15;
+  const validDays = Number.isInteger(d) && d >= 7 && d <= 365;
+  const changed = y !== years0 || d !== days0;
+
+  async function save() {
+    setSaving(true);
+    try {
+      await apiUpdateSellerTrustSettings({ ...(y !== years0 ? { kycRetentionYears: y } : {}), ...(d !== days0 ? { kycDraftRetentionDays: d } : {}) });
+      toast.success('Document retention saved.');
+      onChanged();
+    } catch (err) {
+      toast.error(errMsg(err, 'Could not save the retention periods.'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-3" aria-label="Document retention">
+      <div className="flex items-center gap-2 flex-wrap">
+        <ShieldCheck size={15} className="text-brand-orange" />
+        <h2 className="text-[13.5px] font-semibold text-charcoal">Document retention</h2>
+      </div>
+      <p className="text-[12.5px] text-graphite leading-[1.6]">
+        Verification files (ID, tax certificate, address proof) are deleted every day once their time is up. Files of a closed store that went through
+        verification are kept for tax and audit records, then erased together with the CNIC, NTN and address. Confirm the period with your lawyer.
+      </p>
+      {canManage ? (
+        <div className="flex items-end gap-3 flex-wrap">
+          <div className="w-[170px]">
+            <Input label="Closed stores: keep for (years)" type="number" min={1} max={15} value={years} onChange={ev => setYears(ev.target.value)} error={validYears ? undefined : '1 to 15'} />
+          </div>
+          <div className="w-[190px]">
+            <Input label="Never submitted or rejected: delete after (days)" type="number" min={7} max={365} value={days} onChange={ev => setDays(ev.target.value)} error={validDays ? undefined : '7 to 365'} />
+          </div>
+          {changed && <Button size="sm" variant="primary" disabled={!validYears || !validDays} loading={saving} onClick={save}>Save retention</Button>}
+        </div>
+      ) : (
+        <p className="text-[12.5px] text-charcoal">Closed stores: {years0} years. Never submitted or rejected: {days0} days.</p>
+      )}
+    </section>
+  );
+}
+
 /** Super Admin → Seller trust: audit of every store's verification, review queue, reminders and the enforcement switch. */
 export function AdminSellerTrust() {
   usePageTitle('Seller trust');
@@ -179,7 +289,8 @@ export function AdminSellerTrust() {
     search: search.trim() || undefined,
     country: country || undefined,
     ntn: (ntn || undefined) as YesNo | undefined,
-    status: (view === 'queue' ? 'pending' : status || undefined) as VerificationStatus | undefined,
+    status: (view === 'queue' ? 'pending' : view === 'changes' ? undefined : status || undefined) as VerificationStatus | undefined,
+    changePending: view === 'changes' ? ('yes' as const) : undefined,
     risk: (risk || undefined) as RiskLevel | undefined,
     limited: (limited || undefined) as YesNo | undefined,
   }), [search, country, ntn, status, risk, limited, view]);
@@ -232,6 +343,7 @@ export function AdminSellerTrust() {
           <p className="text-[11px] text-slate truncate">{r.sellerName || r.sellerEmail || '—'}</p>
           <p className="text-[11px] text-slate truncate tabular-nums">{r.sellerPhone || 'No phone'}</p>
           {r.payoutHold?.active && <Badge color="red" size="sm" className="mt-1">Payouts held</Badge>}
+          {r.changePending && <Badge color="orange" size="sm" className="mt-1">Change requested</Badge>}
         </div>
       ),
     },
@@ -267,13 +379,15 @@ export function AdminSellerTrust() {
           <div className="grid lg:grid-cols-2 gap-4">
             <VerificationProgress summary={s} />
             <EnforcementPanel key={`${s.enforcement.startedAt}-${s.enforcement.graceDays}`} summary={s} canManage={canManage} onChanged={refreshAll} />
+            <StrnRulePanel summary={s} canManage={canManage} onChanged={refreshAll} />
+            <RetentionPanel key={`${s.enforcement.kycRetentionYears}-${s.enforcement.kycDraftRetentionDays}`} summary={s} canManage={canManage} onChanged={refreshAll} />
           </div>
         )}
 
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
             <div role="group" aria-label="View" className="inline-flex rounded-lg border border-bone p-0.5 text-[12px]">
-              {([['all', 'All stores'], ['queue', `Review queue${s ? ` (${s.waitingReview})` : ''}`]] as [View, string][]).map(([id, label]) => (
+              {([['all', 'All stores'], ['queue', `Review queue${s ? ` (${s.waitingReview})` : ''}`], ['changes', `Change requests${s?.changeRequests ? ` (${s.changeRequests})` : ''}`]] as [View, string][]).map(([id, label]) => (
                 <button key={id} type="button" aria-pressed={view === id} onClick={() => { setView(id); setPage(1); setSelected(new Set()); }}
                   className={`px-2.5 py-1 rounded-md cursor-pointer border-none ${view === id ? 'bg-charcoal text-white' : 'bg-transparent text-slate hover:text-charcoal'}`}>
                   {label}
@@ -326,8 +440,8 @@ export function AdminSellerTrust() {
               )}
               emptyState={{
                 icon: <ShieldCheck size={28} className="text-slate/50" />,
-                title: view === 'queue' ? 'Nothing waiting for review' : 'No stores match',
-                description: view === 'queue' ? 'New submissions appear here, oldest first.' : 'Try another filter or search.',
+                title: view === 'queue' ? 'Nothing waiting for review' : view === 'changes' ? 'No change requests' : 'No stores match',
+                description: view === 'queue' ? 'New submissions appear here, oldest first.' : view === 'changes' ? 'When a verified seller asks to change their details, it appears here.' : 'Try another filter or search.',
               }}
               pagination={{ page, total: list?.total ?? 0, perPage, onChange: p => { setPage(p); setSelected(new Set()); }, label: 'stores', perPageOptions: PER_PAGE_OPTIONS, onPerPageChange: n => { setPerPage(n); setPage(1); setSelected(new Set()); } }}
             />
@@ -338,7 +452,7 @@ export function AdminSellerTrust() {
           <Info size={13} className="shrink-0 mt-px" />
           <span>
             Unverified stores are limited, not blocked: after their deadline they are hidden from the Solvexo marketplace, get no Verified badge and
-            payouts of online payments are held. Their own store, POS and cash on delivery keep working. Risk updates by itself from verification,
+            payouts of any balance Solvexo holds are paused. Payments that go straight to the seller, their own store, POS and cash on delivery keep working. Risk updates by itself from verification,
             licences, refunds and buyer reports.
           </span>
         </p>

@@ -56,6 +56,8 @@ export const ENDPOINTS = {
     REQUEST_INFO: (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/request-info`,
     NTN_CHECK:    (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/ntn-check`,
     PAYOUT_HOLD:  (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/payout-hold`,
+    CHANGE_APPROVE: (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/change/approve`,
+    CHANGE_REJECT:  (storeId: string) => `/api/admin/seller-trust/stores/${storeId}/change/reject`,
     REMIND:       '/api/admin/seller-trust/remind',
     SETTINGS:     '/api/admin/seller-trust/settings',
   },
@@ -245,6 +247,7 @@ export const ENDPOINTS = {
     VERIFICATION_REQUIREMENTS: (storeId: string) => `/api/store/${storeId}/verification/requirements`,
     VERIFICATION_DOCUMENTS:    (storeId: string) => `/api/store/${storeId}/verification/documents`,
     VERIFICATION_SUBMIT:       (storeId: string) => `/api/store/${storeId}/verification/submit`,
+    VERIFICATION_CHANGE:       (storeId: string) => `/api/store/${storeId}/verification/change`,
     /** Store-independent — used by onboarding before a store exists. */
     VERIFICATION_REQUIREMENTS_PREVIEW: '/api/store/verification/requirements-preview',
 
