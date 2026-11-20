@@ -229,9 +229,8 @@ export function PricingPage() {
                 const prev = i > 0 ? plans[i - 1] : null;
                 const { name, description, badge } = copy(plan);
                 const allFeatures = planFeatures(plan, prev, pageLang);
-                const shown = i === 0 ? 10 : 15; // first card shows 10 lines, the others 15; the rest opens under the link
-                const features = allFeatures.slice(0, shown);
-                const overflow = allFeatures.slice(shown);
+                const features = allFeatures; // the card shows ALL of the plan's own lines
+                const overflow: typeof allFeatures = [];
                 const isOpen = openPlan === plan._id;
                 if (isOpen && openRest.key !== plan._id) openRest = { key: plan._id, name, lines: overflow.map(f => f.title) };
                 const intro = billing === 'monthly' && plan.introOfferEnabled && plan.introPriceUSD != null && plan.introDurationCycles != null;

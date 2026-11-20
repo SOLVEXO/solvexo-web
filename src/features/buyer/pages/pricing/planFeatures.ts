@@ -23,12 +23,7 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null, lan
   const on = (k: keyof PlatformPlanLimits) => !!l[k] && (first || !p[k]);
   const out: PlanFeature[] = [];
 
-  // The first plan lists the core things a new seller is buying, so the card shows real offers without scrolling.
-  if (first) {
-    out.push({ title: t.headStore, hint: t.headStoreHint }, { title: t.headPayments, hint: t.headPaymentsHint },
-      { title: t.headDiscounts, hint: t.headDiscountsHint }, { title: t.headOrders, hint: t.headOrdersHint },
-      { title: t.headDelivery, hint: t.headDeliveryHint }, { title: t.headKhata, hint: t.headKhataHint }, { title: t.head2fa, hint: t.head2faHint });
-  }
+  // Things every plan has (store, payments, discounts, orders, delivery, Khata, 2FA...) live in the "included in every plan" panel, not on the cards.
   if (more(l.maxProducts, p.maxProducts)) {
     out.push({ title: unlimited(l.maxProducts) ? t.unlimitedProducts : t.products(l.maxProducts!),
       hint: unlimited(l.maxProducts) ? t.unlimitedProductsHint : t.productsHint(l.maxProducts!) });

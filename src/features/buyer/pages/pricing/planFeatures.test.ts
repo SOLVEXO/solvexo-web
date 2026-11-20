@@ -28,8 +28,6 @@ const titles = (p: PlatformPlan, prev?: PlatformPlan) => planFeatures(p, prev).m
 describe('pricing page plan features', () => {
   it('lists everything on the first plan in plain words', () => {
     expect(titles(basic)).toEqual([
-      'Online store with editable themes', 'Cash on delivery + card payments', 'Discount codes & gift cards', 'Orders, returns & refunds',
-      'Delivery zones, rates & stock tracking', 'COD protection & Khata', 'Two-step login (2FA)',
       'Sell up to 25 products', '1 extra staff login', 'Recover abandoned carts', 'Your own web address', 'Email marketing',
       '2,000 marketing emails a month', 'Accept up to 3 currencies',
     ]);
@@ -65,10 +63,9 @@ describe('pricing page plan features', () => {
     ].sort());
   });
 
-  it('shows enough real offers on the cards without scrolling: Basic 10+ lines, Grow 12-14, and no POS wording', () => {
-    expect(titles(basic).length).toBeGreaterThanOrEqual(10);
+  it('cards list only each plan own lines (nothing every plan has), and no POS wording', () => {
+    expect(titles(basic).join(' ')).not.toMatch(/Two-step|Khata|Discount codes|Orders, returns/);
     expect(titles(grow, basic).length).toBeGreaterThanOrEqual(12);
-    expect(titles(grow, basic).length).toBeLessThanOrEqual(14);
     const all = [...planFeatures(basic), ...planFeatures(grow, basic)].map(f => `${f.title} ${f.hint ?? ''}`).join(' ');
     expect(all).not.toMatch(/POS/);
   });
