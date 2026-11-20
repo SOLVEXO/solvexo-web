@@ -94,7 +94,19 @@ export interface StorePlatformSubscription {
   legacyFreeEligible: boolean;
   /** A pending end-of-cycle downgrade (Shopify: a cheaper plan starts at the next renewal, no refund). */
   scheduledPlanChange?: { planId: string; planName: string; interval: 'monthly' | 'yearly'; amountUSD: number; scheduledAt: string } | null;
+  /** A purchase started but not yet paid — the plan is applied only after payment succeeds. */
+  pendingPlanChange?: { kind: 'first_purchase' | 'trial_conversion' | 'upgrade'; planId: string; interval: 'monthly' | 'yearly'; amountUSD: number } | null;
+  /** Why the last payment attempt failed (cleared on success). */
+  lastBillingError?: string | null;
+  /** Set when Stripe's price could not be synced after a plan change (admin should reconcile). */
+  billingSyncError?: string | null;
   plan?: PlatformPlan | null;
+}
+
+/** change-plan response: a paid purchase may come back pending with a client secret to confirm (3DS / first payment). */
+export interface ChangePlanResult {
+  subscription?: StorePlatformSubscription;
+  pending?: boolean; requiresAction?: boolean; clientSecret?: string | null; scheduled?: boolean;
 }
 
 export interface PlanChangePreview {
@@ -162,6 +174,8 @@ export interface SellerPlatformOverview {
     storeStatus: string;
     platformPlan: { id: string; name: string; isFree: boolean } | null;
     subscriptionStatus: string;
+    /** Set when Stripe price sync failed after a plan change — needs manual reconcile. */
+    billingSyncError?: string | null;
     nextBillingDate: string | null;
     totalPaidUSD: number;
   }>;
@@ -295,10 +309,15 @@ export function apiGetStoreInvoices(storeId: string, query: { page?: number; lim
  *  backend's `IdempotencyInterceptor`/`changePlan` already honor this header
  *  when present; this was previously the one caller not sending it. */
 export function apiChangePlatformPlan(storeId: string, newPlatformPlanId: string, newBillingInterval: 'monthly' | 'yearly', billImmediately = true, idempotencyKey?: string) {
-  return client.patch<never, ApiResponse<StorePlatformSubscription>>(
+  return client.patch<never, ApiResponse<ChangePlanResult>>(
     `${BASE}/${storeId}/change-plan`, { newPlatformPlanId, newBillingInterval, billImmediately },
     idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined,
   );
+}
+
+/** After the browser confirmed a 3DS charge: the server verifies it with Stripe, then applies the pending plan. */
+export function apiConfirmPendingPlanChange(storeId: string) {
+  return client.post<never, ApiResponse<{ pending: boolean; applied: boolean }>>(`${BASE}/${storeId}/confirm-pending-plan-change`);
 }
 
 /** Exact proration math for a would-be plan change — no charge, no write. Call this before showing a confirm dialog. */

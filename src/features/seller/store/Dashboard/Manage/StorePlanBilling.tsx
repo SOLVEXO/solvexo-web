@@ -10,9 +10,11 @@ import { SettingsCard } from '@/components/comman/settings';
 import { Modal } from '@/components/comman/ui/Modal';
 import { AddPlatformCardModal } from '@/components/layouts/AddPlatformCardModal';
 import { usePlatformCardOnFile } from '@/hooks/usePlatformCardOnFile';
+import { confirmPaymentIntentWithSecret } from '@/components/comman/ui/StripeCardPayment';
+import { completePlanChange, shouldBillImmediately } from '@/utils/planChangeFlow';
 import { Textarea } from '@/components/comman/ui/Input';
 import {
-  apiBrowsePlatformPlans, apiGetStorePlatformPlan, apiGetStoreEntitlements, apiChangePlatformPlan,
+  apiBrowsePlatformPlans, apiGetStorePlatformPlan, apiGetStoreEntitlements, apiChangePlatformPlan, apiConfirmPendingPlanChange,
   apiPreviewPlatformPlanChange, apiCancelScheduledPlanChange, apiCancelPlatformPlan, apiReactivatePlatformPlan, apiCreatePlatformBillingPortalSession,
   apiPurchaseAddon, apiListStoreAddons, apiCancelAddon, apiGetStoreInvoices, apiGetAddonCatalog, apiGetTransactionFees,
   type PlatformPlan, type StorePlatformSubscription, type EntitlementsSummary, type AddonPurchase, type AddonType,
@@ -276,10 +278,19 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
     setChangingId(confirmingPlan._id);
     setActionError('');
     try {
-      await apiChangePlatformPlan(storeId, confirmingPlan._id, interval, true, changePlanIdempotencyKeyRef.current ?? undefined);
+      // Trialing → commit now, charge at trial end; otherwise charge now. Success only once the plan really activated (3DS handled).
+      const billNow = shouldBillImmediately(current);
+      await completePlanChange(confirmingPlan._id, billNow, {
+        change: () => apiChangePlatformPlan(storeId, confirmingPlan._id, interval, billNow, changePlanIdempotencyKeyRef.current ?? undefined),
+        confirmCard: confirmPaymentIntentWithSecret,
+        confirmPending: () => apiConfirmPendingPlanChange(storeId),
+        fetchSub: () => apiGetStorePlatformPlan(storeId).then(r => r.data),
+      });
       setConfirmingPlan(null);
       load();
     } catch (err) {
+      // A failed/declined attempt must retry with a fresh Idempotency-Key, or the replayed response would repeat the failure.
+      changePlanIdempotencyKeyRef.current = `platform-plan-change-${storeId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       setActionError(err instanceof Error ? err.message : 'Failed to change plan.');
     } finally {
       setChangingId(null);

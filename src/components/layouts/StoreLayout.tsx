@@ -13,6 +13,7 @@ import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { useMyStores } from '@/hooks/store/useMyStores';
 import { rememberStore } from '@/utils/storePlanState';
+import { isPlanGateStatus, planProblemBanner } from '@/utils/planChangeFlow';
 import { useFavicon } from '@/hooks/useFavicon';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { NotificationBell, Modal, Button, CopyIconButton } from '@/components/comman/ui';
@@ -1186,6 +1187,8 @@ function OwnerBillingBanner() {
   if (!sub) return null;
   const goToBilling = () => navigate(`/store/${storeId}/plan-billing`);
 
+  const problem = planProblemBanner(sub);
+  if (problem) return <BillingBar tone="error" onClick={goToBilling} text={problem.text} action={problem.action} />;
   if (sub.status === 'trial_ended') {
     return <BillingBar tone="error" onClick={goToBilling} text="Your free trial has ended — choose a plan to continue selling. Your data is safe." action="Choose a plan" />;
   }
@@ -1234,20 +1237,21 @@ function TrialExpiredGateHost() {
   const { storeId } = useStoreWorkspace();
   const { pathname } = useLocation();
   const [status, setStatus] = useState<string | null>(null);
+  const [failureNotice, setFailureNotice] = useState<string | null>(null);
   const isOwner = TokenStorage.getUser<{ role?: AppRole }>()?.role === 'seller';
 
   useEffect(() => {
     if (!storeId || !isOwner) return;
     let cancelled = false;
     apiGetStorePlatformPlan(storeId)
-      .then(res => { if (!cancelled) setStatus(res.data.status); })
+      .then(res => { if (!cancelled) { setStatus(res.data.status); setFailureNotice(res.data.lastBillingError ?? null); } })
       .catch(() => {}); // non-critical — never block the workspace over a failed status read
     return () => { cancelled = true; };
   }, [storeId, isOwner]);
 
-  if (!isOwner || (status !== 'trial_ended' && status !== 'locked')) return null;
+  if (!isOwner || !isPlanGateStatus(status)) return null;
   if (pathname.endsWith('/plan-billing')) return null;
-  return <Suspense fallback={null}><PlanCheckoutFlow storeId={storeId} title="Your trial has expired. Select a plan." headerExtra={<GateEscapeBar storeId={storeId} />} /></Suspense>;
+  return <Suspense fallback={null}><PlanCheckoutFlow storeId={storeId} title="Your trial has expired. Select a plan." headerExtra={<GateEscapeBar storeId={storeId} />} failureNotice={failureNotice} /></Suspense>;
 }
 
 // ── Trial billing pill — small, Shopify-style ("Get 3 months for

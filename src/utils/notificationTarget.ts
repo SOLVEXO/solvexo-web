@@ -82,6 +82,7 @@ export function notificationTarget(n: Pick<NotificationItem, 'type' | 'storeId' 
     case 'platform_plan_trial_ended':
     case 'platform_plan_storefront_hidden':
     case 'platform_plan_admin_action':
+    case 'platform_plan_payment_received':
       return own('plan-billing');
     case 'payout_auto_initiated':
     case 'payout_completed':

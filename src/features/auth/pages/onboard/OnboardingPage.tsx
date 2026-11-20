@@ -17,9 +17,11 @@ import { useUpload } from '@/hooks/upload/useUpload';
 import { PasteImageUrl } from '@/components/comman/ui';
 import { apiGetEnabledCurrencies, apiSuggestLocation, apiUpdateStore, type SellerType, type ProductType, type StoreData, type SupportedCurrency } from '@/api/services/store';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
+import { completePlanChange } from '@/utils/planChangeFlow';
+import { confirmPaymentIntentWithSecret } from '@/components/comman/ui/StripeCardPayment';
 import {
   apiGetOnboardingProgress, apiSaveOnboardingDraft,
-  apiGetPublicTrialSettings, apiBrowsePlatformPlans, apiChangePlatformPlan,
+  apiGetPublicTrialSettings, apiBrowsePlatformPlans, apiChangePlatformPlan, apiConfirmPendingPlanChange, apiGetStorePlatformPlan,
   type PlatformPlan,
 } from '@/api/services/platformPlans';
 import { OnboardingCheckoutPage, OnboardingPlansPage } from './OnboardingCheckout';
@@ -713,8 +715,15 @@ export function OnboardingPage() {
       apiSaveOnboardingDraft({ step: 2, maxReached: 2, form: withStore as unknown as Record<string, unknown> }).catch(() => {});
     }
     try {
-      await apiChangePlatformPlan(storeId, planId, billing === 'annual' ? 'yearly' : 'monthly', true,
-        `platform-plan-onboarding-${storeId}-${planId}-${chargeAttempt.current}`);
+      const onboardingInterval = billing === 'annual' ? 'yearly' : 'monthly';
+      // A brand-new store is still trialing → the card is saved now and charged when the trial ends (trial-end billing).
+      await completePlanChange(planId, false, {
+        change: () => apiChangePlatformPlan(storeId, planId, onboardingInterval, false,
+          `platform-plan-onboarding-${storeId}-${planId}-${chargeAttempt.current}`),
+        confirmCard: confirmPaymentIntentWithSecret,
+        confirmPending: () => apiConfirmPendingPlanChange(storeId),
+        fetchSub: () => apiGetStorePlatformPlan(storeId).then(r => r.data),
+      });
     } catch (err) {
       chargeAttempt.current += 1;
       throw new Error(err instanceof Error && err.message ? err.message : t.cardDeclined, { cause: err });

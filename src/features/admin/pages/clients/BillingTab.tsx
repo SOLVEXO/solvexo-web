@@ -199,7 +199,12 @@ export function BillingTab({ sellerId }: BillingTabProps) {
         ? <Badge size="sm" color={s.platformPlan.isFree ? 'gray' : 'orange'}>{s.platformPlan.name}</Badge>
         : <span className="text-[12.5px] text-slate">No plan</span>,
     },
-    { key: 'subscriptionStatus', header: 'Billing Status', render: (s) => <StatusBadge status={s.subscriptionStatus} size="sm" /> },
+    { key: 'subscriptionStatus', header: 'Billing Status', render: (s) => (
+      <span className="inline-flex items-center gap-1.5">
+        <StatusBadge status={s.subscriptionStatus} size="sm" />
+        {s.billingSyncError && <Badge size="sm" color="red"><span title={s.billingSyncError}>Stripe sync error</span></Badge>}
+      </span>
+    ) },
     { key: 'nextBillingDate', header: 'Next Billing', render: (s) => <span className="text-[13px] text-slate">{s.nextBillingDate ? formatDate(s.nextBillingDate) : '—'}</span> },
     { key: 'totalPaidUSD', header: 'Lifetime Paid', render: (s) => <span className="text-[13px] font-semibold text-charcoal">{formatCurrency(s.totalPaidUSD)}</span> },
     {

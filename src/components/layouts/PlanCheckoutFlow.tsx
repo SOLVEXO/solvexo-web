@@ -2,9 +2,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import {
-  apiBrowsePlatformPlans, apiChangePlatformPlan, apiGetOnboardingProgress, apiGetPublicTrialSettings,
-  type PlatformPlan,
+  apiBrowsePlatformPlans, apiChangePlatformPlan, apiConfirmPendingPlanChange, apiGetOnboardingProgress, apiGetPublicTrialSettings,
+  apiGetStorePlatformPlan, type PlatformPlan, type StorePlatformSubscription,
 } from '@/api/services/platformPlans';
+import { confirmPaymentIntentWithSecret } from '@/components/comman/ui/StripeCardPayment';
+import { completePlanChange, shouldBillImmediately } from '@/utils/planChangeFlow';
 import { OnboardingCheckoutPage, OnboardingPlansPage } from '@/features/auth/pages/onboard/OnboardingCheckout';
 import { pickCheckoutPlan, type OnboardingBilling } from '@/features/auth/pages/onboard/onboardingPlans';
 
@@ -19,8 +21,10 @@ import { pickCheckoutPlan, type OnboardingBilling } from '@/features/auth/pages/
 // (billImmediately: true), then reloads so every part of the workspace (sidebar
 // card, banners, entitlements, billing tab) picks up the new plan.
 export default function PlanCheckoutFlow({
-  storeId, title, initialPlanId, initialBilling = 'monthly', onClose, headerExtra,
+  storeId, title, initialPlanId, initialBilling = 'monthly', onClose, headerExtra, failureNotice,
 }: {
+  /** Why the last payment failed — shown on the blocking gate so the seller sees the real reason. */
+  failureNotice?: string | null;
   /** Shown in the top bar of both screens — the blocking gate uses it for the store switcher + Log out. */
   headerExtra?: ReactNode;
   storeId: string;
@@ -44,10 +48,13 @@ export default function PlanCheckoutFlow({
   // Bumped after every failed charge so a retry gets a fresh Stripe idempotency
   // key (a reused key would just replay the failed response).
   const chargeAttempt = useRef(0);
+  // The store's current subscription: decides trial-vs-now billing and confirms the plan really activated.
+  const [currentSub, setCurrentSub] = useState<StorePlatformSubscription | null>(null);
 
   useEffect(() => {
     apiBrowsePlatformPlans().then(res => setPlans(res.data)).catch(() => {});
     apiGetPublicTrialSettings().then(res => setTrialDays(res.data.durationDays)).catch(() => {});
+    apiGetStorePlatformPlan(storeId).then(res => setCurrentSub(res.data)).catch(() => {});
     apiGetOnboardingProgress()
       .then(res => setCardOnFile(!!res.data.hasPlatformPaymentMethod))
       .catch(() => setCardOnFile(false));
@@ -56,9 +63,16 @@ export default function PlanCheckoutFlow({
   const interval = billing === 'annual' ? 'yearly' : 'monthly';
 
   const subscribe = async (planId: string) => {
+    // Still trialing → commit now, first charge when the trial ends. Trial over → charge now.
+    const billNow = shouldBillImmediately(currentSub);
     try {
-      await apiChangePlatformPlan(storeId, planId, interval, true,
-        `platform-plan-checkout-${storeId}-${planId}-${interval}-${chargeAttempt.current}`);
+      await completePlanChange(planId, billNow, {
+        change: () => apiChangePlatformPlan(storeId, planId, interval, billNow,
+          `platform-plan-checkout-${storeId}-${planId}-${interval}-${chargeAttempt.current}`),
+        confirmCard: confirmPaymentIntentWithSecret,
+        confirmPending: () => apiConfirmPendingPlanChange(storeId),
+        fetchSub: () => apiGetStorePlatformPlan(storeId).then(r => r.data),
+      });
     } catch (err) {
       chargeAttempt.current += 1;
       throw new Error(err instanceof Error && err.message ? err.message : 'Your card was declined — please try again or use a different card.', { cause: err });
@@ -87,6 +101,11 @@ export default function PlanCheckoutFlow({
 
   return (
     <div className="fixed inset-0 z-[70]">
+      {failureNotice && (
+        <div role="alert" className="fixed top-14 left-1/2 -translate-x-1/2 z-[80] max-w-[90vw] rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[13px] text-red-700 shadow">
+          Your last payment didn't go through: {failureNotice}
+        </div>
+      )}
       {view === 'checkout' && (
         <OnboardingCheckoutPage
           plans={plans}

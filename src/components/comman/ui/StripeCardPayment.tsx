@@ -14,6 +14,17 @@ function getStripe() {
   return stripePromise;
 }
 
+/** Confirms a PaymentIntent (3DS / first subscription payment) with the card already on file. Throws a readable Error on failure. */
+export async function confirmPaymentIntentWithSecret(clientSecret: string): Promise<void> {
+  const stripe = await getStripe();
+  if (!stripe) throw new Error('Card payments are not configured.');
+  const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret);
+  if (error) throw new Error(error.message ?? 'Your card was declined or could not be authenticated.');
+  if (paymentIntent && paymentIntent.status !== 'succeeded' && paymentIntent.status !== 'processing') {
+    throw new Error('The payment was not completed — please try again or use a different card.');
+  }
+}
+
 export function isStripeConfigured() {
   return !!PUBLISHABLE_KEY;
 }
