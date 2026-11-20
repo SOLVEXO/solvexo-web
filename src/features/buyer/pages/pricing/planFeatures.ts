@@ -23,6 +23,12 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null, lan
   const on = (k: keyof PlatformPlanLimits) => !!l[k] && (first || !p[k]);
   const out: PlanFeature[] = [];
 
+  // The first plan lists the core things a new seller is buying, so the card shows real offers without scrolling.
+  if (first) {
+    out.push({ title: t.headStore, hint: t.headStoreHint }, { title: t.headPayments, hint: t.headPaymentsHint },
+      { title: t.headDiscounts, hint: t.headDiscountsHint }, { title: t.headOrders, hint: t.headOrdersHint },
+      { title: t.headDelivery, hint: t.headDeliveryHint }, { title: t.headKhata, hint: t.headKhataHint }, { title: t.head2fa, hint: t.head2faHint });
+  }
   if (more(l.maxProducts, p.maxProducts)) {
     out.push({ title: unlimited(l.maxProducts) ? t.unlimitedProducts : t.products(l.maxProducts!),
       hint: unlimited(l.maxProducts) ? t.unlimitedProductsHint : t.productsHint(l.maxProducts!) });
@@ -31,9 +37,9 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null, lan
     out.push(unlimited(l.maxStaffAccounts) ? { title: t.unlimitedStaff, hint: t.unlimitedStaffHint }
       : { title: first ? t.extraStaff(l.maxStaffAccounts!) : t.staff(l.maxStaffAccounts!), hint: t.staffLimitHint(l.maxStaffAccounts!) });
   }
-  if (more(l.maxPosLocations, p.maxPosLocations)) {
+  if (more(l.maxPosLocations, p.maxPosLocations) && !(first && l.maxPosLocations === 1)) {
     out.push({ title: unlimited(l.maxPosLocations) ? t.unlimitedLocations
-      : l.maxPosLocations === 1 ? t.oneLocation : t.locations(l.maxPosLocations!),
+      : t.locations(l.maxPosLocations!),
       hint: unlimited(l.maxPosLocations) ? t.unlimitedLocationsHint : t.locationsHint(l.maxPosLocations!) });
   }
   if (on('abandonedCartRecoveryAllowed')) out.push({ title: t.abandoned, hint: t.abandonedHint });
@@ -41,9 +47,10 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null, lan
   if (on('calculatedShippingRatesAllowed')) out.push({ title: t.courierRates, hint: t.courierRatesHint });
   if (on('customDomainAllowed')) out.push({ title: t.domain, hint: t.domainHint });
   if (on('emailCampaignsAllowed')) out.push({ title: t.email, hint: t.emailHint });
-  if (on('advancedSeoToolsAllowed')) out.push({ title: t.seo, hint: t.seoHint });
-  if (on('customRedirectsAllowed')) out.push({ title: t.redirects, hint: t.redirectsHint });
-  if (on('searchConsoleIntegrationAllowed')) out.push({ title: t.searchConsole, hint: t.searchConsoleHint });
+  // SEO tools, redirects and Search Console are on every plan: they live in the "included in every plan" panel, not on the card.
+  if (!first && on('advancedSeoToolsAllowed')) out.push({ title: t.seo, hint: t.seoHint });
+  if (!first && on('customRedirectsAllowed')) out.push({ title: t.redirects, hint: t.redirectsHint });
+  if (!first && on('searchConsoleIntegrationAllowed')) out.push({ title: t.searchConsole, hint: t.searchConsoleHint });
 
   // Sales/promotions and homepage banners are unlimited on every plan, so they are not a plan feature any more.
   if (more(l.monthlyEmailSends, p.monthlyEmailSends)) {
@@ -51,20 +58,21 @@ export function planFeatures(plan: PlatformPlan, prev?: PlatformPlan | null, lan
   }
   if (l.b2bWholesaleAllowed) {
     const catalogs = unlimited(l.maxB2BCatalogs) ? t.unlimitedCatalogs : l.maxB2BCatalogs ? t.catalogs(l.maxB2BCatalogs) : null;
-    if (on('b2bWholesaleAllowed')) out.push({ title: t.wholesalePrices, hint: catalogs ? t.wholesaleHint(l.maxB2BCatalogs) : t.wholesalePricesShort });
-    else if (catalogs && more(l.maxB2BCatalogs, p.maxB2BCatalogs)) out.push({ title: catalogs, hint: t.wholesaleHint(l.maxB2BCatalogs) });
+    if (on('b2bWholesaleAllowed')) out.push({ title: t.wholesalePrices, hint: t.wholesalePricesShort });
+    if (catalogs && (on('b2bWholesaleAllowed') || more(l.maxB2BCatalogs, p.maxB2BCatalogs))) out.push({ title: catalogs, hint: t.wholesaleHint(l.maxB2BCatalogs) });
   }
   const digital = ([['digitalMembershipsAllowed', t.digitalMemberships, t.digitalMembershipsWhat], ['digitalLicensesAllowed', t.digitalLicenses, t.digitalLicensesWhat], ['digitalCoursesAllowed', t.digitalCourses, t.digitalCoursesWhat]] as const)
     .filter(([k]) => on(k));
-  if (digital.length) {
-    const names = digital.map(d => d[1]);
-    const text = names.length === 1 ? names[0] : `${names.slice(0, -1).join(t.comma)}${t.and}${names[names.length - 1]}`;
-    out.push({ title: t.sellDigital(text), hint: t.sellDigitalHint(digital.map(d => d[2]).join(t.comma)) });
-  }
+  for (const [, name, what] of digital) out.push({ title: t.sellDigital(name), hint: t.sellDigitalHint(what) });
   if (on('apiWebhooksAllowed')) out.push({ title: t.webhooks, hint: t.webhooksHint });
   if (more(l.maxMarkets, p.maxMarkets)) {
     out.push({ title: unlimited(l.maxMarkets) ? t.unlimitedCurrencies : t.currencies(l.maxMarkets!),
       hint: unlimited(l.maxMarkets) ? t.unlimitedCurrenciesHint : t.currenciesHint(l.maxMarkets!) });
+  }
+  const fee = l.transactionFeeRate, prevFee = p.transactionFeeRate;
+  if (!first && typeof fee === 'number' && typeof prevFee === 'number' && fee < prevFee) {
+    const pc = (r: number) => `${Number((r * 100).toFixed(2))}`;
+    out.push({ title: t.gatewayFee(pc(fee), pc(prevFee)), hint: t.gatewayFeeHint });
   }
   if (on('prioritySupport')) out.push({ title: t.priority, hint: t.priorityHint });
   if (on('dedicatedAccountManager')) out.push({ title: t.manager, hint: t.managerHint });

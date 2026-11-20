@@ -28,8 +28,9 @@ const titles = (p: PlatformPlan, prev?: PlatformPlan) => planFeatures(p, prev).m
 describe('pricing page plan features', () => {
   it('lists everything on the first plan in plain words', () => {
     expect(titles(basic)).toEqual([
-      'Sell up to 25 products', '1 extra staff login', '1 shop location with the POS till',
-      'Recover abandoned carts', 'Your own web address', 'Email marketing', 'SEO tools', 'Custom redirects',
+      'Online store with editable themes', 'Cash on delivery + card payments', 'Discount codes & gift cards', 'Orders, returns & refunds',
+      'Delivery zones, rates & stock tracking', 'COD protection & Khata', 'Two-step login (2FA)',
+      'Sell up to 25 products', '1 extra staff login', 'Recover abandoned carts', 'Your own web address', 'Email marketing',
       '2,000 marketing emails a month', 'Accept up to 3 currencies',
     ]);
     expect(planFeatures(basic).find(f => f.title === 'Your own web address')?.hint).toContain('yourshop.com');
@@ -57,31 +58,39 @@ describe('pricing page plan features', () => {
   });
 
   it('lists only what is new or bigger on the next plan', () => {
-    expect(titles(grow, basic)).toEqual([
+    expect([...titles(grow, basic)].sort()).toEqual([
       'Unlimited products', '5 staff logins', '3 shop / warehouse locations',
-      'Loyalty points', '10,000 marketing emails a month', 'B2B wholesale prices',
-      'Sell memberships, license keys & courses', 'Accept up to 5 currencies', 'Priority support',
-    ]);
+      'Loyalty points', 'B2B wholesale prices', '3 wholesale catalogs', 'Sell memberships', 'Sell license keys', 'Sell courses',
+      '10,000 marketing emails a month', 'Accept up to 5 currencies', 'Lower gateway fee: 1% (was 2%)', 'Priority support',
+    ].sort());
+  });
+
+  it('shows enough real offers on the cards without scrolling: Basic 10+ lines, Grow 12-14, and no POS wording', () => {
+    expect(titles(basic).length).toBeGreaterThanOrEqual(10);
+    expect(titles(grow, basic).length).toBeGreaterThanOrEqual(12);
+    expect(titles(grow, basic).length).toBeLessThanOrEqual(14);
+    const all = [...planFeatures(basic), ...planFeatures(grow, basic)].map(f => `${f.title} ${f.hint ?? ''}`).join(' ');
+    expect(all).not.toMatch(/POS/);
   });
 
   it('shows premium-only items on the plan that first has them', () => {
     const t = titles(advanced, grow);
     expect(t).toEqual(expect.arrayContaining(['Webhooks & API', 'Live courier rates at checkout', 'Google Search Console connection']));
-    expect(t).not.toContain('Sell memberships, license keys & courses');
+    expect(t).not.toContain('Sell memberships');
   });
 
   it('never lists a feature the plan does not include', () => {
     expect(titles(basic)).not.toContain('Loyalty points');
     expect(titles(basic).join(' ')).not.toMatch(/memberships|Webhooks/);
-    expect(titles(plan({ limits: { maxStaffAccounts: 0 } }))).toEqual([]);
+    expect(titles(plan({ limits: { maxStaffAccounts: 0 } })).join(' ')).not.toMatch(/staff|Loyalty|Webhooks/);
   });
 });
 
 describe('pricing page in Arabic', () => {
   it('writes the feature lines in Arabic with the right noun for each number', () => {
     expect(titles(basic).length).toBe(planFeatures(basic, null, 'ar').length);
-    expect(planFeatures(basic, null, 'ar')[0].title).toBe('بيع ما يصل إلى 25 منتجًا');
-    expect(planFeatures(grow, basic, 'ar')[0].title).toBe('منتجات غير محدودة');
+    expect(planFeatures(basic, null, 'ar').map(f => f.title)).toContain('بيع ما يصل إلى 25 منتجًا');
+    expect(planFeatures(grow, basic, 'ar').map(f => f.title)).toContain('منتجات غير محدودة');
     expect([1, 2, 7, 14, 100].map(n => arCount(n, AR_DAYS))).toEqual(['يوم واحد', 'يومين', '7 أيام', '14 يومًا', '100 يوم']);
   });
 

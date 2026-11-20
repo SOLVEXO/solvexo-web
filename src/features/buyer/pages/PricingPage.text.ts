@@ -31,7 +31,7 @@ export const PRICING_TEXT = siteText({
     rows: {
       payMonthly: 'Pay monthly', payYearly: 'Pay yearly',
       store: 'Online store', themes: 'Themes and templates', products: 'Products', inventory: 'Inventory management',
-      staff: 'Additional staff accounts', posLocations: 'POS locations', reports: 'Reports and analytics', support: 'Support',
+      staff: 'Additional staff accounts', posLocations: 'Shop / warehouse locations', reports: 'Reports and analytics', support: 'Support',
       aiCredits: 'AI credits per month (for AI SEO suggestions)',
       webhooks: 'Webhooks & API', themesEditor: 'Themes and theme editor', headerFooter: 'Header & footer editor', pagesBlog: 'Pages, blog and navigation', translations: 'Translations in 22 languages',
       emailsPerMonth: 'Marketing emails per month (offers and news to your customers)', loyalty: 'Loyalty program',
@@ -74,7 +74,7 @@ export const PRICING_TEXT = siteText({
       { title: 'Store tools', items: ['Files library', 'FAQ and policy pages', 'Tracking pixels', 'Custom fields', 'Finance and payout reports', 'Two-step login (2FA)', 'Branded mobile app request'] },
     ],
     picks: {
-      basic: { quote: 'I’m just starting and have a few products.', body: (l: PlatformPlanLimits) => `Up to ${l.maxProducts ?? 25} products, ${l.customDomainAllowed ? 'your own web address ' : ''}and the POS for one shop.` },
+      basic: { quote: 'I’m just starting and have a few products.', body: (l: PlatformPlanLimits) => `Up to ${l.maxProducts ?? 25} products, ${l.customDomainAllowed ? 'your own web address ' : ''}and one shop location.` },
       grow: { quote: 'My shop is growing and I have staff.', body: (l: PlatformPlanLimits) => `${count(l.maxProducts) === 'Unlimited' ? 'Unlimited' : l.maxProducts} products, ${count(l.maxStaffAccounts)} staff logins, ${count(l.maxPosLocations)} locations${l.abandonedCartRecoveryAllowed ? ' and automatic reminders to shoppers who leave without paying' : ''}.` },
       advanced: { quote: 'I run several branches or a big brand.', body: (l: PlatformPlanLimits) => `${count(l.maxPosLocations)} locations, ${count(l.maxStaffAccounts)} staff${l.whiteLabelAllowed ? ', your own branding only' : ''}${l.calculatedShippingRatesAllowed ? ', and live courier rates at checkout' : ''}.` },
     },
@@ -156,7 +156,7 @@ export const PRICING_TEXT = siteText({
     rows: {
       payMonthly: 'الدفع شهريًا', payYearly: 'الدفع سنويًا',
       store: 'المتجر الإلكتروني', themes: 'القوالب والتصاميم', products: 'المنتجات', inventory: 'إدارة المخزون',
-      staff: 'حسابات إضافية للموظفين', posLocations: 'مواقع نقطة البيع', reports: 'التقارير والتحليلات', support: 'الدعم',
+      staff: 'حسابات إضافية للموظفين', posLocations: 'مواقع المتجر / المستودع', reports: 'التقارير والتحليلات', support: 'الدعم',
       aiCredits: 'رصيد الذكاء الاصطناعي شهريًا (لاقتراحات SEO بالذكاء الاصطناعي)',
       webhooks: 'Webhooks وواجهة API', themesEditor: 'القوالب ومحرر القوالب', headerFooter: 'محرر الرأس والتذييل', pagesBlog: 'الصفحات والمدونة والتنقل', translations: 'ترجمات بـ 22 لغة',
       emailsPerMonth: 'رسائل التسويق شهريًا (عروض وأخبار لعملائك)', loyalty: 'برنامج الولاء',
@@ -198,7 +198,7 @@ export const PRICING_TEXT = siteText({
       { title: 'أدوات المتجر', items: ['مكتبة الملفات', 'صفحات الأسئلة الشائعة والسياسات', 'بكسلات التتبع', 'حقول مخصصة', 'تقارير المالية والمدفوعات', 'تسجيل دخول بخطوتين (2FA)', 'طلب تطبيق جوال بعلامتك'] },
     ],
     picks: {
-      basic: { quote: 'بدأت للتو ولديّ بضعة منتجات.', body: (l: PlatformPlanLimits) => `حتى ${arCount(l.maxProducts ?? 25, AR_PRODUCTS_UPTO)}، ${l.customDomainAllowed ? 'ونطاقك الخاص، ' : ''}ونقطة البيع لمتجر واحد.` },
+      basic: { quote: 'بدأت للتو ولديّ بضعة منتجات.', body: (l: PlatformPlanLimits) => `حتى ${arCount(l.maxProducts ?? 25, AR_PRODUCTS_UPTO)}، ${l.customDomainAllowed ? 'ونطاقك الخاص، ' : ''}وموقع متجر واحد.` },
       grow: { quote: 'متجري ينمو ولديّ موظفون.', body: (l: PlatformPlanLimits) => `${arN(l.maxProducts, AR_PRODUCTS, 'منتجات غير محدودة')}، و${arN(l.maxStaffAccounts, AR_STAFF, 'حسابات غير محدودة للموظفين')}، و${arN(l.maxPosLocations, AR_LOCATIONS, 'مواقع غير محدودة')}${l.abandonedCartRecoveryAllowed ? '، مع تذكير تلقائي للمتسوقين الذين يغادرون دون الدفع' : ''}.` },
       advanced: { quote: 'أدير عدة فروع أو علامة تجارية كبيرة.', body: (l: PlatformPlanLimits) => `${arN(l.maxPosLocations, AR_LOCATIONS, 'مواقع غير محدودة')}، و${arN(l.maxStaffAccounts, AR_STAFF, 'حسابات غير محدودة للموظفين')}${l.whiteLabelAllowed ? '، وعلامتك التجارية وحدها' : ''}${l.calculatedShippingRatesAllowed ? '، وأسعار شركات التوصيل المباشرة عند الدفع' : ''}.` },
     },
