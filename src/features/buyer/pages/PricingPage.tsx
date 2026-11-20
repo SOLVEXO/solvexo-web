@@ -345,13 +345,13 @@ export function PricingPage() {
       <section className="px-4 md:px-8 pt-10 max-w-[1240px] mx-auto" aria-labelledby="also-included-h">
         <h3 id="also-included-h" className="mb-4 text-center text-[18px] font-semibold">{t.alsoTitle}</h3>
         <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {t.alsoIncluded.map(g => (
+          {t.alsoIncluded.map((g, gi) => (
             <div key={g.title} className="rounded-[14px] bg-white p-[18px]" style={{ border: `1px solid ${LINE}` }}>
               <p className="mb-2 text-[14.5px] font-semibold">{g.title}</p>
               <ul className="list-none m-0 p-0">
-                {g.items.map(item => (
-                  <li key={item} className="flex gap-2.5 py-[5px] text-[13px] leading-[1.45]"><Tick /><span>{item}</span></li>
-                ))}
+                {g.items.map((item, ii) => { const hint = t.alsoHints[t.alsoIncluded.slice(0, gi).reduce((n, x) => n + x.items.length, 0) + ii]; return (
+                  <li key={item} className="flex gap-2.5 py-[5px] text-[13px] leading-[1.45]"><Tick /><span>{item}</span>{hint && <FeatureHelp text={hint} label={item} />}</li>
+                ); })}
               </ul>
             </div>
           ))}
