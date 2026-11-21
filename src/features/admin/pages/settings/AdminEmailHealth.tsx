@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, Mail, Send } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Mail, Megaphone, Send } from 'lucide-react';
 import { Button } from '@/components/comman/ui';
 import { SettingsCard, SettingsRow, SettingsGroupLabel } from '@/components/comman/settings';
 import { apiGetEmailHealth, apiSendTestEmail, type EmailHealth } from '@/api/services/adminEmailHealth';
@@ -16,6 +16,8 @@ export function AdminEmailHealth() {
   const [reloadKey, setReloadKey] = useState(0);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [mTesting, setMTesting] = useState(false);
+  const [mTestResult, setMTestResult] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,14 +39,24 @@ export function AdminEmailHealth() {
       .finally(() => { setTesting(false); reload(); });
   };
 
+  const sendMarketingTest = () => {
+    setMTesting(true);
+    setMTestResult(null);
+    apiSendTestEmail('marketing')
+      .then(res => setMTestResult({ ok: res.success, text: res.message }))
+      .catch((err: unknown) => setMTestResult({ ok: false, text: errMsg(err, 'The test could not be run.') }))
+      .finally(() => { setMTesting(false); reload(); });
+  };
+
   const maxDay = Math.max(1, ...(data?.days ?? []).map(d => d.sent + d.failed));
+  const m = data?.marketing;
 
   return (
     <div className="px-4 sm:px-7 py-6 flex flex-col gap-5">
       <SettingsCard
         title="Platform email"
         icon={<Mail size={14} />}
-        description="Sign-up codes, order emails, invoices and alerts all go through this SMTP account."
+        description={m?.configured ? 'Sign-up codes, order emails, invoices and alerts go through this SMTP account. Marketing email has its own sender below.' : 'Sign-up codes, order emails, invoices and alerts go through this SMTP account, and so does marketing email until a marketing sender is set up below.'}
         actions={<Button size="sm" icon={<Send size={13} />} onClick={sendTest} loading={testing} disabled={loading || !!error || !data?.configured}>Send test email</Button>}
       >
         {loading && !data ? null : error || !data ? (
@@ -107,6 +119,43 @@ export function AdminEmailHealth() {
           </div>
         )}
       </SettingsCard>
+
+      {data && (
+        <SettingsCard
+          title="Marketing email"
+          icon={<Megaphone size={14} />}
+          description="Store campaigns, newsletters, automations and abandoned-cart emails. A dedicated sending service keeps bulk mail from using up the platform mailbox's limits and reputation."
+          actions={<Button size="sm" variant="outline" icon={<Send size={13} />} onClick={sendMarketingTest} loading={mTesting} disabled={!m?.configured}>Send test email</Button>}
+        >
+          <div className="flex flex-col gap-4">
+            {mTestResult && (
+              <p role={mTestResult.ok ? 'status' : 'alert'} className={mTestResult.ok ? 'flex items-center gap-1.5 text-[12.5px] text-success' : 'flex items-start gap-1.5 text-[12.5px] text-error'}>
+                {mTestResult.ok ? <CheckCircle2 size={14} /> : <AlertCircle size={14} className="mt-0.5 shrink-0" />} {mTestResult.text}
+              </p>
+            )}
+            {!m?.configured ? (
+              <p className="flex items-start gap-1.5 text-[12.5px] text-warning bg-warning-bg rounded-xl px-3 py-2.5">
+                <AlertCircle size={14} className="mt-0.5 shrink-0" /> Not set up: marketing email goes through the platform SMTP account above. Set MARKETING_SMTP_HOST, MARKETING_SMTP_PORT, MARKETING_SMTP_USER, MARKETING_SMTP_PASSWORD and MARKETING_SMTP_FROM on the server to give it its own sender.
+              </p>
+            ) : (
+              <>
+                {m.consecutiveFailures >= 3 && (
+                  <p role="alert" className="flex items-start gap-1.5 text-[12.5px] text-error bg-error-bg border border-error-border rounded-xl px-3 py-2.5">
+                    <AlertCircle size={14} className="mt-0.5 shrink-0" /> The last {m.consecutiveFailures} marketing emails failed to send{m.lastError ? `: ${m.lastError}` : '.'} Sign-up codes and order emails are not affected.
+                  </p>
+                )}
+                <div className="-mx-5 border-y border-fog px-5 divide-y divide-fog">
+                  <SettingsRow label="Status"><span className="text-[12.5px] font-semibold text-charcoal">Configured</span></SettingsRow>
+                  <SettingsRow label="Server"><span className="text-[12.5px] font-semibold text-charcoal">{m.host}:{m.port}</span></SettingsRow>
+                  <SettingsRow label="Sent from" description="The store's name is shown as the sender name; replies go to the store."><span className="text-[12.5px] font-semibold text-charcoal">{m.from ?? '—'}</span></SettingsRow>
+                  <SettingsRow label="Last 14 days"><span className="text-[12.5px] font-semibold text-charcoal">{m.totals.sent} sent · {m.totals.failed} failed</span></SettingsRow>
+                  <SettingsRow label="Last error" stacked><span className="block text-[12.5px] font-medium text-charcoal break-words">{m.lastError ?? 'None'}</span></SettingsRow>
+                </div>
+              </>
+            )}
+          </div>
+        </SettingsCard>
+      )}
     </div>
   );
 }
