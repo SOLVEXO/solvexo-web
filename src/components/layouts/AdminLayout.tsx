@@ -457,16 +457,16 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
                         aria-expanded={!isCollapsed}
                         className="relative w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer border-0 bg-transparent hover:bg-dark-active transition-colors duration-fast"
                       >
-                        <ModuleIcon size={15} className="shrink-0 text-pos-faint opacity-55" />
-                        <span className="text-[12.5px] flex-1 font-normal text-pos-faint text-left">{module.label}</span>
+                        <ModuleIcon size={15} className="shrink-0 text-white/70" />
+                        <span className="text-[12.5px] flex-1 font-normal text-white/85 text-left">{module.label}</span>
                         <ChevronDown
                           size={14}
-                          className={clsx('text-pos-faint opacity-70 transition-transform duration-200 shrink-0', !isCollapsed && 'rotate-180')}
+                          className={clsx('text-white/60 transition-transform duration-200 shrink-0', !isCollapsed && 'rotate-180')}
                         />
                       </button>
                     ) : (
                       children.length > 1 && (
-                        <p className="text-[10px] font-semibold text-pos-faint px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{module.label}</p>
+                        <p className="text-[10px] font-semibold text-white/50 px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{module.label}</p>
                       )
                     ))
                   : <div className="h-px bg-dark-active mx-1 mb-2" />
@@ -500,11 +500,11 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
                       )}
                       <item.Icon
                         size={15}
-                        className={clsx('relative shrink-0 transition-opacity duration-150', active ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
+                        className={clsx('relative shrink-0 transition-opacity duration-150', active ? 'text-brand-orange' : 'text-white/70')}
                       />
                       {open && (
                         <>
-                          <span className={clsx('relative text-[12.5px] flex-1 truncate', active ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
+                          <span className={clsx('relative text-[12.5px] flex-1 truncate', active ? 'font-semibold text-white' : 'font-normal text-white/85')}>
                             {item.label}
                           </span>
                           {active && <div className="relative w-[3px] h-3 rounded-[2px] bg-brand-orange shrink-0" />}
