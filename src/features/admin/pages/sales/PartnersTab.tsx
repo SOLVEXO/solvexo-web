@@ -11,13 +11,35 @@ import {
   type PartnerStatement, type PayoutMethod,
 } from '@/api/services/salesOps';
 import { errMsg, useStableToast } from './sales.utils';
+import { OnboardingBoard } from './partners/OnboardingBoard';
+
+/** Applicants not yet vetted: they appear under Applications & onboarding, not in the partner list. */
+const APPLICANT_STAGES = new Set(['applied', 'documents', 'review', 'rejected']);
 
 const thisMonth = () => new Date(Date.now() + 5 * 3_600_000).toISOString().slice(0, 7);
 const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 const STATUS_COLOR: Record<string, 'yellow' | 'green' | 'gray' | 'red'> = { pending: 'yellow', payable: 'green', paid: 'gray', void: 'red' };
 
-/** Super Admin → Sales Ops → Partners: resellers, agents and reps, how they are paid, what they are owed. */
+/** Super Admin → Sales Ops → Partners: the partner list and commissions, plus applications & onboarding. */
 export function PartnersTab() {
+  const [view, setView] = useState<'partners' | 'onboarding'>(() => (new URLSearchParams(window.location.search).get('view') === 'onboarding' ? 'onboarding' : 'partners'));
+  const [tick, setTick] = useState(0);
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="inline-flex self-start rounded-lg border border-bone bg-white p-0.5" role="tablist" aria-label="Partners view">
+        {([['partners', 'Partners & commissions'], ['onboarding', 'Applications & onboarding']] as const).map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)}
+            className={clsx('px-3.5 py-1.5 rounded-md text-[12.5px] font-medium border-0 cursor-pointer', view === k ? 'bg-charcoal text-white' : 'bg-transparent text-charcoal hover:bg-cream')}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {view === 'partners' ? <PartnersList key={tick} /> : <OnboardingBoard onChanged={() => setTick(t => t + 1)} />}
+    </div>
+  );
+}
+
+function PartnersList() {
   const toast = useStableToast();
   const [rows, setRows] = useState<PartnerRow[] | null>(null);
   const [plans, setPlans] = useState<CommissionPlan[]>([]);
@@ -31,7 +53,7 @@ export function PartnersTab() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([apiPartners(), apiCommissionPlans()])
-      .then(([p, c]) => { if (!cancelled) { setRows(p.data); setPlans(c.data); } })
+      .then(([p, c]) => { if (!cancelled) { setRows(p.data.filter(r => !APPLICANT_STAGES.has(r.stage ?? ''))); setPlans(c.data); } })
       .catch(e => { if (!cancelled) { setRows([]); toast.error(errMsg(e, 'Could not load partners.')); } });
     return () => { cancelled = true; };
   }, [tick, toast]);

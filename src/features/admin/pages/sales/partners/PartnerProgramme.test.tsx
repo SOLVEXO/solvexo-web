@@ -1,0 +1,91 @@
+import '@testing-library/jest-dom/vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import type { PartnerOnboarding } from '@/api/services/partnerProgramme';
+
+globalThis.IntersectionObserver ??= class { observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } } as unknown as typeof IntersectionObserver;
+
+const api = vi.hoisted(() => ({
+  apiPartnerBoard: vi.fn(), apiPartnerOnboarding: vi.fn(), apiApprovePartner: vi.fn(), apiTickChecklist: vi.fn(), apiReviewDocument: vi.fn(),
+  apiMyOnboarding: vi.fn(), apiUploadMyDocument: vi.fn(), apiApplyPartner: vi.fn(), apiInvitePartner: vi.fn(),
+}));
+vi.mock('@/api/services/partnerProgramme', async (orig) => ({ ...(await orig<typeof import('@/api/services/partnerProgramme')>()), ...api }));
+vi.mock('@/components/comman/ui/Footer', () => ({ Footer: () => null }));
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }));
+vi.mock('@/contexts/ToastContext', () => ({ useToast: () => toast }));
+
+import { OnboardingBoard } from './OnboardingBoard';
+import { MyOnboarding } from './MyOnboarding';
+import { PartnersPage } from '@/features/buyer/pages/PartnersPage';
+
+afterEach(() => { cleanup(); vi.clearAllMocks(); });
+
+const LABELS = { company_registration: 'Company registration', ntn: 'NTN', cnic: 'CNIC', bank_account: 'Bank account', partnership_proof: 'Partnership proof', business_plan: 'Business plan', reference_letter: 'Reference', agreement: 'Agreement', other: 'Other' };
+const partner = (o: Partial<PartnerOnboarding> = {}): PartnerOnboarding => ({
+  _id: 'p1', name: 'Lahore Traders', code: 'LAHOR123', email: 'ali@lt.pk', phone: '03001234567', city: 'Lahore', status: 'paused', stage: 'review',
+  entityType: 'business', model: 'reseller', resellerMode: null, tier: 'registered', tierRule: { key: 'registered', minPayingSellers: 0, retentionTargetPercent: null, certifiedStaff: 0, commissionPercent: null, demoStores: 1, commissionApproved: false },
+  territory: 'Lahore District', exclusive: false, exclusiveFrom: null, exclusiveUntil: null, houseAccounts: [], application: { contactName: 'Ali', references: [] },
+  appliedAt: '2026-11-20T00:00:00Z', invitedAt: '2026-11-21T00:00:00Z', approvedAt: null, rejectedAt: null, rejectReason: null, hasLogin: true, loginActivatedAt: null,
+  docs: { required: ['company_registration', 'cnic', 'bank_account', 'business_plan'], missing: [], verified: ['company_registration', 'cnic', 'bank_account'], allUploaded: true, allVerified: false, labels: LABELS },
+  documents: [{ _id: 'd1', type: 'business_plan', label: 'Business plan', fileName: 'plan.pdf', uploadedAt: '2026-11-21T00:00:00Z', uploadedByRole: 'partner', status: 'pending', reviewNote: null, reviewedAt: null }],
+  agreement: null, staff: [], demoStores: [],
+  checklist: [
+    { key: 'application', label: 'Application received', week: 0, auto: true, done: true, doneAt: null, dueAt: null, overdue: false },
+    { key: 'references_checked', label: 'References and claimed partnerships checked', week: 0, auto: false, done: false, doneAt: null, dueAt: null, overdue: false },
+  ],
+  facts: { prospects: 0, liveSellers: 0 }, attention: ['1 document to check'], ...o,
+});
+
+describe('Super Admin partner onboarding', () => {
+  it('lists applications needing attention and opens one; approval waits for documents and references', async () => {
+    api.apiPartnerBoard.mockResolvedValue({ success: true, data: [{ _id: 'p1', name: 'Lahore Traders', city: 'Lahore', entityType: 'business', model: 'reseller', tier: 'registered', territory: 'Lahore District', stage: 'review', appliedAt: '2026-11-20T00:00:00Z', docs: { required: 4, verified: 3, waiting: 1 }, checklist: { done: 1, total: 2, overdue: 0 }, pilotEndsAt: null, noticeBy: null, attention: ['1 document to check'] }] });
+    api.apiPartnerOnboarding.mockResolvedValue({ success: true, data: partner() });
+    api.apiTickChecklist.mockResolvedValue({ success: true, data: partner() });
+    render(<MemoryRouter><OnboardingBoard /></MemoryRouter>);
+    fireEvent.click(await screen.findByText('Lahore Traders'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('button', { name: 'Approve' })).toBeDisabled();
+    expect(within(dialog).getByText(/1 of 4 still to verify/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('checkbox', { name: 'References and claimed partnerships checked' }));
+    await waitFor(() => expect(api.apiTickChecklist).toHaveBeenCalledWith('p1', 'references_checked', true));
+  });
+});
+
+describe('the partner’s own onboarding', () => {
+  it('shows what is still needed and uploads a document', async () => {
+    const d = partner({ stage: 'documents', docs: { ...partner().docs, missing: ['bank_account'], verified: ['cnic'], allUploaded: false } , documents: [] });
+    api.apiUploadMyDocument.mockResolvedValue({ success: true, data: null });
+    api.apiMyOnboarding.mockResolvedValue({ success: true, data: d });
+    const onChange = vi.fn();
+    render(<MemoryRouter><MyOnboarding d={d} onChange={onChange} /></MemoryRouter>);
+    expect(screen.getByText(/Upload the documents below/)).toBeInTheDocument();
+    const file = new File(['%PDF-1.4'], 'bank.pdf', { type: 'application/pdf' });
+    fireEvent.change(screen.getByLabelText('Upload Bank account'), { target: { files: [file] } });
+    await waitFor(() => expect(api.apiUploadMyDocument).toHaveBeenCalledWith('bank_account', file));
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+  });
+});
+
+describe('Become a partner page', () => {
+  it('sends a business application with references and requires consent', async () => {
+    api.apiApplyPartner.mockResolvedValue({ success: true, message: 'Thank you. We have your application.', data: null });
+    render(<MemoryRouter><PartnersPage /></MemoryRouter>);
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Ali Raza' } });
+    fireEvent.change(screen.getByLabelText('Registered business name'), { target: { value: 'Lahore Traders' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ali@lt.pk' } });
+    fireEvent.change(screen.getByLabelText('Mobile / WhatsApp'), { target: { value: '0300 1234567' } });
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Lahore' } });
+    fireEvent.change(screen.getByLabelText('Reference 1 name and company'), { target: { value: 'Usman, Usman & Co' } });
+    fireEvent.change(screen.getByLabelText('Reference 1 phone'), { target: { value: '03211234567' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send application' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('agree to be contacted');
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Send application' }));
+    await waitFor(() => expect(api.apiApplyPartner).toHaveBeenCalledWith(expect.objectContaining({
+      entityType: 'business', model: 'reseller', contactName: 'Ali Raza', legalName: 'Lahore Traders', consent: true,
+      references: [{ name: 'Usman, Usman & Co', phone: '03211234567' }],
+    })));
+    expect(await screen.findByText('Application received')).toBeInTheDocument();
+  });
+});

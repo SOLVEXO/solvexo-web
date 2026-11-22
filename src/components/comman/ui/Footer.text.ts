@@ -11,7 +11,7 @@ export const FOOTER_TEXT = siteText({
       { heading: 'Products', links: ['Store Builder', 'Point of Sale', 'Inventory', 'Orders & Customers', 'AI Commerce', 'Analytics', 'Loyalty & Rewards'] },
       { heading: 'Solutions', links: ['Retail', 'Fashion', 'Restaurants & Food', 'Beauty & Cosmetics', 'Creators & Digital Sellers', 'Small Business', 'Online store in Pakistan'] },
       { heading: 'Learn & Support', links: ['Blog', 'User manuals', 'FAQ', 'Contact Us'] },
-      { heading: 'Company', links: ['About Solvexo', 'Security', 'For Sellers', 'Pricing'] },
+      { heading: 'Company', links: ['About Solvexo', 'Security', 'For Sellers', 'Become a partner', 'Pricing'] },
       { heading: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy'] },
     ],
     subscribeError: 'Something went wrong. Please try again.',
@@ -34,7 +34,7 @@ export const FOOTER_TEXT = siteText({
       { heading: 'المنتجات', links: ['منشئ المتاجر', 'نقطة البيع', 'المخزون', 'الطلبات والعملاء', 'التجارة بالذكاء الاصطناعي', 'التحليلات', 'الولاء والمكافآت'] },
       { heading: 'الحلول', links: ['التجزئة', 'الأزياء', 'المطاعم والأغذية', 'التجميل ومستحضرات العناية', 'صنّاع المحتوى وبائعو المنتجات الرقمية', 'الأعمال الصغيرة', 'متجر إلكتروني في باكستان'] },
       { heading: 'التعلّم والدعم', links: ['المدونة', 'أدلة المستخدم', 'الأسئلة الشائعة', 'تواصل معنا'] },
-      { heading: 'الشركة', links: ['عن Solvexo', 'الأمان', 'للتجّار', 'الأسعار'] },
+      { heading: 'الشركة', links: ['عن Solvexo', 'الأمان', 'للتجّار', 'كن شريكاً', 'الأسعار'] },
       // The legal pages themselves stay in English (they need a reviewed translation); only the link names are Arabic.
       { heading: 'قانوني', links: ['سياسة الخصوصية', 'شروط الخدمة', 'سياسة ملفات تعريف الارتباط'] },
     ],
