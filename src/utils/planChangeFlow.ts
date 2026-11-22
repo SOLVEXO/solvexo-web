@@ -39,10 +39,11 @@ export async function completePlanChange(planId: string, expectPaidNow: boolean,
   const res = await deps.change();
   const d = res.data ?? {};
 
-  if (d.requiresAction && d.clientSecret) await deps.confirmCard(d.clientSecret);
+  const paidByCard = !!(d.requiresAction && d.clientSecret);
+  if (paidByCard) await deps.confirmCard(d.clientSecret!);
   if (d.pending) await deps.confirmPending();
 
-  const attempts = deps.pollAttempts ?? 12;
+  const attempts = deps.pollAttempts ?? 20;
   let sub = await deps.fetchSub();
   for (let i = 0; ; i++) {
     if (d.scheduled) return sub;
@@ -51,9 +52,24 @@ export async function completePlanChange(planId: string, expectPaidNow: boolean,
     if (!d.pending && !d.requiresAction && sub.platformPlanId === planId) return sub; // free / credit-only / manual provider
     if (i >= attempts) break;
     await sleep(1000);
+    // Ask the server to check with the payment provider again: it applies a paid purchase even when the provider's own
+    // notification is late (a refusal here is not final — the plan state below decides).
+    if (d.pending && i % 4 === 3) await deps.confirmPending().catch(() => undefined);
     sub = await deps.fetchSub();
   }
-  throw new Error(sub.lastBillingError || 'We could not confirm your payment yet — your plan was not changed. Please try again.');
+  if (sub.lastBillingError) throw new Error(sub.lastBillingError);
+  // The card step succeeded, so the seller has most likely been charged: never tell them to pay again.
+  if (paidByCard || (d.pending && expectPaidNow)) throw new PlanStillActivatingError();
+  throw new Error('We could not confirm your payment yet — your plan was not changed. Please try again.');
+}
+
+/** The payment went through but the plan is not active yet: shown instead of a "try again" that could lead to paying twice. */
+export class PlanStillActivatingError extends Error {
+  readonly stillActivating = true;
+  constructor() {
+    super('Your payment was received and your plan is being switched on. This can take a few minutes — please do not pay again. Refresh this page shortly.');
+    this.name = 'PlanStillActivatingError';
+  }
 }
 
 /** Banner for the two states the generic status banners miss: an ended ('canceled') subscription and a failed purchase attempt on a seller who kept their prior state. */

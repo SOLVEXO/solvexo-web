@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { StorePlatformSubscription } from '@/api/services/platformPlans';
-import { completePlanChange, isPlanGateStatus, planProblemBanner, shouldBillImmediately } from './planChangeFlow';
+import { PlanStillActivatingError, completePlanChange, isPlanGateStatus, planProblemBanner, shouldBillImmediately } from './planChangeFlow';
 
 const sub = (over: Partial<StorePlatformSubscription> = {}): StorePlatformSubscription => ({
   _id: 's1', storeId: 'st1', platformPlanId: null, billingInterval: 'monthly', amountUSD: 0, status: 'trial_ended',
@@ -51,6 +51,28 @@ describe('completePlanChange', () => {
       fetchSub: async () => sub({ platformPlanId: 'p2', status: 'active' }), sleep: noSleep,
     });
     expect(order).toEqual(['card', 'server']);
+  });
+
+  it('keeps asking the server to confirm while it waits, so a late provider notification never blocks a paid plan', async () => {
+    const confirmPending = vi.fn().mockResolvedValue({});
+    let calls = 0;
+    const fetchSub = vi.fn(async () => (++calls >= 6 ? sub({ platformPlanId: 'p1', status: 'active' }) : sub()));
+    const res = await completePlanChange('p1', true, {
+      change: async () => ({ data: { pending: true, requiresAction: true, clientSecret: 'cs_1' } }),
+      confirmCard: vi.fn().mockResolvedValue(undefined), confirmPending, fetchSub, sleep: noSleep,
+    });
+    expect(res.status).toBe('active');
+    expect(confirmPending.mock.calls.length).toBeGreaterThan(1);
+  });
+
+  it('after a successful card payment that is still activating, says so and never asks the seller to pay again', async () => {
+    const err = await completePlanChange('p1', true, {
+      change: async () => ({ data: { pending: true, requiresAction: true, clientSecret: 'cs_1' } }),
+      confirmCard: vi.fn().mockResolvedValue(undefined), confirmPending: vi.fn().mockResolvedValueOnce({}).mockRejectedValue(new Error('x')),
+      fetchSub: async () => sub(), sleep: noSleep, pollAttempts: 3,
+    }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(PlanStillActivatingError);
+    expect((err as Error).message).toContain('please do not pay again');
   });
 
   it('a trial commitment (not paid now) succeeds once the pending commitment is recorded', async () => {
