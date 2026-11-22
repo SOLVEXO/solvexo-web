@@ -150,3 +150,40 @@ export const apiMyDeals = () => client.get<never, ApiResponse<{ canRegister: boo
 export const apiRegisterDeal = (body: DealInput) => client.post<never, ApiResponse<Deal>>('/api/admin/partner-portal/deals', body, quiet);
 export const apiRequestExtension = (id: string, progress: DealProgress, note?: string) =>
   client.post<never, ApiResponse<null>>(`/api/admin/partner-portal/deals/${id}/extension`, { progress, note }, quiet);
+
+// ── Scorecard (B13) ──────────────────────────────────────────────────────────
+
+export interface Scorecard {
+  prospects: number; registrationsAccepted: number; demos: number; signups: number; liveStores: number; payingNow: number; everPaid: number;
+  retention3mPercent: number | null; retentionBase: number; daysToFirstSale: number | null; complaints: number; complaintRatePercent: number | null;
+  earnedPKR: number; eligibleTier: PartnerTier; tierStatus: 'meets' | 'eligible_for_higher' | 'below_requirement';
+}
+export interface Milestone { key: 'paying' | 'live' | 'complaints'; label: string; target: number | null; actual: number | null; met: boolean | null }
+export interface LeaderRow extends Scorecard {
+  _id: string; name: string; tier: PartnerTier | null; territory: string | null; stage: PartnerStage; status: 'active' | 'paused'; milestones: Milestone[] | null;
+}
+export type LogType = 'monthly_review' | 'qbr' | 'complaint' | 'note' | 'warning' | 'improvement_plan' | 'suspension' | 'reinstated';
+export const LOG_LABELS: Record<LogType, string> = {
+  monthly_review: 'Monthly pipeline review', qbr: 'Quarterly business review', complaint: 'Complaint', note: 'Note',
+  warning: 'Written warning', improvement_plan: 'Improvement plan', suspension: 'Suspension', reinstated: 'Reinstated',
+};
+export interface LogEntry {
+  _id: string; type: LogType; at: string; summary: string; details: string | null; plan: string | null; about: string | null;
+  resolvedAt: string | null; dueAt: string | null; snapshot: Partial<Scorecard> | null; visibleToPartner: boolean;
+}
+export interface ScorecardDetail {
+  partner: { _id: string; name: string; tier: PartnerTier | null; territory: string | null; stage: PartnerStage; agreement: Agreement | null };
+  scorecard: Scorecard; milestones: Milestone[]; milestonesApproved: boolean;
+  trend: { month: string; registrations: number; signups: number; firstPayments: number }[];
+  reviews: { lastMonthlyAt: string | null; monthlyDue: boolean; lastQbrAt: string | null; qbrDue: boolean };
+  log: LogEntry[];
+}
+
+export const apiLeaderboard = () => client.get<never, ApiResponse<LeaderRow[]>>(`${B}/scorecards`);
+export const apiScorecard = (id: string) => client.get<never, ApiResponse<ScorecardDetail>>(`${B}/scorecards/${id}`);
+export const apiAddPartnerLog = (id: string, body: { type: 'monthly_review' | 'qbr' | 'complaint' | 'note'; summary: string; details?: string; plan?: string; about?: string; at?: string; visibleToPartner?: boolean }) =>
+  client.post<never, ApiResponse<ScorecardDetail>>(`${B}/scorecards/${id}/log`, body, quiet);
+export const apiResolveComplaint = (id: string, logId: string) => client.post<never, ApiResponse<ScorecardDetail>>(`${B}/scorecards/${id}/log/${logId}/resolve`, {}, quiet);
+export const apiMyScorecard = () => client.get<never, ApiResponse<ScorecardDetail | null>>('/api/admin/partner-portal/scorecard');
+
+export const pct = (n: number | null) => (n === null ? '—' : `${n}%`);
