@@ -195,15 +195,19 @@ export interface Partner {
   /** Channel Partner Programme stage; null = set up before the programme (live). */
   stage?: 'applied' | 'documents' | 'review' | 'agreement' | 'onboarding' | 'live' | 'rejected' | null;
   tier?: 'registered' | 'silver' | 'gold' | 'regional' | null;
+  /** B4.7: withholding tax on payouts, in % (null = programme default). */
+  whtPercent?: number | null;
+  suspendedAt?: string | null;
+  suspendReason?: string | null;
 }
-export type PartnerInput = Partial<Omit<Partner, '_id' | 'createdAt' | 'stage' | 'tier'>>;
+export type PartnerInput = Partial<Omit<Partner, '_id' | 'createdAt' | 'stage' | 'tier' | 'suspendedAt' | 'suspendReason'>>;
 export interface PartnerRow extends Partner { planName: string | null; referred: number; payingNow: number; pendingPKR: number; payablePKR: number; paidPKR: number }
-export interface CommissionLine { _id: string; earnedAt: string; payableAt: string; type: 'bounty' | 'percent' | 'adjustment'; description: string | null; merchant: string | null; amountPKR: number; status: string }
-export interface PartnerPayout { _id: string; amountPKR: number; paidAt: string; method: PayoutMethod; reference: string | null; note?: string | null }
+export interface CommissionLine { _id: string; earnedAt: string; payableAt: string; type: 'bounty' | 'percent' | 'adjustment' | 'activation'; description: string | null; merchant: string | null; amountPKR: number; status: string }
+export interface PartnerPayout { _id: string; amountPKR: number; paidAt: string; method: PayoutMethod; reference: string | null; note?: string | null; whtPKR?: number; netPKR?: number }
 export interface PartnerDetail {
   partner: Partner; link: string; plan: CommissionPlan | null;
   balances: { pendingPKR: number; payablePKR: number; paidPKR: number; earnedPKR: number };
-  referrals: { sellerId: string; merchant: string; source: string; effectiveFrom: string; payingNow: boolean; earnedPKR: number }[];
+  referrals: { sellerId: string; merchant: string; source: string; effectiveFrom: string; payingNow: boolean; earnedPKR: number; supportNoticeAt?: string | null; commissionEndsAt?: string | null }[];
   lines: CommissionLine[]; payouts: PartnerPayout[];
 }
 export interface PartnerStatement {
@@ -218,6 +222,9 @@ export const apiPartners = () => client.get<never, ApiResponse<PartnerRow[]>>(`$
 export const apiPartner = (id: string) => client.get<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}`);
 export const apiSavePartner = (id: string | null, body: PartnerInput) =>
   id ? client.patch<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}`, body) : client.post<never, ApiResponse<PartnerDetail>>(`${BASE}/partners`, body);
+/** B4.4: written 60-day notice that the partner stopped supporting a seller (cancel withdraws it). */
+export const apiSupportNotice = (id: string, sellerId: string, body: { reason?: string; cancel?: boolean }) =>
+  client.post<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}/referrals/${sellerId}/support-notice`, body);
 export const apiAddReferral = (id: string, body: { sellerEmail: string; effectiveFrom?: string | null }) => client.post<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}/referrals`, body);
 export const apiRemoveReferral = (id: string, sellerId: string) => client.delete<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}/referrals/${sellerId}`);
 export const apiAddAdjustment = (id: string, body: { amountPKR: number; description: string }) => client.post<never, ApiResponse<PartnerDetail>>(`${BASE}/partners/${id}/adjustments`, body);

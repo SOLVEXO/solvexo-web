@@ -4,7 +4,7 @@ import { CheckCircle2, Circle, MinusCircle, XCircle } from 'lucide-react';
 import { Badge, Button, Input, Select, Textarea } from '@/components/comman/ui';
 import { formatPKR } from '@/api/services/salesOps';
 import {
-  LOG_LABELS, TIER_LABELS, apiAddPartnerLog, apiResolveComplaint, fmtDay, pct, type Milestone, type Scorecard, type ScorecardDetail,
+  LOG_LABELS, TIER_LABELS, apiAddPartnerLog, apiConduct, apiResolveComplaint, fmtDay, pct, type Milestone, type Scorecard, type ScorecardDetail,
 } from '@/api/services/partnerProgramme';
 import { errMsg, useStableToast } from '../sales.utils';
 
@@ -98,6 +98,7 @@ export function ScorecardView({ d, manage, onChange }: { d: ScorecardDetail; man
           </table>
         </section>
       </div>
+      {manage && <ConductSection d={d} onChange={onChange} />}
       <LogSection d={d} manage={manage} onChange={onChange} />
     </div>
   );
@@ -151,8 +152,8 @@ function LogSection({ d, manage, onChange }: { d: ScorecardDetail; manage?: bool
           {d.log.map(l => (
             <li key={l._id} className="border-b border-bone last:border-0 py-2">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge color={l.type === 'complaint' ? (l.resolvedAt ? 'gray' : 'red') : l.type === 'note' ? 'gray' : 'blue'}>{LOG_LABELS[l.type]}</Badge>
-                <span className="text-[11.5px] text-slate">{fmtDay(l.at)}{l.about ? ` · ${l.about}` : ''}{l.type === 'complaint' ? (l.resolvedAt ? ` · resolved ${fmtDay(l.resolvedAt)}` : ' · open') : ''}</span>
+                <Badge color={l.type === 'complaint' ? (l.resolvedAt ? 'gray' : 'red') : l.type === 'suspension' ? 'red' : l.type === 'warning' || l.type === 'improvement_plan' ? 'orange' : l.type === 'note' ? 'gray' : l.type === 'reinstated' ? 'green' : 'blue'}>{LOG_LABELS[l.type]}</Badge>
+                <span className="text-[11.5px] text-slate">{fmtDay(l.at)}{l.dueAt ? ` · by ${fmtDay(l.dueAt)}` : ''}{l.about ? ` · ${l.about}` : ''}{l.type === 'complaint' ? (l.resolvedAt ? ` · resolved ${fmtDay(l.resolvedAt)}` : ' · open') : ''}</span>
                 {manage && !l.visibleToPartner && <span className="text-[11px] text-slate">(internal)</span>}
                 {manage && l.type === 'complaint' && !l.resolvedAt && <Button size="xs" variant="ghost" onClick={() => resolve(l._id)}><Circle size={11} /> Mark resolved</Button>}
               </div>
@@ -163,6 +164,56 @@ function LogSection({ d, manage, onChange }: { d: ScorecardDetail; manage?: bool
             </li>
           ))}
         </ul>
+      )}
+    </section>
+  );
+}
+
+type ConductAction = 'warning' | 'improvement_plan' | 'suspend' | 'reinstate';
+const CONDUCT: Record<ConductAction, { label: string; help: string }> = {
+  warning: { label: 'Written warning', help: 'Sent to the partner with 60 days to put it right. Needed before a tier can go down (B3).' },
+  improvement_plan: { label: '60-day improvement plan', help: 'After missed milestones or a fixable breach: what must change, and the review date (B6, B14).' },
+  suspend: { label: 'Suspend', help: 'Only for serious cases: fraud, data misuse, bribery or misrepresenting Solvexo (B14). Earns nothing new; earned commission is still paid.' },
+  reinstate: { label: 'Reinstate', help: 'The partner is active again and earns from now on.' },
+};
+
+/** Manager actions under the programme's conduct and exit rules (B9, B14). */
+function ConductSection({ d, onChange }: { d: ScorecardDetail; onChange?: (d: ScorecardDetail) => void }) {
+  const toast = useStableToast();
+  const suspended = !!d.partner.suspendedAt;
+  const actions: ConductAction[] = suspended ? ['reinstate'] : ['warning', 'improvement_plan', 'suspend'];
+  const [action, setAction] = useState<ConductAction | null>(null);
+  const [f, setF] = useState({ reason: '', plan: '', dueAt: '' });
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    if (!action || !f.reason.trim()) return toast.error('Give the reason: the partner receives it in writing.');
+    if (action === 'improvement_plan' && !f.plan.trim()) return toast.error('Write down what must change.');
+    setBusy(true);
+    try {
+      const r = await apiConduct(d.partner._id, { action, reason: f.reason.trim(), plan: f.plan.trim() || undefined, dueAt: f.dueAt || undefined });
+      onChange?.(r.data); setAction(null); setF({ reason: '', plan: '', dueAt: '' }); toast.success(`${CONDUCT[action].label}: recorded and emailed to the partner.`);
+    } catch (e) { toast.error(errMsg(e, 'Could not save.')); }
+    setBusy(false);
+  };
+  return (
+    <section className="rounded-xl border border-bone bg-white p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-slate">Conduct</p>
+        {suspended && <Badge color="red" dot>Suspended {fmtDay(d.partner.suspendedAt)}{d.partner.suspendReason ? `: ${d.partner.suspendReason}` : ''}</Badge>}
+      </div>
+      <div className="flex flex-wrap gap-1.5 mt-2">
+        {actions.map(a => (
+          <Button key={a} size="xs" variant={action === a ? 'primary' : a === 'suspend' ? 'danger' : 'outline'} onClick={() => setAction(action === a ? null : a)}>{CONDUCT[a].label}</Button>
+        ))}
+      </div>
+      {action && (
+        <div className="flex flex-col gap-2 mt-3">
+          <p className="text-[11.5px] text-slate">{CONDUCT[action].help}</p>
+          <Input label="Reason (sent to the partner)" value={f.reason} onChange={e => setF({ ...f, reason: e.target.value })} />
+          {action === 'improvement_plan' && <Textarea label="What must change" rows={2} value={f.plan} onChange={e => setF({ ...f, plan: e.target.value })} />}
+          {(action === 'warning' || action === 'improvement_plan') && <Input label="Put right by (default: 60 days)" type="date" value={f.dueAt} onChange={e => setF({ ...f, dueAt: e.target.value })} />}
+          <div className="flex justify-end"><Button size="sm" variant={action === 'suspend' ? 'danger' : 'primary'} loading={busy} onClick={save}>{CONDUCT[action].label}</Button></div>
+        </div>
       )}
     </section>
   );
