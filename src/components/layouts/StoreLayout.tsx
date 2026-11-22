@@ -543,14 +543,14 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                         'hover:bg-[#1a1917] transition-colors duration-fast',
                       )}
                     >
-                      <GroupIcon size={15} className="shrink-0 text-slate opacity-55" />
-                      <span className="text-[13px] flex-1 font-normal text-slate text-left">{section.group}</span>
+                      <GroupIcon size={15} className="shrink-0 text-white/70" />
+                      <span className="text-[13px] flex-1 font-normal text-white/85 text-left">{section.group}</span>
                       {isCollapsed && section.items.reduce((sum, it) => sum + (badges[it.id] ?? 0), 0) > 0 && (
                         <NavCountBadge count={section.items.reduce((sum, it) => sum + (badges[it.id] ?? 0), 0)} />
                       )}
                       <ChevronDown
                         size={14}
-                        className={clsx('text-slate opacity-70 transition-transform duration-200 shrink-0', !isCollapsed && 'rotate-180')}
+                        className={clsx('text-white/60 transition-transform duration-200 shrink-0', !isCollapsed && 'rotate-180')}
                       />
                     </button>
                   ) : (
@@ -562,7 +562,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                     // own single-destination items (Home/Orders/Products)
                     // have no group heading above them either.
                     section.items.length > 1 && (
-                      <p className="text-[10px] font-semibold text-dark-label px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{section.group}</p>
+                      <p className="text-[10px] font-semibold text-white/50 px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{section.group}</p>
                     )
                   ))
                 : <div className="h-px bg-dark-active mx-1 mb-2" />
@@ -596,11 +596,11 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                       )}
                       <item.Icon
                         size={15}
-                        className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
+                        className={clsx('relative shrink-0', active ? 'text-brand-orange' : 'text-white/70')}
                       />
                       {open && (
                         <>
-                          <span className={clsx('relative text-[13px] flex-1 font-normal text-slate', active && 'font-semibold text-white')}>
+                          <span className={clsx('relative text-[13px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-white/85')}>
                             {item.label}
                           </span>
                           {(badges[item.id] ?? 0) > 0 && <NavCountBadge count={badges[item.id]} />}
