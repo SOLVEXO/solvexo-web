@@ -12,6 +12,7 @@ import {
 } from '@/api/services/salesOps';
 import { errMsg, useStableToast } from './sales.utils';
 import { OnboardingBoard } from './partners/OnboardingBoard';
+import { DealsBoard } from './partners/DealsBoard';
 
 /** Applicants not yet vetted: they appear under Applications & onboarding, not in the partner list. */
 const APPLICANT_STAGES = new Set(['applied', 'documents', 'review', 'rejected']);
@@ -22,19 +23,19 @@ const STATUS_COLOR: Record<string, 'yellow' | 'green' | 'gray' | 'red'> = { pend
 
 /** Super Admin → Sales Ops → Partners: the partner list and commissions, plus applications & onboarding. */
 export function PartnersTab() {
-  const [view, setView] = useState<'partners' | 'onboarding'>(() => (new URLSearchParams(window.location.search).get('view') === 'onboarding' ? 'onboarding' : 'partners'));
+  const [view, setView] = useState<'partners' | 'onboarding' | 'deals'>(() => { const v = new URLSearchParams(window.location.search).get('view'); return v === 'onboarding' || v === 'deals' ? v : 'partners'; });
   const [tick, setTick] = useState(0);
   return (
     <div className="flex flex-col gap-4">
       <div className="inline-flex self-start rounded-lg border border-bone bg-white p-0.5" role="tablist" aria-label="Partners view">
-        {([['partners', 'Partners & commissions'], ['onboarding', 'Applications & onboarding']] as const).map(([k, label]) => (
+        {([['partners', 'Partners & commissions'], ['onboarding', 'Applications & onboarding'], ['deals', 'Deal registrations']] as const).map(([k, label]) => (
           <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)}
             className={clsx('px-3.5 py-1.5 rounded-md text-[12.5px] font-medium border-0 cursor-pointer', view === k ? 'bg-charcoal text-white' : 'bg-transparent text-charcoal hover:bg-cream')}>
             {label}
           </button>
         ))}
       </div>
-      {view === 'partners' ? <PartnersList key={tick} /> : <OnboardingBoard onChanged={() => setTick(t => t + 1)} />}
+      {view === 'partners' ? <PartnersList key={tick} /> : view === 'onboarding' ? <OnboardingBoard onChanged={() => setTick(t => t + 1)} /> : <DealsBoard />}
     </div>
   );
 }

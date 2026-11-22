@@ -9,6 +9,7 @@ globalThis.IntersectionObserver ??= class { observe() {} unobserve() {} disconne
 const api = vi.hoisted(() => ({
   apiPartnerBoard: vi.fn(), apiPartnerOnboarding: vi.fn(), apiApprovePartner: vi.fn(), apiTickChecklist: vi.fn(), apiReviewDocument: vi.fn(),
   apiMyOnboarding: vi.fn(), apiUploadMyDocument: vi.fn(), apiApplyPartner: vi.fn(), apiInvitePartner: vi.fn(),
+  apiDeals: vi.fn(), apiDecideDeal: vi.fn(), apiMyDeals: vi.fn(), apiRegisterDeal: vi.fn(),
 }));
 vi.mock('@/api/services/partnerProgramme', async (orig) => ({ ...(await orig<typeof import('@/api/services/partnerProgramme')>()), ...api }));
 vi.mock('@/components/comman/ui/Footer', () => ({ Footer: () => null }));
@@ -18,6 +19,8 @@ vi.mock('@/contexts/ToastContext', () => ({ useToast: () => toast }));
 import { OnboardingBoard } from './OnboardingBoard';
 import { MyOnboarding } from './MyOnboarding';
 import { PartnersPage } from '@/features/buyer/pages/PartnersPage';
+import { DealsBoard } from './DealsBoard';
+import { MyDeals } from './MyDeals';
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -87,5 +90,39 @@ describe('Become a partner page', () => {
       references: [{ name: 'Usman, Usman & Co', phone: '03211234567' }],
     })));
     expect(await screen.findByText('Application received')).toBeInTheDocument();
+  });
+});
+
+const deal = (o: Record<string, unknown> = {}) => ({
+  _id: 'd1', partnerId: 'p1', partnerName: 'Lahore Traders', businessName: 'Hamza Mart', contactName: 'Hamza', phone: '03001234567', email: null, city: 'Lahore',
+  link: null, notes: null, status: 'pending', submittedAt: '2026-11-24T00:00:00Z', decisionDueAt: '2026-11-26T23:59:59Z', overdue: true, decidedAt: null, decidedHow: null,
+  rejectReason: null, protectedUntil: null, extensions: [], extensionRequest: null, wonAt: null, conflicts: [{ kind: 'pending_elsewhere', detail: 'Also submitted by Karachi Co' }], ...o,
+});
+
+describe('deal registration', () => {
+  it('lets a manager accept a registration past its deadline and shows the conflicts', async () => {
+    api.apiDeals.mockResolvedValue({ success: true, data: { counts: { pending: 1, overdue: 1 }, deals: [deal()] } });
+    api.apiDecideDeal.mockResolvedValue({ success: true, message: 'Accepted', data: null });
+    render(<MemoryRouter><DealsBoard /></MemoryRouter>);
+    expect(await screen.findByText('Hamza Mart')).toBeInTheDocument();
+    expect(screen.getByText('Also submitted by Karachi Co')).toBeInTheDocument();
+    expect(screen.getByText(/Reply by/)).toHaveClass('text-error');
+    fireEvent.click(screen.getByRole('button', { name: /Accept/ }));
+    await waitFor(() => expect(api.apiDecideDeal).toHaveBeenCalledWith('d1', 'accept'));
+  });
+
+  it('lets a partner register a prospect only with the seller’s permission', async () => {
+    api.apiMyDeals.mockResolvedValue({ success: true, data: { canRegister: true, protectionDays: 90, responseDays: 2, deals: [deal({ status: 'accepted', protectedUntil: '2027-02-22T00:00:00Z' })] } });
+    api.apiRegisterDeal.mockResolvedValue({ success: true, message: 'Registered.', data: deal() });
+    render(<MemoryRouter><MyDeals /></MemoryRouter>);
+    expect(await screen.findByText(/protected until/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Register a prospect' }));
+    fireEvent.change(screen.getByLabelText('Business name'), { target: { value: 'Ali Shoes' } });
+    fireEvent.change(screen.getByLabelText('Phone / WhatsApp'), { target: { value: '03007654321' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('agreed');
+    fireEvent.click(screen.getByRole('checkbox', { name: /seller agreed/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+    await waitFor(() => expect(api.apiRegisterDeal).toHaveBeenCalledWith(expect.objectContaining({ businessName: 'Ali Shoes', phone: '03007654321', consent: true })));
   });
 });

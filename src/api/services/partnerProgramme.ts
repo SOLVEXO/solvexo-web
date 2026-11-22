@@ -117,3 +117,36 @@ export const apiUploadMyDocument = (type: string, file: File) =>
 export const apiMyDocumentUrl = (docId: string) => client.get<never, ApiResponse<{ url: string; fileName: string }>>(`/api/admin/partner-portal/onboarding/documents/${docId}/url`);
 
 export const fmtDay = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+
+// ── Deal registration (B7) ───────────────────────────────────────────────────
+
+export type DealStatus = 'pending' | 'accepted' | 'rejected' | 'expired' | 'won' | 'lost';
+export type DealProgress = 'demo_held' | 'trial_started' | 'other';
+export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
+  pending: 'Waiting for Solvexo', accepted: 'Accepted · protected', rejected: 'Not accepted', expired: 'Protection ended', won: 'Signed up', lost: 'Lost',
+};
+export const DEAL_STATUS_COLORS: Record<DealStatus, 'blue' | 'green' | 'red' | 'gray' | 'yellow' | 'orange'> = {
+  pending: 'blue', accepted: 'green', rejected: 'red', expired: 'gray', won: 'green', lost: 'gray',
+};
+export const PROGRESS_LABELS: Record<DealProgress, string> = { demo_held: 'Demo held', trial_started: 'Trial started', other: 'Other progress' };
+
+export interface Deal {
+  _id: string; partnerId: string; partnerName?: string; businessName: string; contactName: string | null; phone: string | null; email: string | null;
+  city: string | null; link: string | null; notes: string | null; status: DealStatus; submittedAt: string; decisionDueAt: string; overdue: boolean;
+  decidedAt: string | null; decidedHow: 'auto' | 'manager' | null; rejectReason: string | null; protectedUntil: string | null;
+  extensions: { at: string; progress: DealProgress; until: string }[]; extensionRequest: { at: string; progress: DealProgress; note: string | null } | null;
+  wonAt: string | null; conflicts?: { kind: string; detail: string }[]; consentNote?: string | null;
+}
+export interface DealInput { businessName: string; contactName?: string; phone?: string; email?: string; city?: string; link?: string; notes?: string; consent: boolean; consentNote?: string }
+
+export const apiDeals = (status?: string) =>
+  client.get<never, ApiResponse<{ counts: Partial<Record<DealStatus | 'overdue' | 'extension', number>>; deals: Deal[] }>>(`${B}/deals`, { params: status ? { status } : {} });
+export const apiDecideDeal = (id: string, decision: 'accept' | 'reject', reason?: string) => client.post<never, ApiResponse<null>>(`${B}/deals/${id}/decision`, { decision, reason }, quiet);
+export const apiExtendDeal = (id: string, days?: number) => client.post<never, ApiResponse<null>>(`${B}/deals/${id}/extend`, { days }, quiet);
+export const apiDealLost = (id: string) => client.post<never, ApiResponse<null>>(`${B}/deals/${id}/lost`, {}, quiet);
+export const apiRunDeals = () => client.post<never, ApiResponse<{ won: number; expired: number; overdue: number }>>(`${B}/deals/run`, {}, quiet);
+
+export const apiMyDeals = () => client.get<never, ApiResponse<{ canRegister: boolean; protectionDays: number; responseDays: number; deals: Deal[] }>>('/api/admin/partner-portal/deals');
+export const apiRegisterDeal = (body: DealInput) => client.post<never, ApiResponse<Deal>>('/api/admin/partner-portal/deals', body, quiet);
+export const apiRequestExtension = (id: string, progress: DealProgress, note?: string) =>
+  client.post<never, ApiResponse<null>>(`/api/admin/partner-portal/deals/${id}/extension`, { progress, note }, quiet);
