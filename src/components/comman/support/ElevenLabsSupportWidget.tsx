@@ -7,7 +7,7 @@ const WIDGET_SRC = 'https://unpkg.com/@elevenlabs/convai-widget-embed@0.22.0';
 const SCRIPT_ID = 'elevenlabs-convai-widget';
 
 /** Pages with their own bottom bar, where the bubble would sit on top of the main button. */
-const HIDDEN_ON = ['/start'];
+const HIDDEN_ON = ['/start', '/online-store-pakistan'];
 
 /**
  * The "Solvexo Support" AI agent (ElevenLabs Agents) as a chat/voice bubble on the public site.

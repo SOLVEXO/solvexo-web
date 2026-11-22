@@ -12,6 +12,7 @@ import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { useSiteText } from '@/i18n/site/useSiteText';
 import { useSiteLang } from '@/i18n/site/siteLangContext';
 import { FAQ_TEXT } from './FaqPage.text';
+import { SELLER_FAQ } from '../data/sellerFaq';
 
 function FaqAccordionItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -137,6 +138,16 @@ export function FaqPage() {
               {c}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* ── Seller questions (fixed, so they are in the pre-built HTML too); English page only ── */}
+      {pageLang === 'en' && !query && !category && (
+        <div className="bg-white px-4 md:px-8 lg:px-12 pt-10 border-t border-bone">
+          <div className="max-w-[720px] mx-auto">
+            <h2 className="text-[11px] font-bold text-brand-orange uppercase tracking-[0.08em] mb-1">For sellers</h2>
+            {SELLER_FAQ.map(f => <FaqAccordionItem key={f.q} question={f.q} answer={f.a} />)}
+          </div>
         </div>
       )}
 

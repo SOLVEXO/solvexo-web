@@ -348,6 +348,7 @@ const mainRouter = createBrowserRouter([
               { path: 'blog/:slug',      element: <BlogPostPage /> },
               { path: 'manuals',         element: <ManualsPage /> },
               { path: 'start',           element: <StartPage /> },
+              { path: 'online-store-pakistan', element: <StartPage variant="pakistan" /> },
               // Unknown public address: a real not-found page (noindex) instead of redirecting to the home page,
               // which search engines report as a "soft 404".
               { path: '*',               element: <NotFoundPage /> },
