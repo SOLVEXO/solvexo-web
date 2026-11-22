@@ -47,6 +47,7 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
       { label: 'Beauty & Cosmetics',       path: '/solutions/beauty' },
       { label: 'Creators & Digital Sellers', path: '/solutions/creators' },
       { label: 'Small Business',           path: '/solutions/small-business' },
+      { label: 'Online store in Pakistan', path: '/online-store-pakistan' },
     ],
   },
   {

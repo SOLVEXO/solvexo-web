@@ -14,6 +14,15 @@ describe('public site SEO', () => {
     }
   });
 
+  it('keeps titles to 60 characters and descriptions whole (Google cuts longer titles, "…" reads as broken)', () => {
+    for (const p of SITEMAP_PAGES.filter(x => !x.path.startsWith('/blog/'))) {
+      expect(p.title.length, p.path).toBeLessThanOrEqual(60);
+      expect(p.description.endsWith('…'), p.path).toBe(false);
+      expect(p.description.length, p.path).toBeLessThanOrEqual(158);
+    }
+    expect(seoForPath('/online-store-pakistan')?.index).toBe(true);
+  });
+
   it('covers products and solutions, and keeps sign-in steps and unknown pages out', () => {
     expect(seoForPath('/products/pos')?.index).toBe(true);
     expect(seoForPath('/solutions/retail/')?.path).toBe('/solutions/retail');

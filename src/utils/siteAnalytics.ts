@@ -7,7 +7,7 @@
 const TRACKED_EXACT = new Set([
   '/', '/pricing', '/sellers', '/faq', '/privacy-policy', '/terms-of-service', '/cookie-policy', '/contact-us',
   '/book-demo', '/about', '/security', '/products', '/solutions',
-  '/register', '/signup', '/verify-otp', '/onboard', '/login', '/start', '/manuals', '/blog',
+  '/register', '/signup', '/verify-otp', '/onboard', '/login', '/start', '/online-store-pakistan', '/manuals', '/blog',
 ]);
 const TRACKED_PREFIXES = ['/products/', '/solutions/', '/onboard/', '/blog/'];
 

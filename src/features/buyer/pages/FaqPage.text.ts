@@ -5,7 +5,7 @@ export const FAQ_TEXT = siteText({
   en: {
     pageTitle: 'FAQ',
     title: 'Frequently asked questions',
-    subtitle: 'Find answers about your account, orders, payments and more.',
+    subtitle: 'Answers about selling on Solvexo, your account, orders, payments and more.',
     searchPlaceholder: 'Search for a question…',
     all: 'All',
     tryAgain: 'Try again',
