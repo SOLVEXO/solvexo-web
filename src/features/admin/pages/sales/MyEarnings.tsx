@@ -9,6 +9,7 @@ import { StatementView } from './PartnersTab';
 import { errMsg } from './sales.utils';
 import { apiMyOnboarding, type PartnerOnboarding } from '@/api/services/partnerProgramme';
 import { MyOnboarding } from './partners/MyOnboarding';
+import { MyDeals } from './partners/MyDeals';
 
 /** Before the agreement is signed a partner sees only their onboarding: there is nothing to earn yet. */
 const PRE_AGREEMENT = new Set(['applied', 'documents', 'review', 'agreement', 'rejected']);
@@ -55,6 +56,7 @@ export function MyEarnings() {
       {header}
       <div className="px-4 sm:px-7 py-5 flex flex-col gap-5 max-w-5xl">
         {onb && onb.stage === 'onboarding' && <MyOnboarding d={onb} onChange={setOnb} />}
+        <MyDeals />
         <section className="rounded-xl border border-bone bg-white p-4">
           <p className="text-[11px] font-bold uppercase tracking-wide text-slate mb-1.5">Your referral link</p>
           <div className="flex items-center gap-2 rounded-lg border border-bone bg-cream/60 px-3 py-2">
