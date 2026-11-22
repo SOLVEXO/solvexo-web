@@ -10,6 +10,7 @@ const api = vi.hoisted(() => ({
   apiPartnerBoard: vi.fn(), apiPartnerOnboarding: vi.fn(), apiApprovePartner: vi.fn(), apiTickChecklist: vi.fn(), apiReviewDocument: vi.fn(),
   apiMyOnboarding: vi.fn(), apiUploadMyDocument: vi.fn(), apiApplyPartner: vi.fn(), apiInvitePartner: vi.fn(),
   apiDeals: vi.fn(), apiDecideDeal: vi.fn(), apiMyDeals: vi.fn(), apiRegisterDeal: vi.fn(),
+  apiLeaderboard: vi.fn(), apiScorecard: vi.fn(), apiAddPartnerLog: vi.fn(),
 }));
 vi.mock('@/api/services/partnerProgramme', async (orig) => ({ ...(await orig<typeof import('@/api/services/partnerProgramme')>()), ...api }));
 vi.mock('@/components/comman/ui/Footer', () => ({ Footer: () => null }));
@@ -21,6 +22,7 @@ import { MyOnboarding } from './MyOnboarding';
 import { PartnersPage } from '@/features/buyer/pages/PartnersPage';
 import { DealsBoard } from './DealsBoard';
 import { MyDeals } from './MyDeals';
+import { ScorecardBoard } from './ScorecardBoard';
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -124,5 +126,36 @@ describe('deal registration', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /seller agreed/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
     await waitFor(() => expect(api.apiRegisterDeal).toHaveBeenCalledWith(expect.objectContaining({ businessName: 'Ali Shoes', phone: '03007654321', consent: true })));
+  });
+});
+
+const card = { prospects: 6, registrationsAccepted: 4, demos: 2, signups: 30, liveStores: 20, payingNow: 26, everPaid: 28, retention3mPercent: 80, retentionBase: 10, daysToFirstSale: 12, complaints: 1, complaintRatePercent: 3.8, earnedPKR: 54000, eligibleTier: 'silver' as const, tierStatus: 'eligible_for_higher' as const };
+
+describe('partner scorecards', () => {
+  it('ranks partners, flags a tier upgrade, opens the scorecard and records a monthly review', async () => {
+    api.apiLeaderboard.mockResolvedValue({ success: true, data: [
+      { _id: 'p1', name: 'Lahore Traders', tier: 'registered', territory: 'Lahore District', stage: 'live', status: 'active', milestones: null, ...card },
+      { _id: 'p2', name: 'Karachi Co', tier: 'registered', territory: null, stage: 'live', status: 'active', milestones: null, ...card, payingNow: 3, tierStatus: 'meets', eligibleTier: 'registered' },
+    ] });
+    const detail = {
+      partner: { _id: 'p1', name: 'Lahore Traders', tier: 'registered', territory: 'Lahore District', stage: 'live', agreement: null },
+      scorecard: card, milestones: [{ key: 'paying', label: 'Paying sellers (X)', target: null, actual: 26, met: null }], milestonesApproved: false,
+      trend: [{ month: '2026-11', registrations: 2, signups: 3, firstPayments: 1 }],
+      reviews: { lastMonthlyAt: null, monthlyDue: true, lastQbrAt: null, qbrDue: true }, log: [],
+    };
+    api.apiScorecard.mockResolvedValue({ success: true, data: detail });
+    api.apiAddPartnerLog.mockResolvedValue({ success: true, data: { ...detail, log: [{ _id: 'l1', type: 'monthly_review', at: '2026-11-22T00:00:00Z', summary: 'Good month', details: null, plan: null, about: null, resolvedAt: null, dueAt: null, snapshot: { payingNow: 26 }, visibleToPartner: true }] } });
+    render(<MemoryRouter><ScorecardBoard /></MemoryRouter>);
+    const rows = await screen.findAllByRole('row');
+    expect(within(rows[1]).getByText('Lahore Traders')).toBeInTheDocument(); // most paying sellers first
+    expect(within(rows[1]).getByText('→ Silver')).toBeInTheDocument();
+    fireEvent.click(within(rows[1]).getByText('Lahore Traders'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('Qualifies for a higher tier')).toBeInTheDocument();
+    expect(within(dialog).getByText(/awaiting management approval/)).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText('Summary'), { target: { value: 'Good month' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.apiAddPartnerLog).toHaveBeenCalledWith('p1', expect.objectContaining({ type: 'monthly_review', summary: 'Good month' })));
+    expect(await within(dialog).findByText('Good month')).toBeInTheDocument();
   });
 });
