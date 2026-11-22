@@ -824,6 +824,9 @@ export interface StoreCustomer {
   marketingSource?: string;
   marketingConsentAt?: string | null;
   marketingUnsubscribedAt?: string | null;
+  /** SMS / WhatsApp marketing consent recorded per store (from a customer import). Nothing sends these yet. */
+  smsMarketingOptIn?: boolean;
+  whatsappMarketingOptIn?: boolean;
   /** Signed up for marketing email but has no account/orders yet — `_id` is `sub:<subscriberId>`; only unsubscribe/remove apply. */
   isSubscriberOnly: boolean;
   /** Real GDPR erasure marker — this store's own data for this customer has been scrubbed (see apiEraseCustomerData). */

@@ -37,6 +37,8 @@ export interface BulkImportData {
   failed: BulkRowFailure[];
   skippedRows: { row: number; note: string }[];
   columns: string[];
+  /** Optional lines for the result screen (e.g. "Tax Exempt is not used yet"). */
+  notices?: string[];
 }
 
 export function apiGetImportTemplate(basePath: string) {
