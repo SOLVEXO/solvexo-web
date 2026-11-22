@@ -10,6 +10,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { SettingsCard } from '@/components/comman/settings';
 import { Modal } from '@/components/comman/ui/Modal';
 import { usePlatformCardOnFile } from '@/hooks/usePlatformCardOnFile';
+import { useToast } from '@/contexts/ToastContext';
 import { confirmPaymentIntentWithSecret } from '@/components/comman/ui/StripeCardPayment';
 import { completePlanChange, shouldBillImmediately } from '@/utils/planChangeFlow';
 import { PLAN_STATUS_TONE_CLASS, planStatusLabel } from '@/utils/planStatus';
@@ -148,6 +149,7 @@ function UsageBar({ label, used, max, Icon }: { label: string; used: number; max
 
 export default function StorePlanBilling({ embedded = false }: { embedded?: boolean } = {}) {
   const { storeId, store } = useStoreWorkspace();
+  const toast = useToast();
   // Display only: a Pakistani store sees Rs amounts (its own country); everything is billed in US$.
   const local = useLocalCurrencyForCountry(store?.country);
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
@@ -222,6 +224,7 @@ export default function StorePlanBilling({ embedded = false }: { embedded?: bool
         confirmPending: () => apiConfirmPendingPlanChange(storeId),
         fetchSub: () => apiGetStorePlatformPlan(storeId).then(r => r.data),
       });
+      toast.success(billNow ? `You're now on ${confirmingPlan.name}.` : `${confirmingPlan.name} is set — billing starts when your trial ends.`);
       setConfirmingPlan(null);
       load();
     } catch (err) {
