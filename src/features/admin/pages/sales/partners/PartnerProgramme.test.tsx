@@ -10,7 +10,7 @@ const api = vi.hoisted(() => ({
   apiPartnerBoard: vi.fn(), apiPartnerOnboarding: vi.fn(), apiApprovePartner: vi.fn(), apiTickChecklist: vi.fn(), apiReviewDocument: vi.fn(),
   apiMyOnboarding: vi.fn(), apiUploadMyDocument: vi.fn(), apiApplyPartner: vi.fn(), apiInvitePartner: vi.fn(),
   apiDeals: vi.fn(), apiDecideDeal: vi.fn(), apiMyDeals: vi.fn(), apiRegisterDeal: vi.fn(),
-  apiLeaderboard: vi.fn(), apiScorecard: vi.fn(), apiAddPartnerLog: vi.fn(),
+  apiLeaderboard: vi.fn(), apiScorecard: vi.fn(), apiAddPartnerLog: vi.fn(), apiConduct: vi.fn(),
 }));
 vi.mock('@/api/services/partnerProgramme', async (orig) => ({ ...(await orig<typeof import('@/api/services/partnerProgramme')>()), ...api }));
 vi.mock('@/components/comman/ui/Footer', () => ({ Footer: () => null }));
@@ -23,6 +23,7 @@ import { PartnersPage } from '@/features/buyer/pages/PartnersPage';
 import { DealsBoard } from './DealsBoard';
 import { MyDeals } from './MyDeals';
 import { ScorecardBoard } from './ScorecardBoard';
+import { ScorecardView } from './ScorecardView';
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -157,5 +158,29 @@ describe('partner scorecards', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(api.apiAddPartnerLog).toHaveBeenCalledWith('p1', expect.objectContaining({ type: 'monthly_review', summary: 'Good month' })));
     expect(await within(dialog).findByText('Good month')).toBeInTheDocument();
+  });
+});
+
+describe('conduct (B9, B14)', () => {
+  it('suspends with a written reason and then only offers reinstatement', async () => {
+    const detail = {
+      partner: { _id: 'p1', name: 'Lahore Traders', tier: 'registered', territory: null, stage: 'live', agreement: null, status: 'active', suspendedAt: null, suspendReason: null },
+      scorecard: card, milestones: [], milestonesApproved: true, trend: [], reviews: { lastMonthlyAt: null, monthlyDue: false, lastQbrAt: null, qbrDue: false }, log: [],
+    };
+    const suspended = { ...detail, partner: { ...detail.partner, status: 'paused', suspendedAt: '2026-11-22T00:00:00Z', suspendReason: 'Misrepresented Solvexo' } };
+    api.apiConduct.mockResolvedValue({ success: true, data: suspended });
+    const onChange = vi.fn();
+    const { rerender } = render(<MemoryRouter><ScorecardView d={detail as never} manage onChange={onChange} /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
+    expect(screen.getByText(/Only for serious cases/)).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Suspend' }).at(-1)!);
+    expect(api.apiConduct).not.toHaveBeenCalled(); // no reason yet
+    fireEvent.change(screen.getByLabelText('Reason (sent to the partner)'), { target: { value: 'Misrepresented Solvexo' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Suspend' }).at(-1)!);
+    await waitFor(() => expect(api.apiConduct).toHaveBeenCalledWith('p1', expect.objectContaining({ action: 'suspend', reason: 'Misrepresented Solvexo' })));
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(suspended));
+    rerender(<MemoryRouter><ScorecardView d={suspended as never} manage onChange={onChange} /></MemoryRouter>);
+    expect(screen.getByRole('button', { name: 'Reinstate' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Written warning' })).toBeNull();
   });
 });

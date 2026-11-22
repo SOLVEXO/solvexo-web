@@ -4,7 +4,8 @@ import { TIER_LABELS, apiProgrammeSettings, apiSaveProgrammeSettings, type Progr
 import { errMsg, useStableToast } from '../sales.utils';
 
 type NumKey = 'pilotDays' | 'termMonths' | 'noticeDays' | 'dealResponseWorkingDays' | 'dealProtectionDays' | 'pilotMinPayingSellers'
-  | 'pilotMinLiveStores' | 'pilotMaxComplaintRatePercent' | 'activationBonusPKR' | 'minPayoutPKR' | 'statementDay' | 'payoutDay';
+  | 'pilotMinLiveStores' | 'pilotMaxComplaintRatePercent' | 'activationBonusPKR' | 'minPayoutPKR' | 'statementDay' | 'payoutDay'
+  | 'cardFeePercent' | 'cardFeeFixedUSD' | 'withholdingTaxPercent' | 'supportNoticeDays';
 
 /** Fields, grouped as in the programme document. `nullable`: may stay empty ("not decided yet"). */
 const GROUPS: { title: string; ref: string; fields: { key: NumKey; label: string; nullable?: boolean }[] }[] = [
@@ -17,6 +18,11 @@ const GROUPS: { title: string; ref: string; fields: { key: NumKey; label: string
   { title: 'Payments', ref: 'A3 / B4', fields: [
     { key: 'activationBonusPKR', label: 'Activation bonus (PKR)', nullable: true }, { key: 'minPayoutPKR', label: 'Minimum payout (PKR)', nullable: true },
     { key: 'statementDay', label: 'Statement by (day of month)' }, { key: 'payoutDay', label: 'Payment by (day of month)' },
+    { key: 'withholdingTaxPercent', label: 'Withholding tax on payouts (%)', nullable: true },
+  ] },
+  { title: 'Commission base', ref: 'B4.1 / B4.4', fields: [
+    { key: 'cardFeePercent', label: 'Card processing fee (%)', nullable: true }, { key: 'cardFeeFixedUSD', label: 'Card fee per payment (US$)', nullable: true },
+    { key: 'supportNoticeDays', label: 'Notice before commission on a seller ends (days)' },
   ] },
 ];
 
@@ -106,6 +112,9 @@ export function ProgrammeSettingsModal({ onClose }: { onClose: () => void }) {
               </div>
             </Group>
           </div>
+          <p className="text-[12px] text-slate">
+            The card fee is taken out of the commission base only for card payments made after it is set{s.cardFeeFrom ? ` (in force since ${new Date(s.cardFeeFrom).toLocaleDateString()})` : ''}, so commission already earned never goes down. The activation bonus is paid once per seller that has paid for 2 full months and still pays; leave it empty for none.
+          </p>
           <p className="text-[12px] text-slate">
             Still awaiting approval: <Badge color="yellow">{['tiers', ...GROUPS.flatMap(g => g.fields.map(f => f.key)), 'agreementVersion', 'signingEntity'].filter(k => !approved(k)).length}</Badge> values.
           </p>

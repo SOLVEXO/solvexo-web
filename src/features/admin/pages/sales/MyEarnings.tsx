@@ -105,7 +105,7 @@ export function MyEarnings() {
           <p className="text-[12px] text-slate mb-2">Paid by {PAYOUT_LABELS[d.partner.payoutMethod]}{d.partner.payoutDetails ? ` to ${d.partner.payoutDetails}` : ''}. To change your payout details, contact your Solvexo manager.</p>
           {d.payouts.length === 0 ? <p className="text-[12.5px] text-slate">No payouts yet.</p> : (
             <ul className="divide-y divide-bone">
-              {d.payouts.map(p => <li key={p._id} className="flex items-center gap-3 py-2 text-[13px]"><span className="w-28 text-slate">{day(p.paidAt)}</span><span className="font-semibold tabular-nums">{formatPKR(p.amountPKR)}</span><span className="text-slate">{PAYOUT_LABELS[p.method] ?? p.method}{p.reference ? ` · ref ${p.reference}` : ''}</span></li>)}
+              {d.payouts.map(p => <li key={p._id} className="flex items-center gap-3 py-2 text-[13px]"><span className="w-28 text-slate">{day(p.paidAt)}</span><span className="font-semibold tabular-nums">{formatPKR(p.amountPKR)}</span><span className="text-slate">{PAYOUT_LABELS[p.method] ?? p.method}{p.reference ? ` · ref ${p.reference}` : ''}{p.whtPKR ? ` · tax withheld ${formatPKR(p.whtPKR)}, you received ${formatPKR(p.netPKR ?? p.amountPKR - p.whtPKR)}` : ''}</span></li>)}
             </ul>
           )}
         </section>

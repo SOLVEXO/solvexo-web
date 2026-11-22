@@ -67,6 +67,7 @@ export interface ProgrammeSettings {
   pilotMinPayingSellers: number | null; pilotMinLiveStores: number | null; pilotMaxComplaintRatePercent: number | null;
   activationBonusPKR: number | null; minPayoutPKR: number | null; statementDay: number; payoutDay: number;
   agreementVersion: string; signingEntity: string | null; approvedKeys: string[];
+  cardFeePercent: number | null; cardFeeFixedUSD: number | null; cardFeeFrom: string | null; withholdingTaxPercent: number | null; supportNoticeDays: number;
 }
 
 export interface PartnerApplication {
@@ -172,7 +173,7 @@ export interface LogEntry {
   resolvedAt: string | null; dueAt: string | null; snapshot: Partial<Scorecard> | null; visibleToPartner: boolean;
 }
 export interface ScorecardDetail {
-  partner: { _id: string; name: string; tier: PartnerTier | null; territory: string | null; stage: PartnerStage; agreement: Agreement | null };
+  partner: { _id: string; name: string; tier: PartnerTier | null; territory: string | null; stage: PartnerStage; agreement: Agreement | null; status?: 'active' | 'paused'; suspendedAt?: string | null; suspendReason?: string | null };
   scorecard: Scorecard; milestones: Milestone[]; milestonesApproved: boolean;
   trend: { month: string; registrations: number; signups: number; firstPayments: number }[];
   reviews: { lastMonthlyAt: string | null; monthlyDue: boolean; lastQbrAt: string | null; qbrDue: boolean };
@@ -184,6 +185,9 @@ export const apiScorecard = (id: string) => client.get<never, ApiResponse<Scorec
 export const apiAddPartnerLog = (id: string, body: { type: 'monthly_review' | 'qbr' | 'complaint' | 'note'; summary: string; details?: string; plan?: string; about?: string; at?: string; visibleToPartner?: boolean }) =>
   client.post<never, ApiResponse<ScorecardDetail>>(`${B}/scorecards/${id}/log`, body, quiet);
 export const apiResolveComplaint = (id: string, logId: string) => client.post<never, ApiResponse<ScorecardDetail>>(`${B}/scorecards/${id}/log/${logId}/resolve`, {}, quiet);
+/** B9/B14 conduct: written warning, 60-day improvement plan, suspension with a reason, reinstatement. */
+export const apiConduct = (id: string, body: { action: 'warning' | 'improvement_plan' | 'suspend' | 'reinstate'; reason: string; details?: string; plan?: string; dueAt?: string }) =>
+  client.post<never, ApiResponse<ScorecardDetail>>(`${B}/scorecards/${id}/conduct`, body, quiet);
 export const apiMyScorecard = () => client.get<never, ApiResponse<ScorecardDetail | null>>('/api/admin/partner-portal/scorecard');
 
 export const pct = (n: number | null) => (n === null ? '—' : `${n}%`);
