@@ -65,6 +65,7 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
       { label: 'About Solvexo', path: '/about' },
       { label: 'Security',      path: '/security' },
       { label: 'For Sellers',   path: '/sellers' },
+      { label: 'Become a partner', path: '/partners' },
       { label: 'Pricing',       path: '/pricing' },
     ],
   },

@@ -192,8 +192,11 @@ export type CommissionPlanInput = Partial<Omit<CommissionPlan, '_id' | 'partners
 export interface Partner {
   _id: string; name: string; kind: PartnerKind; code: string; adminId: string | null; email: string | null; phone: string | null; city: string | null;
   planId: string | null; payoutMethod: PayoutMethod; payoutDetails: string | null; status: 'active' | 'paused'; notes?: string | null; createdAt: string;
+  /** Channel Partner Programme stage; null = set up before the programme (live). */
+  stage?: 'applied' | 'documents' | 'review' | 'agreement' | 'onboarding' | 'live' | 'rejected' | null;
+  tier?: 'registered' | 'silver' | 'gold' | 'regional' | null;
 }
-export type PartnerInput = Partial<Omit<Partner, '_id' | 'createdAt'>>;
+export type PartnerInput = Partial<Omit<Partner, '_id' | 'createdAt' | 'stage' | 'tier'>>;
 export interface PartnerRow extends Partner { planName: string | null; referred: number; payingNow: number; pendingPKR: number; payablePKR: number; paidPKR: number }
 export interface CommissionLine { _id: string; earnedAt: string; payableAt: string; type: 'bounty' | 'percent' | 'adjustment'; description: string | null; merchant: string | null; amountPKR: number; status: string }
 export interface PartnerPayout { _id: string; amountPKR: number; paidAt: string; method: PayoutMethod; reference: string | null; note?: string | null }

@@ -90,6 +90,13 @@ function contentFor(page: PublicPageSeo): string {
   if (page.path === '/manuals') {
     return MANUALS.map(m => `<h2>${esc(m.title)}</h2><p>${esc(m.summary)}</p>${links([m.complete, ...m.chapters].map(c => ({ label: `${c.label} (PDF)`, path: c.file })))}`).join('');
   }
+  if (page.path === '/partners') {
+    return [
+      '<p>Help shops and sellers in your city go online and sell in person with Solvexo, and earn on every month they stay subscribed.</p>',
+      '<h2>Ways to partner</h2><ul><li>Referral Agent: individuals who introduce sellers with a partner link or code.</li><li>Authorised Reseller: registered businesses that sell, onboard and give first-line support.</li><li>Service Partner: agencies and IT firms doing paid setup work.</li><li>Regional Partner: by invitation, for Gold resellers who meet regional milestones.</li></ul>',
+      '<h2>How joining works</h2><ol><li>Apply on this page.</li><li>Upload your documents.</li><li>Sign the partner agreement.</li><li>Your first 30 days: demo store, training, certification, first sellers live.</li></ol>',
+    ].join('');
+  }
   if (page.path === '/faq') {
     return `<h2>For sellers</h2>${faqHtml(SELLER_FAQ)}`;
   }
