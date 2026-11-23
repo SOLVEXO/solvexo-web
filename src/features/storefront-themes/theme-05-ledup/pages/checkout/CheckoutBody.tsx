@@ -72,7 +72,8 @@ export function CheckoutBody({ storeId, storeName, baseCurrency, items, buyNow, 
   const { checkout, summary, setCheckout } = creation;
 
   const credit = useStoreCredit({ storeId, checkout, setCheckout, loggedIn: loggedIn && !guest });
-  const creditCoversAll = !!checkout?.storeCreditApplied && checkout.totalAmount <= 0;
+  // Nothing left to pay: store credit covers it, or the order is free (free download, 100% discount). The server decides which endpoint places it.
+  const creditCoversAll = !!checkout && checkout.totalAmount <= 0;
   const discounts = useCheckoutDiscounts({ checkout, setCheckout, resyncCredit: credit.resync });
 
   // --- finishing: one-time side effects when an order is placed ---

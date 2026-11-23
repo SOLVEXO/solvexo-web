@@ -94,6 +94,13 @@ export function apiStoreCreditPayment(payload: { checkoutId: string }, idempoten
   );
 }
 
+/** POST /api/payment/free-payment — places an order whose server-computed total is zero (free download, 100% discount). */
+export function apiFreePayment(payload: { checkoutId: string }, idempotencyKey: string) {
+  return client.post<never, CodPaymentResponse>(
+    ENDPOINTS.PAYMENT.FREE_PAYMENT, payload, { headers: { 'Idempotency-Key': idempotencyKey } },
+  );
+}
+
 /** POST /api/payment/initiate-payment — creates (or reuses) a Stripe PaymentIntent
  *  for a checkout. Returns a clientSecret for Stripe Elements/PaymentElement.
  *  `paymentMode: 'split'` (mixed carts only) charges just the digital-items

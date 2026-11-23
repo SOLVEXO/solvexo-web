@@ -918,6 +918,7 @@ export const ENDPOINTS = {
   PAYMENT: {
     COD:              '/api/payment/cod-payment',
     STORE_CREDIT_PAYMENT: '/api/payment/store-credit-payment',
+    FREE_PAYMENT: '/api/payment/free-payment',
     INITIATE_PAYMENT: '/api/payment/initiate-payment',
     STATUS:           '/api/payment/status',
     OPEN_DISPUTE_COUNT: (storeId: string) => `/api/payment/disputes/${storeId}/open-count`,

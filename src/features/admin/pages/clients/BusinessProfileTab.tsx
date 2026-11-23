@@ -24,6 +24,21 @@ const answerText = (v: unknown): string | null => {
   return humanize(String(v));
 };
 
+// Seller type / selling categories use the seller-facing names (what the seller saw in onboarding and Settings).
+const SELLER_TYPE_LABEL: Record<string, string> = {
+  creator: 'Creator', educator: 'Educator', retailer: 'Retailer', brand_business: 'Brand / Business', freelancer: 'Freelancer / Reseller', mix: 'Mix of the above',
+};
+const PRODUCT_TYPE_LABEL: Record<string, string> = {
+  physical_products: 'Physical products', digital_downloads: 'Digital downloads', educational_resources: 'Educational resources',
+  services_bookings: 'Services / bookings', in_person_pos: 'In-person / POS', subscriptions: 'Subscriptions',
+};
+const profileAnswerText = (key: string, v: unknown): string | null => {
+  const labels = key === 'sellerType' ? SELLER_TYPE_LABEL : PRODUCT_TYPE_LABEL;
+  const one = (x: unknown) => labels[String(x)] ?? humanize(String(x));
+  if (Array.isArray(v)) return v.length ? v.map(one).join(', ') : null;
+  return v == null || v === '' ? null : one(v);
+};
+
 function Rows({ rows }: { rows: [string, ReactNode][] }) {
   return (
     <dl className="grid grid-cols-[minmax(120px,40%)_1fr] gap-x-4 text-[12.5px]">
@@ -55,7 +70,7 @@ function ContactCard({ seller, stores }: { seller: ClientBusinessProfile['seller
   const cameFrom = acq ? [acq.source, acq.medium && `(${acq.medium})`, acq.campaign && `campaign "${acq.campaign}"`, acq.landingPage && `landing ${acq.landingPage}`].filter(Boolean).join(' · ') : '';
   const wa = seller.phone ? whatsappHref(seller.phone) : null;
   const answers = Object.entries(seller.onboardingAnswers ?? {})
-    .map(([k, v]) => [humanize(k), answerText(v)] as const)
+    .map(([k, v]) => [humanize(k), k === 'sellerType' || k === 'productTypes' ? profileAnswerText(k, v) : answerText(v)] as const)
     .filter((e): e is readonly [string, string] => !!e[1]);
 
   const rows: [string, ReactNode][] = [

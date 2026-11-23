@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { apiApplyStoreCredit, apiRemoveStoreCredit, type Checkout, type ApplyStoreCreditData } from '@/api/services/checkout';
-import { apiStoreCreditPayment, type PlacedOrder } from '@/api/services/payment';
+import { apiStoreCreditPayment, apiFreePayment, type PlacedOrder } from '@/api/services/payment';
 import { apiGetMyStoreCredit } from '@/api/services/storeCredit';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { ts } from '@/utils/tStatic';
@@ -103,7 +103,10 @@ export function useStoreCredit({ storeId, checkout, setCheckout, loggedIn, onTot
     setPlacing(true); setPlaceError('');
     if (!placeKeyRef.current) placeKeyRef.current = `store-credit-${checkout._id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     try {
-      const res = await apiStoreCreditPayment({ checkoutId: checkout._id }, placeKeyRef.current);
+      // Credit that covers everything and a plainly free order are placed by two endpoints; the server re-checks the total.
+      const res = checkout.storeCreditApplied
+        ? await apiStoreCreditPayment({ checkoutId: checkout._id }, placeKeyRef.current)
+        : await apiFreePayment({ checkoutId: checkout._id }, placeKeyRef.current);
       return res.data.orders;
     } catch (err) {
       placeKeyRef.current = null; // a failed attempt must not replay on retry
@@ -112,5 +115,5 @@ export function useStoreCredit({ storeId, checkout, setCheckout, loggedIn, onTot
     } finally { setPlacing(false); }
   };
 
-  return { balance, balanceCurrency, busy, msg, msgApplied, apply, remove, resync, place, placing, placeError, available: balance > 0 || !!checkout?.storeCreditApplied };
+  return { balance, balanceCurrency, busy, msg, msgApplied, apply, remove, resync, place, placing, placeError, applied: !!checkout?.storeCreditApplied, available: balance > 0 || !!checkout?.storeCreditApplied };
 }

@@ -158,7 +158,7 @@ export function PaymentStep(props: PaymentStepProps) {
   } else if (creditCoversAll) {
     body = (
       <div className="flex flex-col gap-4">
-        <Hint>{ts('checkout.creditCovers', 'Your store credit covers the full amount - no payment needed.')}</Hint>
+        {credit.applied && <Hint>{ts('checkout.creditCovers', 'Your store credit covers the full amount - no payment needed.')}</Hint>}
         {credit.placeError && <Notice tone="error">{credit.placeError}</Notice>}
         <Consent value={emailOffers} onChange={setEmailOffers} storeName={storeName} />
         <PillButton full loading={creditPlacing || credit.placing} onClick={onPlaceWithCredit}>
