@@ -1,3 +1,4 @@
+import { PageJump } from '@/components/comman/ui/Pagination';
 import { useCallback, useEffect, useState } from 'react';
 import { Copy, Plus, RotateCw, Warehouse } from 'lucide-react';
 import { useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
@@ -158,6 +159,7 @@ export default function FulfillmentTab() {
             <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
             <span className="text-[12.5px] text-slate">Page {page} of {Math.max(1, Math.ceil(total / 15))}</span>
             <Button size="sm" variant="secondary" disabled={page * 15 >= total} onClick={() => setPage((p) => p + 1)}>Next</Button>
+            <PageJump page={page} totalPages={Math.max(1, Math.ceil(total / 15))} onChange={setPage} />
           </div>
         )}
       </section>

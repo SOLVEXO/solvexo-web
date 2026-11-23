@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -7,6 +8,32 @@ interface PaginationProps {
   perPage?: number;
   onChange: (page: number) => void;
   className?: string;
+}
+
+/** "Go to page" box — type a number, press Enter. Out-of-range values are clamped. */
+export function PageJump({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
+  const [val, setVal] = useState('');
+  if (totalPages <= 2) return null;
+  const go = () => {
+    const n = parseInt(val, 10);
+    setVal('');
+    if (!Number.isFinite(n)) return;
+    const target = Math.min(totalPages, Math.max(1, n));
+    if (target !== page) onChange(target);
+  };
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={val}
+      onChange={(e) => setVal(e.target.value.replace(/\D/g, '').slice(0, 6))}
+      onKeyDown={(e) => { if (e.key === 'Enter') go(); }}
+      onBlur={() => { if (val) go(); }}
+      placeholder="Go to"
+      aria-label="Go to page"
+      className="w-[64px] h-8 sm:h-8 max-sm:h-11 rounded-md border border-bone bg-white text-center text-[13px] text-carbon placeholder:text-slate focus:outline-none focus:border-brand-orange"
+    />
+  );
 }
 
 export function Pagination({ page, total, perPage = 10, onChange, className }: PaginationProps) {
@@ -68,6 +95,7 @@ export function Pagination({ page, total, perPage = 10, onChange, className }: P
         >
           <ChevronRight size={14} />
         </button>
+        <span className="ml-1"><PageJump page={page} totalPages={totalPages} onChange={onChange} /></span>
       </div>
 
       <div className="flex sm:hidden items-center gap-3">
@@ -90,6 +118,7 @@ export function Pagination({ page, total, perPage = 10, onChange, className }: P
         >
           <ChevronRight size={18} />
         </button>
+        <PageJump page={page} totalPages={totalPages} onChange={onChange} />
       </div>
     </div>
   );

@@ -3,7 +3,6 @@ import { MapPin, Monitor, ExternalLink, Clock } from 'lucide-react';
 import { Modal } from './Modal';
 import { Badge } from './Badge';
 import { Button } from './Button';
-import { formatDate } from '../analytics/format';
 
 /** Loose shape covering both `ActivityLogEntry` (seller) and `AdminActivityLogEntry`
  *  (admin) — every field either type actually has, typed generically here so
@@ -16,6 +15,11 @@ export interface ActivityLogDetailEntry {
   actorRole: string | null;
   category: string;
   action: string;
+  title?: string;
+  isSystem?: boolean;
+  /** The entry's own store currency / timezone (server-enriched). */
+  storeCurrency?: string | null;
+  storeTimezone?: string | null;
   description: string | null;
   targetId: string | null;
   targetType: string | null;
@@ -45,14 +49,28 @@ function fieldLabel(field: string) {
  *  ambiguous (0.08 could be 8% or $0.08), so this leans on the field's own
  *  name (same convention every call site already uses: *rate as a 0-1
  *  fraction, *price/*amount in the seller's real currency units). */
-function fieldValue(field: string, value: unknown): string {
-  if (value === null || value === undefined) return '—';
+function money(value: number, currency: string): string {
+  try { return new Intl.NumberFormat('en', { style: 'currency', currency }).format(value); } catch { return `${currency} ${value.toFixed(2)}`; }
+}
+
+function fieldValue(field: string, value: unknown, currency: string): string {
+  if (value === null || value === undefined || value === '') return '—';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'number') {
     if (/rate$/i.test(field)) return `${(value * 100).toFixed(2)}%`;
-    if (/(price|amount)$/i.test(field)) return `$${value.toFixed(2)}`;
+    if (/(price|amount|cost|fee|total|balance)$/i.test(field)) return money(value, currency);
     return String(value);
   }
+  if (typeof value === 'object') { try { return JSON.stringify(value); } catch { return String(value); } }
   return String(value);
+}
+
+/** "Nov 23, 2026, 10:00 AM" in the store's own timezone (falls back to the browser's if the zone is missing/invalid). */
+function formatWhen(iso: string, timeZone?: string | null): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  const opts: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+  try { return d.toLocaleString('en-US', timeZone ? { ...opts, timeZone } : opts); } catch { return d.toLocaleString('en-US', opts); }
 }
 
 function isDiffMetadata(metadata: Record<string, any>): metadata is { changes: { field: string; before: unknown; after: unknown }[] } {
@@ -66,9 +84,16 @@ export interface ActivityLogDetailModalProps {
   targetHref?: string | null;
   /** Lazy-loads this entity's full history on demand — omitted (or a target-less entry) hides the section entirely. */
   fetchTimeline?: (targetId: string) => Promise<{ data: ActivityLogDetailEntry[] }>;
+  /** ISO currency of the store this entry belongs to — money fields in the diff are shown in it (admin views are USD). Default USD. */
+  currency?: string;
+  /** IANA timezone of the store — all times are shown in it. Default: the viewer's own. */
+  timeZone?: string | null;
 }
 
-export function ActivityLogDetailModal({ entry, onClose, targetHref, fetchTimeline }: ActivityLogDetailModalProps) {
+export function ActivityLogDetailModal({ entry, onClose, targetHref, fetchTimeline, currency: currencyProp = 'USD', timeZone: timeZoneProp }: ActivityLogDetailModalProps) {
+  // The entry's own store wins: a platform-wide (admin) view then still shows a PKR store's values in PKR and its times in that store's zone.
+  const currency = entry.storeCurrency ?? currencyProp;
+  const timeZone = entry.storeTimezone ?? timeZoneProp;
   const [timeline, setTimeline] = useState<ActivityLogDetailEntry[] | null>(null);
   const [loadingTimeline, setLoadingTimeline] = useState(false);
   const [timelineError, setTimelineError] = useState('');
@@ -98,7 +123,7 @@ export function ActivityLogDetailModal({ entry, onClose, targetHref, fetchTimeli
     <Modal mobileSheet title="Activity Detail" width={560} onClose={onClose} footer={<Button variant="outline" onClick={onClose}>Close</Button>}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <p className="text-[15px] font-bold text-charcoal">{actionTitle(entry.action)}</p>
+          <p className="text-[15px] font-bold text-charcoal">{entry.title ?? actionTitle(entry.action)}</p>
           <div className="flex items-center gap-1.5">
             {entry.isSecurityAlert && <Badge color="red" size="sm">Security Alert</Badge>}
             <Badge size="sm">{entry.category}</Badge>
@@ -110,7 +135,7 @@ export function ActivityLogDetailModal({ entry, onClose, targetHref, fetchTimeli
         <div className="grid grid-cols-2 gap-3 bg-cream border border-bone rounded-[8px] px-3.5 py-3 text-[12.5px]">
           <div>
             <span className="text-slate flex items-center gap-1"><Clock size={11} /> When</span>
-            <p className="font-medium text-carbon mt-0.5">{formatDate(entry.createdAt)}</p>
+            <p className="font-medium text-carbon mt-0.5">{formatWhen(entry.createdAt, timeZone)}</p>
           </div>
           <div>
             <span className="text-slate">Actor</span>
@@ -153,9 +178,9 @@ export function ActivityLogDetailModal({ entry, onClose, targetHref, fetchTimeli
                 <div key={c.field} className="flex items-center justify-between gap-2 px-3 py-2 text-[12.5px]">
                   <span className="text-slate">{fieldLabel(c.field)}</span>
                   <span className="font-medium text-carbon">
-                    <span className="text-slate line-through">{fieldValue(c.field, c.before)}</span>
+                    <span className="text-slate line-through">{fieldValue(c.field, c.before, currency)}</span>
                     {' → '}
-                    <span className="text-brand-orange">{fieldValue(c.field, c.after)}</span>
+                    <span className="text-brand-orange">{fieldValue(c.field, c.after, currency)}</span>
                   </span>
                 </div>
               ))}
@@ -184,7 +209,7 @@ export function ActivityLogDetailModal({ entry, onClose, targetHref, fetchTimeli
               <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
                 {(timeline ?? []).map(t => (
                   <div key={t._id} className="flex items-start gap-2 text-[12px]">
-                    <span className="text-slate whitespace-nowrap shrink-0">{formatDate(t.createdAt)}</span>
+                    <span className="text-slate whitespace-nowrap shrink-0">{formatWhen(t.createdAt, timeZone)}</span>
                     <span className="text-charcoal">{actionTitle(t.action)}{t.actorName ? ` — ${t.actorName}` : ''}</span>
                   </div>
                 ))}

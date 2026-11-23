@@ -1,3 +1,4 @@
+import { PageJump } from '@/components/comman/ui/Pagination';
 import { useEffect, useState } from 'react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Modal } from '@/components/comman/ui/Modal';
@@ -519,6 +520,7 @@ function VouchersTab({ storeId }: { storeId: string }) {
               className="px-3 py-[6px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
               Next
             </button>
+            <PageJump page={page} totalPages={Math.max(1, Math.ceil(total / limit))} onChange={setPage} />
           </div>
         </div>
       )}

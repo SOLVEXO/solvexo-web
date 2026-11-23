@@ -1,3 +1,4 @@
+import { PageJump } from '@/components/comman/ui/Pagination';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Archive, Download, Inbox, Mail, Paperclip, Search, ShieldAlert, Trash2 } from 'lucide-react';
@@ -236,6 +237,7 @@ export default function ContactMessages() {
             <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
             <span className="text-[12px] text-slate">Page {page} of {totalPages}</span>
             <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+            <PageJump page={page} totalPages={totalPages} onChange={setPage} />
           </div>
         )}
       </div>

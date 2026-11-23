@@ -1,3 +1,4 @@
+import { PageJump } from '@/components/comman/ui/Pagination';
 import { useState } from 'react';
 import { AlertCircle, RotateCw } from 'lucide-react';
 import { Button, Input, Select } from '@/components/comman/ui';
@@ -163,6 +164,7 @@ export function FbrInvoiceList({ load, retry, resolve, refreshKey = 0, stats, re
           <div className="flex gap-2">
             <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
             <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage(p => p + 1)}>Next</Button>
+            <PageJump page={page} totalPages={pages} onChange={setPage} />
           </div>
         </div>
       )}

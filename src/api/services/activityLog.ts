@@ -11,12 +11,14 @@ export type ActivityCategory = 'products' | 'orders' | 'finance' | 'marketing' |
 export type AdminActivityCategory =
   | ActivityCategory
   | 'loyalty' | 'subscriptions' | 'platform_billing' | 'platform_plans'
-  | 'seo' | 'announcements' | 'moderation' | 'promotions' | 'admin_audit' | 'admin_team';
+  | 'seo' | 'announcements' | 'moderation' | 'promotions' | 'admin_audit' | 'admin_team'
+  | 'inventory' | 'integrations' | 'b2b' | 'khata' | 'fulfillment' | 'checkout_rules' | 'experiments' | 'apps' | 'webhooks' | 'api_tokens' | 'api_token';
 
 export const ADMIN_ACTIVITY_CATEGORIES: AdminActivityCategory[] = [
   'products', 'orders', 'finance', 'marketing', 'customers', 'settings', 'security',
   'loyalty', 'subscriptions', 'platform_billing', 'platform_plans',
   'seo', 'announcements', 'moderation', 'promotions',
+  'inventory', 'integrations', 'b2b', 'khata', 'fulfillment', 'checkout_rules', 'experiments', 'apps', 'webhooks', 'api_tokens', 'admin_audit', 'admin_team',
 ];
 
 /** City/country resolved from `ip` — see the backend's `resolveLocationFromIp`. Null for a private/local IP. */
@@ -39,6 +41,11 @@ export interface ActivityLogEntry {
   location:        ActivityLogLocation | null;
   device:          string | null;
   isSecurityAlert: boolean;
+  /** Read-time enrichment: human title for `action`, and true for automated events (no human actor). */
+  title?:          string;
+  isSystem?:       boolean;
+  storeCurrency?:  string | null;
+  storeTimezone?:  string | null;
   metadata:        Record<string, any> | null;
   createdAt:       string;
 }
@@ -48,9 +55,13 @@ export interface ActivityLogQuery {
   limit?:    number;
   category?: ActivityCategory;
   actorId?:  string;
+  action?:   string;
   search?:   string;
   from?:     string;
   to?:       string;
+  isSecurityAlert?: boolean;
+  /** Hide automated events (daily SEO audit, recovery emails…) — only rows with a human actor. */
+  excludeSystem?: boolean;
 }
 
 export interface ActivityLogStats {
@@ -88,9 +99,11 @@ export function apiGetActivityTimeline(storeId: string, targetId: string) {
 }
 
 /** GET /api/activity-log/:storeId/export — triggers a CSV file download */
-export async function apiExportActivityLog(storeId: string, storeName: string) {
-  // A Blob, not 'text': the response interceptor rejects any non-object body.
-  const blob = await client.get<never, Blob>(ENDPOINTS.ACTIVITY_LOG.EXPORT(storeId), { responseType: 'blob' });
+export async function apiExportActivityLog(storeId: string, storeName: string, query: Omit<ActivityLogQuery, 'page' | 'limit'> = {}) {
+  // A Blob, not 'text': the response interceptor rejects any non-object body. Same filters as the list, so the file matches what is on screen.
+  const params: Record<string, string> = {};
+  Object.entries(query).forEach(([k, v]) => { if (v !== undefined && v !== '') params[k] = String(v); });
+  const blob = await client.get<never, Blob>(ENDPOINTS.ACTIVITY_LOG.EXPORT(storeId), { params, responseType: 'blob' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -120,6 +133,10 @@ export interface AdminActivityLogEntry {
   location:        ActivityLogLocation | null;
   device:          string | null;
   isSecurityAlert: boolean;
+  title?:          string;
+  isSystem?:       boolean;
+  storeCurrency?:  string | null;
+  storeTimezone?:  string | null;
   metadata:        Record<string, any> | null;
   createdAt:       string;
 }
@@ -142,6 +159,7 @@ export interface AdminActivityLogQuery {
   action?:          string;
   targetType?:      string;
   isSecurityAlert?: boolean;
+  excludeSystem?:   boolean;
   search?:          string;
   from?:            string;
   to?:              string;
@@ -173,7 +191,7 @@ export async function apiExportAdminActivityLog(query: AdminActivityLogQuery = {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'admin-activity-log.csv';
+  a.download = `admin-activity-log-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }

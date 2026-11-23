@@ -1,3 +1,4 @@
+import { PageJump } from '@/components/comman/ui/Pagination';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { Plus, Tag, Pencil, Power, PowerOff, Trash2, ChevronLeft, ChevronRight, Link2, QrCode } from 'lucide-react';
@@ -393,6 +394,7 @@ export function DiscountCodes({ storeId, storeCurrency, storeUrl, createOpen, on
           <span>Page {page} of {pages}</span>
           <Button variant="outline" icon={<ChevronLeft size={14} />} disabled={page <= 1 || loading} onClick={() => setPage(p => Math.max(1, p - 1))}>Previous</Button>
           <Button variant="outline" icon={<ChevronRight size={14} />} disabled={page >= pages || loading} onClick={() => setPage(p => p + 1)}>Next</Button>
+          <PageJump page={page} totalPages={pages} onChange={setPage} />
         </div>
       )}
 

@@ -32,7 +32,7 @@ const PAGE_SIZE = 20;
 
 // Cycled over a small palette — 15 categories, 6 colors, repeats by design
 // rather than needing a bespoke color per category.
-const CATEGORY_COLOR: Record<AdminActivityCategory, BadgeColor> = {
+const CATEGORY_COLOR: Partial<Record<AdminActivityCategory, BadgeColor>> = {
   products: 'blue', orders: 'blue', finance: 'orange', marketing: 'yellow',
   customers: 'green', settings: 'gray', security: 'red',
   loyalty: 'green', subscriptions: 'blue', platform_billing: 'orange',
@@ -137,7 +137,7 @@ export function AdminActivityLog({ embedded = false }: { embedded?: boolean } = 
       key: 'action', header: 'Action',
       render: r => (
         <div className="max-w-[220px]">
-          <p className="font-medium text-charcoal truncate m-0">{actionTitle(r.action)}</p>
+          <p className="font-medium text-charcoal truncate m-0">{r.title ?? actionTitle(r.action)}</p>
           {r.description && <p className="text-[11px] text-slate truncate m-0">{r.description}</p>}
         </div>
       ),
@@ -155,7 +155,7 @@ export function AdminActivityLog({ embedded = false }: { embedded?: boolean } = 
               {r.actorName ?? r.actorId}
             </button>
           ) : (
-            <p className="text-graphite truncate m-0">—</p>
+            <p className="text-graphite truncate m-0">{r.actorName ?? "System"}</p>
           )}
           {r.actorRole && <p className="text-[11px] text-slate m-0">{r.actorRole}</p>}
         </div>
@@ -201,6 +201,7 @@ export function AdminActivityLog({ embedded = false }: { embedded?: boolean } = 
         </div>
       )}
 
+      {(data?.pagination?.total ?? 0) > 50000 && <p className="text-[11.5px] text-slate m-0">Export includes the 50,000 most recent events for this filter — narrow the date range or store for the rest.</p>}
       {exportError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{exportError}</div>}
 
       <div className="bg-white border border-bone rounded-[10px] overflow-hidden">

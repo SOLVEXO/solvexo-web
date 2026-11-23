@@ -1,3 +1,4 @@
+import { PageJump } from '@/components/comman/ui/Pagination';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, Link2, RefreshCw, ShieldCheck, Trash2, LogOut, Users, History, ClipboardCheck } from 'lucide-react';
 import { Button, Modal, Toggle } from '@/components/comman/ui';
@@ -417,7 +418,8 @@ function AuditPane() {
         <div className="flex items-center justify-between text-[12.5px] text-slate">
           <span>Page {pg.page} of {pg.totalPages}</span>
           <div className="flex gap-2"><Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
-            <Button size="sm" variant="outline" disabled={page >= pg.totalPages} onClick={() => setPage(p => p + 1)}>Next</Button></div>
+            <Button size="sm" variant="outline" disabled={page >= pg.totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+            <PageJump page={page} totalPages={pg.totalPages} onChange={setPage} /></div>
         </div>
       )}
     </div>

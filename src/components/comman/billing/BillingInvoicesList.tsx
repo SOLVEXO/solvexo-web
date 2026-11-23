@@ -1,3 +1,4 @@
+import { PageJump } from '@/components/comman/ui/Pagination';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/comman/ui/Button';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
@@ -101,6 +102,7 @@ export function BillingInvoicesList({ storeId, refreshKey = 0 }: { storeId: stri
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Previous</Button>
             <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage(p => Math.min(pages, p + 1))}>Next</Button>
+            <PageJump page={page} totalPages={pages} onChange={setPage} />
           </div>
         </div>
       )}

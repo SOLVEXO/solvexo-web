@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { PageJump } from '@/components/comman/ui/Pagination';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import { useActivityLogLive } from '@/hooks/useActivityLogLive';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
@@ -20,7 +21,7 @@ function resolveTargetHref(storeId: string, targetType: string | null, targetId:
   return null;
 }
 
-type FilterCategory = 'all' | ActivityCategory;
+type FilterCategory = 'all' | ActivityCategory | 'inventory' | 'loyalty' | 'subscriptions' | 'seo' | 'integrations' | 'apps';
 const PAGE_SIZE = 10;
 
 const FILTER_CATEGORIES: { id: FilterCategory; label: string }[] = [
@@ -32,6 +33,12 @@ const FILTER_CATEGORIES: { id: FilterCategory; label: string }[] = [
   { id: 'customers',  label: 'Customers'  },
   { id: 'settings',   label: 'Settings'   },
   { id: 'security',   label: 'Security'   },
+  { id: 'inventory',  label: 'Inventory'  },
+  { id: 'loyalty',    label: 'Loyalty'    },
+  { id: 'subscriptions', label: 'Subscriptions' },
+  { id: 'seo',        label: 'SEO'        },
+  { id: 'integrations', label: 'Integrations' },
+  { id: 'apps',       label: 'Apps'       },
 ];
 
 const categoryStyle: Record<string, { bg: string; color: string }> = {
@@ -49,6 +56,11 @@ function actionTitle(action: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+function changeCount(item: ActivityLogEntry) {
+  const c = item.metadata?.changes;
+  return Array.isArray(c) ? c.length : 0;
+}
+
 function initialsOf(name: string) {
   return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('');
 }
@@ -59,6 +71,10 @@ export function ActivityLogTab() {
 
   const [category, setCategory] = useState<FilterCategory>('all');
   const [dateRange, setDateRange] = useState('last7');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [securityOnly, setSecurityOnly] = useState(false);
+  const [hideAutomated, setHideAutomated] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [actorFilter, setActorFilter] = useState<{ id: string; name: string } | null>(null);
@@ -75,34 +91,43 @@ export function ActivityLogTab() {
     apiGetActivityStats(storeId).then(res => setStats(res.data)).catch(() => {});
   }, [storeId]);
 
+  // One filter set for the list AND the export, so the downloaded file always matches what is on screen.
+  const filterQuery = useMemo(() => {
+    const from = dateRange === 'last7' ? daysAgo(7) : dateRange === 'last30' ? daysAgo(30) : dateRange === 'last90' ? daysAgo(90) : dateRange === 'custom' ? (customFrom || undefined) : undefined;
+    const to = dateRange === 'custom' ? (customTo || undefined) : undefined;
+    return {
+      category: category === 'all' ? undefined : category as ActivityCategory,
+      search: search || undefined,
+      actorId: actorFilter?.id,
+      from, to,
+      isSecurityAlert: securityOnly ? true : undefined,
+      excludeSystem: hideAutomated ? true : undefined,
+    };
+  }, [category, search, actorFilter, dateRange, customFrom, customTo, securityOnly, hideAutomated]);
+
   useEffect(() => {
     if (!storeId) return;
     let cancelled = false;
     setLoading(true);
 
-    const from = dateRange === 'last7' ? daysAgo(7) : dateRange === 'last30' ? daysAgo(30) : dateRange === 'last90' ? daysAgo(90) : undefined;
-
-    apiGetActivityLog(storeId, {
-      page, limit: PAGE_SIZE,
-      category: category === 'all' ? undefined : category,
-      search: search || undefined,
-      actorId: actorFilter?.id,
-      from,
-    })
+    apiGetActivityLog(storeId, { page, limit: PAGE_SIZE, ...filterQuery })
       .then(res => { if (!cancelled) { setLogs(res.data?.logs ?? []); setTotal(res.data?.pagination?.total ?? 0); } })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load activity.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [storeId, category, dateRange, search, page, actorFilter]);
+  }, [storeId, filterQuery, page]);
 
   const onLiveEvent = useCallback((entry: ActivityLogEntry) => {
     if (page !== 1) return;
     if (category !== 'all' && entry.category !== category) return;
     if (actorFilter && entry.actorId !== actorFilter.id) return;
+    if (securityOnly && !entry.isSecurityAlert) return;
+    if (hideAutomated && !entry.actorId) return;
+    if (dateRange === 'custom') return;
     setLogs(prev => [entry, ...prev].slice(0, PAGE_SIZE));
     setTotal(t => t + 1);
-  }, [page, category, actorFilter]);
+  }, [page, category, actorFilter, securityOnly, hideAutomated, dateRange]);
 
   const live = useActivityLogLive(storeId, onLiveEvent);
 
@@ -120,8 +145,9 @@ export function ActivityLogTab() {
 
       <div className="flex items-center justify-between">
         <p className="text-[13px] text-slate">Full audit trail of all staff actions, changes, and security events.</p>
+        {total > 50000 && <span className="text-[11px] text-slate ml-auto mr-2">Export includes the 50,000 most recent events — narrow the date range for the rest.</span>}
         <button
-          onClick={() => { apiExportActivityLog(storeId, store?.name ?? 'store').catch(() => {}); }}
+          onClick={() => { apiExportActivityLog(storeId, store?.name ?? 'store', filterQuery).catch(() => {}); }}
           className="flex items-center gap-1.5 px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
         >
           <Download size={12} />
@@ -176,7 +202,16 @@ export function ActivityLogTab() {
               <option value="last30">Last 30 days</option>
               <option value="last90">Last 90 days</option>
               <option value="all">All time</option>
+              <option value="custom">Custom range…</option>
             </select>
+            {dateRange === 'custom' && (
+              <div className="flex flex-col gap-2 mt-2">
+                <label className="text-[11px] text-slate">From<input type="date" value={customFrom} max={customTo || undefined} onChange={e => { setCustomFrom(e.target.value); setPage(1); }} className="mt-0.5 w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal" /></label>
+                <label className="text-[11px] text-slate">To<input type="date" value={customTo} min={customFrom || undefined} onChange={e => { setCustomTo(e.target.value); setPage(1); }} className="mt-0.5 w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal" /></label>
+              </div>
+            )}
+            <label className="flex items-center gap-2 mt-3 text-[12.5px] text-charcoal cursor-pointer"><input type="checkbox" checked={securityOnly} onChange={e => { setSecurityOnly(e.target.checked); setPage(1); }} /> Security alerts only</label>
+            <label className="flex items-center gap-2 mt-2 text-[12.5px] text-charcoal cursor-pointer"><input type="checkbox" checked={hideAutomated} onChange={e => { setHideAutomated(e.target.checked); setPage(1); }} /> Hide automated events</label>
           </div>
         </div>
 
@@ -219,7 +254,7 @@ export function ActivityLogTab() {
           ) : (
             logs.map(item => {
               const isMe = !!me && item.actorId === me.id;
-              const actorName = isMe ? me!.name : (item.actorName ?? 'Team member');
+              const actorName = item.isSystem ? 'System' : isMe ? me!.name : (item.actorName ?? 'Team member');
               const actorRole = (isMe ? me!.role : item.actorRole ?? '') ;
               const roleLabel = actorRole ? actorRole.charAt(0).toUpperCase() + actorRole.slice(1) : '';
               const cs = item.isSecurityAlert ? { bg: '#FDECEA', color: '#C0392B' } : (categoryStyle[item.category] ?? { bg: '#F0EEE6', color: '#5A5852' });
@@ -249,7 +284,7 @@ export function ActivityLogTab() {
                     <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold" style={{ background: cs.bg, color: cs.color }}>{catLabel}</span>
                     <span className="ml-auto text-[11px] text-slate shrink-0">{timeAgo(item.createdAt)}</span>
                   </div>
-                  <p className="text-[13px] font-semibold text-carbon pl-[38px] mb-0.5">{actionTitle(item.action)}</p>
+                  <p className="text-[13px] font-semibold text-carbon pl-[38px] mb-0.5">{item.title ?? actionTitle(item.action)}{changeCount(item) > 0 && <span className="ml-2 text-[11px] font-medium text-slate">· {changeCount(item)} field{changeCount(item) === 1 ? '' : 's'} changed</span>}</p>
                   {item.description && <p className="text-xs text-slate pl-[38px] mb-0.5">{item.description}</p>}
                   {item.ip && <p className="text-[11px] text-dark-text pl-[38px]">IP: {item.ip}{item.device ? ` · ${item.device}` : ''}{locationLabel ? ` · ${locationLabel}` : ''}</p>}
                 </div>
@@ -267,6 +302,7 @@ export function ActivityLogTab() {
               <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="w-7 h-7 rounded-[6px] border border-bone flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-30 bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                 <ChevronRight size={14} />
               </button>
+              <PageJump page={page} totalPages={totalPages} onChange={setPage} />
             </div>
           </div>
         </div>
@@ -278,6 +314,8 @@ export function ActivityLogTab() {
           onClose={() => setViewing(null)}
           targetHref={resolveTargetHref(storeId, viewing.targetType, viewing.targetId)}
           fetchTimeline={(targetId) => apiGetActivityTimeline(storeId, targetId)}
+          currency={store?.baseCurrency ?? 'USD'}
+          timeZone={store?.timezone ?? undefined}
         />
       )}
     </div>
