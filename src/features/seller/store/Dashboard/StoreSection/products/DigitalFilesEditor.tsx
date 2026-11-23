@@ -18,6 +18,12 @@ export function DigitalFilesEditor({ value, onChange }: { value: DigitalFileRow[
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Not a block: a product that sells a course or a membership plan legitimately has no file of its own. */}
+      {value.length === 0 && (
+        <div role="note" className="rounded-xl border border-warning bg-warning-bg px-3 py-2.5 text-[12.5px] leading-[1.5] text-warning">
+          No file added yet. Buyers will have nothing to download after paying — unless this product is linked to a course or a membership plan.
+        </div>
+      )}
       {value.map((r, i) => (
         <div key={r.url} className="rounded-xl border border-bone p-3 flex flex-col gap-2">
           <div className="flex items-center gap-2">
