@@ -3,6 +3,8 @@ import { textCaseOf } from '../textCase';
 import type { StorefrontHeader, StorefrontFooter } from '@/api/services/storeTheme';
 import type { Block } from '@/api/services/storefrontTypes';
 import { ts } from '@/utils/tStatic';
+import type { ChromeItem } from '@/features/storefront/chrome/chromeTypes';
+import type { TopStripData } from '@/features/storefront/chrome/ChromeTopStrip';
 
 /**
  * The retailer-controlled header settings, with every missing value read as "today's look" — a store saved
@@ -40,7 +42,7 @@ export interface HeaderOptions {
   /** Theme-defined slug (default 'icons'); each theme interprets the ones it offers. */
   searchPosition: string;
   cta: { label: string; link: string } | null;
-  topBar: { text: string | null; phone: string | null; email: string | null; bg: string | null; color: string | null } | null;
+  topBar: TopStripData | null;
 }
 
 const SAFE_LINK = /^(https?:\/\/\S+|\/(?!\/)\S*)$/i;
@@ -68,6 +70,13 @@ export function headerNavCss(scope: string, o: Pick<HeaderOptions, 'navFontSize'
     rules.push(`${itemHover}{background-color:color-mix(in srgb,currentColor 10%,transparent)}`);
   }
   return rules.join('');
+}
+
+/** Strip items the seller built; anything malformed is dropped so a bad row never breaks the storefront. */
+function readTopBarItems(v: unknown): ChromeItem[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter((i): i is ChromeItem => !!i && typeof i === 'object' && typeof (i as ChromeItem).id === 'string'
+    && ['text', 'link', 'popup'].includes((i as ChromeItem).kind));
 }
 
 const text = (v: unknown, fallback: string) => (typeof v === 'string' && v.trim() ? v.trim() : fallback);
@@ -117,8 +126,12 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     searchPosition: typeof h.searchPosition === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(h.searchPosition) ? h.searchPosition : 'icons',
     cta: typeof h.ctaLabel === 'string' && h.ctaLabel.trim() && typeof h.ctaLink === 'string' && SAFE_LINK.test(h.ctaLink)
       ? { label: h.ctaLabel.trim(), link: h.ctaLink } : null,
-    topBar: h.topBarEnabled && (h.topBarText || h.topBarPhone || h.topBarEmail)
-      ? { text: h.topBarText?.trim() || null, phone: h.topBarPhone?.trim() || null, email: h.topBarEmail?.trim() || null, bg: hex(h.topBarBg), color: hex(h.topBarTextColor) }
+    topBar: h.topBarEnabled && (h.topBarText || h.topBarPhone || h.topBarEmail || readTopBarItems(h.topBarItems).length)
+      ? {
+        text: h.topBarText?.trim() || null, phone: h.topBarPhone?.trim() || null, email: h.topBarEmail?.trim() || null,
+        bg: hex(h.topBarBg), color: hex(h.topBarTextColor),
+        items: readTopBarItems(h.topBarItems), size: h.topBarSize === 'sm' || h.topBarSize === 'lg' ? h.topBarSize : 'md',
+      }
       : null,
   };
 }

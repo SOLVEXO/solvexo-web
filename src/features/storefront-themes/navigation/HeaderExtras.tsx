@@ -1,4 +1,5 @@
-import { ArrowUp, Mail, Phone, Search } from 'lucide-react';
+import { ArrowUp, Search } from 'lucide-react';
+import { ChromeTopStrip } from '@/features/storefront/chrome/ChromeTopStrip';
 import { useTranslation } from 'react-i18next';
 import { scrollRootToTop } from '@/utils/scrollRoot';
 import { NavAnchor } from './NavAnchor';
@@ -18,18 +19,7 @@ export function BackToTop({ color, fontFamily }: { color: string; fontFamily: st
 export function HeaderTopBar({ bar, fallbackBg, fallbackColor, fontFamily, maxWidth, padX }: {
   bar: NonNullable<HeaderOptions['topBar']>; fallbackBg: string; fallbackColor: string; fontFamily: string; maxWidth: string; padX: string;
 }) {
-  const color = bar.color ?? fallbackColor;
-  return (
-    <div style={{ background: bar.bg ?? fallbackBg, color, fontFamily, fontSize: '12px' }}>
-      <div className="mx-auto flex items-center justify-between gap-4" style={{ maxWidth, padding: `7px ${padX}` }}>
-        <span className="truncate min-w-0">{bar.text}</span>
-        <span className="hidden sm:flex items-center gap-4 shrink-0">
-          {bar.phone && <a href={`tel:${bar.phone.replace(/[^\d+]/g, '')}`} className="no-underline flex items-center gap-1.5" style={{ color }}><Phone size={12} />{bar.phone}</a>}
-          {bar.email && <a href={`mailto:${bar.email}`} className="no-underline flex items-center gap-1.5" style={{ color }}><Mail size={12} />{bar.email}</a>}
-        </span>
-      </div>
-    </div>
-  );
+  return <ChromeTopStrip bar={bar} fallbackBg={fallbackBg} fallbackColor={fallbackColor} fontFamily={fontFamily} maxWidth={maxWidth} padX={padX} />;
 }
 
 /** The retailer's call-to-action button in the header (desktop only; the mobile drawer keeps the menu clean). */

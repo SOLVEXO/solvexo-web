@@ -1,17 +1,24 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, X } from 'lucide-react';
 import { SocialIcon } from '@/features/storefront-themes/navigation/FooterParts';
+import { ChromeIcon } from '@/features/storefront/chrome/ChromeIcon';
+import { ChromePopup, type ChromeTheme } from '@/features/storefront/chrome/ChromePopup';
+import type { ChromePopup as PopupData } from '@/features/storefront/chrome/chromeTypes';
 import { ts } from '@/utils/tStatic';
 import type { FloatingContactConfig } from '@/api/services/store';
 
 /**
- * Floating contact bar (call / WhatsApp / social icons). Theme-agnostic: mounted once by `StorefrontLayout`, so every theme
- * (native or imported) shows it. It borrows the store's font, button radius and brand colour from `cfg`; everything else
- * (links, position, size, labels) is the seller's own setting. Labels slide out on hover/focus (not on touch screens).
+ * Floating contact bar (call / WhatsApp / social icons + the seller's own buttons and popups). Theme-agnostic: mounted once by
+ * `StorefrontLayout`, so every theme (native or imported) shows it. It borrows the store's font, button radius and brand colour;
+ * everything else (links, position, size, labels, shape, colours, a speech bubble) is the seller's own setting. Labels slide out
+ * on hover/focus (not on touch screens).
  */
 
-interface Item { key: string; label: string; href: string; bg: string; fg: string; icon: ReactNode; external: boolean }
+interface Item {
+  key: string; label: string; href: string; bg: string; fg: string; icon: ReactNode; external: boolean;
+  popup?: PopupData; device?: 'all' | 'desktop' | 'mobile';
+}
 
 const BRAND: Record<string, { bg: string; fg: string }> = {
   phone: { bg: '#F5B02E', fg: '#fff' },
@@ -40,11 +47,16 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
 }) {
   const { pathname } = useLocation();
   const [mounted, setMounted] = useState(false);
+  const [popup, setPopup] = useState<PopupData | null>(null);
+  const [bubbleHidden, setBubbleHidden] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
   const items = useMemo<Item[]>(() => {
     const themed = config.style === 'theme';
-    const paint = (k: string) => (themed ? { bg: brandColor, fg: '#fff' } : BRAND[k]);
+    const paint = (k: string) => {
+      const base = themed ? { bg: brandColor, fg: '#fff' } : BRAND[k];
+      return { bg: config.customBg || base.bg, fg: config.customFg || base.fg };
+    };
     const out: Item[] = [];
     const phone = config.phone.trim();
     if (phone) out.push({ key: 'phone', label: config.phoneLabel.trim() || ts('fc.call', 'Call us'), href: `tel:${phone.replace(/[^0-9+]/g, '')}`, ...paint('phone'), icon: <Phone size={22} strokeWidth={2.2} aria-hidden />, external: false });
@@ -59,6 +71,16 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
       const url = config[k];
       if (url) out.push({ key: k, label: BRAND_NAME[k], href: url, ...paint(k), icon: <SocialIcon platform={k} size={24} />, external: true });
     }
+    for (const it of config.items ?? []) {
+      if (it.kind === 'popup' && !it.popup) continue;
+      if (it.kind === 'link' && !it.url) continue;
+      out.push({
+        key: it.id, label: it.label || it.icon, href: it.kind === 'popup' ? '' : it.url,
+        bg: it.bg || config.customBg || (themed ? brandColor : '#111111'), fg: it.fg || config.customFg || '#fff',
+        icon: <ChromeIcon icon={it.icon || 'link'} iconUrl={it.iconUrl} size={24} />,
+        external: /^https?:/i.test(it.url) || it.newTab, popup: it.kind === 'popup' ? (it.popup ?? undefined) : undefined, device: it.device,
+      });
+    }
     return out;
   }, [config, brandColor]);
 
@@ -68,20 +90,27 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
 
   const size = SIZES[config.size] ?? 48;
   const end = config.position !== 'left';
-  const r = radius && /^\d/.test(radius) ? `min(${radius}, 14px)` : '0px';
-  const vertical: CSSProperties = config.vertical === 'top' ? { top: '18%' }
+  const round = config.shape === 'round';
+  const r = round ? '999px' : radius && /^\d/.test(radius) ? `min(${radius}, 14px)` : '0px';
+  const vertical: CSSProperties = round ? { bottom: 24 }
+    : config.vertical === 'top' ? { top: '18%' }
     : config.vertical === 'bottom' ? { bottom: 96 }
     : { top: '50%', transform: 'translateY(-50%)' };
   const sideProp = end ? 'insetInlineEnd' : 'insetInlineStart';
   const showClass = config.device === 'desktop' ? 'fcb-desktop' : config.device === 'mobile' ? 'fcb-mobile' : '';
+  const popupTheme: ChromeTheme = { bg: '#ffffff', fg: '#161412', accent: brandColor, accentText: '#ffffff', font, radius: radius && /^\d/.test(radius) ? `min(${radius}, 18px)` : '12px' };
+  const bubble = (config.bubbleText ?? '').trim();
+  const sideGap = round ? 20 : 0;
 
   return (
     <>
       <style>{`
         .fcb{position:fixed;z-index:60;display:flex;flex-direction:column;gap:2px;font-family:var(--fcb-font,inherit)}
-        .fcb-i{display:flex;align-items:stretch;text-decoration:none;color:var(--fg);overflow:hidden;width:max-content;
+        .fcb-round{gap:12px}
+        .fcb-i{display:flex;align-items:stretch;text-decoration:none;color:var(--fg);overflow:hidden;width:max-content;cursor:pointer;border:0;padding:0;font:inherit;
           border-start-start-radius:var(--rs);border-end-start-radius:var(--rs);border-start-end-radius:var(--re);border-end-end-radius:var(--re);
           background:var(--bg);align-self:var(--self);transition:filter .15s}
+        .fcb-round .fcb-i{box-shadow:0 6px 18px rgba(0,0,0,.25)}
         .fcb-i:hover,.fcb-i:focus-visible{filter:brightness(1.06)}
         .fcb-i:focus-visible{outline:2px solid #fff;outline-offset:-4px}
         .fcb-ic{display:flex;align-items:center;justify-content:center;width:var(--s);height:var(--s);flex:none}
@@ -93,36 +122,48 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
         .fcb-end .fcb-i:hover .fcb-l,.fcb-end .fcb-i:focus-visible .fcb-l{padding-inline:18px 4px}
         .fcb-start .fcb-i:hover .fcb-l,.fcb-start .fcb-i:focus-visible .fcb-l{padding-inline:4px 18px}
         .fcb-nolabel .fcb-l{display:none}
-        @media (max-width:767px){.fcb{--s:${Math.max(36, size - 8)}px!important}.fcb-desktop{display:none}}
-        @media (min-width:768px){.fcb-mobile{display:none}}
-        @media print{.fcb{display:none}}
+        .fcb-bubble{position:fixed;z-index:60;display:flex;align-items:center;gap:6px;background:#fff;color:#161412;border-radius:10px;padding:8px 8px 8px 14px;
+          font-size:13px;font-weight:500;box-shadow:0 6px 18px rgba(0,0,0,.18);font-family:var(--fcb-font,inherit);max-width:min(220px,50vw)}
+        .fcb-bubble button{border:0;background:transparent;cursor:pointer;color:inherit;display:grid;place-items:center;padding:2px;opacity:.6}
+        @media (max-width:767px){.fcb{--s:${Math.max(36, size - 8)}px!important}.fcb-desktop,.fcb-item-desktop{display:none}}
+        @media (min-width:768px){.fcb-mobile,.fcb-item-mobile{display:none}}
+        @media print{.fcb,.fcb-bubble{display:none}}
         @media (prefers-reduced-motion:reduce){.fcb-l,.fcb-i{transition:none}}
       `}</style>
       <nav
-        className={['fcb', end ? 'fcb-end' : 'fcb-start', config.showLabels ? '' : 'fcb-nolabel', showClass].filter(Boolean).join(' ')}
+        className={['fcb', end ? 'fcb-end' : 'fcb-start', round ? 'fcb-round' : '', config.showLabels && !round ? '' : 'fcb-nolabel', showClass].filter(Boolean).join(' ')}
         aria-label={ts('fc.aria', 'Contact us')}
-        style={{ ...vertical, [sideProp]: 0, ['--s' as string]: `${size}px`, ['--fcb-font' as string]: font || 'inherit' } as CSSProperties}
+        style={{ ...vertical, [sideProp]: sideGap, ['--s' as string]: `${size}px`, ['--fcb-font' as string]: font || 'inherit' } as CSSProperties}
       >
-        {items.map(it => (
-          <a
-            key={it.key}
-            className="fcb-i"
-            href={it.href}
-            aria-label={it.label}
-            {...(it.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-            style={{
-              ['--bg' as string]: it.bg, ['--fg' as string]: it.fg,
-              // Round only the corners that face the page, so the stack sits flush on the screen edge.
-              ['--rs' as string]: end ? r : '0', ['--re' as string]: end ? '0' : r,
-              ['--self' as string]: end ? 'flex-end' : 'flex-start',
-              flexDirection: end ? 'row' : 'row-reverse',
-            } as CSSProperties}
-          >
-            <span className="fcb-l">{it.label}</span>
-            <span className="fcb-ic">{it.icon}</span>
-          </a>
-        ))}
+        {items.map(it => {
+          const style = {
+            ['--bg' as string]: it.bg, ['--fg' as string]: it.fg,
+            // Round only the corners that face the page, so the stack sits flush on the screen edge.
+            ['--rs' as string]: round || end ? r : '0', ['--re' as string]: round || !end ? r : '0',
+            ['--self' as string]: end ? 'flex-end' : 'flex-start',
+            flexDirection: end ? 'row' : 'row-reverse',
+          } as CSSProperties;
+          const cls = `fcb-i${it.device === 'desktop' ? ' fcb-item-desktop' : it.device === 'mobile' ? ' fcb-item-mobile' : ''}`;
+          const inner = (<><span className="fcb-l">{it.label}</span><span className="fcb-ic">{it.icon}</span></>);
+          if (it.popup) {
+            return <button key={it.key} type="button" className={cls} aria-label={it.label} aria-haspopup="dialog" style={style} onClick={() => setPopup(it.popup ?? null)}>{inner}</button>;
+          }
+          return (
+            <a key={it.key} className={cls} href={it.href} aria-label={it.label}
+              {...(it.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={style}>
+              {inner}
+            </a>
+          );
+        })}
       </nav>
+      {round && bubble && !bubbleHidden && (
+        <div className={`fcb-bubble${showClass ? ` ${showClass}` : ''}`}
+          style={{ bottom: 24 + size / 2 - 20, [sideProp]: sideGap + size + 12, ['--fcb-font' as string]: font || 'inherit' } as CSSProperties}>
+          <span>{bubble}</span>
+          <button type="button" aria-label="Close" onClick={() => setBubbleHidden(true)}><X size={14} /></button>
+        </div>
+      )}
+      {popup && <ChromePopup popup={popup} theme={popupTheme} onClose={() => setPopup(null)} />}
     </>
   );
 }

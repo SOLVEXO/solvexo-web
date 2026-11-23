@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
+import { ChromeItemsEditor } from '@/features/seller/store/Dashboard/OnlineStore/themes/ChromeItemsEditor';
 import { Button } from '@/components/comman/ui';
 import { Toggle } from '@/components/comman/ui/Toggle';
 import { useToast } from '@/contexts/ToastContext';
@@ -9,6 +10,7 @@ const EMPTY: FloatingContactConfig = {
   enabled: false, position: 'right', vertical: 'middle', size: 'md', style: 'brand', showLabels: true, device: 'all',
   phone: '', phoneLabel: '', whatsapp: '', whatsappMessage: '', whatsappLabel: '', email: '', emailLabel: '',
   facebook: '', instagram: '', tiktok: '', youtube: '', x: '', snapchat: '', linkedin: '',
+  items: [], shape: 'flush', bubbleText: '', customBg: '', customFg: '',
 };
 
 const INPUT = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px] text-ink outline-none focus:border-brand-orange';
@@ -129,7 +131,26 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
             <Toggle checked={cfg.showLabels} onChange={v => set('showLabels', v)} disabled={!canManage} ariaLabel="Open names on hover" />
           </div>
         </div>
+        <div className="mt-4 grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))]">
+          <Pick label="Button shape" value={cfg.shape} onChange={v => set('shape', v)} options={[{ value: 'flush', label: 'Tabs on the screen edge' }, { value: 'round', label: 'Round buttons in the corner' }]} />
+          {text('bubbleText', 'Speech bubble text', 'Shown next to the buttons, e.g. "Need help? Chat with us". Leave empty for none.', 'Need help? Chat with us')}
+          <Field label="Button colour (all)" hint="Leave empty to use the colours above.">
+            {id => <input id={id} type="color" className="h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white" value={cfg.customBg || '#25D366'} disabled={!canManage} onChange={e => set('customBg', e.target.value)} />}
+          </Field>
+          <Field label="Icon colour (all)">
+            {id => <input id={id} type="color" className="h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white" value={cfg.customFg || '#ffffff'} disabled={!canManage} onChange={e => set('customFg', e.target.value)} />}
+          </Field>
+        </div>
+        {(cfg.customBg || cfg.customFg) && (
+          <button type="button" onClick={() => { set('customBg', ''); set('customFg', ''); }} className="mt-2 border-0 bg-transparent p-0 text-[12px] text-slate underline cursor-pointer">Reset colours</button>
+        )}
         <p className="mt-3 text-[12px] text-slate">The bar uses your theme's font and button shape. It is hidden on checkout and sign-in pages.</p>
+      </section>
+
+      <section className={card}>
+        <h3 className="mb-1 text-[14px] font-semibold text-ink">Your own buttons</h3>
+        <p className="mb-3 text-[12px] text-slate">Add any button you like: a link to any page or app (Telegram, Maps, a form), or a popup with your text, image and your own designed QR code. Pick any icon or upload yours.</p>
+        <ChromeItemsEditor items={cfg.items} onChange={next => set('items', next)} showZone={false} itemName="button" compactColours />
       </section>
 
       {canManage && (

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased } from '../../textCase';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Clock, Heart, Mail, Menu, Phone, Search, ShoppingCart, User, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Heart, Menu, Search, ShoppingCart, User, X } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import { useStorefront, type ResolvedStorefrontNavItem, type StorefrontNavItemSettings } from '@/features/storefront/StorefrontContext';
 import { useContentLocale } from '@/features/storefront/storefrontMarket';
@@ -22,25 +22,21 @@ import { logoImageProps, readHeaderOptions } from '../../navigation/headerOption
 import { techTheme as t } from '../theme.config';
 import { TechSectionRenderer } from '../sections/TechSectionRenderer';
 import { techButtonStyle } from '../ui/techStyle';
+import { ChromeTopStrip } from '@/features/storefront/chrome/ChromeTopStrip';
+import type { ChromeItem } from '@/features/storefront/chrome/chromeTypes';
 import { TechPredictiveSearch } from './TechPredictiveSearch';
 
 type TopBarData = NonNullable<ReturnType<typeof readHeaderOptions>['topBar']>;
 
 /** Slim strip above the header. Everything in it is typed by the seller: hours and showroom line (Theme settings), text, phone and email (Header settings). */
 function TopBar({ bar }: { bar: TopBarData }) {
-  const color = bar.color ?? t.colors.darkInk;
-  const middle = [bar.text, t.topBarShowroom].filter(Boolean).join('   ·   ');
+  const text = [bar.text, t.topBarShowroom].filter(Boolean).join('   ·   ') || null;
+  const hours: ChromeItem[] = t.topBarHours
+    ? [{ id: 'tech-hours', kind: 'text', zone: 'left', label: t.topBarHours, icon: 'clock', iconUrl: '', url: '', newTab: false, bg: '', fg: '', device: 'desktop', popup: null }]
+    : [];
   return (
-    <div style={{ background: bar.bg ?? t.colors.dark, color, fontFamily: t.fonts.body }}>
-      <div className="mx-auto flex items-center justify-between gap-4 text-xs font-medium" style={{ maxWidth: t.layout.maxWidth, padding: `8px ${t.layout.containerPadX}` }}>
-        {t.topBarHours ? <span className="hidden shrink-0 items-center gap-1.5 md:flex"><Clock size={12} aria-hidden /><bdi>{t.topBarHours}</bdi></span> : null}
-        <span className="min-w-0 flex-1 truncate sm:text-center">{middle}</span>
-        <span className="hidden shrink-0 items-center gap-5 sm:flex">
-          {bar.phone && <a href={`tel:${bar.phone.replace(/[^\d+]/g, '')}`} className="flex items-center gap-1.5 no-underline hover:underline" style={{ color }}><Phone size={12} aria-hidden /><bdi>{bar.phone}</bdi></a>}
-          {bar.email && <a href={`mailto:${bar.email}`} className="flex items-center gap-1.5 no-underline hover:underline" style={{ color }}><Mail size={12} aria-hidden /><bdi>{bar.email}</bdi></a>}
-        </span>
-      </div>
-    </div>
+    <ChromeTopStrip bar={{ ...bar, text, items: [...hours, ...bar.items] }} fallbackBg={t.colors.dark} fallbackColor={t.colors.darkInk}
+      fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} radius="0px" />
   );
 }
 
@@ -217,7 +213,7 @@ export function TechNavbar() {
   const badge = (n: number) => n > 0 && <span className="absolute end-0 top-0 grid h-4 min-w-4 place-items-center px-1 text-[10px] font-semibold" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: 9999 }}>{n > 99 ? '99+' : n}</span>;
   const cta = o.cta;
   // A top bar shows when the seller set any of its content: header text/phone/email, hours or a showroom line.
-  const bar: TopBarData | null = o.topBar ?? (t.topBarHours || t.topBarShowroom ? { text: null, phone: null, email: null, bg: null, color: null } : null);
+  const bar: TopBarData | null = o.topBar ?? (t.topBarHours || t.topBarShowroom ? { text: null, phone: null, email: null, bg: null, color: null, items: [], size: 'md' as const } : null);
 
   const logoLink = <NavAnchor link={resolveLink(header?.logoLink ?? { linkType: 'home' })} className="flex shrink-0 items-center no-underline" style={{ color: t.colors.ink }}>{wordmark}</NavAnchor>;
   const menuButton = <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: t.colors.ink }}><Menu size={22} /></button>;

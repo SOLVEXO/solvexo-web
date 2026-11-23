@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import type { StorefrontHeader, StorefrontFooter, LogoLink } from '@/api/services/storeTheme';
 import { LinkTargetFields, type LinkTarget } from '../builder/LinkTargetFields';
+import { ChromeItemsEditor } from './ChromeItemsEditor';
 import { readHeaderOptions } from '@/features/storefront-themes/navigation/headerOptions';
 import type { FooterOptionKey, HeaderChoice, HeaderOptionKey } from '@/features/storefront-themes/themeManifest';
 
@@ -205,6 +206,17 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
             <div className="grid grid-cols-2 gap-3">
               <ColorField label="Strip background" value={header.topBarBg} fallback="#161412" onChange={v => set({ topBarBg: v })} />
               <ColorField label="Strip text" value={header.topBarTextColor} fallback="#ffffff" onChange={v => set({ topBarTextColor: v })} />
+            </div>
+            <label className="flex flex-col gap-1">
+              <span className="text-[11.5px] text-charcoal">Strip height and text size</span>
+              <select className={SELECT} value={header.topBarSize ?? 'md'} onChange={e => set({ topBarSize: e.target.value as 'sm' | 'md' | 'lg' })}>
+                <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
+              </select>
+            </label>
+            <div className="border-t border-bone pt-3">
+              <p className="mb-1 text-[12.5px] font-semibold text-charcoal">Your own items</p>
+              <p className="mb-2 text-[10.5px] text-slate">Add texts, social icons, links or popups (like a WhatsApp subscribe popup with your own QR). Place them left, middle or right. The theme styles them to match.</p>
+              <ChromeItemsEditor items={header.topBarItems ?? []} onChange={next => set({ topBarItems: next })} showZone />
             </div>
           </>
         )}

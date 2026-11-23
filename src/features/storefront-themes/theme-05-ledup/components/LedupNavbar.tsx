@@ -10,6 +10,8 @@ import { useCartDrawer } from '../../cartDrawerContext';
 import { NavAnchor } from '../../navigation/NavAnchor';
 import { NavBadge } from '../../navigation/NavBadge';
 import { logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
+import { ChromeTopStrip } from '@/features/storefront/chrome/ChromeTopStrip';
+import { ledupTheme } from '../theme.config';
 import { LedupMegaMenu } from './LedupMegaMenu';
 import { LedupSearchPanel } from './LedupSearchPanel';
 import { LedupAuthPopover } from './LedupAuthPopover';
@@ -70,6 +72,10 @@ export function LedupNavbar() {
 
   return (
     <>
+      {o.topBar && (
+        <ChromeTopStrip bar={o.topBar} fallbackBg={ledupTheme.colors.dark} fallbackColor={ledupTheme.colors.darkInk}
+          fontFamily={ledupTheme.fonts.body} maxWidth={ledupTheme.layout.maxWidth} padX={ledupTheme.layout.containerPadX} radius="20px" />
+      )}
       {panelOpen && <div className="ld-backdrop" aria-hidden onClick={closeAll} />}
       <header className={`ld-header ${megaId ? 'ld-header--menu' : ''} ${searchOpen ? 'ld-header--glass' : ''}`} onMouseLeave={() => setMegaId(null)}>
         <div className="ld-header-row">

@@ -18,6 +18,9 @@ export interface FloatingContactConfig {
   style: 'brand' | 'theme'; showLabels: boolean; device: 'all' | 'desktop' | 'mobile';
   phone: string; phoneLabel: string; whatsapp: string; whatsappMessage: string; whatsappLabel: string; email: string; emailLabel: string;
   facebook: string; instagram: string; tiktok: string; youtube: string; x: string; snapchat: string; linkedin: string;
+  /** Seller-built buttons (any link or popup with their own QR), shown after the built-in ones. */
+  items: import('@/features/storefront/chrome/chromeTypes').ChromeItem[];
+  shape: 'flush' | 'round'; bubbleText: string; customBg: string; customFg: string;
 }
 
 export interface EnabledCurrency {

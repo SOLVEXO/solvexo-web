@@ -235,6 +235,9 @@ export interface StorefrontHeader {
   topBarEmail?:         string | null;
   topBarBg?:            string | null;
   topBarTextColor?:     string | null;
+  /** Seller-built strip items (text / link / popup) placed in a left, centre or right zone. */
+  topBarItems?:         import('@/features/storefront/chrome/chromeTypes').ChromeItem[];
+  topBarSize?:          'sm' | 'md' | 'lg';
   preset?:              string | null;
 }
 
