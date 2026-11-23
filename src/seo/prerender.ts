@@ -4,11 +4,13 @@
 // engines and link previews see real, page-specific HTML without running JavaScript. The React app still boots from
 // the same file and replaces the plain block on mount (it is hidden at once for visitors with JavaScript).
 import { MANUALS } from '../features/buyer/data/manuals';
+import { SELLER_FAQ, faqPageJsonLd, type SellerFaq } from '../features/buyer/data/sellerFaq';
 import { ALL_PLATFORM_PRODUCTS } from '../features/buyer/data/platformProducts';
 import { SOLUTIONS } from '../features/buyer/data/solutions';
 import { BLOG_AUTHOR, SORTED_BLOG_POSTS, getBlogPost, type BlogBlock } from '../features/buyer/data/blogPosts';
 import { SITEMAP_PAGES, SITE_ORIGIN, canonicalUrl, normalizePath, type PublicPageSeo } from './publicPages';
 import { unsplashUrl } from '../assets/stockPhotos';
+import { homeHeroShellHtml } from './homeHeroShell';
 
 export const PRERENDER_DIR = '_pages';
 
@@ -35,13 +37,22 @@ const NAV: { label: string; path: string }[] = [
   { label: 'Solutions', path: '/solutions' },
   { label: 'About', path: '/about' },
   { label: 'FAQ', path: '/faq' },
+  { label: 'Online store in Pakistan', path: '/online-store-pakistan' },
   { label: 'Book a demo', path: '/book-demo' },
   { label: 'Contact', path: '/contact-us' },
 ];
 
+/** Short name for the breadcrumb ("Point of Sale"), not the full search title. */
+function crumbName(page: PublicPageSeo): string {
+  const slug = page.path.split('/').pop();
+  return ALL_PLATFORM_PRODUCTS.find(p => p.slug === slug && page.path.startsWith('/products/'))?.name
+    ?? SOLUTIONS.find(s => s.slug === slug && page.path.startsWith('/solutions/'))?.name
+    ?? headingFor(page).split(':')[0];
+}
+
 /** The visible heading: the title without the brand suffix ("Pricing: Online Store & POS Plans"). */
 function headingFor(page: PublicPageSeo): string {
-  return page.path === '/' ? 'Solvexo' : page.title.replace(/\s*\|\s*Solvexo$/, '');
+  return page.path === '/' ? 'Solvexo' : page.title.replace(/\s*\|\s*Solvexo( Blog)?$/, '');
 }
 
 function list(items: string[]): string {
@@ -64,6 +75,8 @@ function blockHtml(b: BlogBlock): string {
   }
 }
 
+const faqHtml = (items: SellerFaq[]) => items.map(f => `<h3>${esc(f.q)}</h3><p>${esc(f.a)}</p>`).join('');
+
 const blogSlug = (path: string) => /^\/blog\/([^/]+)$/.exec(path)?.[1] ?? null;
 
 function contentFor(page: PublicPageSeo): string {
@@ -77,6 +90,24 @@ function contentFor(page: PublicPageSeo): string {
   }
   if (page.path === '/manuals') {
     return MANUALS.map(m => `<h2>${esc(m.title)}</h2><p>${esc(m.summary)}</p>${links([m.complete, ...m.chapters].map(c => ({ label: `${c.label} (PDF)`, path: c.file })))}`).join('');
+  }
+  if (page.path === '/partners') {
+    return [
+      '<p>Help shops and sellers in your city go online and sell in person with Solvexo, and earn on every month they stay subscribed.</p>',
+      '<h2>Ways to partner</h2><ul><li>Referral Agent: individuals who introduce sellers with a partner link or code.</li><li>Authorised Reseller: registered businesses that sell, onboard and give first-line support.</li><li>Service Partner: agencies and IT firms doing paid setup work.</li><li>Regional Partner: by invitation, for Gold resellers who meet regional milestones.</li></ul>',
+      '<h2>How joining works</h2><ol><li>Apply on this page.</li><li>Upload your documents.</li><li>Sign the partner agreement.</li><li>Your first 30 days: demo store, training, certification, first sellers live.</li></ol>',
+    ].join('');
+  }
+  if (page.path === '/faq') {
+    return `<h2>For sellers</h2>${faqHtml(SELLER_FAQ)}`;
+  }
+  if (page.path === '/online-store-pakistan') {
+    return [
+      '<p>Make your own online store with cash on delivery and delivery charges by city, plus a POS for your shop counter. Share your store on WhatsApp, Facebook and Instagram, and keep shop and online stock in one count.</p>',
+      '<h2>Live in 3 steps</h2><ol><li>Create your account: sign up with Google in one tap, no card needed.</li><li>Add your products: take photos on your phone, add a price.</li><li>Share your store link on WhatsApp, Facebook and Instagram and take orders.</li></ol>',
+      `<h2>Questions</h2>${faqHtml(SELLER_FAQ)}`,
+      `<p><a href="/pricing">See all plans and prices</a></p>`,
+    ].join('');
   }
   if (page.path === '/blog') {
     return `<h2>Latest guides</h2>${links(SORTED_BLOG_POSTS.map(p => ({ label: p.title, path: `/blog/${p.slug}` })))}`;
@@ -146,6 +177,7 @@ export function structuredDataFor(page: PublicPageSeo): Record<string, unknown>[
       },
     ];
   }
+  if (page.path === '/faq' || page.path === '/online-store-pakistan') return [faqPageJsonLd(SELLER_FAQ)];
   const m = /^\/(products|solutions)\/[^/]+$/.exec(page.path);
   if (!m) return [];
   const section = m[1] === 'products' ? 'Products' : 'Solutions';
@@ -155,7 +187,7 @@ export function structuredDataFor(page: PublicPageSeo): Record<string, unknown>[
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Solvexo', item: canonicalUrl('/') },
       { '@type': 'ListItem', position: 2, name: section, item: canonicalUrl(`/${m[1]}`) },
-      { '@type': 'ListItem', position: 3, name: headingFor(page).split(':')[0], item: canonicalUrl(page.path) },
+      { '@type': 'ListItem', position: 3, name: crumbName(page), item: canonicalUrl(page.path) },
     ],
   }];
 }
@@ -189,7 +221,11 @@ export function buildPrerenderedHtml(template: string, page: PublicPageSeo): str
     '<p><a href="/privacy-policy">Privacy Policy</a> &middot; <a href="/terms-of-service">Terms of Service</a> &middot; <a href="/cookie-policy">Cookie Policy</a> &middot; <a href="mailto:sales@solvexo.store">sales@solvexo.store</a></p>',
     '</main>',
   ].join('\n      ');
-  return html.replace(/<!--solvexo-platform-body-->[\s\S]*?<!--\/solvexo-platform-body-->/, `<!--solvexo-platform-body-->\n      ${body}\n    <!--/solvexo-platform-body-->`);
+  html = html.replace(/<!--solvexo-platform-body-->[\s\S]*?<!--\/solvexo-platform-body-->/, `<!--solvexo-platform-body-->\n      ${body}\n    <!--/solvexo-platform-body-->`);
+  // Home page: its hero, visible before the app loads (see homeHeroShell.ts). Outside #root, so React's first render
+  // does not wipe it before the real hero is ready.
+  if (page.path === '/') html = html.replace('<!--/solvexo-platform-body--></div>', `<!--/solvexo-platform-body--></div>\n    ${homeHeroShellHtml()}`);
+  return html;
 }
 
 const GOOGLE_FONTS_LINK = /<link rel="stylesheet" href="(https:\/\/fonts\.googleapis\.com\/css2\?[^"]+)"[^>]*>/;

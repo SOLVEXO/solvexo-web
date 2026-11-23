@@ -78,6 +78,7 @@ const BlogIndexPage  = lazy(() => import('@/features/buyer/pages/blog/BlogIndexP
 const BlogPostPage   = lazy(() => import('@/features/buyer/pages/blog/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
 const ManualsPage    = lazy(() => import('@/features/buyer/pages/ManualsPage').then(m => ({ default: m.ManualsPage })));
 const StartPage      = lazy(() => import('@/features/buyer/pages/StartPage').then(m => ({ default: m.StartPage })));
+const PartnersPage   = lazy(() => import('@/features/buyer/pages/PartnersPage').then(m => ({ default: m.PartnersPage })));
 
 // ── Public / Buyer ────────────────────────────────────────────────────────────
 const StorefrontLayout = lazy(() => import('@/features/storefront/StorefrontLayout').then(m => ({ default: m.StorefrontLayout })));
@@ -139,6 +140,7 @@ const SearchSettingsPage = lazy(() => import('@/features/seller/store/Dashboard/
 const SalesChannelsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/channels/SalesChannelsPage'));
 const CustomersHubLayout = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomersHubLayout'));
 const KhataHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/khata/KhataHub'));
+const AccountingHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/accounting/AccountingHub'));
 const MessagingHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/messaging/MessagingHub'));
 const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/wholesale/WholesaleHub'));
 const SubscriptionsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/subscriptions/SubscriptionsHub'));
@@ -348,6 +350,8 @@ const mainRouter = createBrowserRouter([
               { path: 'blog/:slug',      element: <BlogPostPage /> },
               { path: 'manuals',         element: <ManualsPage /> },
               { path: 'start',           element: <StartPage /> },
+              { path: 'online-store-pakistan', element: <StartPage variant="pakistan" /> },
+              { path: 'partners',        element: <PartnersPage /> },
               // Unknown public address: a real not-found page (noindex) instead of redirecting to the home page,
               // which search engines report as a "soft 404".
               { path: '*',               element: <NotFoundPage /> },
@@ -454,6 +458,7 @@ const mainRouter = createBrowserRouter([
             { path: 'customer/list',                    element: <StoreCustomerList /> },
             { path: 'wholesale',                        element: <WholesaleHub /> },
             { path: 'khata',                            element: <KhataHub /> },
+            { path: 'accounting',                       element: <AccountingHub /> },
           ] },
           { path: 'customer/subscribers',             element: <Navigate to="../customer/list?marketing=subscribed" replace /> },
           { path: 'analytics',                        element: <StoreAnalytics /> },

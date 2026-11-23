@@ -58,4 +58,18 @@ describe('ad landing page', () => {
     expect((await screen.findAllByRole('button', { name: /Start free/ })).length).toBeGreaterThan(0);
     expect(screen.queryByRole('link', { name: /WhatsApp/ })).toBeNull();
   });
+
+  it('Pakistan search page: its own heading, the seller questions, and call-backs tagged with its address', async () => {
+    api.apiBrowsePlatformPlans.mockResolvedValue({ data: [] });
+    api.apiGetPublicTrialSettings.mockResolvedValue({ data: { enabled: true, durationDays: 7 } });
+    api.apiChatConfig.mockResolvedValue({ data: { enabled: false, agentName: 'Sana', greeting: '', whatsappNumber: null } });
+    api.apiDemoRequest.mockResolvedValue({ success: true, message: 'ok' });
+    render(<MemoryRouter initialEntries={['/online-store-pakistan']}><StartPage variant="pakistan" /></MemoryRouter>);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Online Store Builder & POS for Pakistan' })).toBeInTheDocument();
+    expect(screen.getByText('Does Solvexo take commission on cash on delivery?')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Sara Khan' } });
+    fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '0300 1234567' } });
+    fireEvent.click(screen.getByRole('button', { name: /Call me back/ }));
+    await waitFor(() => expect(api.apiDemoRequest).toHaveBeenCalledWith(expect.objectContaining({ page: '/online-store-pakistan' })));
+  });
 });

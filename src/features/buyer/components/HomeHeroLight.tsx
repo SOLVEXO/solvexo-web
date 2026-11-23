@@ -1,3 +1,4 @@
+import { useLayoutEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowUpRight, ArrowRight, Check, LayoutGrid, ListOrdered, Diamond, Home, Sparkles, Menu } from 'lucide-react';
 import { Reveal } from '@/components/comman/motion/Reveal';
@@ -5,6 +6,7 @@ import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { countryFromPathname } from '@/utils/countryPrefix';
 import { useSiteText } from '@/i18n/site/useSiteText';
 import { HOME_HERO_TEXT } from './HomeHeroLight.text';
+import { HOME_HERO_SHELL_ID } from '@/seo/homeHeroShell';
 
 /**
  * The home page's light hero (owner's new website design): copy on the left, an illustrative workspace + storefront
@@ -31,63 +33,52 @@ export function HomeHeroLight() {
   const navigate = useNavigate();
   const money = useSampleMoney();
   const t = useSiteText(HOME_HERO_TEXT);
+  // The pre-built copy of this hero (shown before the app's JavaScript loads) gives way to the real one in the same frame.
+  useLayoutEffect(() => { document.getElementById(HOME_HERO_SHELL_ID)?.remove(); }, []);
 
   return (
     <section className="relative overflow-hidden bg-[#faf9f5] text-[#1c1d1b]">
       <div className="max-w-[1440px] mx-auto grid lg:grid-cols-2 gap-10 lg:gap-5 px-[6%] lg:px-[5%] pt-12 sm:pt-16 lg:pt-[86px] pb-10 lg:pb-[70px] lg:min-h-[730px]">
-        {/* Copy */}
+        {/* Copy. No entrance animation: the headline is the page's largest text, so it must show the moment it is
+           rendered (it is also pre-built into the home page's HTML; see HOME_HERO_SHELL in src/seo/homeHeroShell.ts). */}
         <div className="flex flex-col justify-center">
-          <Reveal delay={0}>
-            {/* The page's main heading carries the app name in its exact case: Google's OAuth brand review compares
-               the consent screen's name with the home page. */}
-            <h1 className="flex items-center gap-[9px] text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] rtl:tracking-normal text-[#a66c53]">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-orange shrink-0" aria-hidden />
-              <span className="normal-case tracking-[0.02em] text-[12px] sm:text-[13px]">Solvexo</span>
-              <span aria-hidden>—</span> {t.eyebrow}
-            </h1>
-          </Reveal>
-
-          <Reveal delay={0.1}>
-            <h2 className="font-sans font-semibold text-[40px] sm:text-[54px] lg:text-[clamp(40px,4vw,60px)] leading-[1.1] tracking-[-0.05em] rtl:tracking-normal rtl:leading-[1.3] mt-6 mb-6">
-              {t.headline1}<br />
-              {t.headline2}<br />
-              <span className="text-brand-orange">{t.headline3}</span>
-            </h2>
-          </Reveal>
-
-          <Reveal delay={0.2}>
-            <p className="text-[15px] leading-[1.85] text-[#777974] max-w-[400px]">
-              {t.lead}
-            </p>
-          </Reveal>
-
-          <Reveal delay={0.3}>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-4 mt-7">
-              <button
-                type="button"
-                onClick={() => navigate('/sellers')}
-                className="inline-flex items-center gap-[26px] px-[22px] py-[17px] rounded-[7px] text-[13px] font-semibold text-white bg-brand-orange hover:-translate-y-0.5 transition-transform cursor-pointer border-0"
-              >
-                {t.exploreSelling} <ArrowUpRight size={17} strokeWidth={2.2} className="rtl:-scale-x-100" aria-hidden />
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/products')}
-                className="inline-flex items-center gap-[18px] py-[14px] text-[13px] font-semibold border-0 border-b border-[#aaa] bg-transparent hover:text-brand-orange transition-colors cursor-pointer"
-              >
-                {t.productTour} <ArrowRight size={15} className="rtl:-scale-x-100" aria-hidden />
-              </button>
-            </div>
-          </Reveal>
-
-          <Reveal delay={0.4}>
-            <div className="mt-9 flex items-center gap-3 text-[11px] text-[#777974]">
-              <span className="inline-flex items-center gap-2 border border-[#e5e5dd] rounded-full px-2.5 py-[7px] text-[#666]" aria-hidden>
-                <ListOrdered size={11} /><Diamond size={10} /><ArrowUpRight size={11} className="rtl:-scale-x-100" />
-              </span>
-              {t.onePlatform}
-            </div>
-          </Reveal>
+          {/* The page's main heading carries the app name in its exact case: Google's OAuth brand review compares
+             the consent screen's name with the home page. */}
+          <h1 className="flex items-center gap-[9px] text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] rtl:tracking-normal text-[#8f5a43]">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-orange shrink-0" aria-hidden />
+            <span className="normal-case tracking-[0.02em] text-[12px] sm:text-[13px]">Solvexo</span>
+            <span aria-hidden>—</span> {t.eyebrow}
+          </h1>
+          <h2 className="font-sans font-semibold text-[40px] sm:text-[54px] lg:text-[clamp(40px,4vw,60px)] leading-[1.1] tracking-[-0.05em] rtl:tracking-normal rtl:leading-[1.3] mt-6 mb-6">
+            {t.headline1}<br />
+            {t.headline2}<br />
+            <span className="text-brand-orange">{t.headline3}</span>
+          </h2>
+          <p className="text-[15px] leading-[1.85] text-[#64665f] max-w-[400px]">
+            {t.lead}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-4 mt-7">
+            <button
+              type="button"
+              onClick={() => navigate('/sellers')}
+              className="inline-flex items-center gap-[26px] px-[22px] py-[17px] rounded-[7px] text-[13px] font-semibold text-white bg-brand-orange hover:-translate-y-0.5 transition-transform cursor-pointer border-0"
+            >
+              {t.exploreSelling} <ArrowUpRight size={17} strokeWidth={2.2} className="rtl:-scale-x-100" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/products')}
+              className="inline-flex items-center gap-[18px] py-[14px] text-[13px] font-semibold border-0 border-b border-[#aaa] bg-transparent hover:text-brand-orange transition-colors cursor-pointer"
+            >
+              {t.productTour} <ArrowRight size={15} className="rtl:-scale-x-100" aria-hidden />
+            </button>
+          </div>
+          <div className="mt-9 flex items-center gap-3 text-[11px] text-[#64665f]">
+            <span className="inline-flex items-center gap-2 border border-[#e5e5dd] rounded-full px-2.5 py-[7px] text-[#666]" aria-hidden>
+              <ListOrdered size={11} /><Diamond size={10} /><ArrowUpRight size={11} className="rtl:-scale-x-100" />
+            </span>
+            {t.onePlatform}
+          </div>
         </div>
 
         {/* Illustrative visual */}

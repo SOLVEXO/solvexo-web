@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { PlanInsightRow, PlanInsights } from '@/api/services/analytics/saasMetrics';
@@ -49,6 +49,14 @@ const renderTab = () => render(
     </Routes>
   </MemoryRouter>,
 );
+
+// The metric cards count up to their value; asking for reduced motion makes them show the final number at once.
+beforeAll(() => {
+  window.matchMedia = ((query: string) => ({
+    matches: query.includes('prefers-reduced-motion'), media: query, onchange: null,
+    addListener: () => {}, removeListener: () => {}, addEventListener: () => {}, removeEventListener: () => {}, dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
+});
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 

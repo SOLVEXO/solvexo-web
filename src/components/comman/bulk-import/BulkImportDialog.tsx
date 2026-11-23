@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, Download, FileSpreadsheet, MinusCircle, RefreshCw, Upload, XCircle } from 'lucide-react';
+import { AlertCircle, Download, FileSpreadsheet, MinusCircle, RefreshCw, Upload, XCircle, Info } from 'lucide-react';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import {
@@ -138,6 +138,16 @@ export function BulkImportDialog({ title, entityLabel, basePath, onClose, onImpo
                 : `No ${entityLabel} were saved.`}
             {result.failedCount > 0 && ' Fix the failed rows and upload the same file again — rows already saved are not duplicated.'}
           </p>
+
+          {result.notices && result.notices.length > 0 && (
+            <ul className="flex flex-col gap-1.5 list-none p-0 m-0" aria-label="Import notes">
+              {result.notices.map(n => (
+                <li key={n} className="flex items-start gap-2 text-[12px] text-charcoal bg-cream rounded-[8px] px-3 py-2">
+                  <Info size={13} className="text-brand-orange shrink-0 mt-[1px]" aria-hidden /> <span>{n}</span>
+                </li>
+              ))}
+            </ul>
+          )}
 
           {result.failedCount > 0 && (
             <div className="flex flex-col gap-1.5 max-h-[240px] overflow-y-auto border border-bone rounded-[8px] p-3" aria-label="Failed rows">

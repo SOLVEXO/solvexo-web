@@ -21,8 +21,9 @@ const LOGO_SRC = { dark: '/brand/solvexo-logo.png', light: '/brand/solvexo-logo-
 /** Width / height of the full logo artwork (833 × 285). */
 const LOGO_RATIO = 833 / 285;
 
-export function SolvexoIcon({ size = 32 }: { size?: number }) {
-  return <img src={ICON_SRC} alt="Solvexo" width={size} height={size} className="shrink-0 select-none" draggable={false} />;
+/** `decorative`: the name is already written next to the mark, so screen readers should not hear it twice. */
+export function SolvexoIcon({ size = 32, decorative = false }: { size?: number; decorative?: boolean }) {
+  return <img src={ICON_SRC} alt={decorative ? '' : 'Solvexo'} width={size} height={size} className="shrink-0 select-none" draggable={false} />;
 }
 
 /** `size` is the height of the mark; `variant` is the wordmark colour: 'dark' text for light backgrounds, 'light' for dark ones. */
@@ -33,7 +34,7 @@ export function SolvexoLogo({ size = 32, showWordmark = true, className, variant
   if (textWordmark) {
     return (
       <div className={clsx('flex items-center', className)} style={{ gap: Math.round(size * 0.22) }}>
-        <SolvexoIcon size={size} />
+        <SolvexoIcon size={size} decorative />
         <span
           className={clsx('font-sans font-extrabold tracking-[-0.02em] leading-none select-none', variant === 'light' ? 'text-white' : 'text-[#111110]')}
           style={{ fontSize: Math.round(size * 0.62) }}

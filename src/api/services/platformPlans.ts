@@ -293,13 +293,14 @@ export function apiGetStoreInvoices(storeId: string, query: { page?: number; lim
 export function apiChangePlatformPlan(storeId: string, newPlatformPlanId: string, newBillingInterval: 'monthly' | 'yearly', billImmediately = true, idempotencyKey?: string) {
   return client.patch<never, ApiResponse<ChangePlanResult>>(
     `${BASE}/${storeId}/change-plan`, { newPlatformPlanId, newBillingInterval, billImmediately },
-    idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined,
+    // No automatic "Done!" toast: a purchase is not done until payment is confirmed; the checkout shows the real result.
+    { toast: false, ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}) },
   );
 }
 
 /** After the browser confirmed a 3DS charge: the server verifies it with Stripe, then applies the pending plan. */
 export function apiConfirmPendingPlanChange(storeId: string) {
-  return client.post<never, ApiResponse<{ pending: boolean; applied: boolean }>>(`${BASE}/${storeId}/confirm-pending-plan-change`);
+  return client.post<never, ApiResponse<{ pending: boolean; applied: boolean }>>(`${BASE}/${storeId}/confirm-pending-plan-change`, undefined, { toast: false });
 }
 
 /** Exact proration math for a would-be plan change — no charge, no write. Call this before showing a confirm dialog. */

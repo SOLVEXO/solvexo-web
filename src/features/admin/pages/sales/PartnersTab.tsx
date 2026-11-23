@@ -6,18 +6,42 @@ import { can } from '@/hooks/auth/useCan';
 import {
   LINE_STATUS_LABELS, PARTNER_KINDS, PARTNER_KIND_LABELS, PAYOUT_LABELS, PAYOUT_METHODS, REFERRAL_SOURCE_LABELS,
   apiAddAdjustment, apiAddReferral, apiCommissionPlans, apiPartner, apiPartnerLogins, apiPartnerStatement, apiPartners,
-  apiRecordPayout, apiRemoveReferral, apiRunCommissions, apiSaveCommissionPlan, apiSavePartner, describePlan, formatPKR,
+  apiRecordPayout, apiRemoveReferral, apiSupportNotice, apiRunCommissions, apiSaveCommissionPlan, apiSavePartner, describePlan, formatPKR,
   type CommissionPlan, type CommissionPlanInput, type PartnerDetail, type PartnerKind, type PartnerLogin, type PartnerRow,
   type PartnerStatement, type PayoutMethod,
 } from '@/api/services/salesOps';
 import { errMsg, useStableToast } from './sales.utils';
+import { OnboardingBoard } from './partners/OnboardingBoard';
+import { DealsBoard } from './partners/DealsBoard';
+import { ScorecardBoard } from './partners/ScorecardBoard';
+
+/** Applicants not yet vetted: they appear under Applications & onboarding, not in the partner list. */
+const APPLICANT_STAGES = new Set(['applied', 'documents', 'review', 'rejected']);
 
 const thisMonth = () => new Date(Date.now() + 5 * 3_600_000).toISOString().slice(0, 7);
 const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 const STATUS_COLOR: Record<string, 'yellow' | 'green' | 'gray' | 'red'> = { pending: 'yellow', payable: 'green', paid: 'gray', void: 'red' };
 
-/** Super Admin → Sales Ops → Partners: resellers, agents and reps, how they are paid, what they are owed. */
+/** Super Admin → Sales Ops → Partners: the partner list and commissions, plus applications & onboarding. */
 export function PartnersTab() {
+  const [view, setView] = useState<'partners' | 'onboarding' | 'deals' | 'scorecards'>(() => { const v = new URLSearchParams(window.location.search).get('view'); return v === 'onboarding' || v === 'deals' || v === 'scorecards' ? v : 'partners'; });
+  const [tick, setTick] = useState(0);
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="inline-flex flex-wrap self-start rounded-lg border border-bone bg-white p-0.5" role="tablist" aria-label="Partners view">
+        {([['partners', 'Partners & commissions'], ['onboarding', 'Applications & onboarding'], ['deals', 'Deal registrations'], ['scorecards', 'Scorecards']] as const).map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)}
+            className={clsx('px-3.5 py-1.5 rounded-md text-[12.5px] font-medium border-0 cursor-pointer', view === k ? 'bg-charcoal text-white' : 'bg-transparent text-charcoal hover:bg-cream')}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {view === 'partners' ? <PartnersList key={tick} /> : view === 'onboarding' ? <OnboardingBoard onChanged={() => setTick(t => t + 1)} /> : view === 'deals' ? <DealsBoard /> : <ScorecardBoard />}
+    </div>
+  );
+}
+
+function PartnersList() {
   const toast = useStableToast();
   const [rows, setRows] = useState<PartnerRow[] | null>(null);
   const [plans, setPlans] = useState<CommissionPlan[]>([]);
@@ -31,7 +55,7 @@ export function PartnersTab() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([apiPartners(), apiCommissionPlans()])
-      .then(([p, c]) => { if (!cancelled) { setRows(p.data); setPlans(c.data); } })
+      .then(([p, c]) => { if (!cancelled) { setRows(p.data.filter(r => !APPLICANT_STAGES.has(r.stage ?? ''))); setPlans(c.data); } })
       .catch(e => { if (!cancelled) { setRows([]); toast.error(errMsg(e, 'Could not load partners.')); } });
     return () => { cancelled = true; };
   }, [tick, toast]);
@@ -188,7 +212,7 @@ function PartnerFormModal({ partner, plans, onClose, onSaved }: { partner: Partn
   const [f, setF] = useState({
     name: p?.name ?? '', kind: (p?.kind ?? 'reseller') as PartnerKind, code: p?.code ?? '', planId: p?.planId ?? plans.find(x => !x.isArchived)?._id ?? '',
     adminId: p?.adminId ?? '', email: p?.email ?? '', phone: p?.phone ?? '', city: p?.city ?? '',
-    payoutMethod: (p?.payoutMethod ?? 'bank') as PayoutMethod, payoutDetails: p?.payoutDetails ?? '', status: p?.status ?? 'active', notes: p?.notes ?? '',
+    payoutMethod: (p?.payoutMethod ?? 'bank') as PayoutMethod, payoutDetails: p?.payoutDetails ?? '', status: p?.status ?? 'active', notes: p?.notes ?? '', whtPercent: p?.whtPercent?.toString() ?? '',
   });
   const [logins, setLogins] = useState<PartnerLogin[]>([]);
   const [busy, setBusy] = useState(false);
@@ -203,7 +227,7 @@ function PartnerFormModal({ partner, plans, onClose, onSaved }: { partner: Partn
     try {
       onSaved((await apiSavePartner(p?._id ?? null, {
         name: f.name.trim(), kind: f.kind, ...(f.code.trim() ? { code: f.code.trim() } : {}), planId: f.planId || null, adminId: f.adminId || null,
-        email: orNull(f.email), phone: orNull(f.phone), city: orNull(f.city), payoutMethod: f.payoutMethod, payoutDetails: orNull(f.payoutDetails),
+        email: orNull(f.email), phone: orNull(f.phone), city: orNull(f.city), payoutMethod: f.payoutMethod, payoutDetails: orNull(f.payoutDetails), whtPercent: f.whtPercent.trim() === '' ? null : Number(f.whtPercent),
         status: f.status as 'active' | 'paused', notes: orNull(f.notes),
       })).data);
     } catch (e) { setError(errMsg(e, 'Could not save the partner.')); setBusy(false); }
@@ -229,6 +253,7 @@ function PartnerFormModal({ partner, plans, onClose, onSaved }: { partner: Partn
         </Select>
         <Select label="Pay by" value={f.payoutMethod} onChange={set('payoutMethod')}>{PAYOUT_METHODS.map(m => <option key={m} value={m}>{PAYOUT_LABELS[m]}</option>)}</Select>
         <Select label="Status" value={f.status} onChange={set('status')}><option value="active">Active</option><option value="paused">Paused (earns nothing new)</option></Select>
+        <Input label="Withholding tax on payouts (%)" inputMode="decimal" placeholder="Programme default" value={f.whtPercent} onChange={set('whtPercent')} />
         <div className="sm:col-span-2"><Textarea label="Payout details" rows={2} placeholder="Account title, IBAN / account number, bank — or the JazzCash / Easypaisa number" value={f.payoutDetails} onChange={set('payoutDetails')} /></div>
         <div className="sm:col-span-2"><Textarea label="Notes (managers only)" rows={2} value={f.notes} onChange={set('notes')} /></div>
       </div>
@@ -304,6 +329,9 @@ function MerchantsSection({ d, act }: { d: PartnerDetail; act: Act }) {
             <li key={r.sellerId} className="flex items-center gap-3 px-3 py-2">
               <div className="flex-1 min-w-0"><p className="font-medium text-charcoal truncate">{r.merchant}</p><p className="text-[11.5px] text-slate">{REFERRAL_SOURCE_LABELS[r.source] ?? r.source} · counts from {day(r.effectiveFrom)}</p></div>
               <Badge color={r.payingNow ? 'green' : 'gray'} size="sm">{r.payingNow ? 'Paying' : 'Not paying'}</Badge>
+              {r.commissionEndsAt
+                ? <button title="Withdraw the notice" onClick={() => void act(() => apiSupportNotice(d.partner._id, r.sellerId, { cancel: true }), 'Notice withdrawn.')} className="text-[11px] text-warning bg-transparent border-0 cursor-pointer whitespace-nowrap">Commission ends {day(r.commissionEndsAt)}</button>
+                : <button title="B4.4: the partner stopped supporting this seller" onClick={() => { const reason = window.prompt(`Why is ${d.partner.name} no longer supporting ${r.merchant}? This is sent to them as written notice; commission on this seller ends after the notice period.`); if (reason?.trim()) void act(() => apiSupportNotice(d.partner._id, r.sellerId, { reason: reason.trim() }), 'Notice given.'); }} className="text-[11px] text-slate hover:text-charcoal bg-transparent border-0 cursor-pointer whitespace-nowrap">Stopped supporting?</button>}
               <span className="w-28 text-right tabular-nums">{formatPKR(r.earnedPKR)}</span>
               <button aria-label={`Remove ${r.merchant}`} onClick={() => void act(() => apiRemoveReferral(d.partner._id, r.sellerId), 'Merchant removed from this partner.')} className="bg-transparent border-0 text-slate hover:text-error cursor-pointer"><Trash2 size={13} /></button>
             </li>
@@ -375,6 +403,9 @@ function PayoutsSection({ d, act }: { d: PartnerDetail; act: Act }) {
     <div className="flex flex-col gap-4">
       <div className="rounded-lg border border-bone p-3">
         <p className="font-semibold text-charcoal">Pay {formatPKR(Math.max(0, payable))}</p>
+        {(d.partner.whtPercent ?? 0) > 0 && payable > 0 && (
+          <p className="text-[12px] text-slate">Less {d.partner.whtPercent}% withholding tax ({formatPKR(Math.round((payable * d.partner.whtPercent!) / 100))}): transfer {formatPKR(payable - Math.round((payable * d.partner.whtPercent!) / 100))} and give the partner the tax certificate.</p>
+        )}
         <p className="text-[12px] text-slate mb-2">{PAYOUT_LABELS[d.partner.payoutMethod]}{d.partner.payoutDetails ? `: ${d.partner.payoutDetails}` : ' — no payout details saved yet.'}</p>
         {!canPay ? <p className="text-[12px] text-slate">Recording payouts needs the Payouts permission (finance).</p> : payable <= 0 ? <p className="text-[12px] text-slate">Nothing is payable right now.</p> : (
           <div className="grid sm:grid-cols-4 gap-2 items-end">
@@ -396,7 +427,7 @@ function PayoutsSection({ d, act }: { d: PartnerDetail; act: Act }) {
       </div>
       {d.payouts.length > 0 && (
         <ul className="divide-y divide-bone rounded-lg border border-bone">
-          {d.payouts.map(p => <li key={p._id} className="flex items-center gap-3 px-3 py-2"><span className="w-28 text-slate">{day(p.paidAt)}</span><span className="w-32 font-semibold tabular-nums">{formatPKR(p.amountPKR)}</span><span className="text-slate">{PAYOUT_LABELS[p.method] ?? p.method}{p.reference ? ` · ${p.reference}` : ''}</span></li>)}
+          {d.payouts.map(p => <li key={p._id} className="flex items-center gap-3 px-3 py-2"><span className="w-28 text-slate">{day(p.paidAt)}</span><span className="w-32 font-semibold tabular-nums">{formatPKR(p.amountPKR)}</span><span className="text-slate">{PAYOUT_LABELS[p.method] ?? p.method}{p.reference ? ` · ${p.reference}` : ''}{p.whtPKR ? ` · tax withheld ${formatPKR(p.whtPKR)}, transferred ${formatPKR(p.netPKR ?? p.amountPKR - p.whtPKR)}` : ''}</span></li>)}
         </ul>
       )}
     </div>

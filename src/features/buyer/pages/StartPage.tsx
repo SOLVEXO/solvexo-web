@@ -14,18 +14,29 @@ import { ltr } from './pricing/arabicCount';
 import { useSiteLang } from '@/i18n/site/siteLangContext';
 import { useSiteText } from '@/i18n/site/useSiteText';
 import { START_TEXT } from './StartPage.text';
+import { SELLER_FAQ } from '../data/sellerFaq';
 
 const FEATURE_ICONS = [Store, Banknote, Truck, ScanBarcode, Boxes, Share2];
+
+/** Search version (/online-store-pakistan): a heading and intro written for "online store builder Pakistan" and
+ *  "POS system Pakistan", and the seller questions people search for. English page only. */
+const PAKISTAN_SEO = {
+  heroTitle: 'Online Store Builder & POS for Pakistan',
+  heroSub: 'Make your own online store with cash on delivery and delivery charges by city, plus a POS for your shop counter. Share your store on WhatsApp, Facebook and Instagram, and keep shop and online stock in one count.',
+};
 
 /**
  * www.solvexo.store/start (and /pk/start) — the landing page for paid social ads. Phone-first, Urdu + English,
  * prices in the visitor's currency, one sign-up button, a WhatsApp button when Solvexo's WhatsApp line is connected,
  * and a call-back form that lands in the sales pipeline. Kept out of search results (ads only).
+ * `variant="pakistan"` is the same page for search at /online-store-pakistan (indexed).
  */
-export function StartPage() {
+export function StartPage({ variant = 'ad' }: { variant?: 'ad' | 'pakistan' }) {
   const sellEntry = useSellEntry();
-  const t = useSiteText(START_TEXT);
+  const base = useSiteText(START_TEXT);
   const { pageLang } = useSiteLang();
+  const seo = variant === 'pakistan' && pageLang === 'en';
+  const t = seo ? { ...base, ...PAKISTAN_SEO, faq: SELLER_FAQ } : base;
   const { search } = useLocation();
   const local = useLocalCurrency();
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
@@ -120,7 +131,7 @@ export function StartPage() {
 
       {/* Call back */}
       <section className="px-4 pb-12 max-w-[560px] mx-auto">
-        <CallBackForm search={search} />
+        <CallBackForm search={search} page={variant === 'pakistan' ? '/online-store-pakistan' : '/start'} />
       </section>
 
       {/* FAQ */}
@@ -158,7 +169,7 @@ export function StartPage() {
   );
 }
 
-function CallBackForm({ search }: { search: string }) {
+function CallBackForm({ search, page }: { search: string; page: string }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
@@ -174,8 +185,8 @@ function CallBackForm({ search }: { search: string }) {
     try {
       await apiDemoRequest({
         name: name.trim(), phone: phone.trim(), city: city.trim() || undefined,
-        message: 'Asked for a call back from the ad landing page.',
-        page: '/start', ...campaignTags(search), partnerCode: getPartnerCode() ?? undefined,
+        message: page === '/start' ? 'Asked for a call back from the ad landing page.' : 'Asked for a call back from the Pakistan page.',
+        page, ...campaignTags(search), partnerCode: getPartnerCode() ?? undefined,
       });
       setState('sent');
     } catch {

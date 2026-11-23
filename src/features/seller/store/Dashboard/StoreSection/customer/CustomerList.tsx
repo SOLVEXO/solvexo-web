@@ -489,8 +489,14 @@ export default function StoreCustomerList() {
                 entityLabel="customers"
                 basePath={`/api/store/${storeId}/customers`}
                 onImported={refetch}
-                consent={{ label: 'These customers agreed to receive marketing emails from my store (needed for rows marked "yes" in Accepts Email Marketing).', optional: true }}
-                notes={['Email is the unique key — customers that already exist in this store are skipped.', 'No password or email is sent; customers can sign in later by resetting their password.', 'People who unsubscribed earlier are never re-subscribed by an import.']}
+                consent={{ label: 'These customers agreed to receive marketing from my store (needed for rows marked "yes" in Accepts Email, SMS or WhatsApp Marketing).', optional: true }}
+                notes={[
+                  'A Shopify customer export works as it is. Name, email, phone, default address, tags and note are imported.',
+                  'Email is the unique key — customers that already exist in this store are skipped.',
+                  'Customers with a phone number but no email are added to your shop (POS) customers, where the till finds them by phone.',
+                  'No password or email is sent; customers can sign in later by resetting their password.',
+                  'People who unsubscribed earlier are never re-subscribed by an import.',
+                ]}
               />
             )}
             <Button size="sm" icon={<Plus size={14} />} aria-label="Create Customer" onClick={() => { setCreateForm({ name: '', email: '', phone: '', marketingConsent: false }); setCreateError(''); setCreateNotice(''); setCreateOpen(true); }}>
@@ -823,6 +829,16 @@ export default function StoreCustomerList() {
                     )}
                     {metaError && <p className="text-[11px] text-error mt-1" role="alert">{metaError}</p>}
                   </div>
+                  {(sel.smsMarketingOptIn || sel.whatsappMarketingOptIn) && (
+                    <div>
+                      <span className="text-xs font-medium text-graphite block mb-1.5">SMS & WhatsApp marketing</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {sel.smsMarketingOptIn && <Badge color="green" dot>SMS: agreed</Badge>}
+                        {sel.whatsappMarketingOptIn && <Badge color="green" dot>WhatsApp: agreed</Badge>}
+                      </div>
+                      <p className="text-[10.5px] text-slate mt-1 leading-[1.4]">Recorded from a customer import. Solvexo doesn't send SMS or WhatsApp marketing yet; this keeps the consent ready.</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-[#f0eee6]">

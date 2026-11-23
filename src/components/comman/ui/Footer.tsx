@@ -47,6 +47,7 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
       { label: 'Beauty & Cosmetics',       path: '/solutions/beauty' },
       { label: 'Creators & Digital Sellers', path: '/solutions/creators' },
       { label: 'Small Business',           path: '/solutions/small-business' },
+      { label: 'Online store in Pakistan', path: '/online-store-pakistan' },
     ],
   },
   {
@@ -64,6 +65,7 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
       { label: 'About Solvexo', path: '/about' },
       { label: 'Security',      path: '/security' },
       { label: 'For Sellers',   path: '/sellers' },
+      { label: 'Become a partner', path: '/partners' },
       { label: 'Pricing',       path: '/pricing' },
     ],
   },
@@ -152,9 +154,10 @@ function Newsletter() {
           <button
             type="submit"
             disabled={loading}
+            aria-label={loading ? t.subscribing : t.subscribe}
             className="flex items-center justify-center gap-2 h-9 px-5 rounded-full bg-brand-orange text-white text-[13px] font-semibold border-none cursor-pointer hover:bg-brand-deep-orange transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
           >
-            <Send size={13} /> <span className="hidden sm:inline">{loading ? t.subscribing : t.subscribe}</span>
+            <Send size={13} aria-hidden /> <span className="hidden sm:inline" aria-hidden>{loading ? t.subscribing : t.subscribe}</span>
           </button>
         </MagneticButton>
       </form>

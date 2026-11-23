@@ -7,6 +7,13 @@ import { can } from '@/hooks/auth/useCan';
 import { apiMyPartner, apiMyStatement, describePlan, formatPKR, PAYOUT_LABELS, type PartnerDetail, type PartnerStatement } from '@/api/services/salesOps';
 import { StatementView } from './PartnersTab';
 import { errMsg } from './sales.utils';
+import { apiMyOnboarding, type PartnerOnboarding } from '@/api/services/partnerProgramme';
+import { MyOnboarding } from './partners/MyOnboarding';
+import { MyDeals } from './partners/MyDeals';
+import { MyScorecard } from './partners/MyScorecard';
+
+/** Before the agreement is signed a partner sees only their onboarding: there is nothing to earn yet. */
+const PRE_AGREEMENT = new Set(['applied', 'documents', 'review', 'agreement', 'rejected']);
 
 const thisMonth = () => new Date(Date.now() + 5 * 3_600_000).toISOString().slice(0, 7);
 const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
@@ -17,7 +24,11 @@ export function MyEarnings() {
   const [error, setError] = useState('');
   const [month, setMonth] = useState(thisMonth);
   const [statement, setStatement] = useState<PartnerStatement | null>(null);
+  const [onb, setOnb] = useState<PartnerOnboarding | null | undefined>(undefined);
 
+  useEffect(() => {
+    apiMyOnboarding().then(r => setOnb(r.data)).catch(() => setOnb(null));
+  }, []);
   useEffect(() => {
     apiMyPartner().then(r => { setD(r.data); setStatement(r.data?.statement ?? null); }).catch(e => { setD(null); setError(errMsg(e, 'Could not load your earnings.')); });
   }, []);
@@ -27,7 +38,10 @@ export function MyEarnings() {
   };
 
   const header = <AdminPageHeader title="My earnings" subtitle="Your referral link, the merchants you brought in, and what you have earned." icon={<Handshake size={18} />} />;
-  if (d === undefined) return <>{header}<div className="px-4 sm:px-7 py-6"><div className="h-48 rounded-xl bg-cream animate-pulse" /></div></>;
+  if (onb && PRE_AGREEMENT.has(onb.stage)) {
+    return <>{header}<div className="px-4 sm:px-7 py-5 max-w-5xl"><MyOnboarding d={onb} onChange={setOnb} /></div></>;
+  }
+  if (d === undefined || onb === undefined) return <>{header}<div className="px-4 sm:px-7 py-6"><div className="h-48 rounded-xl bg-cream animate-pulse" /></div></>;
   if (!d) return (
     <>{header}<div className="px-4 sm:px-7 py-10">
       <EmptyState icon={<Handshake size={28} />} title={error || 'You are not set up as a partner yet'}
@@ -42,6 +56,9 @@ export function MyEarnings() {
     <>
       {header}
       <div className="px-4 sm:px-7 py-5 flex flex-col gap-5 max-w-5xl">
+        {onb && onb.stage === 'onboarding' && <MyOnboarding d={onb} onChange={setOnb} />}
+        <MyDeals />
+        <MyScorecard />
         <section className="rounded-xl border border-bone bg-white p-4">
           <p className="text-[11px] font-bold uppercase tracking-wide text-slate mb-1.5">Your referral link</p>
           <div className="flex items-center gap-2 rounded-lg border border-bone bg-cream/60 px-3 py-2">
@@ -88,7 +105,7 @@ export function MyEarnings() {
           <p className="text-[12px] text-slate mb-2">Paid by {PAYOUT_LABELS[d.partner.payoutMethod]}{d.partner.payoutDetails ? ` to ${d.partner.payoutDetails}` : ''}. To change your payout details, contact your Solvexo manager.</p>
           {d.payouts.length === 0 ? <p className="text-[12.5px] text-slate">No payouts yet.</p> : (
             <ul className="divide-y divide-bone">
-              {d.payouts.map(p => <li key={p._id} className="flex items-center gap-3 py-2 text-[13px]"><span className="w-28 text-slate">{day(p.paidAt)}</span><span className="font-semibold tabular-nums">{formatPKR(p.amountPKR)}</span><span className="text-slate">{PAYOUT_LABELS[p.method] ?? p.method}{p.reference ? ` · ref ${p.reference}` : ''}</span></li>)}
+              {d.payouts.map(p => <li key={p._id} className="flex items-center gap-3 py-2 text-[13px]"><span className="w-28 text-slate">{day(p.paidAt)}</span><span className="font-semibold tabular-nums">{formatPKR(p.amountPKR)}</span><span className="text-slate">{PAYOUT_LABELS[p.method] ?? p.method}{p.reference ? ` · ref ${p.reference}` : ''}{p.whtPKR ? ` · tax withheld ${formatPKR(p.whtPKR)}, you received ${formatPKR(p.netPKR ?? p.amountPKR - p.whtPKR)}` : ''}</span></li>)}
             </ul>
           )}
         </section>

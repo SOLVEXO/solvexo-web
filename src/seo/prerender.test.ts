@@ -22,11 +22,11 @@ describe('pre-built public pages', () => {
   it("puts the page's own head tags and plain-HTML content in place, once", () => {
     const html = buildPrerenderedHtml(template, seoForPath('/products/pos')!);
     expect(html.match(/<title>/g)).toHaveLength(1);
-    expect(html).toContain('<title>Point of Sale: Sell in person, synced with your store | Solvexo</title>');
+    expect(html).toContain('<title>POS System Synced With Your Online Store | Solvexo</title>');
     expect(html.match(/<meta name="description"/g)).toHaveLength(1);
     expect(html).toContain('<link rel="canonical" href="https://www.solvexo.store/products/pos" />');
     expect(html.match(/<h1/g)).toHaveLength(1);
-    expect(html).toContain('<h1 style="font-size:30px;margin:0">Point of Sale: Sell in person, synced with your store</h1>');
+    expect(html).toContain('<h1 style="font-size:30px;margin:0">POS System Synced With Your Online Store</h1>');
     expect(html).toContain('<a href="/pricing">Pricing</a>');
     expect(html).not.toContain('How Solvexo uses Google sign-in');
     // The app still boots from the same file.
@@ -89,5 +89,17 @@ describe('blog pages', () => {
   it('lists every article on /blog', () => {
     const html = buildPrerenderedHtml(template, seoForPath('/blog')!);
     for (const p of SITEMAP_PAGES.filter(p => p.path.startsWith('/blog/'))) expect(html).toContain(`<a href="${p.path}">`);
+  });
+
+  it('puts the seller questions and an FAQPage schema on /faq and /online-store-pakistan', () => {
+    for (const path of ['/faq', '/online-store-pakistan']) {
+      const html = buildPrerenderedHtml(template, seoForPath(path)!);
+      expect(html).toContain('<h3>Does Solvexo take commission on cash on delivery?</h3>');
+      const faq = ld(html).find(d => d['@type'] === 'FAQPage');
+      expect(faq.mainEntity[0].name).toBe('How do I make an online store in Pakistan?');
+    }
+    const pk = buildPrerenderedHtml(template, seoForPath('/online-store-pakistan')!);
+    expect(pk).toContain('<h1 style="font-size:30px;margin:0">Online Store Builder &amp; POS System in Pakistan</h1>');
+    expect(pk).toContain('<link rel="canonical" href="https://www.solvexo.store/online-store-pakistan"');
   });
 });

@@ -300,7 +300,9 @@ describe('phase 2: files, CAPTCHA, spam protection', () => {
     expect(input.accept).not.toContain('.png');
     const file = new File(['%PDF-1.4'], 'receipt.pdf', { type: 'application/pdf' });
     fireEvent.change(input, { target: { files: [file] } });
-    await waitFor(() => expect(screen.getByText('receipt.pdf')).toBeTruthy());
+    // The name shows as soon as the file is chosen; the Remove button only once the upload has finished. Sending before
+    // that is (rightly) refused, so wait for the button, not the name: on a slow CI machine the upload is still running.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove receipt.pdf' })).toBeTruthy());
     expect(uploadMock).toHaveBeenCalledTimes(1);
     expect((uploadMock.mock.calls[0][1] as { fieldId: string; sectionId: string }).fieldId).toBe('f');
     send();
