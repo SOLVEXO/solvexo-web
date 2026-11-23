@@ -55,3 +55,11 @@ export const dayIso = (d: Date) => d.toISOString().slice(0, 10);
 export const shortDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString() : '—');
 export const isBalanceSheet = (t: AccountType) => t === 'asset' || t === 'liability' || t === 'equity';
 export const isDebitNormal = (t: AccountType) => t === 'asset' || t === 'expense';
+
+export const EXPENSE_CATEGORY_LABEL: Record<string, string> = {
+  rent: 'Rent', utilities: 'Utilities', salaries: 'Salaries and wages', supplies: 'Supplies', transport: 'Transport', repairs: 'Repairs',
+  marketing: 'Marketing', meals: 'Meals and refreshments', taxes_fees: 'Taxes, fees and licences', other: 'Other',
+};
+
+/** The first day of the current month, as YYYY-MM-DD in local time. */
+export const monthStartIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; };
