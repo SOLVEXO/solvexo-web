@@ -11,6 +11,7 @@ import type { TableColumn } from '@/components/comman/ui/Table';
 import { ErrorLine } from '../wholesale/ErrorLine';
 import { useApi } from '../wholesale/wholesaleUtils';
 import { AccountEditModal, EntryModal, LedgerModal, ManualEntryModal, OpeningBalancesModal } from './AccountingModals';
+import { CashBookTab, ExpensesTab, ProfitTaxTab, SuppliersTab } from './AccountingBooksTabs';
 import {
   SKIP_LABEL, SOURCE_LABEL, TYPE_LABEL, dayIso, fmt, isDebitNormal, shortDate,
   type AccountRow, type JournalEntry, type SettingsResponse,
@@ -84,9 +85,16 @@ function Books({ storeId, settings, onSettingsChanged }: { storeId: string; sett
   const ctx = { storeId, exponent: exp, currency: settings.currency, accounts: rows, tick, refresh, openEntry: setEntryId, openLedger: setLedger };
   return (
     <>
-      <TabBar tabs={[{ id: 'overview', label: 'Overview' }, { id: 'journal', label: 'Journal' }, { id: 'trial', label: 'Trial balance' }, { id: 'accounts', label: 'Chart of accounts' }]} active={tab} onChange={setTab} />
+      <TabBar tabs={[
+        { id: 'overview', label: 'Overview' }, { id: 'expenses', label: 'Expenses' }, { id: 'cash', label: 'Cash book' }, { id: 'suppliers', label: 'Suppliers' },
+        { id: 'profit', label: 'Profit & tax' }, { id: 'journal', label: 'Journal' }, { id: 'trial', label: 'Trial balance' }, { id: 'accounts', label: 'Chart of accounts' },
+      ]} active={tab} onChange={setTab} />
       {accounts.error && <ErrorLine message={errorMessage(accounts.error)} onRetry={accounts.reload} />}
       {tab === 'overview' && <Overview {...ctx} settings={settings} />}
+      {tab === 'expenses' && <ExpensesTab {...ctx} />}
+      {tab === 'cash' && <CashBookTab {...ctx} />}
+      {tab === 'suppliers' && <SuppliersTab {...ctx} />}
+      {tab === 'profit' && <ProfitTaxTab {...ctx} />}
       {tab === 'journal' && <Journal {...ctx} minDate={dayIso(new Date(settings.settings!.goLiveDate))} />}
       {tab === 'trial' && <TrialBalance {...ctx} />}
       {tab === 'accounts' && <ChartOfAccounts {...ctx} />}

@@ -51,7 +51,8 @@ describe('Super Admin partner onboarding', () => {
     render(<MemoryRouter><OnboardingBoard /></MemoryRouter>);
     fireEvent.click(await screen.findByText('Lahore Traders'));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByRole('button', { name: 'Approve' })).toBeDisabled();
+    // The dialog opens with a loading placeholder; wait for the partner's details before checking them.
+    expect(await within(dialog).findByRole('button', { name: 'Approve' })).toBeDisabled();
     expect(within(dialog).getByText(/1 of 4 still to verify/)).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole('checkbox', { name: 'References and claimed partnerships checked' }));
     await waitFor(() => expect(api.apiTickChecklist).toHaveBeenCalledWith('p1', 'references_checked', true));
