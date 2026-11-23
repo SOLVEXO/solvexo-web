@@ -49,14 +49,16 @@ export function ChromeQrCode({ qr, size = 200, font }: { qr: ChromeQr; size?: nu
 
   return (
     <figure style={{ margin: 0, display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 8, fontFamily: font }}>
-      <div style={{ background: qr.bg, padding: qr.frame ? 10 : 0, borderRadius: qr.frame ? 14 : 0, boxShadow: qr.frame ? '0 1px 6px rgba(0,0,0,.12)' : 'none', lineHeight: 0 }}>
+      <div style={qr.frame
+        ? { background: qr.frameBg || (qr.transparent ? '#ffffff' : qr.bg), padding: 10, borderRadius: 14, boxShadow: '0 1px 6px rgba(0,0,0,.12)', lineHeight: 0 }
+        : { background: 'transparent', padding: 0, borderRadius: 0, boxShadow: 'none', lineHeight: 0 }}>
         <svg width={size} height={size} viewBox={`0 0 ${total} ${total}`} role="img" aria-label={qr.caption || 'QR code'} shapeRendering="geometricPrecision">
-          <rect width={total} height={total} fill={qr.bg} />
+          {!qr.transparent && <rect width={total} height={total} fill={qr.bg} />}
           <g fill={qr.fg}>{dots}</g>
           {eyes}
           {logoBox > 0 && (
             <g>
-              <rect x={quiet + mid - logoBox / 2 - 0.3} y={quiet + mid - logoBox / 2 - 0.3} width={logoBox + 0.6} height={logoBox + 0.6} rx={1.2} fill={qr.bg} />
+              <rect x={quiet + mid - logoBox / 2 - 0.3} y={quiet + mid - logoBox / 2 - 0.3} width={logoBox + 0.6} height={logoBox + 0.6} rx={1.2} fill={qr.transparent ? 'none' : qr.bg} />
               <image href={qr.logoUrl} x={quiet + mid - logoBox / 2} y={quiet + mid - logoBox / 2} width={logoBox} height={logoBox} preserveAspectRatio="xMidYMid meet" />
             </g>
           )}

@@ -99,7 +99,7 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
     : { top: '50%', transform: 'translateY(-50%)' };
   const sideProp = end ? 'insetInlineEnd' : 'insetInlineStart';
   const showClass = config.device === 'desktop' ? 'fcb-desktop' : config.device === 'mobile' ? 'fcb-mobile' : '';
-  const popupTheme: ChromeTheme = { bg: '#ffffff', fg: '#161412', accent: brandColor, accentText: '#ffffff', font, radius: radius && /^\d/.test(radius) ? `min(${radius}, 18px)` : '12px' };
+  const popupTheme: ChromeTheme = { bg: '#ffffff', fg: '#161412', accent: brandColor, accentText: '#ffffff', font, radius: radius && /^\d/.test(radius) ? `min(${radius}, 18px)` : '12px', popup: { variant: 'card' } };
   const bubble = (config.bubbleText ?? '').trim();
   const sideGap = (round ? 20 : 0) + edge;
   const gapPx = config.gapPx >= 0 ? config.gapPx : round ? 12 : 2;

@@ -19,7 +19,7 @@ export function BackToTop({ color, fontFamily }: { color: string; fontFamily: st
 export function HeaderTopBar({ bar, fallbackBg, fallbackColor, fontFamily, maxWidth, padX }: {
   bar: NonNullable<HeaderOptions['topBar']>; fallbackBg: string; fallbackColor: string; fontFamily: string; maxWidth: string; padX: string;
 }) {
-  return <ChromeTopStrip bar={bar} fallbackBg={fallbackBg} fallbackColor={fallbackColor} fontFamily={fontFamily} maxWidth={maxWidth} padX={padX} />;
+  return <ChromeTopStrip bar={bar} fallbackBg={fallbackBg} fallbackColor={fallbackColor} fontFamily={fontFamily} maxWidth={maxWidth} padX={padX} popup={{ variant: 'card' }} />;
 }
 
 /** The retailer's call-to-action button in the header (desktop only; the mobile drawer keeps the menu clean). */

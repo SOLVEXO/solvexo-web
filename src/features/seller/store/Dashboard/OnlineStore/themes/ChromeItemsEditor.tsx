@@ -5,8 +5,8 @@ import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { ChromeIcon } from '@/features/storefront/chrome/ChromeIcon';
 import { ChromeQrCode } from '@/features/storefront/chrome/ChromeQrCode';
 import {
-  CHROME_ICON_KEYS, DEFAULT_POPUP, DEFAULT_QR, MAX_CHROME_ITEMS, newChromeItem, POPUP_PARTS, POPUP_PART_LABEL,
-  type ChromeItem, type ChromePopup, type ChromeQr,
+  CHROME_ICON_KEYS, DEFAULT_POPUP, DEFAULT_QR, MAX_CHROME_ITEMS, MAX_POPUP_LINKS, newChromeItem, POPUP_PARTS, POPUP_PART_LABEL,
+  type ChromeItem, type ChromePopup, type ChromeQr, type PopupLink,
 } from '@/features/storefront/chrome/chromeTypes';
 import { ColorField } from './HeaderFooterSettingsPanels';
 
@@ -83,6 +83,8 @@ function QrDesigner({ qr, storeId, onChange }: { qr: ChromeQr; storeId: string; 
         <ColorField label="Dots colour" value={qr.fg} fallback="#111111" onChange={v => set({ fg: v ?? '#111111' })} />
         <ColorField label="Background" value={qr.bg} fallback="#ffffff" onChange={v => set({ bg: v ?? '#ffffff' })} />
       </div>
+      <Switch label="Transparent background (no fill behind the dots)" checked={qr.transparent === true} onChange={v => set({ transparent: v })} />
+      {qr.transparent === true && <p className="-mt-1 text-[10.5px] text-slate">Make sure the dots colour stands out on the popup background, or the QR will not scan.</p>}
       <div className="grid grid-cols-2 gap-3">
         <Row label="Dot shape">
           <select className={INPUT} value={qr.dot} onChange={e => set({ dot: e.target.value as ChromeQr['dot'] })}>
@@ -98,7 +100,8 @@ function QrDesigner({ qr, storeId, onChange }: { qr: ChromeQr; storeId: string; 
       <Row label="Caption under the QR" hint="Optional, e.g. Scan to chat with us">
         <input className={INPUT} value={qr.caption} maxLength={60} onChange={e => set({ caption: e.target.value })} />
       </Row>
-      <Switch label="Card around the QR" checked={qr.frame} onChange={v => set({ frame: v })} />
+      <Switch label="Card around the QR (rounded, with a soft shadow)" checked={qr.frame} onChange={v => set({ frame: v })} />
+      {qr.frame && <ColorField label="Card colour" value={qr.frameBg || null} fallback="#ffffff" onChange={v => set({ frameBg: v ?? '' })} />}
       <div className="flex flex-col gap-1.5">
         <span className="text-[11.5px] text-charcoal">Logo in the middle (optional)</span>
         <ImageUpload value={qr.logoUrl ? [qr.logoUrl] : []} onChange={urls => set({ logoUrl: urls[0] ?? '' })} maxFiles={1} storeId={storeId} />
@@ -124,6 +127,45 @@ function NumField({ label, value, empty, min, max, onChange, hint }: {
           if (Number.isFinite(n)) onChange(Math.min(max, Math.max(min, Math.round(n))));
         }} />
     </Row>
+  );
+}
+
+/** The popup's own menu: up to 30 links, shown in a grid of 1-6 columns. */
+function LinksEditor({ popup, onChange }: { popup: ChromePopup; onChange: (p: Partial<ChromePopup>) => void }) {
+  const links = popup.links ?? [];
+  const setLinks = (next: PopupLink[]) => onChange({ links: next });
+  const upd = (i: number, p: Partial<PopupLink>) => setLinks(links.map((l, j) => (j === i ? { ...l, ...p } : l)));
+  const move = (i: number, d: -1 | 1) => { const n = [...links]; const j = i + d; if (j < 0 || j >= n.length) return; [n[i], n[j]] = [n[j], n[i]]; setLinks(n); };
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-bone p-3">
+      <span className="text-[12.5px] font-semibold text-charcoal">Menu / links inside the popup</span>
+      <Row label="Group title (optional)"><input className={INPUT} value={popup.linksTitle ?? ''} maxLength={80} onChange={e => onChange({ linksTitle: e.target.value })} /></Row>
+      <NumField label="Columns (1 to 6)" value={popup.linksColumns ?? 2} empty={-999} min={1} max={6} onChange={v => onChange({ linksColumns: v })} />
+      {links.map((l, i) => (
+        <div key={i} className="flex flex-col gap-1.5 rounded border border-bone bg-white p-2">
+          <div className="flex items-center gap-1">
+            <input className={INPUT} aria-label={`Link ${i + 1} label`} placeholder="Label" value={l.label} maxLength={60} onChange={e => upd(i, { label: e.target.value })} />
+            <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => move(i, -1)} className="p-1 disabled:opacity-30 bg-transparent border-0 cursor-pointer"><ArrowUp size={13} /></button>
+            <button type="button" aria-label="Move down" disabled={i === links.length - 1} onClick={() => move(i, 1)} className="p-1 disabled:opacity-30 bg-transparent border-0 cursor-pointer"><ArrowDown size={13} /></button>
+            <button type="button" aria-label={`Delete link ${i + 1}`} onClick={() => setLinks(links.filter((_, j) => j !== i))} className="p-1 bg-transparent border-0 cursor-pointer"><Trash2 size={13} /></button>
+          </div>
+          <input className={INPUT} aria-label={`Link ${i + 1} address`} placeholder="https://, /pages/about, tel:, mailto:" value={l.url} maxLength={600} onChange={e => upd(i, { url: e.target.value })} />
+          <div className="flex items-center gap-2">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded bg-bone text-charcoal"><ChromeIcon icon={l.icon || 'link'} size={14} /></span>
+            <select className={INPUT} aria-label={`Link ${i + 1} icon`} value={l.icon} onChange={e => upd(i, { icon: e.target.value })}>
+              <option value="">No icon</option>
+              {CHROME_ICON_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
+            </select>
+            <label className="flex shrink-0 items-center gap-1 text-[12px] text-charcoal"><input type="checkbox" checked={l.bold === true} onChange={e => upd(i, { bold: e.target.checked })} /> Bold</label>
+          </div>
+        </div>
+      ))}
+      {links.length < MAX_POPUP_LINKS && (
+        <button type="button" onClick={() => setLinks([...links, { label: '', url: '', icon: '', bold: false }])}
+          className="self-start rounded-lg border border-bone bg-white px-3 py-1.5 text-[12px] text-charcoal cursor-pointer">+ Add a link ({links.length}/{MAX_POPUP_LINKS})</button>
+      )}
+      <p className="text-[10.5px] text-slate">Turn on "Links / menu" in the list below to show it.</p>
+    </div>
   );
 }
 
@@ -177,6 +219,7 @@ function PopupEditor({ popup, storeId, onChange }: { popup: ChromePopup; storeId
       </div>
       <Switch label="Show share icons" checked={popup.showShare} onChange={v => set({ showShare: v })} />
       <Row label="Small print (optional)"><input className={INPUT} value={popup.footnote} maxLength={300} onChange={e => set({ footnote: e.target.value })} /></Row>
+      <LinksEditor popup={popup} onChange={set} />
       <PartsOrder popup={popup} onChange={set} />
       <span className="text-[12.5px] font-semibold text-charcoal">Popup look</span>
       <p className="-mt-2 text-[10.5px] text-slate">Anything left empty follows your theme's own style.</p>
@@ -186,13 +229,36 @@ function PopupEditor({ popup, storeId, onChange }: { popup: ChromePopup; storeId
           <option value="center">In the middle of the screen</option>
         </select>
       </Row>
+      <Row label="Style">
+        <select className={INPUT} value={popup.style ?? 'classic'} onChange={e => set({ style: e.target.value as ChromePopup['style'] })}>
+          <option value="theme">Follow my theme (its own card / panel / glass look)</option>
+          <option value="classic">Classic (flat, attached to the strip)</option>
+        </select>
+      </Row>
+      <Row label="Width">
+        <select className={INPUT} value={popup.widthMode ?? 'auto'} onChange={e => set({ widthMode: e.target.value as ChromePopup['widthMode'] })}>
+          <option value="auto">Automatic (theme)</option>
+          <option value="custom">Custom width (px)</option>
+          <option value="content">Same as the page content width</option>
+          <option value="full">Full screen width (like a menu panel)</option>
+        </select>
+      </Row>
       <Row label="Content layout">
         <select className={INPUT} value={popup.layout ?? 'side'} onChange={e => set({ layout: e.target.value as ChromePopup['layout'] })}>
           <option value="side">Text on one side, QR / image on the other</option>
           <option value="stack">Everything in one column</option>
         </select>
       </Row>
+      {(popup.layout ?? 'side') === 'side' && (
+        <Row label="Image and QR position" hint="Beside the text, or above / below it">
+          <select className={INPUT} value={popup.mediaPlacement ?? 'side'} onChange={e => set({ mediaPlacement: e.target.value as ChromePopup['mediaPlacement'] })}>
+            <option value="side">Beside the text</option><option value="above">Above the text</option><option value="below">Below the text</option>
+          </select>
+        </Row>
+      )}
       <div className="grid grid-cols-2 gap-3">
+        <NumField label="Max height (px)" value={popup.maxHeight ?? 0} empty={0} min={120} max={2000} onChange={v => set({ maxHeight: v })} hint="Empty = automatic; scrolls inside" />
+        <NumField label="Gap under the strip (px)" value={popup.gap ?? -1} empty={-1} min={0} max={200} onChange={v => set({ gap: v })} hint="Empty = theme default" />
         <NumField label="Width (px)" value={popup.widthPx ?? 0} empty={0} min={200} max={1600} onChange={v => set({ widthPx: v })} hint="Empty = automatic" />
         <NumField label="Corner roundness (px)" value={popup.radius ?? -1} empty={-1} min={0} max={200} onChange={v => set({ radius: v })} />
         <NumField label="Space inside (px)" value={popup.padding ?? -1} empty={-1} min={0} max={200} onChange={v => set({ padding: v })} />

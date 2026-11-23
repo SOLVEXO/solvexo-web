@@ -8,7 +8,13 @@ export interface ChromeQr {
   logoUrl: string;
   caption: string;
   frame: boolean;
+  /** No background fill behind the dots at all. */
+  transparent?: boolean;
+  /** Card colour (only with `frame`); empty = the QR's own background. */
+  frameBg?: string;
 }
+
+export interface PopupLink { label: string; url: string; icon: string; bold: boolean }
 
 export interface ChromePopup {
   title: string;
@@ -39,12 +45,25 @@ export interface ChromePopup {
   align: 'left' | 'center';
   border: boolean;
   shadow: boolean;
+  /** 'theme' = the active theme's own popup look, 'classic' = flat and attached (the old look). Missing = classic. */
+  style?: 'theme' | 'classic';
+  /** auto = theme default; custom = widthPx / width; content = the page container; full = edge to edge. Missing = auto. */
+  widthMode?: 'auto' | 'custom' | 'content' | 'full';
+  /** px, scrolls inside; 0 = automatic. */
+  maxHeight?: number;
+  /** px between the strip and the popup; -1 = the theme's own. */
+  gap?: number;
+  mediaPlacement?: 'side' | 'below' | 'above';
+  linksTitle?: string;
+  linksColumns?: number;
+  links?: PopupLink[];
 }
 
-export type PopupPart = 'title' | 'body' | 'image' | 'qr' | 'button' | 'share' | 'footnote';
-export const POPUP_PARTS: PopupPart[] = ['title', 'body', 'image', 'qr', 'button', 'share', 'footnote'];
+export type PopupPart = 'title' | 'body' | 'links' | 'image' | 'qr' | 'button' | 'share' | 'footnote';
+export const POPUP_PARTS: PopupPart[] = ['title', 'body', 'links', 'image', 'qr', 'button', 'share', 'footnote'];
+export const MAX_POPUP_LINKS = 30;
 export const POPUP_PART_LABEL: Record<PopupPart, string> = {
-  title: 'Heading', body: 'Text', image: 'Image', qr: 'QR code', button: 'Button', share: 'Share icons', footnote: 'Small print',
+  title: 'Heading', body: 'Text', image: 'Image', qr: 'QR code', button: 'Button', share: 'Share icons', footnote: 'Small print', links: 'Links / menu',
 };
 
 export type ChromeZone = 'left' | 'center' | 'right';
@@ -69,12 +88,13 @@ export interface ChromeItem {
 
 export const MAX_CHROME_ITEMS = 12;
 
-export const DEFAULT_QR: ChromeQr = { data: '', fg: '#111111', bg: '#ffffff', dot: 'square', eye: 'square', logoUrl: '', caption: '', frame: true };
+export const DEFAULT_QR: ChromeQr = { data: '', fg: '#111111', bg: '#ffffff', dot: 'square', eye: 'square', logoUrl: '', caption: '', frame: true, transparent: false, frameBg: '' };
 
 export const DEFAULT_POPUP: ChromePopup = {
   title: '', body: '', imageUrl: '', qr: null, buttonLabel: '', buttonUrl: '', showShare: false, footnote: '', width: 'md',
   placement: 'below', widthPx: 0, layout: 'side', order: [...POPUP_PARTS], bg: '', fg: '', radius: -1, padding: -1,
   titleSize: 0, bodySize: 0, align: 'left', border: false, shadow: true,
+  style: 'theme', widthMode: 'auto', maxHeight: 0, gap: -1, mediaPlacement: 'side', linksTitle: '', linksColumns: 2, links: [],
 };
 
 export function newChromeItem(kind: ChromeItem['kind'], zone: ChromeZone = 'right'): ChromeItem {

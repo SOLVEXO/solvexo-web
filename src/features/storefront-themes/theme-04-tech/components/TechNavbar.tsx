@@ -38,7 +38,8 @@ function TopBar({ bar }: { bar: TopBarData }) {
   return (
     <ChromeTopStrip bar={{ ...bar, text, items: [...hours, ...bar.items] }} fallbackBg={t.colors.dark} fallbackColor={t.colors.darkInk}
       fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} radius="0px"
-      displayFont={t.fonts.display} borderColor={t.colors.border} buttonRadius={t.buttonRadiusPx} />
+      displayFont={t.fonts.display} borderColor={t.colors.border} buttonRadius={t.buttonRadiusPx}
+      popup={{ variant: 'panel', accentColor: t.colors.accent }} />
   );
 }
 

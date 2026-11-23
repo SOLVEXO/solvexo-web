@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type RefObject } from 'react';
 import { ChevronDown, Mail, Phone } from 'lucide-react';
 import { ChromeIcon } from './ChromeIcon';
-import { ChromePopup, type ChromeTheme } from './ChromePopup';
+import { ChromePopup, type ChromePopupTheme, type ChromeTheme } from './ChromePopup';
 import type { ChromeItem, ChromeZone } from './chromeTypes';
 
 export interface TopStripData {
@@ -60,14 +60,17 @@ function StripItem({ item, color, theme, stripRef }: { item: ChromeItem; color: 
  * The thin strip above the header: the classic text / phone / email plus the seller's own items placed in a left, centre
  * and right zone. Colours, fonts and the popup look come from the active theme; the seller can override them.
  */
-export function ChromeTopStrip({ bar, fallbackBg, fallbackColor, fontFamily, maxWidth, padX, radius = '12px', displayFont, borderColor, buttonRadius }: {
+export function ChromeTopStrip({ bar, fallbackBg, fallbackColor, fontFamily, maxWidth, padX, radius = '12px', displayFont, borderColor, buttonRadius, popup }: {
   bar: TopStripData; fallbackBg: string; fallbackColor: string; fontFamily: string; maxWidth: string; padX: string; radius?: string;
   displayFont?: string; borderColor?: string; buttonRadius?: string;
+  /** The theme's own popup structure (card / panel / glass, gap, motion). The seller's popup settings win over it. */
+  popup?: ChromePopupTheme;
 }) {
   const stripRef = useRef<HTMLDivElement>(null);
   const bg = bar.bg ?? fallbackBg;
   const color = bar.color ?? fallbackColor;
-  const theme: ChromeTheme = { bg: fallbackColor, fg: fallbackBg, accent: fallbackBg, accentText: fallbackColor, font: fontFamily, radius, fontDisplay: displayFont, border: borderColor, buttonRadius };
+  const theme: ChromeTheme = { bg: fallbackColor, fg: fallbackBg, accent: fallbackBg, accentText: fallbackColor, font: fontFamily, radius, fontDisplay: displayFont, border: borderColor, buttonRadius,
+    popup: { contentMaxWidth: maxWidth, padX, ...popup } };
   const by = (z: ChromeZone) => bar.items.filter(i => i.zone === z);
   const left = by('left'), center = by('center'), right = by('right');
   const zone = (items: ChromeItem[]) => items.map(i => <StripItem key={i.id} item={i} color={color} theme={theme} stripRef={stripRef} />);

@@ -23,7 +23,8 @@ export function HeaderTopBar({ bar, fallbackBg, fallbackColor, fontFamily, maxWi
   bar: NonNullable<HeaderOptions['topBar']>; fallbackBg: string; fallbackColor: string; fontFamily: string; maxWidth: string; padX: string;
 }) {
   return <ChromeTopStrip bar={bar} fallbackBg={fallbackBg} fallbackColor={fallbackColor} fontFamily={fontFamily} maxWidth={maxWidth} padX={padX} radius="999px"
-    displayFont={t.fonts.display} borderColor={t.colors.border} buttonRadius={t.buttonRadiusPx} />;
+    displayFont={t.fonts.display} borderColor={t.colors.border} buttonRadius={t.buttonRadiusPx}
+    popup={{ variant: 'card' }} />;
 }
 
 /** The retailer's call-to-action pill in the header (desktop only; the mobile drawer keeps the menu clean). */
