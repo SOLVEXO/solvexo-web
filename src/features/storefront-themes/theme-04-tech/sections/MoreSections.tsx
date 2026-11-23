@@ -22,12 +22,14 @@ import { RelatedProductsSection } from './shared/RelatedProductsSection';
 import { FeatureListSection } from './shared/FeatureListSection';
 import { PromoCardsSection } from './shared/PromoCardsSection';
 import { CollectionColumnsSection } from './shared/CollectionColumnsSection';
+import { ImageMosaicSection } from './shared/ImageMosaicSection';
 import { TeamGridSection } from './shared/TeamGridSection';
 import { StatsCounterSection } from './shared/StatsCounterSection';
 import { ts } from '@/utils/tStatic';
 
 registerTechSection('multicolumn', (section, blocks, colors) => <MulticolumnSection section={section} blocks={blocks} colors={colors} />);
-registerTechSection('collection_columns', (section, blocks, colors) => <CollectionColumnsSection section={section} blocks={blocks} colors={colors} />);
+registerTechSection('image_mosaic', (section, blocks, colors) => <ImageMosaicSection section={section} blocks={blocks} colors={colors} />);
+registerTechSection('collection_columns',(section, blocks, colors) => <CollectionColumnsSection section={section} blocks={blocks} colors={colors} />);
 registerTechSection('promo_cards',(section, blocks, colors) => <PromoCardsSection section={section} blocks={blocks} colors={colors} />);
 registerTechSection('logo_list',(section, blocks, colors) => <LogoListSection section={section} blocks={blocks} colors={colors} />);
 registerTechSection('marquee', (section, blocks, colors) => <MarqueeSection section={section} blocks={blocks} colors={colors} />);

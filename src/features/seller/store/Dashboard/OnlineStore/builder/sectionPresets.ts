@@ -126,6 +126,14 @@ export const SECTION_PRESETS: SectionPreset[] = [
       { type: 'multicolumn_column', settings: { heading: 'Real support', body: 'Questions? We reply within a few hours.' } },
     ] }) },
 
+  { id: 'mosaic-featured', type: 'image_mosaic', category: 'collections', name: 'Image mosaic (one big, rest small)', description: 'A big image beside smaller ones, each linkable — you set sizes and links', mock: 'tiles',
+    build: () => ({
+      settings: { columns: 4, mobileColumns: 2, gap: 8, rowHeight: 180, hover: 'zoom', fit: 'cover' },
+      blocks: [
+        { type: 'mosaic_image', settings: { imageUrl: '', colSpan: 2, rowSpan: 2 } },
+        ...[1, 2, 3, 4].map(() => ({ type: 'mosaic_image', settings: { imageUrl: '', colSpan: 1, rowSpan: 1 } })),
+      ],
+    }) },
   { id: 'collection-columns-4', type: 'collection_columns', category: 'collections', name: 'Collection columns (4 ranges)', description: 'Four columns, each a range heading with a short list of products: photo, name and price', mock: 'columns',
     build: () => ({
       settings: { columns: 4, gap: 32, showHeadingLine: true, showImage: true, imagePosition: 'left', imageSize: 100, titleLines: 3, showOldPrice: true },
