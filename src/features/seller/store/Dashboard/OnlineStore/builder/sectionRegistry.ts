@@ -479,6 +479,10 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'textAlign', kind: 'select', label: 'Name alignment', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }] },
       { key: 'layout', kind: 'select', label: 'Layout', options: [{ value: 'grid', label: 'Grid' }, { value: 'carousel', label: 'Scrolling row with arrows' }] },
       { key: 'eyebrow', kind: 'text', label: 'Small text above the heading (optional)', maxLength: 60 },
+      { key: 'clickAction', kind: 'select', label: 'When a customer clicks a tile', options: [{ value: 'link', label: 'Open the collection page' }, { value: 'show_products', label: 'Show its products below, with "Add all to cart"' }], hint: 'The second choice builds a "complete set" picker: pick a grade/class tile, see only its products and add them all in one click. Each tile must have a collection chosen.' },
+      { key: 'showSubtotal', kind: 'checkbox', label: 'Show the total price of the shown products' },
+      { key: 'addAllLabel', kind: 'text', label: 'Add-all button text (optional)', maxLength: 60, hint: 'Empty = "Add all N to cart".' },
+      { key: 'productColumns', kind: 'number', label: 'Product columns (shown products)', min: 1, max: 8, step: 1 },
     ]),
   },
   {

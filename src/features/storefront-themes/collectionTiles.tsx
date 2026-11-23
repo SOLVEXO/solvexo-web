@@ -18,6 +18,8 @@ export interface CollectionTileData {
   image: string;
   /** Key of a built-in icon (see collectionIcons.ts), or ''. */
   icon: string;
+  /** The collection this tile stands for (empty for a tile that is only typed text). */
+  collectionId?: string;
   /** Where the image / title go (the collection page). */
   to?: string;
   ctaText: string;
@@ -42,7 +44,7 @@ export function useCollectionTiles(section: Section, blocks: Block[]): Collectio
     const manual = blocks.filter(b => b.type === 'collection_item' && b.enabled !== false);
     if (manual.length === 0) {
       return items.slice(0, limit).map(c => ({
-        key: c._id, name: c.name, description: showDesc ? c.description ?? '' : '', image: c.image ?? '', icon: '',
+        key: c._id, collectionId: c._id, name: c.name, description: showDesc ? c.description ?? '' : '', image: c.image ?? '', icon: '',
         to: `/collections/${handleOf(c)}`, ctaText: '',
       }));
     }
@@ -55,7 +57,7 @@ export function useCollectionTiles(section: Section, blocks: Block[]): Collectio
       const icon = String(s.icon ?? '').trim();
       if (!name && !image && !icon) return; // an empty tile (nothing picked, nothing typed) is skipped
       out.push({
-        key: String(b._id ?? i), blockId: String(b._id ?? i), name,
+        key: String(b._id ?? i), blockId: String(b._id ?? i), collectionId: c?._id, name,
         description: String(s.description ?? '').trim() || (showDesc ? c?.description ?? '' : ''),
         image, icon, to: c ? `/collections/${handleOf(c)}` : undefined,
         ctaText: String(s.ctaText ?? '').trim(), ctaLink: s.ctaLink,
@@ -97,7 +99,10 @@ export function tileOptions(s: Record<string, unknown>): TileOptions {
 }
 
 /** One Collection List tile, shared by every theme: the theme only passes its colours, fonts, radii and arrow chip. */
-export function CollectionTileCard({ tile, colors, fonts, imageRadius, buttonRadius, opts, arrow, fallbackClass }: {
+export function CollectionTileCard({ tile, colors, fonts, imageRadius, buttonRadius, opts, arrow, fallbackClass, onSelect, selected }: {
+  /** Set = the tile is a button that picks the collection (the products show under the grid) instead of a link to its page. */
+  onSelect?: () => void;
+  selected?: boolean;
   tile: CollectionTileData;
   colors: TileColors;
   fonts: { display: string; body: string };
@@ -167,10 +172,23 @@ export function CollectionTileCard({ tile, colors, fonts, imageRadius, buttonRad
     </>
   );
 
-  const content = tile.to
-    ? <Link to={tile.to} className="group block no-underline" style={{ color: colors.ink, width: '100%' }}>{top}</Link>
-    : <div className="group block" style={{ width: '100%' }}>{top}</div>;
+  const picking = !!onSelect && !!tile.collectionId;
+  const content = picking
+    ? (
+      <button type="button" onClick={onSelect} aria-pressed={!!selected} className="group block cursor-pointer border-0 bg-transparent p-0 text-start" style={{ color: colors.ink, width: '100%', font: 'inherit', textAlign: opts.center ? 'center' : undefined }}>
+        {top}
+        <span className="mt-1.5 block text-sm" style={{ fontFamily: fonts.body, color: selected ? colors.accent : colors.inkMuted, fontWeight: selected ? 600 : 400 }}>
+          {selected ? '✓' : '→'}
+        </span>
+      </button>
+    )
+    : tile.to
+      ? <Link to={tile.to} className="group block no-underline" style={{ color: colors.ink, width: '100%' }}>{top}</Link>
+      : <div className="group block" style={{ width: '100%' }}>{top}</div>;
 
-  const card = <div style={cardStyle}>{content}{body}</div>;
+  const pickedStyle: CSSProperties = picking && selected
+    ? { outline: `2px solid ${colors.accent}`, outlineOffset: 2, ...(boxed ? {} : { borderRadius: imageRadius }) }
+    : {};
+  const card = <div style={{ ...cardStyle, ...pickedStyle }}>{content}{picking ? null : body}{picking && tile.description ? <p className="m-0 mt-1.5 text-sm leading-relaxed" style={{ fontFamily: fonts.body, color: colors.inkMuted }}>{tile.description}</p> : null}</div>;
   return tile.blockId ? <PreviewBlock blockId={tile.blockId}>{card}</PreviewBlock> : card;
 }

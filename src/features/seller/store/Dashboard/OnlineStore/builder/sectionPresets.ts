@@ -102,6 +102,13 @@ export const SECTION_PRESETS: SectionPreset[] = [
   // ── Collections ──
   { id: 'collections-grid', type: 'collection_list', category: 'collections', name: 'Shop by collection', description: 'Image tiles for your collections', mock: 'tiles',
     build: only({ heading: 'Shop by collection', columns: 3, limit: 6, imageRatio: 'portrait', showDescription: false }) },
+  { id: 'collections-set-picker', type: 'collection_list', category: 'collections', name: 'Complete set picker (grade / class)', description: 'Customers click a card (e.g. Grade-1) to see only its products and add them all to the cart in one click', mock: 'columns',
+    build: () => ({ settings: { heading: 'Build a complete set', columns: 4, cardStyle: 'bordered', tileStyle: 'simple', textAlign: 'left', clickAction: 'show_products', showSubtotal: true, productColumns: 4 }, blocks: [
+      { type: 'collection_item', settings: { title: '', description: '', ctaText: '' } },
+      { type: 'collection_item', settings: { title: '', description: '', ctaText: '' } },
+      { type: 'collection_item', settings: { title: '', description: '', ctaText: '' } },
+      { type: 'collection_item', settings: { title: '', description: '', ctaText: '' } },
+    ] }) },
   { id: 'collections-cards', type: 'collection_list', category: 'collections', name: 'Collection cards with buttons', description: 'Hand-picked cards: emoji or image, title, text and a button each', mock: 'columns',
     build: () => ({ settings: { heading: 'Explore our collections', columns: 3, cardStyle: 'bordered', buttonStyle: 'solid', tileStyle: 'simple' }, blocks: [
       { type: 'collection_item', settings: { title: '', description: '', ctaText: 'Shop now →' } },

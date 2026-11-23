@@ -2,6 +2,8 @@ import { useRef } from 'react';
 import { columnCount } from '@/features/storefront/browse/gridLayout';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CollectionTileCard, tileOptions, useCollectionTiles, type CollectionTileData } from '../../../collectionTiles';
+import { CollectionSetPanel, useCollectionPick } from '../../../CollectionSetPanel';
+import { TechProductCard } from '../../components/TechProductCard';
 import { baseTheme as t, type BaseColors } from '../../theme.base';
 import { SectionShell } from '../SectionShell';
 import type { SharedSectionProps } from './types';
@@ -9,13 +11,18 @@ import type { SharedSectionProps } from './types';
 export function CollectionListSection({ section, blocks, colors }: SharedSectionProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const tiles = useCollectionTiles(section, blocks);
+  const pick = useCollectionPick(section, tiles);
   if (!tiles || tiles.length === 0) return null;
   const cols = columnCount(section.settings.columns, 3);
   const opts = tileOptions(section.settings);
   const eyebrow = typeof section.settings.eyebrow === 'string' && section.settings.eyebrow.trim() ? section.settings.eyebrow.trim() : undefined;
   const arrow = <span className="absolute bottom-3 right-3 grid size-10 place-items-center rounded-full transition-transform duration-300 group-hover:rotate-45" style={{ background: colors.bg, color: colors.ink }}><ArrowUpRight size={16} className="tx-flip-rtl" aria-hidden /></span>;
   const tile = (c: CollectionTileData) => (
-    <CollectionTileCard key={c.key} tile={c} colors={colors as BaseColors} fonts={t.fonts} imageRadius={t.imageRadiusPx} buttonRadius={t.buttonRadiusPx} opts={opts} arrow={arrow} fallbackClass="tx-serif" />
+    <CollectionTileCard key={c.key} tile={c} colors={colors as BaseColors} fonts={t.fonts} imageRadius={t.imageRadiusPx} buttonRadius={t.buttonRadiusPx} opts={opts} arrow={arrow} fallbackClass="tx-serif"
+      onSelect={pick.enabled && c.collectionId ? () => pick.select(c.collectionId as string) : undefined} selected={pick.selected?.collectionId === c.collectionId} />
+  );
+  const panel = pick.selected && (
+    <CollectionSetPanel section={section} tile={pick.selected} colors={colors as BaseColors} fonts={t.fonts} buttonRadius={t.buttonRadiusPx} ProductCard={TechProductCard} />
   );
   if (section.settings.layout === 'carousel') {
     const scroll = (dir: 1 | -1) => rowRef.current?.scrollBy({ left: dir * Math.max(240, (rowRef.current?.clientWidth ?? 600) * 0.8), behavior: 'smooth' });
@@ -32,6 +39,7 @@ export function CollectionListSection({ section, blocks, colors }: SharedSection
             </>
           )}
         </div>
+        {panel}
       </SectionShell>
     );
   }
@@ -40,6 +48,7 @@ export function CollectionListSection({ section, blocks, colors }: SharedSection
       <div className="grid gap-x-5 gap-y-9" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${Math.floor(960 / cols)}px), 1fr))` }}>
         {tiles.map(tile)}
       </div>
+      {panel}
     </SectionShell>
   );
 }
