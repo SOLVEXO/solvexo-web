@@ -38,7 +38,7 @@ export function ChromePopup({ popup, theme, onClose }: { popup: PopupData; theme
 
   const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
   const box: CSSProperties = {
-    background: theme.bg, color: theme.fg, fontFamily: theme.font, borderRadius: theme.radius,
+    background: theme.bg, color: theme.fg, fontFamily: theme.font, borderRadius: `min(${theme.radius}, 24px)`,
     width: `min(100%, ${WIDTH[popup.width] ?? 460}px)`, maxHeight: 'min(88vh, 760px)', overflowY: 'auto', position: 'relative', padding: 28,
     boxShadow: '0 24px 60px rgba(0,0,0,.35)',
   };

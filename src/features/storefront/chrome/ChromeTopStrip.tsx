@@ -8,12 +8,13 @@ export interface TopStripData { text: string | null; phone: string | null; email
 
 const FONT_PX = { sm: 11, md: 12, lg: 14 } as const;
 const PAD_Y = { sm: 5, md: 7, lg: 10 } as const;
-const DEVICE_CLASS = { all: '', desktop: 'hidden md:inline-flex', mobile: 'md:hidden' } as const;
+// `hidden` and `inline-flex` both set `display`; which one wins depends on CSS order, so the display class is chosen per device instead of stacked.
+const DEVICE_CLASS = { all: 'inline-flex', desktop: 'hidden md:inline-flex', mobile: 'inline-flex md:hidden' } as const;
 
 function StripItem({ item, color, theme }: { item: ChromeItem; color: string; theme: ChromeTheme }) {
   const [open, setOpen] = useState(false);
   const style = { color: item.fg || color, background: item.bg || undefined, borderRadius: item.bg ? 999 : undefined, padding: item.bg ? '2px 10px' : undefined };
-  const cls = `inline-flex items-center gap-1.5 whitespace-nowrap ${DEVICE_CLASS[item.device] ?? ''}`;
+  const cls = `items-center gap-1.5 whitespace-nowrap ${DEVICE_CLASS[item.device] ?? 'inline-flex'}`;
   const inner = (
     <>
       {(item.icon || item.iconUrl) && <ChromeIcon icon={item.icon} iconUrl={item.iconUrl} size={14} />}
