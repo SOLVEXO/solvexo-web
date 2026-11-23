@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  BookOpen,
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, ClipboardList, Megaphone, Star, Search, Wallet, Inbox,
   Truck, MessageSquare, FolderTree, Undo2, AlertTriangle, Layers, Image as ImageIcon, FileText,
@@ -189,6 +190,7 @@ const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIc
     group: 'Finance',
     items: [
       { id: 'finance', Icon: Wallet, label: 'Finance', path: 'finance', requiredPermission: 'finance.payouts.view' },
+      { id: 'accounting', Icon: BookOpen, label: 'Accounting', path: 'accounting', requiredPermission: 'accounting.view' },
     ],
   },
   {
@@ -300,7 +302,7 @@ const LAYOUT: { group: string; ids: string[]; collapsible?: boolean; groupIcon?:
   { group: 'Online Store', collapsible: true, groupIcon: Store, ids: ['online-store-themes', 'online-store-pages', 'online-store-menus', 'online-store-blog', 'online-store-files', 'online-store-translations', 'search-settings', 'experiments'] },
   { group: 'Sales channels', collapsible: true, groupIcon: Share2, ids: ['sales-channels', 'mobile-app'] },
   { group: 'Apps', ids: ['connected-apps'] },
-  { group: 'Finance', ids: ['finance'] },
+  { group: 'Finance', ids: ['finance', 'accounting'] },
   // Shipping, Checkout rules, COD protection and Webhooks & API are tabs of the Settings hub now (Shopify keeps them under Settings).
   { group: 'Settings', ids: ['settings', 'help'] },
 ];

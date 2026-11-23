@@ -140,6 +140,7 @@ const SearchSettingsPage = lazy(() => import('@/features/seller/store/Dashboard/
 const SalesChannelsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/channels/SalesChannelsPage'));
 const CustomersHubLayout = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomersHubLayout'));
 const KhataHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/khata/KhataHub'));
+const AccountingHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/accounting/AccountingHub'));
 const MessagingHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/messaging/MessagingHub'));
 const WholesaleHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/wholesale/WholesaleHub'));
 const SubscriptionsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/subscriptions/SubscriptionsHub'));
@@ -457,6 +458,7 @@ const mainRouter = createBrowserRouter([
             { path: 'customer/list',                    element: <StoreCustomerList /> },
             { path: 'wholesale',                        element: <WholesaleHub /> },
             { path: 'khata',                            element: <KhataHub /> },
+            { path: 'accounting',                       element: <AccountingHub /> },
           ] },
           { path: 'customer/subscribers',             element: <Navigate to="../customer/list?marketing=subscribed" replace /> },
           { path: 'analytics',                        element: <StoreAnalytics /> },
