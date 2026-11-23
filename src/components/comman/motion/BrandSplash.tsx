@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { HOME_HERO_SHELL_ID } from '@/seo/homeHeroShell';
 import { motion, AnimatePresence } from 'motion/react';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 
@@ -12,6 +13,13 @@ const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
 export function willShowBrandSplash(): boolean {
   if (typeof window === 'undefined') return false;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  // The home page's pre-built hero is already on screen: covering it with the splash would flash content → black →
+  // content, and delay the page. Count it as shown, so it does not play later in this visit either.
+  const shell = document.getElementById(HOME_HERO_SHELL_ID);
+  if (shell && shell.offsetParent !== null) {
+    try { sessionStorage.setItem(FLAG, '1'); } catch { /* private mode */ }
+    return false;
+  }
   if (import.meta.env.DEV) return true;
   return sessionStorage.getItem(FLAG) !== '1';
 }
