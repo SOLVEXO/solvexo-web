@@ -62,6 +62,34 @@ export function apiSuggestLocation() {
   return client.get<never, { success: boolean; data: { country: string | null; suggestedCurrency: string | null } }>(ENDPOINTS.STORE.SUGGEST_LOCATION);
 }
 
+export type CapabilityStatus = 'available' | 'separate_app' | 'coming_soon';
+export type CapabilityId = 'physical_products' | 'digital_downloads' | 'courses' | 'suppliers' | 'pos' | 'services_bookings' | 'dropshipping';
+export interface SellerCapability { id: CapabilityId; status: CapabilityStatus }
+export type SetupFocusTaskId = 'first_product_physical' | 'first_product_digital' | 'first_course' | 'first_supplier' | 'shipping' | 'verify' | 'domain';
+
+/** GET /api/store/seller-profiles — seller-type defaults for "What you sell" + what is really shipped (usable before a store exists). */
+export function apiGetSellerProfiles() {
+  return client.get<never, { success: boolean; data: { profiles: Record<string, { defaultProductTypes: ProductType[] }>; capabilities: SellerCapability[] } }>(
+    ENDPOINTS.STORE.SELLER_PROFILES,
+  );
+}
+
+export interface SellerPersonalization {
+  sellerType: SellerType | null;
+  productTypes: ProductType[];
+  enabledTools: string[];
+  /** `done: null` = the dashboard already has its own real signal for this task. */
+  focusTasks: { id: SetupFocusTaskId; done: boolean | null }[];
+  themeCategories: string[];
+  recommendedApps: { id: 'pos'; reason: 'seller_type' | 'product_type' }[];
+  capabilities: SellerCapability[];
+}
+
+/** GET /api/store/:storeId/personalization — guidance from seller type + selling categories + the store's real data. */
+export function apiGetSellerPersonalization(storeId: string) {
+  return client.get<never, { success: boolean; data: SellerPersonalization }>(ENDPOINTS.STORE.PERSONALIZATION(storeId));
+}
+
 /** GET /api/store/public/:storeId/suggest-location — public/no-auth. Same
  *  IP-detected suggestion as `apiSuggestLocation`, but scoped to what THIS
  *  store actually accepts (its own "Markets" restriction) — a real buyer

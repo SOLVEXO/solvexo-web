@@ -171,7 +171,11 @@ interface NewThemeImpl {
   /** The "sign in to continue" pop-up in this theme's own look. A theme without one gets the platform pop-up. */
   AuthGateModal?: ComponentType;
   /** Theme Library card metadata; `builtRouteCount` is the honest build progress shown on the card. */
-  display: { name: string; description: string; builtRouteCount: number; totalRouteCount: number };
+  display: {
+    name: string; description: string; builtRouteCount: number; totalRouteCount: number;
+    /** Theme-catalog categories this theme is designed for (the ids in `THEME_CATALOG_CATEGORIES`). Drives "Recommended for you". */
+    categories: string[];
+  };
   /** Sent as `theme` in `apiInstallTheme(...)` so a fresh install starts with this theme's own look, not the backend schema defaults. */
   installDefaults: ThemeInstallColorDefaults;
 }
@@ -229,6 +233,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       description: 'Fashion and apparel - modern, image-led and rounded, with a big headline, pill buttons, clean product cards and a polished buy box.',
       builtRouteCount: 33,
       totalRouteCount: 33,
+      categories: ['fashion', 'beauty', 'jewelry'],
     },
     installDefaults: {
       primaryColor: '#09090B',
@@ -288,6 +293,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       description: 'Electronics and computers: bright blue accents, dark feature bands, a filter sidebar and compact product cards.',
       builtRouteCount: 37,
       totalRouteCount: 37,
+      categories: ['electronics'],
     },
     installDefaults: { primaryColor: '#0156FF', bgColor: '#FFFFFF', textColor: '#020203', font: 'Poppins', buttonStyle: 'solid', buttonRadius: 'full' },
   },
@@ -340,6 +346,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       description: 'Architectural and commercial LED lighting: warm metallic bronze header, curved tab navigation, technical spec pills, and curved espresso footer.',
       builtRouteCount: 37,
       totalRouteCount: 37,
+      categories: ['furniture', 'electronics'],
     },
     installDefaults: {
       primaryColor: '#4b423b',

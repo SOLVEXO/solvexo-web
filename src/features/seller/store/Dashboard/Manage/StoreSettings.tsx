@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Store, CreditCard, Globe, Lock, Clock, EyeOff, ShieldCheck, MapPin, Languages, Landmark, Boxes, Info, Palette } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion, type TaxOverride, type CurrencyDisplay } from '@/api/services/store';
+import { apiUpdateStore, apiUpdateStorePrivacy, apiCompletePrivacyRequest, apiGetEnabledCurrencies, type ProductType, type SellerType, type SupportedCurrency, type StorePrivacyMode, type StorePrivacyRequest, type TaxRegion, type TaxOverride, type CurrencyDisplay } from '@/api/services/store';
 import { currencySymbol, getCurrencyDecimals } from '@/utils/currency';
 import { LANGUAGE_OPTIONS } from '@/utils/languages';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
@@ -27,10 +27,27 @@ const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
 const PRODUCT_TYPE_HINTS: Record<ProductType, string> = {
   physical_products:    'Stocked items shipped to the buyer — variants, weight, shipping rates.',
   digital_downloads:    'Files delivered automatically after payment, no shipping step.',
-  educational_resources:'Courses and lessons with per-enrolment access.',
+  educational_resources:'Courses and study material your students can access.',
   services_bookings:    'Time-slotted appointments the buyer reserves at checkout.',
-  in_person_pos:        'Sold face to face — inventory counts down without an online cart.',
+  in_person_pos:        'Sold in person with the Solvexo POS app (a separate Android app) — your products and stock are shared.',
 };
+const SELLER_TYPE_LABELS: Record<SellerType, string> = {
+  creator:        'Creator',
+  educator:       'Educator',
+  retailer:       'Retailer',
+  brand_business: 'Brand / Business',
+  freelancer:     'Freelancer / Reseller',
+  mix:            'Mix of the above',
+};
+const SELLER_TYPE_HINTS: Record<SellerType, string> = {
+  creator:        'Digital art, templates, fonts, music, presets.',
+  educator:       'Courses with lessons and quizzes, plus downloadable study material.',
+  retailer:       'Physical goods, handmade products, branded items.',
+  brand_business: 'A full online store with inventory and shipping — add the POS app for in-person sales.',
+  freelancer:     'Source products from suppliers and resell them, with purchase orders to restock.',
+  mix:            'Several categories and formats.',
+};
+const ALL_SELLER_TYPES: SellerType[] = ['creator', 'educator', 'retailer', 'brand_business', 'freelancer', 'mix'];
 const ALL_PRODUCT_TYPES: ProductType[] = [
   'physical_products', 'digital_downloads', 'educational_resources',
   'services_bookings', 'in_person_pos',
@@ -303,7 +320,7 @@ export function StoreProfileTab() {
               { label: 'Store URL',   value: storeUrl ? storeUrl.replace(/^https?:\/\//, '') : '—', href: storeUrl ?? undefined, hint: 'The URL slug cannot be changed.' },
               { label: 'Plan',        value: store?.plan ?? '—',                   hint: 'Upgrade or switch it under Billing.' },
               { label: 'Status',      value: store?.status ?? '—' },
-              { label: 'Seller type', value: store?.sellerType ?? '—' },
+              { label: 'Seller type', value: store?.sellerType ? SELLER_TYPE_LABELS[store.sellerType] ?? store.sellerType : '—', hint: 'Change it under Product types.' },
             ] as { label: string; value: string; href?: string; hint?: string }[]).map(r => (
               <SettingsRow key={r.label} label={r.label} description={r.hint}>
                 {r.href
@@ -544,10 +561,15 @@ export function CustomerAccountsTab() {
 export function ProductTypesTab() {
   const { store, storeId, loading, refetch } = useStoreWorkspace();
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
+  const [sellerType, setSellerType] = useState<SellerType | null>(null);
   const [saving,  setSaving]  = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  useEffect(() => { if (store) setProductTypes(store.productTypes ?? []); }, [store]);
+  useEffect(() => {
+    if (!store) return;
+    setProductTypes(store.productTypes ?? []);
+    setSellerType(store.sellerType ?? null);
+  }, [store]);
 
   const toggleType = (t: ProductType) =>
     setProductTypes(prev => prev.includes(t) ? prev.filter(p => p !== t) : [...prev, t]);
@@ -557,17 +579,21 @@ export function ProductTypesTab() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, productTypes });
+      // Only what changed is sent. Existing products, settings and integrations are never touched by this.
+      await apiUpdateStore({ storeId, productTypes, ...(sellerType && sellerType !== store?.sellerType ? { sellerType } : {}) });
       refetch();
-      setSaveMsg({ ok: true, text: 'Product types updated successfully.' });
+      setSaveMsg({ ok: true, text: 'Business profile updated. Your setup guide and suggestions follow it.' });
     } catch (err) {
-      setSaveMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to update product types.' });
+      setSaveMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to update your business profile.' });
     } finally {
       setSaving(false);
     }
   };
 
-  const isDirty = !!store && JSON.stringify(productTypes.slice().sort()) !== JSON.stringify((store.productTypes ?? []).slice().sort());
+  const isDirty = !!store && (
+    JSON.stringify(productTypes.slice().sort()) !== JSON.stringify((store.productTypes ?? []).slice().sort())
+    || (sellerType ?? null) !== (store.sellerType ?? null)
+  );
 
   if (loading) return null;
 
@@ -575,9 +601,29 @@ export function ProductTypesTab() {
     <div className="px-4 lg:px-7 py-6">
       <div className="flex flex-col gap-5">
         <SettingsCard
+          title="Seller type"
+          icon={<Store size={14} />}
+          description="Who you are as a seller. It shapes your setup checklist, theme and app suggestions — it never limits what you can sell."
+        >
+          <div className="grid gap-2.5 sm:grid-cols-2" role="radiogroup" aria-label="Seller type">
+            {ALL_SELLER_TYPES.map(t => (
+              <SettingsChoice
+                key={t}
+                type="radio"
+                name="seller-type"
+                checked={sellerType === t}
+                label={SELLER_TYPE_LABELS[t]}
+                description={SELLER_TYPE_HINTS[t]}
+                onChange={() => setSellerType(t)}
+              />
+            ))}
+          </div>
+        </SettingsCard>
+
+        <SettingsCard
           title="Product types"
           icon={<Boxes size={14} />}
-          description="Which kinds of listings this store can sell. Each type brings its own checkout, fulfilment and inventory fields."
+          description="What you sell. Turning a type on prepares its tools; you can still add any product type later — creating one switches it on automatically."
         >
           <div className="grid gap-2.5 sm:grid-cols-2">
             {ALL_PRODUCT_TYPES.map(t => {
@@ -594,9 +640,6 @@ export function ProductTypesTab() {
               );
             })}
           </div>
-          {productTypes.length === 0 && (
-            <p role="alert" className="mt-3 text-[11.5px] text-error">Select at least one type — sellers cannot publish listings until you do.</p>
-          )}
         </SettingsCard>
 
         <SaveBar isDirty={isDirty} saving={saving} onSave={handleSave} saveMsg={saveMsg} />

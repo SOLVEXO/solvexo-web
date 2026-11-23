@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
 import { PasteImageUrl } from '@/components/comman/ui';
-import { apiGetEnabledCurrencies, apiSuggestLocation, apiUpdateStore, type SellerType, type ProductType, type StoreData, type SupportedCurrency } from '@/api/services/store';
+import { apiGetEnabledCurrencies, apiGetSellerProfiles, apiSuggestLocation, apiUpdateStore, type SellerType, type ProductType, type StoreData, type SupportedCurrency } from '@/api/services/store';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { completePlanChange } from '@/utils/planChangeFlow';
 import { useLocalCurrencyForCountry } from '@/features/buyer/pages/pricing/localPrice';
@@ -116,7 +116,7 @@ const NARROW_CONTENT = 'max-w-[480px] mx-auto';
 // Title/description per entry: ONBOARDING_TEXT.sellerTypes, same order (Creator, Educator, Retailer, Brand, Freelancer, Mix).
 const SELLER_TYPES: { id: SellerType; Icon: React.ElementType }[] = [
   { id: 'creator',  Icon: Palette },
-  { id: 'creator',  Icon: BookOpen },
+  { id: 'educator', Icon: BookOpen },
   { id: 'retailer',      Icon: Store },
   { id: 'brand_business', Icon: Briefcase },
   { id: 'freelancer',    Icon: Monitor },
@@ -133,12 +133,10 @@ const PRODUCT_TYPES = ([
   // Bookings is hidden until it returns as an App (FEATURES.bookings), so it isn't offered here either.
 ] as { id: ProductType; Icon: React.ElementType }[]).filter(t => t.id !== 'services_bookings' || FEATURES.bookings);
 
-/** Seller kind for the live background photo. "Educator" shares the `creator`
- *  id in SELLER_TYPES, so it is told apart by its list index in `sellerKey`. */
-function visualTopicFor(form: { sellerType: string; sellerKey: string }): AuthVisualTopic | undefined {
-  if (form.sellerKey === 'creator-1') return 'educator';
+/** Seller kind for the live background photo. */
+function visualTopicFor(form: { sellerType: string }): AuthVisualTopic | undefined {
   const t = form.sellerType;
-  return t === 'creator' || t === 'retailer' || t === 'brand_business' || t === 'freelancer' || t === 'mix' ? t : undefined;
+  return t === 'creator' || t === 'educator' || t === 'retailer' || t === 'brand_business' || t === 'freelancer' || t === 'mix' ? t : undefined;
 }
 
 interface StoreForm {
@@ -387,10 +385,20 @@ function Step1StoreInfo({ form, setForm, onNext }: {
 
 
 // ── Step 3 — Seller Type ──────────────────────────────────────────────────────
-function Step3SellerType({ form, setForm, onNext, onBack }: {
+function Step3SellerType({ form, setForm, onNext, onBack, defaultsFor }: {
   form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void; onBack: () => void;
+  /** Seller-type defaults for "What you sell" (from the backend profile, so there is one source of truth). */
+  defaultsFor: (sellerType: SellerType) => ProductType[];
 }) {
   const t = useSiteText(ONBOARDING_TEXT);
+  // Picking a seller type pre-ticks the matching "What you sell" choices — but only while the seller hasn't made
+  // their own picks (nothing ticked yet, or still exactly the previous type's defaults). Never overwrites a real choice.
+  const pickType = (id: SellerType, selKey: string) => {
+    const previous = form.sellerType ? defaultsFor(form.sellerType as SellerType) : [];
+    const untouched = form.productTypes.length === 0
+      || (form.productTypes.length === previous.length && previous.every(p => form.productTypes.includes(p)));
+    setForm({ ...form, sellerType: id, sellerKey: selKey, productTypes: untouched ? defaultsFor(id) : form.productTypes });
+  };
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
       <div className="text-center mb-9">
@@ -402,7 +410,7 @@ function Step3SellerType({ form, setForm, onNext, onBack }: {
           const selKey = `${type.id}-${idx}`;
           const isSelected = form.sellerKey === selKey;
           return (
-            <div key={selKey} onClick={() => setForm({ ...form, sellerType: type.id, sellerKey: selKey })}
+            <div key={selKey} onClick={() => pickType(type.id, selKey)}
               className={clsx(
                 'rounded-[14px] p-5 border-2 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0',
                 isSelected ? 'bg-brand-pale-orange/40 border-brand-orange' : 'bg-white border-bone hover:border-slate/40',
@@ -488,18 +496,13 @@ function Step4WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
           <Sparkles size={18} className="text-brand-deep-orange shrink-0" />
           <div>
             <p className="text-[13px] font-semibold text-brand-deep-orange mb-[6px]">{t.activateHeading}</p>
-            <div className="flex gap-[6px] flex-wrap">
-              {form.productTypes.includes('physical_products') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Inventory Manager</span>}
-              {form.productTypes.includes('digital_downloads')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Digital Delivery</span>}
-              {form.productTypes.includes('in_person_pos')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">POS Register</span>}
-              {FEATURES.bookings && form.productTypes.includes('services_bookings') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Bookings</span>}
-              <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Marketplace</span>
-              {form.productTypes.includes('physical_products') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.inventory}</span>}
-              {form.productTypes.includes('digital_downloads')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.digitalDelivery}</span>}
-              {form.productTypes.includes('in_person_pos')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.posRegister}</span>}
-              {FEATURES.bookings && form.productTypes.includes('services_bookings') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.bookings}</span>}
-              <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">{t.tools.marketplace}</span>
-            </div>
+            <ul className="space-y-1">
+              {form.productTypes.filter(id => t.setup[id]).map(id => (
+                <li key={id} className="flex items-start gap-[6px] text-[12px] text-carbon leading-[1.5]">
+                  <Check size={12} className="text-success shrink-0 mt-[3px]" /> <span>{t.setup[id]}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
@@ -587,6 +590,17 @@ export function OnboardingPage() {
   // fails — matches the backend's own hardcoded fallback constant.
   const [trialDurationDays, setTrialDurationDays] = useState(3);
 
+  // Seller-type defaults for "What you sell" — owned by the backend profile so onboarding, dashboard and tests agree.
+  // Fails soft: without them nothing is pre-ticked and the seller just picks themselves.
+  const [typeDefaults, setTypeDefaults] = useState<Record<string, ProductType[]>>({});
+  useEffect(() => {
+    apiGetSellerProfiles()
+      .then(res => setTypeDefaults(Object.fromEntries(Object.entries(res.data.profiles).map(([id, p]) => [id, p.defaultProductTypes]))))
+      .catch(() => {});
+  }, []);
+  const defaultsFor = (sellerType: SellerType): ProductType[] =>
+    (typeDefaults[sellerType] ?? []).filter(id => PRODUCT_TYPES.some(p => p.id === id));
+
   useEffect(() => {
     apiGetPublicTrialSettings()
       .then(res => setTrialDurationDays(res.data.durationDays))
@@ -607,7 +621,10 @@ export function OnboardingPage() {
           // exists, or lands on the wrong step's slug in the URL.
           setResumeStep(Math.min(draft.step, TOTAL_STEPS));
           setMaxReached(Math.min(draft.maxReached, TOTAL_STEPS));
-          setForm(prev => ({ ...prev, ...(draft.form as Partial<StoreForm>) }));
+          const saved = draft.form as Partial<StoreForm>;
+          // Drafts saved before "Educator" had its own id stored it as creator at list position 1.
+          const migrated = saved.sellerKey === 'creator-1' ? { ...saved, sellerType: 'educator' as SellerType, sellerKey: 'educator-1' } : saved;
+          setForm(prev => ({ ...prev, ...migrated }));
         }
       })
       // A failed resume-check isn't fatal — the wizard just starts fresh.
@@ -855,7 +872,7 @@ export function OnboardingPage() {
       <div className="flex-1 flex items-start justify-center px-6 py-6">
         <StepPane step={step}>
           {step === 1 && <Step1StoreInfo form={form} setForm={setForm} onNext={next} />}
-          {step === 3 && <Step3SellerType form={form} setForm={setForm} onNext={next} onBack={back} />}
+          {step === 3 && <Step3SellerType form={form} setForm={setForm} onNext={next} onBack={back} defaultsFor={defaultsFor} />}
           {step === 4 && (
             <Step4WhatYouSell
               form={form} setForm={setForm} onBack={back}

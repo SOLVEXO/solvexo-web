@@ -5,8 +5,10 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { StoreData } from '@/api/services/store';
 
 const api = vi.hoisted(() => ({
-  progress: vi.fn(), plan: vi.fn(), stripe: vi.fn(), integrations: vi.fn(), zones: vi.fn(),
+  progress: vi.fn(), plan: vi.fn(), stripe: vi.fn(), integrations: vi.fn(), zones: vi.fn(), personalization: vi.fn(), courses: vi.fn(),
 }));
+vi.mock('@/api/services/store', () => ({ apiGetSellerPersonalization: api.personalization }));
+vi.mock('@/api/services/courses', () => ({ apiCountStoreCourses: api.courses }));
 vi.mock('@/api/services/platformPlans', () => ({ apiGetOnboardingProgress: api.progress, apiGetStorePlatformPlan: api.plan }));
 vi.mock('@/api/services/stripeConnect', () => ({ apiGetStripeConnectStatus: api.stripe }));
 vi.mock('@/api/services/integrations', () => ({ apiListStoreIntegrations: api.integrations }));
@@ -14,7 +16,12 @@ vi.mock('@/api/services/shipping', () => ({ apiListStoreShippingZones: api.zones
 
 import { SetupGuideCard } from './SetupGuideCard';
 
-const setup = (integrations: unknown, store: Partial<StoreData> = {}) => {
+const setup = (integrations: unknown, store: Partial<StoreData> = {}, personalization?: unknown, courseCount?: number) => {
+  // Without personalization the guide falls back to the classic single "Add your first product" task.
+  if (personalization) api.personalization.mockResolvedValue({ data: personalization });
+  else api.personalization.mockRejectedValue(new Error('unavailable'));
+  if (courseCount !== undefined) api.courses.mockResolvedValue(courseCount);
+  else api.courses.mockRejectedValue(new Error('forbidden'));
   api.progress.mockResolvedValue({ data: { hasPlatformPaymentMethod: false } });
   api.plan.mockResolvedValue({ data: { status: 'trialing', trialEndsAt: '2099-01-01' } });
   api.stripe.mockResolvedValue({ data: { chargesEnabled: false } });
@@ -69,5 +76,35 @@ describe('SetupGuideCard', () => {
     expect(await screen.findByText('0 of 7 done')).toBeInTheDocument();
     expect(screen.getByText(/Solvexo is reviewing/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /View status/ })).toBeInTheDocument();
+  });
+
+  const caps = [{ id: 'pos', status: 'separate_app' }];
+  const none = { payment: [], manualMethods: [] };
+
+  it('creator: replaces the generic task with a first DIGITAL product task, and puts it first after billing', async () => {
+    setup(none, {}, { focusTasks: [{ id: 'first_product_digital', done: false }], recommendedApps: [], capabilities: caps });
+    expect(await screen.findByText('0 of 7 done')).toBeInTheDocument();
+    expect(screen.getByText('Add your first digital product')).toBeInTheDocument();
+    expect(screen.queryByText('Add your first product')).not.toBeInTheDocument();
+    const labels = screen.getAllByRole('paragraph').map(p => p.textContent);
+    expect(labels.indexOf('Add your first digital product')).toBeLessThan(labels.indexOf('Choose your store design'));
+  });
+
+  it('educator: the course task is done from the real course count, and is skipped when the count is unavailable', async () => {
+    const p = { focusTasks: [{ id: 'first_course', done: null }, { id: 'first_product_digital', done: false }], recommendedApps: [], capabilities: caps };
+    setup(none, {}, p, 2);
+    expect(await screen.findByText('1 of 8 done')).toBeInTheDocument();
+    expect(screen.getByText('Create your first course')).toBeInTheDocument();
+    cleanup();
+    setup(none, {}, p); // course API rejected (e.g. staff without courses.manage)
+    expect(await screen.findByText('0 of 7 done')).toBeInTheDocument();
+    expect(screen.queryByText('Create your first course')).not.toBeInTheDocument();
+  });
+
+  it('brand: suggests the separate POS app without counting it as a task', async () => {
+    setup(none, {}, { focusTasks: [{ id: 'first_product_physical', done: false }], recommendedApps: [{ id: 'pos', reason: 'seller_type' }], capabilities: caps });
+    expect(await screen.findByText('Selling in person?')).toBeInTheDocument();
+    expect(screen.getByText(/separate Android app/)).toBeInTheDocument();
+    expect(screen.getByText('0 of 7 done')).toBeInTheDocument();
   });
 });

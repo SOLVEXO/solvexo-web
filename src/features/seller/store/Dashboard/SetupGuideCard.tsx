@@ -4,13 +4,15 @@ import { clsx } from 'clsx';
 import {
   Wallet, ShoppingBag, Palette, CreditCard, Truck, Globe2,
   Check, ArrowRight, ChevronDown, ChevronUp, ListChecks, ShieldCheck,
+  Package, FileDown, GraduationCap, Boxes, Smartphone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { apiGetOnboardingProgress, apiGetStorePlatformPlan } from '@/api/services/platformPlans';
 import { apiGetStripeConnectStatus } from '@/api/services/stripeConnect';
 import { apiListStoreIntegrations } from '@/api/services/integrations';
 import { apiListStoreShippingZones } from '@/api/services/shipping';
-import type { StoreData } from '@/api/services/store';
+import { apiGetSellerPersonalization, type SellerPersonalization, type SetupFocusTaskId, type StoreData } from '@/api/services/store';
+import { apiCountStoreCourses } from '@/api/services/courses';
 
 // ── Persistent "Setup Guide" card grid — Shopify's real Home page shows this
 // exact shape for an incomplete/trial store (a task-card grid: "Select a
@@ -92,6 +94,10 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
   // not selling, and payment isn't optional, it's the way to unlock it.
   const [storeLocked, setStoreLocked] = useState(false);
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
+  // Seller-type / selling-category guidance (real counts from the store's own data). Null = unavailable → the classic
+  // single "Add your first product" task is shown instead, so a failed request never leaves the guide empty.
+  const [personalization, setPersonalization] = useState<SellerPersonalization | null>(null);
+  const [courseCount, setCourseCount] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,8 +107,12 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
       apiGetStorePlatformPlan(storeId).catch(() => null),
       apiListStoreShippingZones(storeId, 'shipping').catch(() => null),
       apiListStoreIntegrations(storeId).catch(() => null),
-    ]).then(([progressRes, connectRes, planRes, shippingRes, integrationsRes]) => {
+      apiGetSellerPersonalization(storeId).catch(() => null),
+      apiCountStoreCourses(storeId).catch(() => null),
+    ]).then(([progressRes, connectRes, planRes, shippingRes, integrationsRes, personalizationRes, courses]) => {
       if (cancelled) return;
+      setPersonalization(personalizationRes?.data ?? null);
+      setCourseCount(typeof courses === 'number' ? courses : null);
       setHasPlatformPaymentMethod(!!progressRes?.data?.hasPlatformPaymentMethod);
       // Any way for buyers to pay beyond the default Cash on Delivery counts: Stripe, a connected gateway
       // (Safepay, PayFast, bank transfer, …) switched on at checkout, or an active custom transfer method.
@@ -150,7 +160,41 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
     ? 'View status'
     : verificationStatus === 'needs_info' || verificationStatus === 'rejected' ? 'Update details' : 'Verify now';
 
-  const tasks: SetupTask[] = [
+  // What this seller should do first, from their seller type + what they sell. Each task's done-state is a real count
+  // (products by type, suppliers, courses) — never a claim. A task is skipped when its signal is unavailable.
+  const focus = personalization?.focusTasks ?? [];
+  const focusDone = (id: SetupFocusTaskId) => focus.find(f => f.id === id)?.done === true;
+  const productTasks: SetupTask[] = [];
+  if (focus.some(f => f.id === 'first_product_physical')) {
+    productTasks.push({
+      id: 'product-physical', label: 'Add your first physical product',
+      desc: 'Add price and stock, then set shipping rates so buyers can order.',
+      cta: 'Add product', Icon: Package, path: 'products/add', done: focusDone('first_product_physical'), manual: false,
+    });
+  }
+  if (focus.some(f => f.id === 'first_product_digital')) {
+    productTasks.push({
+      id: 'product-digital', label: 'Add your first digital product',
+      desc: 'Upload the file buyers get after paying — it lands in their download library automatically.',
+      cta: 'Add product', Icon: FileDown, path: 'products/add', done: focusDone('first_product_digital'), manual: false,
+    });
+  }
+  if (focus.some(f => f.id === 'first_course') && courseCount !== null) {
+    productTasks.push({
+      id: 'course', label: 'Create your first course',
+      desc: 'Build lessons and quizzes, then link the course to a product to sell it.',
+      cta: 'Create course', Icon: GraduationCap, path: 'digital', done: courseCount > 0, manual: false,
+    });
+  }
+  if (focus.some(f => f.id === 'first_supplier')) {
+    productTasks.push({
+      id: 'supplier', label: 'Add your first supplier',
+      desc: 'Record who you buy from, then restock with purchase orders.',
+      cta: 'Add supplier', Icon: Boxes, path: 'inventory', done: focusDone('first_supplier'), manual: false,
+    });
+  }
+
+  const baseTasks: SetupTask[] = [
     {
       id: 'billing', label: billingLabel, desc: billingDesc, cta: storeLocked ? 'Unlock store' : 'Select a plan',
       Icon: CreditCard, path: 'plan-billing', done: hasPlatformPaymentMethod, manual: false,
@@ -170,11 +214,11 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
       id: 'verify', label: 'Verify your business', desc: verifyDesc, cta: verifyCta,
       Icon: ShieldCheck, path: 'settings/verification', done: verificationStatus === 'verified', manual: false,
     },
-    {
+    ...(productTasks.length > 0 ? productTasks : [{
       id: 'product', label: 'Add your first product',
       desc: 'List something for sale in your catalog.',
       cta: 'Add product', Icon: ShoppingBag, path: 'products/add', done: totalProducts > 0, manual: false,
-    },
+    }]),
     {
       id: 'domain', label: 'Get a custom domain',
       desc: "Give your store a branded URL that's easy to find, trust, and remember.",
@@ -186,6 +230,19 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
       cta: 'Review rates', Icon: Truck, path: 'shipping', done: (shippingZoneCount ?? 0) > 0, manual: false,
     },
   ];
+
+  // Bring this seller's own priorities forward (billing always stays first); everything else keeps its order.
+  const FOCUS_KEY: Record<string, SetupFocusTaskId> = {
+    'product-physical': 'first_product_physical', 'product-digital': 'first_product_digital', course: 'first_course',
+    supplier: 'first_supplier', shipping: 'shipping', verify: 'verify', domain: 'domain',
+  };
+  const rank = (id: string) => {
+    if (id === 'billing') return -1;
+    const i = focus.findIndex(f => f.id === FOCUS_KEY[id]);
+    return i === -1 ? focus.length : i;
+  };
+  const tasks = [...baseTasks].sort((a, b) => rank(a.id) - rank(b.id));
+  const suggestsPos = personalization?.recommendedApps.some(a => a.id === 'pos') ?? false;
 
   const doneCount = tasks.filter(t => t.done).length;
 
@@ -262,6 +319,23 @@ export function SetupGuideCard({ storeId, totalProducts, store }: { storeId: str
               </button>
             </div>
           ))}
+          {suggestsPos && (
+            // A suggestion, not a task: the POS app is a separate Android app, so it is never counted as "done" here.
+            <div className="sm:col-span-2 flex items-center gap-3 rounded-xl border border-dashed border-slate/40 p-3">
+              <div className="w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0 bg-brand-pale-orange text-brand-orange"><Smartphone size={14} /></div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] sm:text-[12.5px] font-semibold text-charcoal leading-[1.3]">Selling in person?</p>
+                <p className="text-[12.5px] sm:text-[11px] text-slate mt-0.5 leading-[1.4]">The Solvexo POS app is a separate Android app that shares your products and stock with this store.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate(`/store/${storeId}/mobile-app`)}
+                className="shrink-0 flex items-center gap-1.5 px-2.5 py-[5px] pointer-coarse:px-3.5 pointer-coarse:py-2.5 rounded-lg text-[12px] sm:text-[11px] font-semibold bg-cream border border-bone text-charcoal cursor-pointer transition-colors duration-150 hover:border-brand-orange/40 hover:bg-brand-pale-orange"
+              >
+                Get the POS app <ArrowRight size={10} />
+              </button>
+            </div>
+          )}
           {!showAll && tasks.length > PHONE_TASK_CAP && (
             <button
               type="button"

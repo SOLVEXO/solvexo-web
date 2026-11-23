@@ -219,6 +219,8 @@ export const ENDPOINTS = {
     MY_STORES: '/api/store/my-stores',
     ENABLED_CURRENCIES: '/api/store/public/enabled-currencies',
     SUGGEST_LOCATION: '/api/store/suggest-location',
+    SELLER_PROFILES: '/api/store/seller-profiles',
+    PERSONALIZATION: (storeId: string) => `/api/store/${storeId}/personalization`,
     SUGGEST_LOCATION_FOR_STORE: (storeId: string) => `/api/store/public/${storeId}/suggest-location`,
     PUBLIC_MARKETS: (storeId: string) => `/api/public/store-markets/${storeId}`,
     PUBLIC_MARKET_PRICES: (storeId: string, marketId: string) => `/api/public/store-markets/${storeId}/${marketId}/prices`,

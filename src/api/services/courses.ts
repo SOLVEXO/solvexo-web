@@ -14,6 +14,10 @@ const ME = '/api/courses/me';
 const p = (storeId: string) => ({ params: { storeId } });
 
 export const apiMyCourses = (storeId: string) => client.get(ME, p(storeId)) as Promise<CourseSummary[]>;
+
+/** Seller side: how many courses this store has (needs the `courses.manage` permission — rejects for staff without it). */
+export const apiCountStoreCourses = (storeId: string) =>
+  (client.get(`/api/courses/store/${storeId}`, { params: { page: 1, limit: 1 } }) as Promise<{ total: number }>).then(r => r.total ?? 0);
 export const apiCourseOutline = (storeId: string, courseId: string) => client.get(`${ME}/${courseId}`, p(storeId)) as Promise<CourseOutline>;
 export const apiLessonMedia = (storeId: string, courseId: string, lessonId: string) =>
   client.post(`${ME}/${courseId}/lessons/${lessonId}/media`, {}, p(storeId)) as Promise<{ url: string }>;

@@ -10,6 +10,7 @@ import {
   apiDuplicateTheme, apiRenameTheme, apiCreatePreviewLink, apiRevokePreviewLink, apiGetBrandKit,
   brandKitColors, type StoreThemeData, type BrandKit,
 } from '@/api/services/storeTheme';
+import { apiGetSellerPersonalization } from '@/api/services/store';
 import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { listNewThemeEntries, type ThemeInstallColorDefaults } from '@/features/storefront-themes/registry';
 import { getStoreLiveUrl } from '@/utils/storefrontUrl';
@@ -175,7 +176,17 @@ export function ThemeLibraryPage() {
     [installed],
   );
   const activeRow = installed.find((row) => row.status === 'active') ?? null;
-  const newThemeEntries = listNewThemeEntries();
+  // "Recommended for you": a theme is suggested only when its declared categories really overlap with what this seller
+  // does (seller type + selling categories, from the backend profile). No overlap → no badge; nothing is invented.
+  const [themeCategories, setThemeCategories] = useState<string[]>([]);
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetSellerPersonalization(storeId).then(res => { if (!cancelled) setThemeCategories(res.data.themeCategories); }).catch(() => { /* optional: no suggestions */ });
+    return () => { cancelled = true; };
+  }, [storeId]);
+  const isRecommended = (entry: { categories: string[] }) => entry.categories.some(c => c !== 'general' && themeCategories.includes(c));
+  const newThemeEntries = [...listNewThemeEntries()].sort((a, b) => Number(isRecommended(b)) - Number(isRecommended(a)));
   const activeThemeName = newThemeEntries.find((t) => t.id === activeRow?.themeDefinitionId)?.name;
 
   const handleInstallNewTheme = async (id: string, name: string, installDefaults: ThemeInstallColorDefaults) => {
@@ -353,6 +364,11 @@ export function ThemeLibraryPage() {
                   {isActive && (
                     <span className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-full bg-emerald-600 text-[10.5px] font-bold tracking-wide text-white shadow-md">
                       <span className="w-1.5 h-1.5 rounded-full bg-white" /> ACTIVE
+                    </span>
+                  )}
+                  {isRecommended(entry) && (
+                    <span className="absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-full bg-brand-orange text-[10.5px] font-bold tracking-wide text-white shadow-md">
+                      <Sparkles size={11} /> Recommended for you
                     </span>
                   )}
                   {/* Details + actions appear only on hover/focus (tap on touch). */}
