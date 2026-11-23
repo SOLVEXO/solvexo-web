@@ -10,6 +10,7 @@ import { SOLUTIONS } from '../features/buyer/data/solutions';
 import { BLOG_AUTHOR, SORTED_BLOG_POSTS, getBlogPost, type BlogBlock } from '../features/buyer/data/blogPosts';
 import { SITEMAP_PAGES, SITE_ORIGIN, canonicalUrl, normalizePath, type PublicPageSeo } from './publicPages';
 import { unsplashUrl } from '../assets/stockPhotos';
+import { homeHeroShellHtml } from './homeHeroShell';
 
 export const PRERENDER_DIR = '_pages';
 
@@ -220,7 +221,11 @@ export function buildPrerenderedHtml(template: string, page: PublicPageSeo): str
     '<p><a href="/privacy-policy">Privacy Policy</a> &middot; <a href="/terms-of-service">Terms of Service</a> &middot; <a href="/cookie-policy">Cookie Policy</a> &middot; <a href="mailto:sales@solvexo.store">sales@solvexo.store</a></p>',
     '</main>',
   ].join('\n      ');
-  return html.replace(/<!--solvexo-platform-body-->[\s\S]*?<!--\/solvexo-platform-body-->/, `<!--solvexo-platform-body-->\n      ${body}\n    <!--/solvexo-platform-body-->`);
+  html = html.replace(/<!--solvexo-platform-body-->[\s\S]*?<!--\/solvexo-platform-body-->/, `<!--solvexo-platform-body-->\n      ${body}\n    <!--/solvexo-platform-body-->`);
+  // Home page: its hero, visible before the app loads (see homeHeroShell.ts). Outside #root, so React's first render
+  // does not wipe it before the real hero is ready.
+  if (page.path === '/') html = html.replace('<!--/solvexo-platform-body--></div>', `<!--/solvexo-platform-body--></div>\n    ${homeHeroShellHtml()}`);
+  return html;
 }
 
 const GOOGLE_FONTS_LINK = /<link rel="stylesheet" href="(https:\/\/fonts\.googleapis\.com\/css2\?[^"]+)"[^>]*>/;
