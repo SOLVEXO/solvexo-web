@@ -13,6 +13,7 @@ import { useApi } from '../wholesale/wholesaleUtils';
 import { AccountEditModal, EntryModal, LedgerModal, ManualEntryModal, OpeningBalancesModal } from './AccountingModals';
 import { CashBookTab, ExpensesTab, ProfitTaxTab, SuppliersTab } from './AccountingBooksTabs';
 import { ExcelDownload, SettlementsTab, StatementsTab } from './AccountingStatementsTabs';
+import { IntegrationsTab } from './AccountingIntegrationsTab';
 import {
   SKIP_LABEL, SOURCE_LABEL, TYPE_LABEL, dayIso, fmt, isDebitNormal, shortDate,
   type AccountRow, type JournalEntry, type SettingsResponse,
@@ -89,7 +90,7 @@ function Books({ storeId, settings, onSettingsChanged }: { storeId: string; sett
       <TabBar tabs={[
         { id: 'overview', label: 'Overview' }, { id: 'expenses', label: 'Expenses' }, { id: 'cash', label: 'Cash book' }, { id: 'suppliers', label: 'Suppliers' },
         { id: 'statements', label: 'Statements' }, { id: 'settlements', label: 'Settlements' }, { id: 'profit', label: 'POS profit & tax' },
-        { id: 'journal', label: 'Journal' }, { id: 'trial', label: 'Trial balance' }, { id: 'accounts', label: 'Chart of accounts' },
+        { id: 'journal', label: 'Journal' }, { id: 'trial', label: 'Trial balance' }, { id: 'accounts', label: 'Chart of accounts' }, { id: 'integrations', label: 'Integrations' },
       ]} active={tab} onChange={setTab} />
       {accounts.error && <ErrorLine message={errorMessage(accounts.error)} onRetry={accounts.reload} />}
       {tab === 'overview' && <Overview {...ctx} settings={settings} />}
@@ -102,6 +103,7 @@ function Books({ storeId, settings, onSettingsChanged }: { storeId: string; sett
       {tab === 'journal' && <Journal {...ctx} minDate={dayIso(new Date(settings.settings!.goLiveDate))} />}
       {tab === 'trial' && <TrialBalance {...ctx} />}
       {tab === 'accounts' && <ChartOfAccounts {...ctx} />}
+      {tab === 'integrations' && <IntegrationsTab {...ctx} />}
       {entryId && <EntryModal storeId={storeId} entryId={entryId} accounts={rows} exponent={exp} canManage={can('accounting.manage' as StaffPermission)} onClose={() => setEntryId(null)} onChanged={refresh} />}
       {ledger && <LedgerModal storeId={storeId} account={ledger} exponent={exp} onClose={() => setLedger(null)} onOpenEntry={id => setEntryId(id)} />}
     </>
