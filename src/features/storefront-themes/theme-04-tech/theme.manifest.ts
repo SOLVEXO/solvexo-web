@@ -62,7 +62,7 @@ export const techThemeManifest: ThemeManifest = {
   id: 'theme-04-tech',
   name: 'Tech Store',
   supportsAnnouncementBar: true,
-  supportedHeaderOptions: ['searchBar', 'sticky', 'button', 'topBar', 'colours', 'menuStyle'],
+  supportedHeaderOptions: ['searchBar', 'sticky', 'button', 'topBar', 'colours', 'menuStyle', 'menuOverflow'],
   supportedFooterOptions: ['spacing', 'newsletterTop', 'mobileAccordion', 'colours', 'headings', 'socialStyle', 'socialColour', 'socialSize', 'policyLinks', 'currency', 'logo', 'defaultColumns', 'wordmark', 'bottomLayout', 'poweredBy'],
   defaultSettings: DEFAULTS,
   styles: STYLES,

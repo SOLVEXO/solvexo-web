@@ -185,6 +185,16 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
         </label>
       </Group>}
 
+      {can('menuOverflow') && <Group title="Menu overflow">
+        <label className="flex flex-col gap-1">
+          <span className="text-[11.5px] text-charcoal">When the menu has more links than fit</span>
+          <select className={SELECT} value={header.menuOverflow ?? 'scroll'} onChange={e => set({ menuOverflow: e.target.value as 'scroll' | 'wrap' })}>
+            <option value="scroll">One line with scroll arrows</option>
+            <option value="wrap">Wrap onto more lines</option>
+          </select>
+        </label>
+      </Group>}
+
       {can('button') && <Group title="Button">
         <p className="text-[10.5px] text-slate -mt-1">An eye-catching button next to the icons, e.g. “Shop sale”. Shown on desktop.</p>
         <div className="grid grid-cols-2 gap-3">

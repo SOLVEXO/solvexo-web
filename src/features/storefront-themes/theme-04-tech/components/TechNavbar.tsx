@@ -13,6 +13,7 @@ import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/
 import { useCartDrawer } from '../../cartDrawerContext';
 import { buildNavImageLookup, isMegaItem, navHasSchedule, normalizeNavItems } from '../../navigation/megaNav';
 import { NavAnchor } from '../../navigation/NavAnchor';
+import { NavScrollRow } from '../../navigation/NavScrollRow';
 import { NavBadge } from '../../navigation/NavBadge';
 import { MegaPromoCards } from '../../navigation/MegaPromoCards';
 import { useNavRuleContext } from '../../navigation/useNavRuleContext';
@@ -219,15 +220,21 @@ export function TechNavbar() {
   const logoLink = <NavAnchor link={resolveLink(header?.logoLink ?? { linkType: 'home' })} className="flex shrink-0 items-center no-underline" style={{ color: t.colors.ink }}>{wordmark}</NavAnchor>;
   const menuButton = <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: t.colors.ink }}><Menu size={22} /></button>;
 
+  const scrollMenu = o.menuOverflow === 'scroll';
+  const ctaLink = cta && (
+    <NavAnchor link={cta.link.startsWith('/') ? { to: cta.link } : { href: cta.link }} className="tx-btn tx-btn-sm no-underline" style={{ ...techButtonStyle('outline'), borderRadius: t.buttonRadiusPx }}>{cta.label}</NavAnchor>
+  );
   const navList = (className: string): ReactNode => (
-    <nav className={`hidden min-w-0 items-center gap-7 lg:flex ${className}`} aria-label={ts('pg.main', 'Main')}>
+    <>
+    <NavScrollRow enabled={scrollMenu} className={`hidden min-w-0 lg:flex ${className}`} navClassName="items-center gap-7 [&>*]:shrink-0" wrapClassName="min-w-0 flex-wrap justify-center gap-y-1" ariaLabel={ts('pg.main', 'Main')}
+      arrow={{ bg: t.colors.bg, fg: t.colors.ink, border: t.colors.border, radius: t.buttonRadiusPx, fade: t.colors.bg }}>
       {items.map(item => (
         <div key={item.id} className="group relative" data-nav-group={item.id}>
           <NavAnchor link={item.link} className="tx-navlink inline-flex items-center gap-1 whitespace-nowrap py-3 text-sm font-medium no-underline" style={{ color: t.colors.ink }}>
             {cased('menu', item.label)}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} />{item.children.length > 0 && <ChevronDown size={13} aria-hidden />}
           </NavAnchor>
           {item.children.length > 0 && (
-            <div className={`invisible absolute start-0 top-full z-50 pt-1 opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 ${isMegaItem(item) ? 'w-[min(920px,92vw)]' : 'min-w-[220px]'}`}>
+            <div data-nav-panel className={`invisible absolute start-0 top-full z-50 pt-1 opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 ${isMegaItem(item) ? 'w-[min(920px,92vw)]' : 'min-w-[220px]'}`}>
               {isMegaItem(item) ? <MegaPanel item={item} /> : (
                 <ul className="tx-pop m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, boxShadow: '0 12px 32px -12px rgba(2,2,3,.25)' }}>
                   {item.children.map(c => (
@@ -242,10 +249,10 @@ export function TechNavbar() {
           )}
         </div>
       ))}
-      {cta && (
-        <NavAnchor link={cta.link.startsWith('/') ? { to: cta.link } : { href: cta.link }} className="tx-btn tx-btn-sm no-underline" style={{ ...techButtonStyle('outline'), borderRadius: t.buttonRadiusPx }}>{cta.label}</NavAnchor>
-      )}
-    </nav>
+      {!scrollMenu && ctaLink}
+    </NavScrollRow>
+    {scrollMenu && ctaLink && <span className="ms-4 hidden shrink-0 lg:inline-flex">{ctaLink}</span>}
+    </>
   );
 
   /** The search icon: opens the search bar (always visible from the large breakpoint in the search-first and centered layouts). */

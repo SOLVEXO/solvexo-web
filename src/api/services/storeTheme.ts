@@ -241,7 +241,9 @@ export interface StorefrontHeader {
   /** px; empty = by topBarSize. */
   topBarFontSize?:      number | null;
   topBarPadY?:          number | null;
-  preset?:              string | null;
+  /** Menu that does not fit: one scrolling line with arrows (default) or wrapping rows. */
+  menuOverflow?:        'scroll' | 'wrap';
+  preset?:             string | null;
 }
 
 export interface StorefrontFooter {

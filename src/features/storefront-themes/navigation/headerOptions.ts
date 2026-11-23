@@ -39,6 +39,8 @@ export interface HeaderOptions {
   navUppercase: boolean;
   navHoverStyle: 'none' | 'underline' | 'pill';
   searchStyle: 'icon' | 'bar';
+  /** Menu with more items than fit: one scrolling line with arrows (default) or wrapping rows. */
+  menuOverflow: 'scroll' | 'wrap';
   /** Theme-defined slug (default 'icons'); each theme interprets the ones it offers. */
   searchPosition: string;
   cta: { label: string; link: string } | null;
@@ -123,6 +125,7 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     navUppercase: h.navUppercase === true,
     navHoverStyle: h.navHoverStyle === 'underline' || h.navHoverStyle === 'pill' ? h.navHoverStyle : 'none',
     searchStyle: h.searchStyle === 'bar' ? 'bar' : 'icon',
+    menuOverflow: h.menuOverflow === 'wrap' ? 'wrap' : 'scroll',
     searchPosition: typeof h.searchPosition === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(h.searchPosition) ? h.searchPosition : 'icons',
     cta: typeof h.ctaLabel === 'string' && h.ctaLabel.trim() && typeof h.ctaLink === 'string' && SAFE_LINK.test(h.ctaLink)
       ? { label: h.ctaLabel.trim(), link: h.ctaLink } : null,

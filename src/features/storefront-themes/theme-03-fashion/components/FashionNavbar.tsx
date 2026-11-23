@@ -16,6 +16,7 @@ import { NavBadge } from '../../navigation/NavBadge';
 import { MegaPromoCards } from '../../navigation/MegaPromoCards';
 import { useNavRuleContext } from '../../navigation/useNavRuleContext';
 import { NavAnchor } from '../../navigation/NavAnchor';
+import { NavScrollRow } from '../../navigation/NavScrollRow';
 import { useHeaderScroll } from '../../navigation/useHeaderScroll';
 import { headerNavCss, logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
 import { fashionTheme as t } from '../theme.config';
@@ -127,7 +128,7 @@ export function FashionNavbar() {
   // "In the logo row" needs a free middle: logo on the left (the menu then drops to its own row). Otherwise it falls back to its own row.
   const rowBar = searchBar && o.searchPosition === 'row' && o.logoPosition === 'left';
   const below = o.menuPosition === 'below' || rowBar;
-  const navJustify = o.navAlignment === 'right' ? 'justify-end' : o.navAlignment === 'center' ? 'justify-center' : 'justify-start';
+  const navJustify = o.navAlignment === 'right' ? '[justify-content:safe_flex-end]' : o.navAlignment === 'center' ? '[justify-content:safe_center]' : 'justify-start';
   // Search box (seller option): next to the icons, or centered on its own row between the logo row and the menu row.
   const centerBar = searchBar && (o.searchPosition === 'center' || (o.searchPosition === 'row' && !rowBar));
   const layout = {
@@ -162,7 +163,8 @@ export function FashionNavbar() {
           </div>
 
           <div className={`hidden min-w-0 lg:flex ${layout.nav}`}>
-            <nav ref={navRef} className="hidden flex-wrap items-center justify-center gap-1 lg:flex" aria-label={ts('pg.main', 'Main')}>
+            <NavScrollRow enabled={o.menuOverflow === 'scroll'} navRef={navRef} ariaLabel={ts('pg.main', 'Main')} navClassName="items-center gap-1 [&>*]:shrink-0" wrapClassName="flex flex-wrap justify-center"
+              arrow={{ bg: t.colors.bg, fg: t.colors.ink, border: t.colors.border, radius: Math.min(parseInt(String(t.buttonRadiusPx), 10) || 0, 14), fade: headerBg }}>
               {items.map(item => (
                 <div key={item.id} className="group relative" data-open={openMenu === item.id} data-dismissed={dismissedMenu === item.id} data-nav-group={item.id}
                   onMouseEnter={() => { if (dismissedMenu === item.id) setDismissedMenu(null); }} onFocus={() => { if (dismissedMenu === item.id) setDismissedMenu(null); }}>
@@ -180,7 +182,7 @@ export function FashionNavbar() {
                     const columns = item.children.filter(c => c.children.length > 0 || c.imageUrl);
                     const plain = item.children.filter(c => c.children.length === 0 && !c.imageUrl);
                     return (
-                      <MegaPanel className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
+                      <MegaPanel fixedMode={o.menuOverflow === 'scroll'} className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
                         <div style={{ padding: "0 24px" }}>
                           <div className="mx-auto flex gap-8 p-6" style={{ maxWidth: 1840, width: t.mega.width === 'fit' ? 'fit-content' : undefined, maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
                             <div className="grid min-w-0 flex-1 content-start gap-x-8 gap-y-6" style={{ gridTemplateColumns: t.mega.width === 'fit' ? `repeat(${item.megaColumns || t.mega.columns}, minmax(150px, max-content))` : `repeat(${item.megaColumns || t.mega.columns}, minmax(0, 1fr))` }}>
@@ -235,7 +237,7 @@ export function FashionNavbar() {
                   )}
                 </div>
               ))}
-            </nav>
+            </NavScrollRow>
           </div>
 
           {rowBar && (
@@ -305,10 +307,12 @@ function MegaHeading({ label, link, imageUrl, badge }: { label: string; link?: R
   );
 }
 
-function MegaPanel({ className, children }: { className: string; children: ReactNode }) {
+function MegaPanel({ className, children, fixedMode }: { className: string; children: ReactNode; fixedMode?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<{ left: number; width: number } | null>(null);
   useLayoutEffect(() => {
+    // In scroll-row mode NavScrollRow places the panel (position: fixed) so the scrolling menu cannot clip it.
+    if (fixedMode) return;
     const group = ref.current?.parentElement;
     const header = group?.closest('header');
     if (!group || !header) return;
@@ -326,6 +330,6 @@ function MegaPanel({ className, children }: { className: string; children: React
       group.removeEventListener('mouseenter', measure);
       group.removeEventListener('focusin', measure);
     };
-  }, []);
-  return <div ref={ref} data-nav-panel className={className} style={box ? { left: box.left, width: box.width } : undefined}>{children}</div>;
+  }, [fixedMode]);
+  return <div ref={ref} data-nav-panel data-nav-mega className={className} style={!fixedMode && box ? { left: box.left, width: box.width } : undefined}>{children}</div>;
 }

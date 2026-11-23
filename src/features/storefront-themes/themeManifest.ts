@@ -154,7 +154,7 @@ export interface ThemeStylePreset {
  *  (like a Shopify theme's own settings schema), so a control never appears for a theme that would ignore it. */
 export type HeaderOptionKey =
   | 'logoPosition' | 'menuPosition' | 'menuAlignment' | 'searchBar' | 'searchPosition'
-  | 'sticky' | 'transparent' | 'menuStyle' | 'button' | 'topBar' | 'colours';
+  | 'sticky' | 'transparent' | 'menuStyle' | 'menuOverflow' | 'button' | 'topBar' | 'colours';
 
 /** Optional footer controls a theme chooses to support. The Footer settings panel only shows the ones its active theme lists,
  *  so a switch never appears for a theme that would ignore it. A theme with no list shows all of them (older themes keep working). */

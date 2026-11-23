@@ -9,6 +9,7 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { NavAnchor } from '../../navigation/NavAnchor';
 import { NavBadge } from '../../navigation/NavBadge';
+import { NavScrollRow } from '../../navigation/NavScrollRow';
 import { logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
 import { ChromeTopStrip } from '@/features/storefront/chrome/ChromeTopStrip';
 import { ledupTheme } from '../theme.config';
@@ -86,7 +87,8 @@ export function LedupNavbar() {
               : <span className="whitespace-nowrap text-2xl font-bold tracking-tight" style={{ color: onDark ? '#fff' : 'var(--ld-accent)', transition: 'color .3s ease' }}>{store.name}</span>}
           </NavAnchor>
 
-          <nav aria-label={ts('nav.main', 'Main')} className="ld-glass-pill">
+          <NavScrollRow enabled={o.menuOverflow === 'scroll'} ariaLabel={ts('nav.main', 'Main')} className="ld-glass-pill" navClassName="items-center [justify-content:safe_center] [&>*]:shrink-0" wrapClassName="flex-wrap justify-center"
+            arrow={{ bg: '#ffffff', fg: '#4b423b', border: '#e2dedb', radius: 9999, fade: 'rgba(246,246,246,.96)' }}>
             {items.map(it => {
               const hasKids = it.children.length > 0;
               if (!hasKids) {
@@ -101,9 +103,9 @@ export function LedupNavbar() {
                 </button>
               );
             })}
-          </nav>
+          </NavScrollRow>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {cta && (
               <Link to={cta.link} className="ld-ctabtn ld-cta-desktop">{cta.label} <ArrowUpRight size={13} aria-hidden /></Link>
             )}
