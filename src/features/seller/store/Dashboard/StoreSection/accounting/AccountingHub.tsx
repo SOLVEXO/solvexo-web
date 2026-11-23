@@ -12,6 +12,8 @@ import { ErrorLine } from '../wholesale/ErrorLine';
 import { useApi } from '../wholesale/wholesaleUtils';
 import { AccountEditModal, EntryModal, LedgerModal, ManualEntryModal, OpeningBalancesModal } from './AccountingModals';
 import { CashBookTab, ExpensesTab, ProfitTaxTab, SuppliersTab } from './AccountingBooksTabs';
+import { ExcelDownload, SettlementsTab, StatementsTab } from './AccountingStatementsTabs';
+import { IntegrationsTab } from './AccountingIntegrationsTab';
 import {
   SKIP_LABEL, SOURCE_LABEL, TYPE_LABEL, dayIso, fmt, isDebitNormal, shortDate,
   type AccountRow, type JournalEntry, type SettingsResponse,
@@ -87,17 +89,21 @@ function Books({ storeId, settings, onSettingsChanged }: { storeId: string; sett
     <>
       <TabBar tabs={[
         { id: 'overview', label: 'Overview' }, { id: 'expenses', label: 'Expenses' }, { id: 'cash', label: 'Cash book' }, { id: 'suppliers', label: 'Suppliers' },
-        { id: 'profit', label: 'Profit & tax' }, { id: 'journal', label: 'Journal' }, { id: 'trial', label: 'Trial balance' }, { id: 'accounts', label: 'Chart of accounts' },
+        { id: 'statements', label: 'Statements' }, { id: 'settlements', label: 'Settlements' }, { id: 'profit', label: 'POS profit & tax' },
+        { id: 'journal', label: 'Journal' }, { id: 'trial', label: 'Trial balance' }, { id: 'accounts', label: 'Chart of accounts' }, { id: 'integrations', label: 'Integrations' },
       ]} active={tab} onChange={setTab} />
       {accounts.error && <ErrorLine message={errorMessage(accounts.error)} onRetry={accounts.reload} />}
       {tab === 'overview' && <Overview {...ctx} settings={settings} />}
       {tab === 'expenses' && <ExpensesTab {...ctx} />}
       {tab === 'cash' && <CashBookTab {...ctx} />}
       {tab === 'suppliers' && <SuppliersTab {...ctx} />}
+      {tab === 'statements' && <StatementsTab {...ctx} />}
+      {tab === 'settlements' && <SettlementsTab {...ctx} />}
       {tab === 'profit' && <ProfitTaxTab {...ctx} />}
       {tab === 'journal' && <Journal {...ctx} minDate={dayIso(new Date(settings.settings!.goLiveDate))} />}
       {tab === 'trial' && <TrialBalance {...ctx} />}
       {tab === 'accounts' && <ChartOfAccounts {...ctx} />}
+      {tab === 'integrations' && <IntegrationsTab {...ctx} />}
       {entryId && <EntryModal storeId={storeId} entryId={entryId} accounts={rows} exponent={exp} canManage={can('accounting.manage' as StaffPermission)} onClose={() => setEntryId(null)} onChanged={refresh} />}
       {ledger && <LedgerModal storeId={storeId} account={ledger} exponent={exp} onClose={() => setLedger(null)} onOpenEntry={id => setEntryId(id)} />}
     </>
@@ -218,6 +224,7 @@ function TrialBalance({ storeId, exponent, currency, tick, openLedger }: Ctx) {
       <div className="flex flex-wrap items-end gap-3">
         <div className="w-44"><Input label="As of" type="date" value={asOf} onChange={e => setAsOf(e.target.value)} /></div>
         {r.data && (r.data.totals.balanced ? <Badge color="green">Debits equal credits</Badge> : <Badge color="red">Out of balance</Badge>)}
+        <div className="ml-auto"><ExcelDownload storeId={storeId} kind="trial-balance" query={{ asOf }} fileName={`trial-balance-${asOf}.xlsx`} /></div>
       </div>
       {r.error ? <ErrorLine message={errorMessage(r.error)} onRetry={r.reload} /> : (
         <Table columns={columns} data={(r.data?.rows ?? []).filter(row => row.balanceMinor !== 0)} keyExtractor={row => row.key} loading={r.loading} onRowClick={row => openLedger(row)}

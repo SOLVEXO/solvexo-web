@@ -1,3 +1,5 @@
+import client from '@/api/client';
+
 /** Shared types and formatting for the Accounting screens (amounts arrive in integer minor units of the base currency). */
 
 export type AccountType = 'asset' | 'liability' | 'equity' | 'income' | 'expense';
@@ -26,12 +28,13 @@ export const SOURCE_LABEL: Record<string, string> = {
   pos_sale: 'POS sale', pos_refund: 'POS refund', pos_void: 'POS void', expense: 'Expense', cash_movement: 'Cash in / out', shift_close: 'Shift close',
   stock: 'Stock', receipt: 'Goods received', supplier: 'Supplier', khata: 'Khata', order: 'Online order', order_refund: 'Online refund',
   fee: 'Solvexo fee', payout: 'Payout', manual: 'Journal entry', opening: 'Opening balances',
+  order_cogs: 'Online cost of goods', settlement: 'Gateway settlement',
 };
 
 /** Why records were left out of the books, in plain words. */
 export const SKIP_LABEL: Record<string, string> = {
   currency: 'in another currency (converting them comes in a later phase)',
-  no_cost: 'stock movements with no cost price on the product',
+  no_cost: 'sales or stock movements with no cost price on the product (add cost prices to complete cost of goods sold)',
   before_go_live: 'dated before the go-live date (their effect belongs in the opening balances)',
   deleted: 'deleted orders',
   original_missing: 'khata reversals whose original entry was not found',
@@ -63,3 +66,13 @@ export const EXPENSE_CATEGORY_LABEL: Record<string, string> = {
 
 /** The first day of the current month, as YYYY-MM-DD in local time. */
 export const monthStartIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; };
+
+/** Downloads one of the API's Excel files with the same query as the screen. */
+export async function downloadExcel(storeId: string, kind: string, query: Record<string, string>, fileName: string) {
+  const qs = new URLSearchParams(Object.fromEntries(Object.entries(query).filter(([, v]) => v))).toString();
+  const blob = (await client.get(`/api/accounting/${storeId}/exports/${kind}?${qs}`, { responseType: 'blob' })) as unknown as Blob;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = fileName; a.click();
+  URL.revokeObjectURL(url);
+}
+
