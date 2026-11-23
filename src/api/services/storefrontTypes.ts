@@ -49,6 +49,7 @@ export const SECTION_TYPES = [
   'soft_gallery',
   // Shopify-parity section library — rendered by every theme.
   'multicolumn',
+  'promo_cards',
   'logo_list',
   'marquee',
   'custom_html',

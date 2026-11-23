@@ -20,12 +20,14 @@ import { StoreLocationsSection } from './shared/StoreLocationsSection';
 import { ContactFormSection } from './shared/ContactFormSection';
 import { RelatedProductsSection } from './shared/RelatedProductsSection';
 import { FeatureListSection } from './shared/FeatureListSection';
+import { PromoCardsSection } from './shared/PromoCardsSection';
 import { TeamGridSection } from './shared/TeamGridSection';
 import { StatsCounterSection } from './shared/StatsCounterSection';
 import { ts } from '@/utils/tStatic';
 
 registerFashionSection('multicolumn', (section, blocks, colors) => <MulticolumnSection section={section} blocks={blocks} colors={colors} />);
-registerFashionSection('logo_list', (section, blocks, colors) => <LogoListSection section={section} blocks={blocks} colors={colors} />);
+registerFashionSection('promo_cards', (section, blocks, colors) => <PromoCardsSection section={section} blocks={blocks} colors={colors} />);
+registerFashionSection('logo_list',(section, blocks, colors) => <LogoListSection section={section} blocks={blocks} colors={colors} />);
 registerFashionSection('marquee', (section, blocks, colors) => <MarqueeSection section={section} blocks={blocks} colors={colors} />);
 registerFashionSection('custom_html', (section, blocks, colors) => <CustomHtmlSection section={section} blocks={blocks} colors={colors} />);
 registerFashionSection('image_banner', (section, blocks, colors) => <ImageBannerSection section={section} blocks={blocks} colors={colors} />);

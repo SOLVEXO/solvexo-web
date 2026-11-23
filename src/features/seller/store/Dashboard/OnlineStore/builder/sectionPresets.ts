@@ -126,6 +126,24 @@ export const SECTION_PRESETS: SectionPreset[] = [
       { type: 'multicolumn_column', settings: { heading: 'Real support', body: 'Questions? We reply within a few hours.' } },
     ] }) },
 
+  { id: 'deal-cards-2', type: 'promo_cards', category: 'marketing', name: 'Today\'s deals (2 cards)', description: 'Two cards side by side: photo, label, heading, text and a button — each with its own colours', mock: 'tiles',
+    build: () => ({
+      settings: { heading: 'Today\'s deals', columns: 2, layout: 'image-left', cardHeight: 380, imageWidth: 50, gap: 20, contentPosition: 'spread' },
+      blocks: [
+        { type: 'promo_card', settings: { eyebrow: 'New arrival', heading: 'Your first deal', body: 'Describe the offer in a sentence or two.', ctaText: 'Shop now', ctaLink: shopLink, ctaStyle: 'solid', bgColor: '#e9e7ee', textColor: '#2a2a6b', buttonBg: '#2a2a6b', buttonText: '#ffffff' } },
+        { type: 'promo_card', settings: { eyebrow: 'Limited time', heading: 'Your second deal', body: 'Describe the offer in a sentence or two.', ctaText: 'Shop now', ctaLink: shopLink, ctaStyle: 'outline', bgColor: '#c8c9a8', textColor: '#ffffff', buttonBg: '#ffffff', buttonText: '#2a2a2a' } },
+      ],
+    }) },
+  { id: 'deal-cards-3', type: 'promo_cards', category: 'marketing', name: 'Three offer cards (image on top)', description: 'Three cards with the photo on top and a text panel below', mock: 'tiles',
+    build: () => ({
+      settings: { columns: 3, layout: 'image-top', cardHeight: 0, gap: 20, contentPosition: 'top', headingSize: 24 },
+      blocks: [1, 2, 3].map(n => ({ type: 'promo_card', settings: { heading: `Offer ${n}`, body: 'A short line about this offer.', ctaText: 'View', ctaLink: shopLink, ctaStyle: 'link' } })),
+    }) },
+  { id: 'deal-card-banner', type: 'promo_cards', category: 'banners', name: 'Wide image card with text over it', description: 'One big card: photo as the background with your text on top', mock: 'banner',
+    build: () => ({
+      settings: { columns: 1, layout: 'overlay', cardHeight: 420, contentPosition: 'center', contentAlign: 'left', headingSize: 40 },
+      blocks: [{ type: 'promo_card', settings: { eyebrow: 'Sale', heading: 'Big seasonal offer', body: 'Tell shoppers why to click.', ctaText: 'Shop the sale', ctaLink: shopLink, ctaStyle: 'solid', overlayOpacity: 35 } }],
+    }) },
   { id: 'features-4', type: 'feature_list', category: 'trust', name: 'Feature list', description: 'Icon, title and a line of text for each promise', mock: 'columns',
     build: () => ({ settings: { heading: 'Why shop with us', columns: 4, textAlign: 'left' }, blocks: [
       { type: 'feature_item', settings: { icon: 'truck', title: 'Fast delivery', description: 'Orders leave our shop within 24 hours.' } },
