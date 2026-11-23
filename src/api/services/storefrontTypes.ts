@@ -50,6 +50,7 @@ export const SECTION_TYPES = [
   // Shopify-parity section library — rendered by every theme.
   'multicolumn',
   'promo_cards',
+  'collection_columns',
   'logo_list',
   'marquee',
   'custom_html',

@@ -21,12 +21,14 @@ import { ContactFormSection } from './shared/ContactFormSection';
 import { RelatedProductsSection } from './shared/RelatedProductsSection';
 import { FeatureListSection } from './shared/FeatureListSection';
 import { PromoCardsSection } from './shared/PromoCardsSection';
+import { CollectionColumnsSection } from './shared/CollectionColumnsSection';
 import { TeamGridSection } from './shared/TeamGridSection';
 import { StatsCounterSection } from './shared/StatsCounterSection';
 import { ts } from '@/utils/tStatic';
 
 registerLedupSection('multicolumn', (section, blocks, colors) => <MulticolumnSection section={section} blocks={blocks} colors={colors} />);
-registerLedupSection('promo_cards', (section, blocks, colors) => <PromoCardsSection section={section} blocks={blocks} colors={colors} />);
+registerLedupSection('collection_columns', (section, blocks, colors) => <CollectionColumnsSection section={section} blocks={blocks} colors={colors} />);
+registerLedupSection('promo_cards',(section, blocks, colors) => <PromoCardsSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('logo_list',(section, blocks, colors) => <LogoListSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('marquee', (section, blocks, colors) => <MarqueeSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('custom_html', (section, blocks, colors) => <CustomHtmlSection section={section} blocks={blocks} colors={colors} />);

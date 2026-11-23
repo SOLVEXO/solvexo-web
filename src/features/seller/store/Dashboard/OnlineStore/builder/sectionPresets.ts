@@ -126,6 +126,11 @@ export const SECTION_PRESETS: SectionPreset[] = [
       { type: 'multicolumn_column', settings: { heading: 'Real support', body: 'Questions? We reply within a few hours.' } },
     ] }) },
 
+  { id: 'collection-columns-4', type: 'collection_columns', category: 'collections', name: 'Collection columns (4 ranges)', description: 'Four columns, each a range heading with a short list of products: photo, name and price', mock: 'columns',
+    build: () => ({
+      settings: { columns: 4, gap: 32, showHeadingLine: true, showImage: true, imagePosition: 'left', imageSize: 100, titleLines: 3, showOldPrice: true },
+      blocks: ['First range', 'Second range', 'Third range', 'Fourth range'].map(heading => ({ type: 'collection_column', settings: { source: 'newArrivals', heading, limit: 3 } })),
+    }) },
   { id: 'deal-cards-2', type: 'promo_cards', category: 'marketing', name: 'Today\'s deals (2 cards)', description: 'Two cards side by side: photo, label, heading, text and a button — each with its own colours', mock: 'tiles',
     build: () => ({
       settings: { heading: 'Today\'s deals', columns: 2, layout: 'image-left', cardHeight: 380, imageWidth: 50, gap: 20, contentPosition: 'spread' },
