@@ -5,7 +5,7 @@ import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { ChromeIcon } from '@/features/storefront/chrome/ChromeIcon';
 import { ChromeQrCode } from '@/features/storefront/chrome/ChromeQrCode';
 import {
-  CHROME_ICON_KEYS, DEFAULT_POPUP, DEFAULT_QR, MAX_CHROME_ITEMS, newChromeItem,
+  CHROME_ICON_KEYS, DEFAULT_POPUP, DEFAULT_QR, MAX_CHROME_ITEMS, newChromeItem, POPUP_PARTS, POPUP_PART_LABEL,
   type ChromeItem, type ChromePopup, type ChromeQr,
 } from '@/features/storefront/chrome/chromeTypes';
 import { ColorField } from './HeaderFooterSettingsPanels';
@@ -110,6 +110,51 @@ function QrDesigner({ qr, storeId, onChange }: { qr: ChromeQr; storeId: string; 
   );
 }
 
+/** A number box: empty means "automatic" (`empty` is what gets stored then). */
+function NumField({ label, value, empty, min, max, onChange, hint }: {
+  label: string; value: number; empty: number; min: number; max: number; onChange: (v: number) => void; hint?: string;
+}) {
+  return (
+    <Row label={label} hint={hint}>
+      <input type="number" inputMode="numeric" min={min} max={max} className={INPUT} placeholder="Auto" value={value === empty ? '' : value}
+        onChange={e => {
+          const raw = e.target.value;
+          if (raw.trim() === '') { onChange(empty); return; }
+          const n = Number(raw);
+          if (Number.isFinite(n)) onChange(Math.min(max, Math.max(min, Math.round(n))));
+        }} />
+    </Row>
+  );
+}
+
+/** Which parts the popup shows and in what order (a part switched off is hidden). */
+function PartsOrder({ popup, onChange }: { popup: ChromePopup; onChange: (p: Partial<ChromePopup>) => void }) {
+  const order = (popup.order ?? POPUP_PARTS).filter(k => POPUP_PARTS.includes(k));
+  const hidden = POPUP_PARTS.filter(k => !order.includes(k));
+  const move = (i: number, d: -1 | 1) => { const n = [...order]; const j = i + d; if (j < 0 || j >= n.length) return; [n[i], n[j]] = [n[j], n[i]]; onChange({ order: n }); };
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[12.5px] font-semibold text-charcoal">What the popup shows, in order</span>
+      {order.map((k, i) => (
+        <div key={k} className="flex items-center gap-1 rounded border border-bone bg-white px-2 py-1 text-[12px] text-charcoal">
+          <span className="flex-1">{POPUP_PART_LABEL[k]}</span>
+          <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => move(i, -1)} className="p-1 disabled:opacity-30 bg-transparent border-0 cursor-pointer"><ArrowUp size={13} /></button>
+          <button type="button" aria-label="Move down" disabled={i === order.length - 1} onClick={() => move(i, 1)} className="p-1 disabled:opacity-30 bg-transparent border-0 cursor-pointer"><ArrowDown size={13} /></button>
+          <button type="button" aria-label={`Hide ${POPUP_PART_LABEL[k]}`} onClick={() => onChange({ order: order.filter(x => x !== k) })} className="p-1 bg-transparent border-0 cursor-pointer"><Trash2 size={13} /></button>
+        </div>
+      ))}
+      {hidden.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {hidden.map(k => (
+            <button key={k} type="button" onClick={() => onChange({ order: [...order, k] })}
+              className="inline-flex items-center gap-1 rounded border border-dashed border-bone bg-white px-2 py-1 text-[11.5px] text-slate cursor-pointer"><Plus size={12} /> {POPUP_PART_LABEL[k]}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PopupEditor({ popup, storeId, onChange }: { popup: ChromePopup; storeId: string; onChange: (p: ChromePopup) => void }) {
   const set = (p: Partial<ChromePopup>) => onChange({ ...popup, ...p });
   return (
@@ -132,11 +177,39 @@ function PopupEditor({ popup, storeId, onChange }: { popup: ChromePopup; storeId
       </div>
       <Switch label="Show share icons" checked={popup.showShare} onChange={v => set({ showShare: v })} />
       <Row label="Small print (optional)"><input className={INPUT} value={popup.footnote} maxLength={300} onChange={e => set({ footnote: e.target.value })} /></Row>
-      <Row label="Popup width">
-        <select className={INPUT} value={popup.width} onChange={e => set({ width: e.target.value as ChromePopup['width'] })}>
-          <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
+      <PartsOrder popup={popup} onChange={set} />
+      <span className="text-[12.5px] font-semibold text-charcoal">Popup look</span>
+      <p className="-mt-2 text-[10.5px] text-slate">Anything left empty follows your theme's own style.</p>
+      <Row label="Where it opens">
+        <select className={INPUT} value={popup.placement ?? 'below'} onChange={e => set({ placement: e.target.value as ChromePopup['placement'] })}>
+          <option value="below">Right under the item (like a dropdown)</option>
+          <option value="center">In the middle of the screen</option>
         </select>
       </Row>
+      <Row label="Content layout">
+        <select className={INPUT} value={popup.layout ?? 'side'} onChange={e => set({ layout: e.target.value as ChromePopup['layout'] })}>
+          <option value="side">Text on one side, QR / image on the other</option>
+          <option value="stack">Everything in one column</option>
+        </select>
+      </Row>
+      <div className="grid grid-cols-2 gap-3">
+        <NumField label="Width (px)" value={popup.widthPx ?? 0} empty={0} min={200} max={1600} onChange={v => set({ widthPx: v })} hint="Empty = automatic" />
+        <NumField label="Corner roundness (px)" value={popup.radius ?? -1} empty={-1} min={0} max={200} onChange={v => set({ radius: v })} />
+        <NumField label="Space inside (px)" value={popup.padding ?? -1} empty={-1} min={0} max={200} onChange={v => set({ padding: v })} />
+        <NumField label="Heading size (px)" value={popup.titleSize ?? 0} empty={0} min={10} max={120} onChange={v => set({ titleSize: v })} />
+        <NumField label="Text size (px)" value={popup.bodySize ?? 0} empty={0} min={9} max={48} onChange={v => set({ bodySize: v })} />
+        <Row label="Text alignment">
+          <select className={INPUT} value={popup.align ?? 'left'} onChange={e => set({ align: e.target.value as ChromePopup['align'] })}>
+            <option value="left">Left</option><option value="center">Centre</option>
+          </select>
+        </Row>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <ColorField label="Popup background" value={popup.bg || null} fallback="#ffffff" onChange={v => set({ bg: v ?? '' })} />
+        <ColorField label="Popup text colour" value={popup.fg || null} fallback="#161412" onChange={v => set({ fg: v ?? '' })} />
+      </div>
+      <Switch label="Soft shadow" checked={popup.shadow !== false} onChange={v => set({ shadow: v })} />
+      <Switch label="Thin border" checked={popup.border === true} onChange={v => set({ border: v })} />
     </div>
   );
 }
@@ -212,6 +285,12 @@ export function ChromeItemsEditor({ items, onChange, showZone, itemName = 'item'
                   <ColorField label={compactColours ? 'Button colour' : 'Highlight colour'} value={it.bg || null} fallback="#25D366" onChange={v => update(it.id, { bg: v ?? '' })} />
                   <ColorField label={compactColours ? 'Icon colour' : 'Text colour'} value={it.fg || null} fallback="#ffffff" onChange={v => update(it.id, { fg: v ?? '' })} />
                 </div>
+                {!compactColours && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <NumField label="Text size (px)" value={it.fontSize ?? 0} empty={0} min={8} max={60} onChange={v => update(it.id, { fontSize: v })} hint="Empty = the strip's" />
+                    <div className="flex items-end pb-2"><Switch label="Bold" checked={it.bold === true} onChange={v => update(it.id, { bold: v })} /></div>
+                  </div>
+                )}
                 <Row label="Show on">
                   <select className={INPUT} value={it.device} onChange={e => update(it.id, { device: e.target.value as ChromeItem['device'] })}>
                     <option value="all">Phones and computers</option><option value="desktop">Computers only</option><option value="mobile">Phones only</option>

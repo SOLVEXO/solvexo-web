@@ -213,6 +213,10 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
                 <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
               </select>
             </label>
+            <div className="grid grid-cols-2 gap-3">
+              <SizeField label="Exact text size (px)" value={header.topBarFontSize} min={8} max={48} onChange={v => set({ topBarFontSize: v })} hint="Empty = from the choice above" />
+              <SizeField label="Space above/below (px)" value={header.topBarPadY} min={0} max={80} onChange={v => set({ topBarPadY: v })} hint="Empty = from the choice above" />
+            </div>
             <div className="border-t border-bone pt-3">
               <p className="mb-1 text-[12.5px] font-semibold text-charcoal">Your own items</p>
               <p className="mb-2 text-[10.5px] text-slate">Add texts, social icons, links or popups (like a WhatsApp subscribe popup with your own QR). Place them left, middle or right. The theme styles them to match.</p>

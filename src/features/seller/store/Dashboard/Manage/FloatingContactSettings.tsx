@@ -10,7 +10,7 @@ const EMPTY: FloatingContactConfig = {
   enabled: false, position: 'right', vertical: 'middle', size: 'md', style: 'brand', showLabels: true, device: 'all',
   phone: '', phoneLabel: '', whatsapp: '', whatsappMessage: '', whatsappLabel: '', email: '', emailLabel: '',
   facebook: '', instagram: '', tiktok: '', youtube: '', x: '', snapchat: '', linkedin: '',
-  items: [], shape: 'flush', bubbleText: '', customBg: '', customFg: '',
+  items: [], shape: 'flush', bubbleText: '', customBg: '', customFg: '', sizePx: 0, edgeOffset: 0, gapPx: -1,
 };
 
 const INPUT = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px] text-ink outline-none focus:border-brand-orange';
@@ -140,6 +140,24 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
           <Field label="Icon colour (all)">
             {id => <input id={id} type="color" className="h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white" value={cfg.customFg || '#ffffff'} disabled={!canManage} onChange={e => set('customFg', e.target.value)} />}
           </Field>
+        </div>
+        <div className="mt-4 grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))]">
+          {([
+            ['sizePx', 'Exact button size (px)', 'Empty = the size chosen above.', 0, 24, 140],
+            ['edgeOffset', 'Distance from the screen edge (px)', 'Moves the buttons away from the edge.', 0, 0, 200],
+            ['gapPx', 'Space between buttons (px)', 'Empty = automatic.', -1, 0, 80],
+          ] as const).map(([k, label, hint, empty, min, max]) => (
+            <Field key={k} label={label} hint={hint}>
+              {id => <input id={id} type="number" min={min} max={max} className={INPUT} placeholder="Auto" disabled={!canManage}
+                value={cfg[k] === empty ? '' : cfg[k]}
+                onChange={e => {
+                  const raw = e.target.value;
+                  if (raw.trim() === '') { set(k, empty); return; }
+                  const n = Number(raw);
+                  if (Number.isFinite(n)) set(k, Math.min(max, Math.max(min, Math.round(n))));
+                }} />}
+            </Field>
+          ))}
         </div>
         {(cfg.customBg || cfg.customFg) && (
           <button type="button" onClick={() => { set('customBg', ''); set('customFg', ''); }} className="mt-2 border-0 bg-transparent p-0 text-[12px] text-slate underline cursor-pointer">Reset colours</button>

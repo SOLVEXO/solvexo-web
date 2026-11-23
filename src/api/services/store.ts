@@ -21,6 +21,8 @@ export interface FloatingContactConfig {
   /** Seller-built buttons (any link or popup with their own QR), shown after the built-in ones. */
   items: import('@/features/storefront/chrome/chromeTypes').ChromeItem[];
   shape: 'flush' | 'round'; bubbleText: string; customBg: string; customFg: string;
+  /** Exact button size px (0 = by `size`), distance from the edge px, space between buttons px (-1 = automatic). */
+  sizePx: number; edgeOffset: number; gapPx: number;
 }
 
 export interface EnabledCurrency {

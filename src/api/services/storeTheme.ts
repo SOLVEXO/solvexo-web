@@ -238,6 +238,9 @@ export interface StorefrontHeader {
   /** Seller-built strip items (text / link / popup) placed in a left, centre or right zone. */
   topBarItems?:         import('@/features/storefront/chrome/chromeTypes').ChromeItem[];
   topBarSize?:          'sm' | 'md' | 'lg';
+  /** px; empty = by topBarSize. */
+  topBarFontSize?:      number | null;
+  topBarPadY?:          number | null;
   preset?:              string | null;
 }
 

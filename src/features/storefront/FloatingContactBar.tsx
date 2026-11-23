@@ -88,7 +88,8 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
   if (!mounted || !config.enabled || items.length === 0) return null;
   if (/^\/(checkout|login|register|verify-otp|forgot-password|new-password|reset-password)(\/|$)/.test(pathname)) return null;
 
-  const size = SIZES[config.size] ?? 48;
+  const size = config.sizePx > 0 ? config.sizePx : SIZES[config.size] ?? 48;
+  const edge = Math.max(0, config.edgeOffset || 0);
   const end = config.position !== 'left';
   const round = config.shape === 'round';
   const r = round ? '999px' : radius && /^\d/.test(radius) ? `min(${radius}, 14px)` : '0px';
@@ -100,13 +101,13 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
   const showClass = config.device === 'desktop' ? 'fcb-desktop' : config.device === 'mobile' ? 'fcb-mobile' : '';
   const popupTheme: ChromeTheme = { bg: '#ffffff', fg: '#161412', accent: brandColor, accentText: '#ffffff', font, radius: radius && /^\d/.test(radius) ? `min(${radius}, 18px)` : '12px' };
   const bubble = (config.bubbleText ?? '').trim();
-  const sideGap = round ? 20 : 0;
+  const sideGap = (round ? 20 : 0) + edge;
+  const gapPx = config.gapPx >= 0 ? config.gapPx : round ? 12 : 2;
 
   return (
     <>
       <style>{`
-        .fcb{position:fixed;z-index:60;display:flex;flex-direction:column;gap:2px;font-family:var(--fcb-font,inherit)}
-        .fcb-round{gap:12px}
+        .fcb{position:fixed;z-index:60;display:flex;flex-direction:column;gap:var(--fcb-gap,2px);font-family:var(--fcb-font,inherit)}
         .fcb-i{display:flex;align-items:stretch;text-decoration:none;color:var(--fg);overflow:hidden;width:max-content;cursor:pointer;border:0;padding:0;font:inherit;
           border-start-start-radius:var(--rs);border-end-start-radius:var(--rs);border-start-end-radius:var(--re);border-end-end-radius:var(--re);
           background:var(--bg);align-self:var(--self);transition:filter .15s}
@@ -133,7 +134,7 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
       <nav
         className={['fcb', end ? 'fcb-end' : 'fcb-start', round ? 'fcb-round' : '', config.showLabels && !round ? '' : 'fcb-nolabel', showClass].filter(Boolean).join(' ')}
         aria-label={ts('fc.aria', 'Contact us')}
-        style={{ ...vertical, [sideProp]: sideGap, ['--s' as string]: `${size}px`, ['--fcb-font' as string]: font || 'inherit' } as CSSProperties}
+        style={{ ...vertical, [sideProp]: sideGap, ['--s' as string]: `${size}px`, ['--fcb-gap' as string]: `${gapPx}px`, ['--fcb-font' as string]: font || 'inherit' } as CSSProperties}
       >
         {items.map(it => {
           const style = {

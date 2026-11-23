@@ -74,7 +74,8 @@ export function LedupNavbar() {
     <>
       {o.topBar && (
         <ChromeTopStrip bar={o.topBar} fallbackBg={ledupTheme.colors.dark} fallbackColor={ledupTheme.colors.darkInk}
-          fontFamily={ledupTheme.fonts.body} maxWidth={ledupTheme.layout.maxWidth} padX={ledupTheme.layout.containerPadX} radius="20px" />
+          fontFamily={ledupTheme.fonts.body} maxWidth={ledupTheme.layout.maxWidth} padX={ledupTheme.layout.containerPadX} radius="20px"
+          displayFont={ledupTheme.fonts.display} borderColor={ledupTheme.colors.border} buttonRadius={ledupTheme.buttonRadiusPx} />
       )}
       {panelOpen && <div className="ld-backdrop" aria-hidden onClick={closeAll} />}
       <header className={`ld-header ${megaId ? 'ld-header--menu' : ''} ${searchOpen ? 'ld-header--glass' : ''}`} onMouseLeave={() => setMegaId(null)}>

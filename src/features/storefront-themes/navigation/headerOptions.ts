@@ -131,6 +131,7 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
         text: h.topBarText?.trim() || null, phone: h.topBarPhone?.trim() || null, email: h.topBarEmail?.trim() || null,
         bg: hex(h.topBarBg), color: hex(h.topBarTextColor),
         items: readTopBarItems(h.topBarItems), size: h.topBarSize === 'sm' || h.topBarSize === 'lg' ? h.topBarSize : 'md',
+        fontSize: typeof h.topBarFontSize === 'number' ? h.topBarFontSize : null, padY: typeof h.topBarPadY === 'number' ? h.topBarPadY : null,
       }
       : null,
   };

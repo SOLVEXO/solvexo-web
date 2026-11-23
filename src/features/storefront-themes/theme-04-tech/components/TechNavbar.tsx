@@ -32,11 +32,12 @@ type TopBarData = NonNullable<ReturnType<typeof readHeaderOptions>['topBar']>;
 function TopBar({ bar }: { bar: TopBarData }) {
   const text = [bar.text, t.topBarShowroom].filter(Boolean).join('   ·   ') || null;
   const hours: ChromeItem[] = t.topBarHours
-    ? [{ id: 'tech-hours', kind: 'text', zone: 'left', label: t.topBarHours, icon: 'clock', iconUrl: '', url: '', newTab: false, bg: '', fg: '', device: 'desktop', popup: null }]
+    ? [{ id: 'tech-hours', kind: 'text', zone: 'left', label: t.topBarHours, icon: 'clock', iconUrl: '', url: '', newTab: false, bg: '', fg: '', device: 'desktop', fontSize: 0, bold: false, popup: null }]
     : [];
   return (
     <ChromeTopStrip bar={{ ...bar, text, items: [...hours, ...bar.items] }} fallbackBg={t.colors.dark} fallbackColor={t.colors.darkInk}
-      fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} radius="0px" />
+      fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} radius="0px"
+      displayFont={t.fonts.display} borderColor={t.colors.border} buttonRadius={t.buttonRadiusPx} />
   );
 }
 
