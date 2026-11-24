@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import client from '@/api/client';
 import { errorMessage } from '@/api/errorMessage';
@@ -127,7 +128,7 @@ function Tokens({ storeId }: { storeId: string }) {
   ];
   return (
     <div className="flex flex-col gap-4">
-      <Card padding="md"><p className="m-0 text-[13px] text-slate">Give a token to software that needs your store data, such as a marketing tool or your accounting system. It sends the token as <code>Authorization: Bearer sxk_…</code> and only sees this store, and only what you allow. <a href="/developers" target="_blank" rel="noreferrer" className="font-semibold text-brand-orange">Read the API guide</a> for every endpoint.</p></Card>
+      <Card padding="md"><p className="m-0 text-[13px] text-slate">Give a token to software that needs your store data, such as a marketing tool or your accounting system. It sends the token as <code>Authorization: Bearer sxk_…</code> and only sees this store, and only what you allow. <a href="/developers" target="_blank" rel="noreferrer" className="font-semibold text-brand-orange">Read the API guide</a> for every endpoint. Building an app for other sellers? Use <Link to={`/store/${storeId}/build-apps`} className="font-semibold text-brand-orange">Build apps</Link>.</p></Card>
       <div><Button onClick={() => setAdding(true)}>Create token</Button></div>
       {list.error ? <ErrorLine message={errorMessage(list.error)} onRetry={list.reload} /> : <Table columns={columns} data={list.data?.items ?? []} keyExtractor={(t) => t._id} loading={list.loading} emptyState={{ title: 'No tokens yet', description: 'Create a token for software that reads your store data.' }} />}
       {adding && (

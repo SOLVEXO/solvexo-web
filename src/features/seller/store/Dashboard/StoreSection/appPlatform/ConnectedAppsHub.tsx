@@ -22,6 +22,7 @@ export default function ConnectedAppsHub() {
   const toast = useToast();
   const user = TokenStorage.getUser<{ role?: 'admin' | 'seller' | 'staff' | 'user'; permissions?: string[] }>();
   const canManage = hasNavPermission(user as never, ['apps.manage']);
+  const isOwner = user?.role === 'seller'; // apps belong to a person's own account, so staff don't build them
   const [tab, setTab] = useState('installed');
   const [installed, setInstalled] = useState<InstalledApp[]>([]);
   const [available, setAvailable] = useState<AvailableApp[]>([]);
@@ -53,7 +54,8 @@ export default function ConnectedAppsHub() {
 
   return (
     <>
-      <StorePageHeader title="Connected apps" subtitle="Apps approved by Solvexo that can read or change store data. You decide what each one may do, and you can remove it at any time." />
+      <StorePageHeader title="Connected apps" subtitle="Apps approved by Solvexo that can read or change store data. You decide what each one may do, and you can remove it at any time."
+        actions={isOwner ? <Button size="sm" variant="secondary" onClick={() => navigate(`/store/${storeId}/build-apps`)}>Build your own app</Button> : undefined} />
       <div className="px-4 lg:px-7 pt-5 pb-10 w-full flex flex-col gap-5">
         <TabBar tabs={TABS} active={tab} onChange={setTab} />
         {error ? <EmptyState icon={<Blocks size={22} />} title="Could not load" description={error} action={{ label: 'Retry', onClick: load }} />
@@ -82,7 +84,7 @@ export default function ConnectedAppsHub() {
                   <ul className="grid gap-3 list-none p-0 m-0 grid-cols-[repeat(auto-fill,minmax(min(100%,380px),1fr))]">
                     {available.map((a) => (
                       <li key={a.id} className="rounded-2xl border border-border-soft bg-white p-4 flex flex-col gap-2">
-                        <div className="flex items-center gap-2"><span className="font-semibold text-[14px] text-charcoal truncate">{a.name}</span>{a.installed && <Badge color="green" size="sm">Installed</Badge>}</div>
+                        <div className="flex items-center gap-2"><span className="font-semibold text-[14px] text-charcoal truncate">{a.name}</span>{a.installed && <Badge color="green" size="sm">Installed</Badge>}{a.private && <Badge color="gray" size="sm">Your app</Badge>}</div>
                         <p className="text-[12.5px] text-slate m-0">{a.description || 'No description'}</p>
                         <p className="text-[12px] text-slate m-0">Asks to: {a.scopeLabels.join('; ')}</p>
                         {canManage && <div className="pt-1"><Button size="sm" variant={a.installed ? 'secondary' : 'primary'} onClick={() => install(a)}>{a.installed ? 'Reinstall' : 'Install'}</Button></div>}

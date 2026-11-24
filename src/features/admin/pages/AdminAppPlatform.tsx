@@ -8,7 +8,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { can } from '@/hooks/auth/useCan';
 import type { BadgeColor } from '@/types';
 import {
-  apiAdminApproveApp, apiAdminCreateApp, apiAdminListApps, apiAdminRotateAppSecrets, apiAdminSuspendApp, apiAdminUpdateApp,
+  apiAdminApproveApp, apiAdminCreateApp, apiAdminListApps, apiAdminRejectApp, apiAdminRotateAppSecrets, apiAdminSuspendApp, apiAdminUpdateApp,
   type AdminAppInput, type AdminAppRow,
 } from '@/api/services/appPlatform';
 
@@ -35,6 +35,8 @@ export function AdminAppPlatform() {
   const [saving, setSaving] = useState(false);
   const [secrets, setSecrets] = useState<{ name: string; clientId?: string; clientSecret: string; sessionSecret: string } | null>(null);
   const [confirm, setConfirm] = useState<AdminAppRow | null>(null);
+  const [rejecting, setRejecting] = useState<AdminAppRow | null>(null);
+  const [rejectNote, setRejectNote] = useState('');
   const [busy, setBusy] = useState('');
 
   const load = useCallback(() => {
@@ -65,7 +67,7 @@ export function AdminAppPlatform() {
 
   return (
     <>
-      <AdminPageHeader title="App platform" subtitle="Apps that store owners can install. An approved app can ask for API permissions; the store owner always has to allow them."
+      <AdminPageHeader title="App platform" subtitle="Apps that store owners can install. Developers' apps are private until you approve a listing; the store owner always has to allow an app's permissions."
         icon={<Blocks size={18} />} actions={canManage ? <Button size="sm" icon={<Plus size={14} />} onClick={() => open('new')}>Register app</Button> : undefined} />
       <div className="px-4 sm:px-7 py-5 flex flex-col gap-3">
         {error ? <EmptyState icon={<Blocks size={22} />} title="Could not load" description={error} action={{ label: 'Retry', onClick: load }} />
@@ -75,12 +77,15 @@ export function AdminAppPlatform() {
                 <ul className="flex flex-col gap-2 list-none p-0 m-0">
                   {rows.map((a) => (
                     <li key={a._id} className="rounded-xl border border-bone bg-white p-3 flex flex-col gap-1">
-                      <div className="flex flex-wrap items-center gap-2"><span className="font-semibold text-[13.5px]">{a.name}</span><Badge color={STATUS_COLOR[a.status]} size="sm">{a.status}</Badge><span className="text-[12px] text-slate">{a.clientId} · secret {a.clientSecretHint}</span></div>
+                      <div className="flex flex-wrap items-center gap-2"><span className="font-semibold text-[13.5px]">{a.name}</span><Badge color={STATUS_COLOR[a.status]} size="sm">{a.status}</Badge>{a.reviewStatus === 'submitted' && <Badge color="yellow" size="sm">Waiting for review</Badge>}{a.reviewStatus === 'rejected' && <Badge color="red" size="sm">Changes asked</Badge>}{a.ownerSellerId && <Badge color="blue" size="sm">From a developer</Badge>}<span className="text-[12px] text-slate">{a.clientId} · secret {a.clientSecretHint}</span></div>
+                      {a.ownerSellerId && <p className="text-[12.5px] text-slate m-0">{a.developerName || 'Developer'}{a.developerEmail ? ` · ${a.developerEmail}` : ''}{a.description ? ` · ${a.description}` : ''}</p>}
+                      {a.reviewStatus === 'rejected' && a.reviewNote && <p className="text-[12.5px] text-error m-0">You asked: {a.reviewNote}</p>}
                       <p className="text-[12.5px] text-slate m-0">Permissions: {a.requestedScopes.join(', ')} · {a.redirectUrls.length} redirect address(es){a.webhookUrl ? ' · webhook' : ''}{a.embedUrl ? ' · dashboard page' : ''}</p>
                       {canManage && (
                         <div className="flex flex-wrap gap-2 pt-0.5">
                           <Button size="sm" variant="secondary" onClick={() => open(a)}>Edit</Button>
-                          {a.status !== 'approved' && <Button size="sm" loading={busy === a._id} onClick={() => void run(a._id, () => apiAdminApproveApp(a._id), 'App approved')}>Approve</Button>}
+                          {a.status !== 'approved' && <Button size="sm" loading={busy === a._id} onClick={() => void run(a._id, () => apiAdminApproveApp(a._id), 'App approved and listed')}>{a.reviewStatus === 'submitted' ? 'Approve and list' : 'Approve'}</Button>}
+                          {a.reviewStatus === 'submitted' && <Button size="sm" variant="outline" onClick={() => { setRejectNote(''); setRejecting(a); }}>Ask for changes</Button>}
                           {a.status === 'approved' && <Button size="sm" variant="outline" onClick={() => setConfirm(a)}>Suspend</Button>}
                           <Button size="sm" variant="secondary" loading={busy === `r${a._id}`} onClick={() => void run(`r${a._id}`, async () => { const r = await apiAdminRotateAppSecrets(a._id); setSecrets({ name: a.name, clientSecret: r.clientSecret, sessionSecret: r.sessionSecret }); }, 'New secrets created')}>New secrets</Button>
                         </div>
@@ -122,6 +127,16 @@ export function AdminAppPlatform() {
               <div key={label} className="flex items-start gap-2 rounded-lg border border-bone p-2 break-all font-mono text-[12.5px]"><span className="flex-1">{label}: {v}</span><button type="button" aria-label={`Copy ${label}`} className="cursor-pointer" onClick={() => copy(v)}><Copy size={14} /></button></div>
             ))}
           </div>
+        </Modal>
+      )}
+
+      {rejecting && (
+        <Modal title={`Ask for changes to ${rejecting.name}`} onClose={() => setRejecting(null)} width={500} mobileSheet
+          footer={<div className="flex justify-end gap-2"><Button variant="secondary" onClick={() => setRejecting(null)}>Cancel</Button><Button disabled={!rejectNote.trim()} loading={busy === `x${rejecting._id}`} onClick={() => { const a = rejecting; void run(`x${a._id}`, async () => { await apiAdminRejectApp(a._id, rejectNote.trim()); setRejecting(null); }, 'The developer will see your note'); }}>Send to the developer</Button></div>}>
+          <label className="flex flex-col gap-1 text-[13px]">What should the developer change? They see this note on their app.
+            <textarea className="min-h-[90px] rounded-lg border border-bone p-2 text-[13px]" maxLength={1000} value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} />
+          </label>
+          <p className="text-[12.5px] text-slate mt-2 mb-0">The app stays private and keeps working on the developer's own stores.</p>
         </Modal>
       )}
 

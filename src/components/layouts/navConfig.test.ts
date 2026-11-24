@@ -27,7 +27,7 @@ describe('navConfig', () => {
     expect(groups).toContain('Discounts');
     expect(groups[groups.length - 1]).toBe('Settings');
     expect(allItems.find(i => i.id === 'security')).toBeUndefined();
-    expect(ACCOUNT_NAV.map(i => i.id)).toEqual(['security']);
+    expect(ACCOUNT_NAV.map(i => i.id)).toEqual(['security', 'build-apps']);
     const inGroup = (id: string) => NAV.find(g => g.items.some(i => i.id === id))?.group;
     expect(inGroup('discounts')).toBe('Discounts');
     expect(inGroup('settings')).toBe('Settings');

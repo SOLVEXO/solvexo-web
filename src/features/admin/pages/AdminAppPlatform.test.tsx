@@ -59,4 +59,21 @@ describe('AdminAppPlatform', () => {
     render(<AdminAppPlatform />);
     expect(await screen.findByRole('button', { name: /retry/i })).toBeTruthy();
   });
+
+  it('a developer\'s listing request: shows who asked, approves and lists, or sends back a note', async () => {
+    post.mockResolvedValue({});
+    list = [row({ ownerSellerId: 's1', reviewStatus: 'submitted', developerName: 'Acme Apps', developerEmail: 'dev@acme.test', description: 'Daily sales report' })];
+    render(<AdminAppPlatform />);
+    expect(await screen.findByText('Waiting for review')).toBeTruthy();
+    expect(screen.getByText('From a developer')).toBeTruthy();
+    expect(screen.getByText(/Acme Apps · dev@acme.test · Daily sales report/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for changes' }));
+    const send = await screen.findByRole('button', { name: 'Send to the developer' });
+    expect((send as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText(/What should the developer change/), { target: { value: '  Add a privacy policy link ' } });
+    fireEvent.click(send);
+    await waitFor(() => expect(post).toHaveBeenCalledWith('/api/admin/app-platform/x1/reject', { note: 'Add a privacy policy link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve and list' }));
+    await waitFor(() => expect(post).toHaveBeenLastCalledWith('/api/admin/app-platform/x1/approve'));
+  });
 });
