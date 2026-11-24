@@ -226,7 +226,8 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
         <AskConsentModal
           leads={selectedLeads.length ? selectedLeads : data?.items ?? []}
           scope={selectedLeads.length ? 'selected' : 'filtered'}
-          moreNotShown={!selectedLeads.length && data ? data.total - data.items.length : 0}
+          total={selectedLeads.length ? selectedLeads.length : data?.total ?? 0}
+          filters={{ ...filters, q: search.trim() || undefined }}
           onClose={() => setAsking(false)}
           onSent={() => { setSelected(new Set()); void load(); }}
         />
@@ -306,16 +307,17 @@ function LeadTable({ leads, loading, showOwner, onOpen, selected, onToggle, onTo
 }
 
 /** One-time "Can we keep you posted?" email to leads who haven't been asked. Only a click on its button counts as agreeing. */
-function AskConsentModal({ leads, scope, moreNotShown, onClose, onSent }: {
-  leads: SalesLead[]; scope: 'selected' | 'filtered'; moreNotShown: number; onClose: () => void; onSent: () => void;
+function AskConsentModal({ leads, scope, total, filters, onClose, onSent }: {
+  leads: SalesLead[]; scope: 'selected' | 'filtered'; total: number; filters: LeadQuery; onClose: () => void; onSent: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<{ sent: number; skipped: number } | null>(null);
+  const [result, setResult] = useState<{ sent: number; skipped: number; more?: number } | null>(null);
   const eligible = leads.filter(l => l.email && (l.marketingConsent?.status ?? 'none') === 'none').length;
   const send = async () => {
     setBusy(true); setError('');
-    try { setResult(await apiAskMarketingConsent(leads.map(l => l._id))); onSent(); }
+    // Ticked leads go by id; otherwise the server applies the filters itself, so leads beyond the loaded page count too.
+    try { setResult(await apiAskMarketingConsent(scope === 'selected' ? leads.map(l => l._id) : undefined, filters)); onSent(); }
     catch (e) { setError(errMsg(e, 'Could not send the emails.')); }
     setBusy(false);
   };
@@ -326,17 +328,20 @@ function AskConsentModal({ leads, scope, moreNotShown, onClose, onSent }: {
       </div>}>
       {result ? (
         <div role="status" className="flex flex-col gap-1 text-[13px] text-charcoal">
-          <p><strong>Sent to {result.sent} lead{result.sent === 1 ? '' : 's'}.</strong></p>
-          <p className="text-slate">Skipped {result.skipped}: no email, or already asked, agreed or unsubscribed.</p>
+          <p><strong>Sending to {result.sent} lead{result.sent === 1 ? '' : 's'}.</strong> The emails go out over the next few minutes.</p>
+          {result.skipped > 0 && <p className="text-slate">Skipped {result.skipped}: no email, or already asked, agreed or unsubscribed.</p>}
+          {!!result.more && <p className="text-slate">{result.more} more can be asked: click Ask for permission again to send the next batch.</p>}
           <p className="text-slate">Anyone who taps “Yes” is marked Agreed and goes to Brevo on the next sync.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2 text-[13px] text-charcoal">
           <p>Each lead gets one short email from Solvexo asking <strong>“Can we keep you posted?”</strong> with a button to say yes. Only people who tap it are marked Agreed. Nobody is asked twice, and leads without an email, or who were already asked, agreed or unsubscribed, are skipped.</p>
           <p className="text-slate">
-            {scope === 'selected' ? `${leads.length} selected lead${leads.length === 1 ? '' : 's'}` : `${leads.length} lead${leads.length === 1 ? '' : 's'} matching these filters`}
-            {`, about ${eligible} can be asked.`}
-            {moreNotShown > 0 && ` ${moreNotShown} more match but aren’t loaded; narrow the filters to reach them.`}
+            {scope === 'selected'
+              ? `${leads.length} selected lead${leads.length === 1 ? '' : 's'}, about ${eligible} can be asked.`
+              : total > leads.length
+                ? `${total} leads match these filters. Everyone among them with an email who hasn’t been asked yet gets it (up to 500 at a time).`
+                : `${total} lead${total === 1 ? '' : 's'} matching these filters, about ${eligible} can be asked.`}
           </p>
           {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
         </div>

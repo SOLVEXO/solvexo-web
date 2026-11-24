@@ -117,9 +117,17 @@ export const apiBrevoStatus = async () => unwrap<BrevoStatus>(await client.get(`
 export const apiBrevoConnect = async (apiKey: string) => unwrap<BrevoStatus>(await client.put(`${BASE}/brevo`, { apiKey }));
 export const apiBrevoDisconnect = async () => unwrap<BrevoStatus>(await client.delete(`${BASE}/brevo`));
 export const apiBrevoSync = async () => unwrap<{ queued: number; synced: number; failed: number }>(await client.post(`${BASE}/brevo/sync`));
-/** Sends the one-time "Can we keep you posted?" email. The server skips leads without an email or already asked/agreed/unsubscribed. */
-export const apiAskMarketingConsent = async (leadIds?: string[]) =>
-  unwrap<{ sent: number; skipped: number }>(await client.post(`${BASE}/leads/consent-requests`, leadIds ? { leadIds } : {}));
+/**
+ * Sends the one-time "Can we keep you posted?" email to the ticked leads, or (without `leadIds`) to every lead the list
+ * filters match, up to 500 a time. The server skips leads without an email or already asked/agreed/unsubscribed, and
+ * sends in the background: `sent` is how many are on their way, `more` how many are left for another round.
+ */
+export const apiAskMarketingConsent = async (leadIds?: string[], filters: LeadQuery = {}) => {
+  const body = leadIds
+    ? { leadIds }
+    : Object.fromEntries(Object.entries({ ...filters, page: undefined, limit: undefined }).filter(([, v]) => v !== undefined && v !== ''));
+  return unwrap<{ sent: number; skipped: number; more?: number }>(await client.post(`${BASE}/leads/consent-requests`, body));
+};
 /** CSV of the leads (matching these filters) who agreed to marketing emails, in Brevo's import format. */
 export async function apiExportBrevoCsv(params: LeadQuery = {}) {
   const clean = Object.fromEntries(Object.entries({ ...params, page: undefined, limit: undefined }).filter(([, v]) => v !== undefined && v !== ''));

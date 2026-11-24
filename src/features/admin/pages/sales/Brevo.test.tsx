@@ -189,8 +189,8 @@ describe('Pipeline: consent filter, Brevo export, permission emails', () => {
     expect(within(dialog).getByText(/Can we keep you posted\?/)).toBeInTheDocument();
     expect(within(dialog).getByText(/2 selected leads, about 1 can be asked/)).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Send permission email' }));
-    await waitFor(() => expect(api.apiAskMarketingConsent).toHaveBeenCalledWith(['l1', 'l2']));
-    expect(await within(dialog).findByText('Sent to 1 lead.')).toBeInTheDocument();
+    await waitFor(() => expect(api.apiAskMarketingConsent).toHaveBeenCalledWith(['l1', 'l2'], expect.any(Object)));
+    expect(await within(dialog).findByText('Sending to 1 lead.')).toBeInTheDocument();
     expect(within(dialog).getByText(/Skipped 1/)).toBeInTheDocument();
   });
 
@@ -202,8 +202,21 @@ describe('Pipeline: consent filter, Brevo export, permission emails', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Ask for permission' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Send permission email' }));
-    await waitFor(() => expect(api.apiAskMarketingConsent).toHaveBeenCalledWith(['l1', 'l3']));
-    expect(await within(dialog).findByText('Sent to 2 leads.')).toBeInTheDocument();
+    // The server applies the filters, so leads beyond the loaded page are reached too
+    await waitFor(() => expect(api.apiAskMarketingConsent).toHaveBeenCalledWith(undefined, expect.any(Object)));
+    expect(await within(dialog).findByText('Sending to 2 leads.')).toBeInTheDocument();
+  });
+
+  it('says how many filtered leads match beyond the loaded page and how many are left', async () => {
+    api.apiSalesOwners.mockResolvedValue({ data: [] });
+    api.apiListLeads.mockResolvedValue({ data: { items: [lead()], total: 464, page: 1, limit: 200 } });
+    api.apiAskMarketingConsent.mockResolvedValue({ sent: 500, skipped: 0, more: 12 });
+    renderList();
+    fireEvent.click(await screen.findByRole('button', { name: 'Ask for permission' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText(/464 leads match these filters/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Send permission email' }));
+    expect(await within(dialog).findByText(/12 more can be asked/)).toBeInTheDocument();
   });
 
   it('hides the marketing actions from reps without sales.manage', async () => {

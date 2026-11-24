@@ -26,5 +26,8 @@ describe('Brevo API calls', () => {
     client.post.mockResolvedValueOnce({ success: true, data: { sent: 3, skipped: 1 } });
     expect(await apiAskMarketingConsent(['a', 'b'])).toEqual({ sent: 3, skipped: 1 });
     expect(client.post).toHaveBeenLastCalledWith('/api/admin/sales/leads/consent-requests', { leadIds: ['a', 'b'] });
+    client.post.mockResolvedValueOnce({ success: true, data: { sent: 1, skipped: 0, more: 0 } });
+    await apiAskMarketingConsent(undefined, { stage: 'won', q: '', page: 2, limit: 200 });
+    expect(client.post).toHaveBeenLastCalledWith('/api/admin/sales/leads/consent-requests', { stage: 'won' });
   });
 });
