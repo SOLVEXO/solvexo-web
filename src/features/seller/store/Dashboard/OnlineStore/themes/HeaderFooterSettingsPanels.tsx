@@ -145,6 +145,32 @@ function IconLook({ header, sets, set }: { header: StorefrontHeader; sets: Heade
         </select>
       </label>
       <SwitchRow label="Tooltip on hover" hint="A small name bubble when a shopper points at an icon. Not shown on touch screens or when labels are on." checked={header.iconTooltips !== false} onChange={v => set({ iconTooltips: v })} />
+      {header.iconTooltips !== false && eff.iconLabels === 'none' && (
+        <div className="flex flex-col gap-3 rounded-lg border border-bone p-3">
+          <span className="text-[11.5px] font-medium text-charcoal">Tooltip look and words</span>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-[11.5px] text-charcoal">Colour</span>
+              <select className={SELECT} value={eff.iconTipStyle} onChange={e => set({ iconTipStyle: e.target.value as StorefrontHeader['iconTipStyle'] })}>
+                <option value="theme">Theme default</option><option value="dark">Dark</option><option value="light">Light</option><option value="brand">Brand colour</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[11.5px] text-charcoal">Shows</span>
+              <select className={SELECT} value={eff.iconTipPosition} onChange={e => set({ iconTipPosition: e.target.value as StorefrontHeader['iconTipPosition'] })}>
+                <option value="below">Below the icon</option><option value="above">Above the icon</option>
+              </select>
+            </label>
+          </div>
+          {([['iconTipSearch', 'Search', 'Search'], ['iconTipAccount', 'Account', 'Sign in'], ['iconTipWishlist', 'Wishlist', 'Wishlist'], ['iconTipCart', 'Cart', 'Cart']] as const).map(([key, label, hint]) => (
+            <label key={key} className="flex flex-col gap-1">
+              <span className="text-[11.5px] text-charcoal">{label} tooltip text</span>
+              <input className={SELECT} maxLength={30} placeholder={hint} value={header[key] ?? ''} onChange={e => set({ [key]: e.target.value || null } as Partial<StorefrontHeader>)} />
+            </label>
+          ))}
+          <span className="text-[10.5px] text-slate">Leave a text blank to keep the standard word (it follows the shopper's language).</span>
+        </div>
+      )}
     </>
   );
 }
@@ -335,6 +361,36 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
           ? <IconLook header={header} sets={iconSets} set={set} />
           : <p className="text-[10.5px] text-slate">The cart icon always stays.</p>}
       </Group>
+
+      {can('dropdown') && <Group title="Dropdown menu">
+        <p className="m-0 text-[10.5px] text-slate">The small list that opens under a menu item. Big menus with photos keep their own design.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Background</span>
+            <select className={SELECT} value={eff.dropdownBg} onChange={e => set({ dropdownBg: e.target.value as StorefrontHeader['dropdownBg'] })}>
+              <option value="theme">Theme default</option><option value="light">Light</option><option value="dark">Dark</option><option value="brand">Brand colour</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Corners</span>
+            <select className={SELECT} value={eff.dropdownRadius} onChange={e => set({ dropdownRadius: e.target.value as StorefrontHeader['dropdownRadius'] })}>
+              <option value="theme">Theme default</option><option value="square">Square</option><option value="soft">Soft</option><option value="round">Round</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">Shadow</span>
+            <select className={SELECT} value={eff.dropdownShadow} onChange={e => set({ dropdownShadow: e.target.value as StorefrontHeader['dropdownShadow'] })}>
+              <option value="theme">Theme default</option><option value="none">None</option><option value="soft">Soft</option><option value="strong">Strong</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11.5px] text-charcoal">When pointing at a link</span>
+            <select className={SELECT} value={eff.dropdownHover} onChange={e => set({ dropdownHover: e.target.value as StorefrontHeader['dropdownHover'] })}>
+              <option value="theme">Theme default</option><option value="tint">Soft highlight</option><option value="underline">Underline</option><option value="none">Nothing</option>
+            </select>
+          </label>
+        </div>
+      </Group>}
 
       <Group title="Automatic menu items">
         <SwitchRow label="“Shop” dropdown" hint="Lists your categories and collections." checked={header.showShopMenu !== false} onChange={v => set({ showShopMenu: v })} />

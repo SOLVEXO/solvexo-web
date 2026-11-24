@@ -12,10 +12,11 @@ export const TECH_ICON_SETS: HeaderIconSetDef[] = [
   { id: 'tech-tile', label: 'Tile', hint: 'Each icon on a tinted square tile.', family: 'bag', treatment: 'tile' },
 ];
 
-export function techIconSkin(t: { colors: { ink: string; bg: string }; fonts: { body: string } }, radius: string | number): IconSkin {
+export function techIconSkin(t: { colors: { ink: string; bg: string; accent?: string; accentInk?: string }; fonts: { body: string } }, radius: string | number): IconSkin {
   const r = Number.parseFloat(String(radius)) || 0;
   return {
     tipBg: t.colors.ink, tipInk: t.colors.bg, tipRadius: Math.min(r, 6), tipFont: t.fonts.body,
     tipShadow: '0 4px 14px rgba(0,0,0,.2)', tileRadius: Math.min(r, 6), inverse: t.colors.bg,
+    brandBg: t.colors.accent, brandInk: t.colors.accentInk,
   };
 }

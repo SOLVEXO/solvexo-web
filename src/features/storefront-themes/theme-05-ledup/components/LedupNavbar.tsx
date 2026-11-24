@@ -12,7 +12,7 @@ import { useCartDrawer } from '../../cartDrawerContext';
 import { NavAnchor } from '../../navigation/NavAnchor';
 import { NavBadge } from '../../navigation/NavBadge';
 import { NavScrollRow } from '../../navigation/NavScrollRow';
-import { logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
+import { headerPopupCss, logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
 import { ChromeTopStrip } from '@/features/storefront/chrome/ChromeTopStrip';
 import { ledupTheme } from '../theme.config';
 import { LedupMegaMenu } from './LedupMegaMenu';
@@ -114,6 +114,7 @@ export function LedupNavbar() {
               <Link to={cta.link} className="ld-ctabtn ld-cta-desktop">{cta.label} <ArrowUpRight size={13} aria-hidden /></Link>
             )}
             <HeaderIconStyles />
+            <style>{headerPopupCss(o, { bg: '#4b423b', ink: '#ffffff' })}</style>
             {o.showSearch && <HeaderIconButton kind="search" prefs={iconPrefs} skin={LEDUP_ICON_SKIN} base={16} label={ts('nav.search', 'Search')} wrapClassName="ld-hide-md" className="ld-iconbtn" expanded={searchOpen} onClick={() => { setMegaId(null); setSearchOpen(v => !v); }} glyph={searchOpen ? <X size={16} aria-hidden /> : undefined} />}
             {o.showAccount && (
               <div className="relative ld-hide-md">

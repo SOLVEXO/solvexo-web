@@ -20,7 +20,7 @@ import { useNavRuleContext } from '../../navigation/useNavRuleContext';
 import { NavAnchor } from '../../navigation/NavAnchor';
 import { NavScrollRow } from '../../navigation/NavScrollRow';
 import { useHeaderScroll } from '../../navigation/useHeaderScroll';
-import { headerNavCss, logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
+import { headerNavCss, headerPopupCss, logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
 import { fashionTheme as t } from '../theme.config';
 import { FashionPredictiveSearch } from './browse/FashionPredictiveSearch';
 import { FashionLocaleControls } from './FashionLocaleControls';
@@ -159,7 +159,7 @@ export function FashionNavbar() {
     <>
       {o.topBar && <HeaderTopBar bar={o.topBar} fallbackBg={t.colors.ink} fallbackColor={t.colors.bg} fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} />}
       <header className="relative" ref={el => scroll.attach(el)} data-sx-header={scope} style={{ ...scroll.style, background: headerBg, color: fg, borderBottom: o.showDivider && !(transparent && scroll.clear) ? `1px solid ${t.colors.border}` : '1px solid transparent', fontFamily: t.fonts.body, backdropFilter: o.stickyMode !== 'off' ? 'saturate(1.4) blur(10px)' : undefined }}>
-        <style>{headerNavCss(scope, { ...o, navHoverStyle: o.navHoverStyle === 'pill' ? 'none' : o.navHoverStyle }) + maisonNoLinkNavCss(scope, o)}</style>
+        <style>{headerNavCss(scope, { ...o, navHoverStyle: o.navHoverStyle === 'pill' ? 'none' : o.navHoverStyle }) + maisonNoLinkNavCss(scope, o) + headerPopupCss(o, { bg: t.colors.accent, ink: t.colors.accentInk })}</style>
         <div className={`mx-auto grid grid-cols-[1fr_auto_1fr] items-center ${layout.grid} ${layout.rows}`} style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, columnGap: 16 }}>
           <div className={`col-start-1 row-start-1 flex min-w-0 items-center gap-2 ${layout.logo}`}>
             <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: fg }}><Menu size={22} /></button>
@@ -188,7 +188,7 @@ export function FashionNavbar() {
                     return (
                       <MegaPanel fixedMode={o.menuOverflow === 'scroll'} className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
                         <div style={{ padding: "0 24px" }}>
-                          <div className="mx-auto flex gap-8 p-6" style={{ maxWidth: 1840, width: t.mega.width === 'fit' ? 'fit-content' : undefined, maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
+                          <div data-nav-card className="mx-auto flex gap-8 p-6" style={{ maxWidth: 1840, width: t.mega.width === 'fit' ? 'fit-content' : undefined, maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
                             <div className="grid min-w-0 flex-1 content-start gap-x-8 gap-y-6" style={{ gridTemplateColumns: t.mega.width === 'fit' ? `repeat(${item.megaColumns || t.mega.columns}, minmax(150px, max-content))` : `repeat(${item.megaColumns || t.mega.columns}, minmax(0, 1fr))` }}>
                               {plain.length > 0 && (
                                 <div>
@@ -227,7 +227,7 @@ export function FashionNavbar() {
                   })()}
                   {item.children.length > 0 && !isMegaItem(item) && (
                     <div data-nav-panel className="invisible absolute left-0 top-full z-50 min-w-[220px] pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
-                      <ul className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16 }}>
+                      <ul data-nav-card className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16 }}>
                         {item.children.map(c => (
                           <li key={c.id}>
                             <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>

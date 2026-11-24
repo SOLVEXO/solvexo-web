@@ -46,11 +46,10 @@ function cardLookFields(): FieldSchema[] {
   ];
 }
 
-/** The small label above a heading — on/off + own text (blank = the theme's own words). */
-function eyebrowFields(themeDefaultHint: string): FieldSchema[] {
+/** The small label above a heading. Shows ONLY what the seller types here; blank = no label (themes add no words of their own). */
+function eyebrowFields(): FieldSchema[] {
   return [
-    { key: 'showEyebrow', kind: 'checkbox', label: 'Show small label above the heading' },
-    { key: 'eyebrow', kind: 'text', label: 'Label text', maxLength: 60, placeholder: 'Theme default', hint: themeDefaultHint, showIf: s => s.showEyebrow !== false },
+    { key: 'eyebrow', kind: 'text', label: 'Small label above the heading (optional)', maxLength: 60, placeholder: 'e.g. New this season', hint: 'Leave blank to show no label.' },
   ];
 }
 
@@ -170,7 +169,10 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'hideSoldOut', kind: 'checkbox', label: 'Hide sold-out products', defaultOff: true, hint: 'Leaves out products that can not be bought right now.', showIf: s => s.source !== 'rules' },
       { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, hint: 'Any number from 1 to 8. Phones always show fewer.' },
       ...cardLookFields(),
-      ...eyebrowFields('Blank keeps the theme\'s label (e.g. "The considered edit").'),
+      ...eyebrowFields(),
+      { key: 'showViewAll', kind: 'checkbox', label: 'Show "View all" button', hint: 'The link at the top right of the section.' },
+      { key: 'viewAllLabel', kind: 'text', label: '"View all" text', maxLength: 30, placeholder: 'View all', half: true, showIf: s => s.showViewAll !== false },
+      { key: 'viewAllLink', kind: 'link', label: '"View all" link', hint: 'Blank = this section\'s own collection, or all products.', showIf: s => s.showViewAll !== false },
     ]),
   },
   {
@@ -214,7 +216,7 @@ export const SECTION_META: SectionMeta[] = [
         { value: 'blocks', label: 'Added here (blocks below)' },
         { value: 'store', label: 'My store FAQs (Online Store → FAQs)' },
       ], hint: 'Store FAQs keep this section and your /faqs page in sync.' },
-      ...eyebrowFields('Blank keeps the theme\'s label (e.g. "Good to know").'),
+      ...eyebrowFields(),
     ]),
   },
   {
@@ -244,7 +246,8 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'imageRatio', kind: 'select', label: 'Image shape (large tiles)', options: [{ value: 'default', label: 'Default' }, { value: 'portrait', label: 'Portrait' }, { value: 'square', label: 'Square' }, { value: 'landscape', label: 'Landscape' }], showIf: s => s.tileStyle === 'simple' },
       { key: 'textAlign', kind: 'select', label: 'Name alignment (large tiles)', options: [{ value: 'center', label: 'Center' }, { value: 'left', label: 'Left' }], showIf: s => s.tileStyle === 'simple' },
       { key: 'showArrows', kind: 'checkbox', label: 'Show scroll arrows' },
-      ...eyebrowFields('Blank keeps the theme\'s label (e.g. "Browse").'),
+      { key: 'showCount', kind: 'checkbox', label: 'Show the number of products under each category' },
+      ...eyebrowFields(),
     ]),
   },
   {
@@ -280,7 +283,7 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'placeholder', kind: 'text', label: 'Email box placeholder', maxLength: 60, placeholder: 'Your email', half: true },
       { key: 'buttonLabel', kind: 'text', label: 'Button label', maxLength: 30, placeholder: 'Subscribe', half: true },
       { key: 'successMessage', kind: 'text', label: 'Message after signing up', maxLength: 160, placeholder: "Thank you — you're subscribed." },
-      ...eyebrowFields('Blank keeps the theme\'s label (e.g. "Private notes").'),
+      ...eyebrowFields(),
     ]),
   },
   {
@@ -323,6 +326,10 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'ctaText', kind: 'text', label: 'Button text (optional)' },
       { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
       { key: 'endedText', kind: 'text', label: 'Text when the countdown ends', maxLength: 60, placeholder: 'Dropped!' },
+      { key: 'daysLabel', kind: 'text', label: 'Word under the days', maxLength: 16, placeholder: 'Days', half: true },
+      { key: 'hoursLabel', kind: 'text', label: 'Word under the hours', maxLength: 16, placeholder: 'Hrs', half: true },
+      { key: 'minutesLabel', kind: 'text', label: 'Word under the minutes', maxLength: 16, placeholder: 'Min', half: true },
+      { key: 'secondsLabel', kind: 'text', label: 'Word under the seconds', maxLength: 16, placeholder: 'Sec', half: true },
     ]),
   },
   // ── Shopify-parity section library ───────────────────────────────────────
@@ -1037,7 +1044,7 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'imageUrl', kind: 'image', label: 'Image', required: true },
     { key: 'imageLinkOn', kind: 'checkbox', label: 'Make the whole image a link', defaultOff: true },
     { key: 'imageLink', kind: 'link', label: 'Image link', showIf: s => s.imageLinkOn === true },
-    ...eyebrowFields('Blank keeps the theme\'s label (e.g. "A closer look").'),
+    ...eyebrowFields(),
     { key: 'heading', kind: 'text', label: 'Heading' },
     { key: 'body', kind: 'richtext', label: 'Body', rows: 6, hint: 'Press Enter for a new paragraph. Use the toolbar for headings, bold, lists and links.' },
     { key: 'ctaText', kind: 'text', label: 'Button text' },

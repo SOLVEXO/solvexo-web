@@ -13,7 +13,7 @@ import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import type { CategoryNode } from '@/api/services/categories';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useLocalize } from '@/hooks/useLocalize';
-import { copyText, showEyebrow } from '../../sectionCopy';
+import { eyebrowText } from '../../sectionCopy';
 import { LedupProductCard } from '../components/LedupProductCard';
 import { baseTheme as t, type BaseColors } from '../theme.base';
 import { registerLedupSection } from './ledupSectionRegistry';
@@ -44,7 +44,7 @@ function FeaturedProducts({ settings: s, colors }: { settings: Record<string, an
   );
   if (items && items.length === 0) return null;
   return (
-    <SectionShell colors={colors} heading={s.heading} eyebrow={showEyebrow(s) ? copyText(s, 'eyebrow', 'The edit') : undefined}
+    <SectionShell colors={colors} heading={s.heading} eyebrow={eyebrowText(s)}
       action={<TextLink to={featuredViewAllPath(s)} colors={colors}>{ts('pg.view_all', 'View all')}</TextLink>}>
       {failed ? (
         <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_these_products', 'We couldn\'t load these products.')} <button type="button" onClick={load} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
@@ -76,7 +76,7 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
 
   if (!loading && !error && shown.length === 0) return null;
   return (
-    <SectionShell colors={colors} heading={s.heading} eyebrow={showEyebrow(s) ? copyText(s, 'eyebrow', 'Browse') : undefined}>
+    <SectionShell colors={colors} heading={s.heading} eyebrow={eyebrowText(s)}>
       {error ? (
         <p className="m-0 text-sm" role="alert" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_categories', 'We couldn\'t load categories.')} <button type="button" onClick={refetch} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
       ) : loading ? <Skeleton n={n} columns={n} /> : (
@@ -92,7 +92,7 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
                       {c.image && <img src={c.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />}
                     </div>
                     <p className="m-0 mt-3 text-base font-medium">{name}</p>
-                    {c.productCount != null && <p className="m-0 mt-0.5 text-sm" style={{ color: colors.inkMuted }}>{ts('pg.products_items', '{{count}} items', { count: c.productCount })}</p>}
+                    {c.productCount != null && s.showCount !== false && <p className="m-0 mt-0.5 text-sm" style={{ color: colors.inkMuted }}>{ts('pg.products_items', '{{count}} items', { count: c.productCount })}</p>}
                   </Link>
                 </li>
               );
@@ -105,7 +105,7 @@ function CategoryGrid({ settings: s, colors }: { settings: Record<string, any>; 
                   </div>
                   <div className="min-w-0 flex-1 p-5">
                     <p className="m-0 truncate text-base font-medium">{name}</p>
-                    {c.productCount != null && <p className="m-0 mt-0.5 text-sm" style={{ color: colors.inkMuted }}>{ts('pg.products_items', '{{count}} items', { count: c.productCount })}</p>}
+                    {c.productCount != null && s.showCount !== false && <p className="m-0 mt-0.5 text-sm" style={{ color: colors.inkMuted }}>{ts('pg.products_items', '{{count}} items', { count: c.productCount })}</p>}
                   </div>
                 </Link>
               </li>

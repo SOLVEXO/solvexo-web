@@ -11,6 +11,7 @@ import { apiGetPublicStoreProducts, type PublicStoreProductsParams } from '@/api
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useLoad } from '../../core/pageHooks';
 import { featuredProductsQuery, featuredViewAllPath } from '../../core/sectionProductQuery';
+import { useViewAll } from '../../core/useViewAll';
 import { copyText } from '../../sectionCopy';
 import { EditableText } from '../../inlineEdit';
 import type { BaseColors } from '../theme.base';
@@ -24,14 +25,16 @@ import { renderStoreSection } from '../../storeSections/renderStoreSection';
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
 
 /** Standard Tech section frame: centred box, heading on the left, an optional "See all" link on the right. */
-export function TechSectionShell({ colors, heading, link, children, padY = true }: { colors: BaseColors; heading?: string; link?: { to: string; label: string }; children: ReactNode; padY?: boolean }) {
+export function TechSectionShell({ colors, heading, link, children, padY = true }: { colors: BaseColors; heading?: string; link?: { to?: string; href?: string; newTab?: boolean; label: string }; children: ReactNode; padY?: boolean }) {
   return (
     <section style={{ padding: padY ? `${t.layout.sectionPadY} ${t.layout.containerPadX}` : `0 ${t.layout.containerPadX}`, color: colors.ink, fontFamily: t.fonts.body }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
         {(heading || link) && (
           <header className="mb-5 flex items-baseline justify-between gap-4">
             {heading ? <h2 className="m-0 text-[clamp(20px,2.4vw,26px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}><EditableText value={heading} settingKey="heading" /></h2> : <span />}
-            {link && <Link to={link.to} className="text-xs font-medium no-underline hover:underline" style={{ color: colors.accent }}>{link.label}</Link>}
+            {link && (link.href && !link.to
+              ? <a href={link.href} {...newTabProps(link)} className="text-xs font-medium no-underline hover:underline" style={{ color: colors.accent }}>{link.label}</a>
+              : <Link to={link.to ?? '/'} {...newTabProps(link)} className="text-xs font-medium no-underline hover:underline" style={{ color: colors.accent }}>{link.label}</Link>)}
           </header>
         )}
         {children}
@@ -50,12 +53,12 @@ function ProductRow({ settings: s, colors }: { settings: Record<string, any>; co
   const scroller = useRef<HTMLDivElement>(null);
   const key = JSON.stringify(queryFor(s));
   const { data: items, error, retry } = useLoad(() => apiGetPublicStoreProducts(store.storeId, JSON.parse(key) as PublicStoreProductsParams).then(r => r.data?.products ?? []), [store.storeId, key]);
+  const viewAll = useViewAll(s, ts('pg.see_all', 'See all'), featuredViewAllPath(s));
   if (items && items.length === 0) return null;
   const nudge = (dir: 1 | -1) => scroller.current?.scrollBy({ left: dir * (scroller.current.clientWidth * 0.8) * (document.dir === 'rtl' ? -1 : 1), behavior: 'smooth' });
-  const to = featuredViewAllPath(s);
   const arrow = 'absolute top-1/2 z-10 hidden size-9 -translate-y-1/2 cursor-pointer place-items-center rounded-full border-0 md:grid';
   return (
-    <TechSectionShell colors={colors} heading={s.heading} link={{ to, label: text(s.linkLabel) || ts('pg.see_all', 'See all') }}>
+    <TechSectionShell colors={colors} heading={s.heading} link={viewAll ?? undefined}>
       {error ? (
         <p role="alert" className="m-0 text-sm" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_these_products', "We couldn't load these products.")} <button type="button" onClick={retry} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
       ) : (
@@ -109,7 +112,7 @@ custom.set('tech.category_tiles', (section, blocks, colors) => {
 });
 
 /** Deal banner: a dark promo band with headline, text, button and an optional countdown date typed by the seller. */
-function Countdown({ endsAt, colors }: { endsAt: string; colors: BaseColors }) {
+function Countdown({ endsAt, colors, labels }: { endsAt: string; colors: BaseColors; labels?: { days?: string; hours?: string } }) {
   const end = new Date(endsAt).getTime();
   const [now] = useState(() => Date.now());
   const left = end - now;
@@ -117,7 +120,7 @@ function Countdown({ endsAt, colors }: { endsAt: string; colors: BaseColors }) {
   const days = Math.floor(left / 86_400_000);
   const hours = Math.floor((left % 86_400_000) / 3_600_000);
   const part = (n: number, label: string) => <span className="grid min-w-[56px] place-items-center px-2 py-2" style={{ background: colors.accent, color: colors.accentInk }}><b className="text-xl leading-none">{n}</b><span className="text-[10px] uppercase">{label}</span></span>;
-  return <div className="mt-4 flex gap-2">{part(days, ts('pg.days', 'days'))}{part(hours, ts('pg.hours', 'hours'))}</div>;
+  return <div className="mt-4 flex gap-2">{part(days, labels?.days || ts('pg.days', 'days'))}{part(hours, labels?.hours || ts('pg.hours', 'hours'))}</div>;
 }
 /** The deal banner's button: resolves the seller's own link setting (page, collection, product or external). */
 export function DealButton({ label, link }: { label: string; link: any }) {
@@ -136,7 +139,7 @@ custom.set('tech.deal_banner', (section, _blocks, colors) => {
         <div>
           <h2 className="m-0 text-[clamp(26px,3.4vw,40px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}><EditableText value={text(s.heading)} settingKey="heading" /></h2>
           {text(s.text) && <p className="m-0 mt-4 text-base leading-relaxed opacity-80">{text(s.text)}</p>}
-          {text(s.endsAt) && <Countdown endsAt={text(s.endsAt)} colors={colors} />}
+          {text(s.endsAt) && <Countdown endsAt={text(s.endsAt)} colors={colors} labels={{ days: text(s.daysLabel), hours: text(s.hoursLabel) }} />}
           {text(s.buttonLabel) && s.buttonLink && <div className="mt-6"><DealButton label={text(s.buttonLabel)} link={s.buttonLink} /></div>}
         </div>
         {text(s.imageUrl) && <img src={text(s.imageUrl)} alt="" loading="lazy" className="max-h-[360px] w-full object-contain" />}

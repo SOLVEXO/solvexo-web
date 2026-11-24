@@ -12,10 +12,11 @@ export const MAISON_ICON_SETS: HeaderIconSetDef[] = [
   { id: 'maison-tile', label: 'Soft tile', hint: 'Each icon on a softly tinted rounded tile.', family: 'handbag', treatment: 'tile' },
 ];
 
-export function maisonIconSkin(t: { colors: { ink: string; bg: string }; fonts: { body: string }; buttonRadiusPx: string | number }): IconSkin {
+export function maisonIconSkin(t: { colors: { ink: string; bg: string; accent?: string; accentInk?: string }; fonts: { body: string }; buttonRadiusPx: string | number }): IconSkin {
   const r = Number.parseFloat(String(t.buttonRadiusPx)) || 0;
   return {
     tipBg: t.colors.ink, tipInk: t.colors.bg, tipRadius: Math.min(r, 12), tipFont: t.fonts.body,
     tipShadow: '0 6px 18px rgba(0,0,0,.18)', tileRadius: Math.min(r, 14), inverse: t.colors.bg,
+    brandBg: t.colors.accent, brandInk: t.colors.accentInk,
   };
 }

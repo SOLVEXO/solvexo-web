@@ -146,54 +146,83 @@ export function VariantOptionsEditor({
   );
 }
 
-/** Pick which of the product's own photos a shopper sees when they choose this variant (Shopify: "assign image"). One small thumbnail; the choices open in a popup. */
-function VariantImagePicker({ images, value, onChange, label, triggerLabel }: { images: string[]; value: string; onChange: (url: string) => void; label: string; /** A text button instead of the thumbnail (used by the bulk "Add images" bar). */ triggerLabel?: string }) {
+/** Link product photos to a variant (Shopify: variant media). A photo can belong to several variants; the shopper sees these first, then the photos no variant claims.
+ *  Works on a draft: toggling photos is free, "Done" (or closing) saves the choice. */
+function VariantImagePicker({ images, value, onChange, label, triggerLabel }: { images: string[]; value: string[]; onChange: (urls: string[]) => void; label: string; /** A text button instead of the thumbnail (used by the bulk "Add images" bar). */ triggerLabel?: string }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [draft, setDraft] = useState<string[]>([]);
   const btn = useRef<HTMLButtonElement>(null);
-  const close = useCallback(() => { setPos(null); btn.current?.focus(); }, []);
+  const draftRef = useRef<string[]>([]);
+  draftRef.current = draft;
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const close = useCallback((save: boolean) => {
+    if (save) {
+      const next = draftRef.current;
+      const prev = valueRef.current;
+      if (next.length !== prev.length || next.some((u, i) => u !== prev[i])) onChange(next);
+    }
+    setPos(null);
+    btn.current?.focus();
+  }, [onChange]);
   useEffect(() => {
     if (!pos) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(false); };
     const hide = () => setPos(null);
     window.addEventListener('keydown', onKey);
     window.addEventListener('resize', hide);
-    window.addEventListener('scroll', hide, true);
-    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('resize', hide); window.removeEventListener('scroll', hide, true); };
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('resize', hide); };
   }, [pos, close]);
 
   if (images.length === 0) return <span className="text-[11px] text-slate">Add product images first</span>;
   const open = () => {
     const r = btn.current?.getBoundingClientRect();
     if (!r) return;
-    const width = 232;
-    setPos({ top: Math.min(r.bottom + 6, window.innerHeight - 200), left: Math.max(8, Math.min(r.left, window.innerWidth - width - 8)) });
+    const width = 300;
+    setDraft(value.filter(u => images.includes(u)));
+    setPos({ top: Math.max(8, Math.min(r.bottom + 6, window.innerHeight - 340)), left: Math.max(8, Math.min(r.left, window.innerWidth - width - 8)) });
   };
-  const pick = (url: string) => { onChange(url); close(); };
+  const flip = (url: string) => setDraft(d => (d.includes(url) ? d.filter(u => u !== url) : [...d, url]));
+  const shown = value.filter(u => images.includes(u));
   return (
     <>
       {triggerLabel ? (
         <button ref={btn} type="button" onClick={open} aria-haspopup="dialog" aria-expanded={!!pos}
           className="rounded-md border border-bone bg-white px-3 py-1.5 text-[12px] font-semibold text-charcoal cursor-pointer hover:border-brand-orange">{triggerLabel}</button>
       ) : (
-      <button ref={btn} type="button" onClick={open} aria-haspopup="dialog" aria-expanded={!!pos} aria-label={`Image for ${label}: ${value ? 'change' : 'choose'}`}
-        className="size-10 p-0 overflow-hidden rounded-md border border-bone bg-white cursor-pointer flex items-center justify-center text-[11px] text-slate hover:border-brand-orange">
-        {value ? <img src={value} alt="" className="size-full object-cover" /> : <span>None</span>}
+      <button ref={btn} type="button" onClick={open} aria-haspopup="dialog" aria-expanded={!!pos} aria-label={`Images for ${label}: ${shown.length ? `${shown.length} linked, change` : 'choose'}`}
+        className="relative size-10 p-0 overflow-visible rounded-md border border-bone bg-white cursor-pointer flex items-center justify-center text-[11px] text-slate hover:border-brand-orange">
+        {shown.length ? <img src={shown[0]} alt="" className="size-full rounded-md object-cover" /> : <span>None</span>}
+        {shown.length > 1 && <span className="absolute -right-1.5 -top-1.5 rounded-full bg-brand-orange px-1.5 text-[10px] font-semibold leading-4 text-white">{shown.length}</span>}
       </button>
       )}
       {pos && createPortal(
-        <div className="fixed inset-0 z-[1000]">
-          <button type="button" tabIndex={-1} aria-label="Close" onClick={close} className="fixed inset-0 cursor-default border-0 bg-transparent p-0" />
-          <div role="dialog" aria-label={`Choose image for ${label}`} style={{ top: pos.top, left: pos.left, width: 232 }}
-            className="fixed rounded-lg border border-bone bg-white p-2 max-h-[220px] overflow-y-auto">
-            <div className="grid grid-cols-4 gap-1.5" role="radiogroup" aria-label={`Image for ${label}`}>
-              <button type="button" role="radio" aria-checked={!value} onClick={() => pick('')}
-                className={`size-12 rounded-md border-2 cursor-pointer bg-white text-[11px] ${!value ? 'border-brand-orange text-brand-orange font-semibold' : 'border-bone text-slate'}`}>None</button>
-              {images.map((src, i) => (
-                <button key={src + i} type="button" role="radio" aria-checked={value === src} aria-label={`Use image ${i + 1} for ${label}`} onClick={() => pick(src)}
-                  className={`size-12 p-0 overflow-hidden rounded-md border-2 cursor-pointer bg-white ${value === src ? 'border-brand-orange' : 'border-transparent'}`}>
-                  <img src={src} alt="" loading="lazy" className="size-full object-cover" />
-                </button>
-              ))}
+        <div className="fixed inset-0 z-[10050]">
+          <button type="button" tabIndex={-1} aria-label="Close" onClick={() => close(true)} className="fixed inset-0 cursor-default border-0 bg-transparent p-0" />
+          <div role="dialog" aria-label={`Choose images for ${label}`} style={{ top: pos.top, left: pos.left, width: 300 }}
+            className="fixed rounded-lg border border-bone bg-white p-2">
+            <div className="mb-2 flex items-center justify-between gap-2 text-[12px]">
+              <span className="font-semibold text-charcoal">{draft.length} of {images.length} selected</span>
+              <span className="flex gap-3">
+                <button type="button" onClick={() => setDraft([...images])} className="bg-transparent border-none cursor-pointer p-0 text-slate underline">All</button>
+                <button type="button" onClick={() => setDraft([])} className="bg-transparent border-none cursor-pointer p-0 text-slate underline">None</button>
+              </span>
+            </div>
+            <div className="grid max-h-[260px] grid-cols-5 gap-1.5 overflow-y-auto" role="group" aria-label={`Images for ${label}`}>
+              {images.map((src, i) => {
+                const on = draft.includes(src);
+                return (
+                  <button key={src + i} type="button" aria-pressed={on} aria-label={`Image ${i + 1} for ${label}`} onClick={() => flip(src)}
+                    className={`relative size-[52px] p-0 overflow-hidden rounded-md border-2 cursor-pointer bg-white ${on ? 'border-brand-orange' : 'border-transparent'}`}>
+                    <img src={src} alt="" loading="lazy" className="size-full object-cover" />
+                    {on && <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-brand-orange text-[10px] leading-none text-white">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2 flex justify-end gap-2">
+              <button type="button" onClick={() => close(false)} className="rounded-md border border-bone bg-white px-3 py-1.5 text-[12px] text-charcoal cursor-pointer">Cancel</button>
+              <button type="button" onClick={() => close(true)} className="rounded-md border-none bg-brand-orange px-3 py-1.5 text-[12px] font-semibold text-white cursor-pointer">Done</button>
             </div>
           </div>
         </div>,
@@ -215,12 +244,20 @@ export function VariantTableEditor({
   const updateRow = (key: string, patch: Partial<VariantRow>) => {
     onRowsChange(rows.map(r => r.key === key ? { ...r, ...patch } : r));
   };
-  // Shopify: tick variants, then "Add images" gives every ticked variant the chosen image (one image per variant).
+  // Shopify: tick variants (or a whole Color value), then "Add images" links the chosen photos to every ticked variant.
   const [ticked, setTicked] = useState<string[]>([]);
   const live = ticked.filter(k => rows.some(r => r.key === k));
   const toggle = (key: string) => setTicked(t => (t.includes(key) ? t.filter(k => k !== key) : [...t, key]));
   const allTicked = rows.length > 0 && live.length === rows.length;
-  const applyImage = (image: string) => onRowsChange(rows.map(r => (live.includes(r.key) ? { ...r, image } : r)));
+  const addImages = (urls: string[]) => onRowsChange(rows.map(r => (live.includes(r.key) ? { ...r, images: [...r.images, ...urls.filter(u => !r.images.includes(u))] } : r)));
+  const clearImages = () => onRowsChange(rows.map(r => (live.includes(r.key) ? { ...r, images: [] } : r)));
+  // one chip per option value (Color: Black ...): ticks every variant that has it, so all sizes of a colour get the same photos
+  const valueChips = Array.from(new Map(rows.flatMap(r => r.options.map(o => [`${o.name}\u0000${o.value}`, o] as const))).values());
+  const optionNames = Array.from(new Set(valueChips.map(o => o.name)));
+  const tickValue = (name: string, value: string) => {
+    const keys = rows.filter(r => r.options.some(o => o.name === name && o.value === value)).map(r => r.key);
+    setTicked(keys);
+  };
   const bulkBar = productImages.length > 0 && (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-bone bg-cream/60 px-3 py-2">
       <label className="flex items-center gap-2 text-[12px] font-medium text-charcoal cursor-pointer">
@@ -229,9 +266,18 @@ export function VariantTableEditor({
       </label>
       {live.length > 0 && (
         <>
-          <VariantImagePicker images={productImages} value="" onChange={applyImage} label={`${live.length} selected variants`} triggerLabel="Add images" />
-          <button type="button" onClick={() => applyImage('')} className="bg-transparent border-none cursor-pointer text-[12px] text-slate underline">Remove images</button>
+          <VariantImagePicker images={productImages} value={[]} onChange={addImages} label={`${live.length} selected variants`} triggerLabel="Link images" />
+          <button type="button" onClick={clearImages} className="bg-transparent border-none cursor-pointer text-[12px] text-slate underline">Remove images</button>
         </>
+      )}
+      {optionNames.length > 0 && rows.length > 1 && (
+        <div className="flex w-full flex-wrap items-center gap-1.5 text-[11px] text-slate">
+          <span>Select all variants with:</span>
+          {valueChips.map(o => (
+            <button key={o.name + o.value} type="button" onClick={() => tickValue(o.name, o.value)} title={`Select every variant with ${o.name}: ${o.value}`}
+              className="rounded-full border border-bone bg-white px-2 py-0.5 text-[11px] text-charcoal cursor-pointer hover:border-brand-orange">{o.value}</button>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -262,7 +308,7 @@ export function VariantTableEditor({
             <div key={row.key} className="border border-bone rounded-lg p-3 bg-white">
               <label className="mb-2 flex items-start gap-2 text-[13px] font-semibold text-charcoal break-words cursor-pointer"><input type="checkbox" className="mt-1" checked={live.includes(row.key)} onChange={() => toggle(row.key)} aria-label={`Select ${name}`} />{name}</label>
               <div className="mb-2 flex flex-col gap-1 text-[11px] font-medium text-graphite">Image
-                <VariantImagePicker images={productImages} value={row.image} onChange={image => updateRow(row.key, { image })} label={name} />
+                <VariantImagePicker images={productImages} value={row.images} onChange={images => updateRow(row.key, { images })} label={name} />
               </div>
               <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                 <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Price ({currencySymbol})
@@ -312,7 +358,7 @@ export function VariantTableEditor({
               <tr key={row.key} className="border-t border-bone">
                 <td className="w-8 px-2 py-2"><input type="checkbox" checked={live.includes(row.key)} onChange={() => toggle(row.key)} aria-label={`Select ${row.options.map(o => o.value).join(' / ')}`} /></td>
                 <td className="px-3 py-2 font-medium text-charcoal break-words">{row.options.map(o => o.value).join(' / ')}</td>
-                <td className="px-2 py-1.5"><div className="flex flex-col gap-1.5"><VariantImagePicker images={productImages} value={row.image} onChange={image => updateRow(row.key, { image })} label={row.options.map(o => o.value).join(' / ')} /></div></td>
+                <td className="px-2 py-1.5"><div className="flex flex-col gap-1.5"><VariantImagePicker images={productImages} value={row.images} onChange={images => updateRow(row.key, { images })} label={row.options.map(o => o.value).join(' / ')} /></div></td>
                 <td className="px-2 py-1.5"><input type="number" min="0" value={row.price} onChange={e => updateRow(row.key, { price: e.target.value })} className={inp} placeholder="0.00" aria-label="Price" /></td>
                 <td className="px-2 py-1.5"><input type="number" min="0" value={row.compareAtPrice} onChange={e => updateRow(row.key, { compareAtPrice: e.target.value })} className={inp} placeholder="0.00" aria-label="Compare-at price" /></td>
                 <td className="px-2 py-1.5"><input value={row.sku} onChange={e => updateRow(row.key, { sku: e.target.value })} className={inp} placeholder="Auto" aria-label="SKU" /></td>

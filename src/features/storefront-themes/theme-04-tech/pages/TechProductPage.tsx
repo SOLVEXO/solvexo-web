@@ -27,6 +27,7 @@ import { productPreorderNote } from '../../core/merchandising/purchaseNotes';
 import { stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
 import { VariantOptionPicker } from '../../core/product/VariantOptionPicker';
 import { buildOptionValues } from '../../core/product/variantOptions';
+import { variantGallery } from '../../core/product/variantGallery';
 import { ProductTrustBadges } from '../../core/product/trustBadges';
 import type { Section } from '@/api/services/storefrontTypes';
 import { ProductQuestions } from '../../core/product/ProductQuestions';
@@ -130,11 +131,7 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
     return () => { off = true; };
   }, [detail?.product._id, reviewsTick]);
 
-  const images = useMemo(() => {
-    const own = variant?.images?.filter(Boolean) ?? [];
-    const all = detail?.product.images ?? [];
-    return [...own, ...all.filter(i => !own.includes(i))];
-  }, [variant, detail?.product.images]);
+  const images = useMemo(() => variantGallery(variant, variants, detail?.product.images), [variant, variants, detail?.product.images]);
   const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, images.length - 1)) : 0;
   const setImageIndex = (i: number) => setGallery({ vid: variant?._id ?? '', i });
 

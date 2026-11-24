@@ -12,6 +12,7 @@ describe('readHeaderOptions', () => {
       stickyMode: 'off', transparentOnHome: false, transparentTextColor: '#ffffff', navFontSize: 'md', navUppercase: false,
       navHoverStyle: 'none', searchStyle: 'icon', searchPosition: 'icons', cta: null, topBar: null,
       menuOverflow: 'scroll', showCart: true, iconSet: null, iconSize: 'md', iconStroke: 'regular', iconTooltips: true, iconLabels: 'none',
+      iconTipStyle: 'theme', iconTipPosition: 'below', iconTips: {}, dropdownBg: 'theme', dropdownRadius: 'theme', dropdownShadow: 'theme', dropdownHover: 'theme',
     });
     // the old sticky switch still works
     expect(readHeaderOptions({ sticky: true }, 'Journal').stickyMode).toBe('always');

@@ -21,7 +21,7 @@ import { MegaPromoCards } from '../../navigation/MegaPromoCards';
 import { useNavRuleContext } from '../../navigation/useNavRuleContext';
 import { useInlineEditActive } from '../../inlineEdit';
 import { useHeaderScroll } from '../../navigation/useHeaderScroll';
-import { logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
+import { headerPopupCss, logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
 import { techTheme as t } from '../theme.config';
 import { TechSectionRenderer } from '../sections/TechSectionRenderer';
 import { techButtonStyle } from '../ui/techStyle';
@@ -50,7 +50,7 @@ function MegaColumns({ item }: { item: ResolvedStorefrontNavItem }) {
   const cols = item.children;
   const perRow = item.megaColumns || t.megaColumns || Math.min(Math.max(cols.length, 1), 6);
   return (
-    <div className="tx-pop" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, color: t.colors.ink, boxShadow: '0 12px 32px -12px rgba(2,2,3,.25)' }}>
+    <div data-nav-card className="tx-pop" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, color: t.colors.ink, boxShadow: '0 12px 32px -12px rgba(2,2,3,.25)' }}>
       <div className="grid gap-x-8 gap-y-6 p-6" style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))${item.promos?.length ? ' 260px' : ''}${t.megaFeatured && item.imageUrl ? ' 260px' : ''}` }}>
         {cols.map(c => (
           <div key={c.id} className="min-w-0">
@@ -80,7 +80,7 @@ function MegaSidebar({ item }: { item: ResolvedStorefrontNavItem }) {
   const [active, setActive] = useState(() => item.children.find(c => c.children.length > 0)?.id ?? item.children[0]?.id);
   const current = item.children.find(c => c.id === active) ?? item.children[0];
   return (
-    <div className="tx-pop" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, color: t.colors.ink, boxShadow: '0 12px 32px -12px rgba(2,2,3,.25)' }}>
+    <div data-nav-card className="tx-pop" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, color: t.colors.ink, boxShadow: '0 12px 32px -12px rgba(2,2,3,.25)' }}>
       <div className="grid" style={{ gridTemplateColumns: `280px 1fr${item.promos?.length ? ' 260px' : ''}${t.megaFeatured && item.imageUrl ? ' 280px' : ''}`, minHeight: 220 }}>
         <ul className="m-0 list-none p-0" style={{ borderRight: `1px solid ${t.colors.border}` }}>
           {item.children.map(c => (
@@ -241,7 +241,7 @@ export function TechNavbar() {
           {item.children.length > 0 && (
             <div data-nav-panel className={`invisible absolute start-0 top-full z-50 pt-1 opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 ${isMegaItem(item) ? 'w-[min(920px,92vw)]' : 'min-w-[220px]'}`}>
               {isMegaItem(item) ? <MegaPanel item={item} /> : (
-                <ul className="tx-pop m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, boxShadow: '0 12px 32px -12px rgba(2,2,3,.25)' }}>
+                <ul data-nav-card className="tx-pop m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, boxShadow: '0 12px 32px -12px rgba(2,2,3,.25)' }}>
                   {item.children.map(c => (
                     <li key={c.id}>
                       <NavAnchor link={c.link} className="block px-4 py-2.5 text-sm no-underline hover:underline" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
@@ -317,6 +317,7 @@ export function TechNavbar() {
     <>
       {t.topBar && bar && <TopBar bar={bar} />}
       <header ref={el => scroll.attach(el)} className="relative" style={{ ...scroll.style, background: t.colors.bg, color: t.colors.ink, borderBottom: `1px solid ${t.colors.border}`, fontFamily: t.fonts.body }}>
+      <style>{headerPopupCss(o, { bg: t.colors.accent, ink: t.colors.accentInk })}</style>
         {rows}
       </header>
       {(header?.sections?.length ?? 0) > 0 && <TechSectionRenderer sections={header?.sections ?? []} />}

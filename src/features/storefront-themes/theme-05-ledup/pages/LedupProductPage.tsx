@@ -2,6 +2,7 @@ import { VariantOptionPicker } from '../../core/product/VariantOptionPicker';
 import { cased } from '../../textCase';
 import { buildOptionValues, resolveOptionStyle } from '../../core/product/variantOptions';
 import { useProductPickerSettings } from '../../core/product/pickerSettings';
+import { variantGallery } from '../../core/product/variantGallery';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
@@ -110,11 +111,7 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
     return () => { off = true; };
   }, [store.storeId, categoryId, productId]);
 
-  const images = useMemo(() => {
-    const own = variant?.images?.filter(Boolean) ?? [];
-    const all = detail?.product.images ?? [];
-    return [...own, ...all.filter(i => !own.includes(i))];
-  }, [variant, detail?.product.images]);
+  const images = useMemo(() => variantGallery(variant, variants, detail?.product.images), [variant, variants, detail?.product.images]);
   const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, images.length - 1)) : 0;
 
   // Wholesale gate + price: hooks stay above the early return below.

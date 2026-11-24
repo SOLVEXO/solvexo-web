@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HeaderIconButton, resolveIconPrefs, type IconSkin } from './headerIcons';
-import { readHeaderOptions } from './headerOptions';
+import { readHeaderOptions, headerPopupCss } from './headerOptions';
 import { MAISON_ICON_SETS } from '../theme-03-fashion/headerIconSets';
 import { TECH_ICON_SETS } from '../theme-04-tech/headerIconSets';
 import { LEDUP_ICON_SETS } from '../theme-05-ledup/headerIconSets';
@@ -43,5 +43,52 @@ describe('HeaderIconButton', () => {
     const below = render(<MemoryRouter><HeaderIconButton kind="cart" prefs={prefs({ iconLabels: 'below' })} skin={skin} label="Cart" onClick={() => {}} className="b" /></MemoryRouter>);
     expect(below.container.querySelector('.sx-hi-label')?.textContent).toBe('Cart');
     expect(below.container.querySelector('.sx-hi-tip')).toBeNull();
+  });
+});
+
+describe('seller-controlled tooltip', () => {
+  const prefs = (patch: Record<string, unknown> = {}) =>
+    resolveIconPrefs({ ...readHeaderOptions({ iconTipStyle: 'light', iconTipPosition: 'above', iconTipCart: 'My bag', ...patch }, 'J') }, MAISON_ICON_SETS);
+
+  it('reads the seller words, colour and position', () => {
+    const o = readHeaderOptions({ iconTipStyle: 'brand', iconTipPosition: 'above', iconTipCart: '  My bag  ', iconTipSearch: '' }, 'J');
+    expect(o.iconTipStyle).toBe('brand');
+    expect(o.iconTipPosition).toBe('above');
+    expect(o.iconTips).toEqual({ cart: 'My bag' });
+    expect(readHeaderOptions(undefined, 'J')).toMatchObject({ iconTipStyle: 'theme', iconTipPosition: 'below', iconTips: {} });
+  });
+
+  it('shows the seller text, above the icon, in the light look', () => {
+    const { container } = render(<MemoryRouter><HeaderIconButton kind="cart" prefs={prefs()} skin={skin} label="Cart" onClick={() => {}} className="b" /></MemoryRouter>);
+    const tip = container.querySelector('.sx-hi-tip') as HTMLElement;
+    expect(tip.textContent).toBe('My bag');
+    expect(tip.getAttribute('data-pos')).toBe('above');
+    expect(tip.style.getPropertyValue('--tip-bg')).toBe('#ffffff');
+  });
+
+  it('an icon without its own text keeps the standard word', () => {
+    const { container } = render(<MemoryRouter><HeaderIconButton kind="wishlist" prefs={prefs()} skin={skin} label="Wishlist" to="/w" className="b" /></MemoryRouter>);
+    expect(container.querySelector('.sx-hi-tip')?.textContent).toBe('Wishlist');
+  });
+});
+
+describe('seller-controlled dropdown look', () => {
+  const o = (h: Record<string, unknown>) => readHeaderOptions(h, 'J');
+  const brand = { bg: '#b00', ink: '#fff' };
+
+  it('adds nothing while everything is the theme default', () => {
+    expect(headerPopupCss(o({}), brand)).toBe('');
+  });
+  it('paints the panel, corners, shadow and hover the seller chose', () => {
+    const css = headerPopupCss(o({ dropdownBg: 'brand', dropdownRadius: 'square', dropdownShadow: 'none', dropdownHover: 'underline' }), brand);
+    expect(css).toContain('background:#b00!important');
+    expect(css).toContain('color:#fff!important');
+    expect(css).toContain('border-radius:0px!important');
+    expect(css).toContain('box-shadow:none!important');
+    expect(css).toContain('text-decoration:underline!important');
+    expect(css).not.toContain('data-nav-mega]) > ul a:hover{background:color-mix');
+  });
+  it('ignores unknown values', () => {
+    expect(headerPopupCss(o({ dropdownBg: 'pink', dropdownRadius: 'x' }), brand)).toBe('');
   });
 });

@@ -123,8 +123,7 @@ export function NavScrollRow({
     };
     el.addEventListener('keydown', onKey);
     window.addEventListener('resize', later);
-    // Older browsers (and jsdom in tests) have no ResizeObserver: the window resize and mutation observers still cover it.
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(later) : null;
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(later);
     ro?.observe(el);
     const mo = new MutationObserver(later);
     mo.observe(el, { childList: true, subtree: true, characterData: true });

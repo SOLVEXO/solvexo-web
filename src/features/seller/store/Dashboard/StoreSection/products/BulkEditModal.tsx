@@ -8,7 +8,7 @@ import {
   type BulkEditProductUpdate, type BulkEditVariantUpdate, type BulkProductStatus,
 } from '@/api/services/productsBulk';
 
-interface VariantRow { id: string; label: string; sku: string; price: string; compare: string; stock: string; unlimited: boolean; len: string; wid: string; hei: string; origin: string; hs: string; taxable: string; image: string }
+interface VariantRow { id: string; label: string; sku: string; price: string; compare: string; stock: string; unlimited: boolean; len: string; wid: string; hei: string; origin: string; hs: string; taxable: string; image: string; imageCount: number }
 interface ProductRow {
   id: string; name: string; status: string; tags: string; digital: boolean; images: string[];
   variants: VariantRow[]; loadError?: string;
@@ -75,7 +75,7 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                 stock: numStr(v.stock), unlimited: !!v.unlimitedStock,
                 len: numStr(v.length), wid: numStr(v.width), hei: numStr(v.height),
                 origin: v.countryOfOrigin ?? '', hs: v.hsCode ?? '', taxable: v.taxable === false ? 'no' : 'yes',
-                image: v.images?.find(Boolean) ?? '',
+                image: v.images?.find(Boolean) ?? '', imageCount: (v.images ?? []).filter(Boolean).length,
               })),
             };
           } catch (e) {
@@ -333,8 +333,8 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                           <input type="checkbox" checked={val(k('taxable')) !== 'no'} onChange={e => setCell(k('taxable'), e.target.checked ? 'yes' : 'no')} aria-label="Charge tax on this product" />
                         </td>
                         <td className="px-2 py-1.5">
-                          <select className={cls(k('image'))} value={val(k('image'))} onChange={e => setCell(k('image'), e.target.value)} aria-label="Variant image" disabled={p.digital || p.images.length === 0}>
-                            <option value="">None</option>
+                          <select className={cls(k('image'))} value={val(k('image'))} onChange={e => setCell(k('image'), e.target.value)} aria-label="Variant image" title={v.imageCount > 1 ? 'Several photos are linked to this variant. Change them from the product page.' : undefined} disabled={p.digital || p.images.length === 0 || v.imageCount > 1}>
+                            <option value="">{v.imageCount > 1 ? `${v.imageCount} photos linked` : 'None'}</option>
                             {p.images.map((src, i) => <option key={src + i} value={src}>Image {i + 1}</option>)}
                           </select>
                         </td>

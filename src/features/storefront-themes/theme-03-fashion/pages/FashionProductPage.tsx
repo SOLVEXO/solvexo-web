@@ -31,6 +31,7 @@ import { productPreorderNote } from '../../core/merchandising/purchaseNotes';
 import { stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../../variantAvailability';
 import { VariantOptionPicker } from '../../core/product/VariantOptionPicker';
 import { buildOptionValues } from '../../core/product/variantOptions';
+import { variantGallery } from '../../core/product/variantGallery';
 import { ProductTrustBadges } from '../../core/product/trustBadges';
 import type { Section } from '@/api/services/storefrontTypes';
 import { ProductQuestions } from '../../core/product/ProductQuestions';
@@ -133,11 +134,7 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
     return () => { off = true; };
   }, [detail?.product._id, reviewsTick]);
 
-  const images = useMemo(() => {
-    const own = variant?.images?.filter(Boolean) ?? [];
-    const all = detail?.product.images ?? [];
-    return [...own, ...all.filter(i => !own.includes(i))];
-  }, [variant, detail?.product.images]);
+  const images = useMemo(() => variantGallery(variant, variants, detail?.product.images), [variant, variants, detail?.product.images]);
   // Optional product video: one more item in the gallery, first or last as the seller chose.
   const video = useMemo(() => parseProductVideo(variant?.videoUrl || detail?.product.videoUrl), [variant?.videoUrl, detail?.product.videoUrl]);
   const videoAt = video ? (detail?.product.videoFirst ? 0 : images.length) : -1;

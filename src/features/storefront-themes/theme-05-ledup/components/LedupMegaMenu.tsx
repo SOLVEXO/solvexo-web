@@ -26,7 +26,7 @@ export function LedupMegaMenu({ items, activeId, onClose }: { items: ResolvedSto
   return (
     <div className={`ld-mega ${visible ? 'is-visible' : ''}`} aria-hidden={!visible}>
       {current && (
-        <div className="ld-mega-surface">
+        <div data-nav-card className="ld-mega-surface">
           <div className="flex w-1/5 shrink-0 flex-col gap-7 border-e border-[#e2dedb] pe-6">
             {parents.map(it => (
               <button key={it.id} type="button" tabIndex={visible ? 0 : -1} className={`ld-parent ${it.id === current.id ? 'is-active' : ''}`}
