@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { waitUntil } from '@vercel/functions';
 
 const API_ORIGIN = (process.env.SOLVEXO_API_URL || process.env.VITE_API_URL || 'https://api.solvexo.store').replace(/\/$/, '');
 
@@ -67,12 +68,12 @@ function slugFromHost(host) {
 }
 
 /** One request for the store, its live theme and its home page (the same endpoint the browser would call after loading). */
-async function fetchBootstrap(host) {
+async function fetchBootstrap(host, timeoutMs = 2500) {
   try {
     const url = new URL(`${API_ORIGIN}/api/store/public/bootstrap`);
     const slug = slugFromHost(host);
     if (slug) url.searchParams.set('slug', slug); else url.searchParams.set('host', host);
-    const res = await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(2500) });
+    const res = await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(timeoutMs) });
     if (!res.ok) return null;
     const body = await res.json();
     return body?.data ?? null;
@@ -198,6 +199,105 @@ async function sendStorefrontShell(response, status = 200) {
   response.status(status).setHeader('Content-Type', 'text/html; charset=utf-8').send(fallbackShell);
 }
 
+const sleep = (ms) => new Promise((resolve) => { const timer = setTimeout(resolve, ms); timer.unref?.(); });
+
+/** Runs work after the visitor was answered (Vercel keeps the function alive for it); a plain Node run just lets it continue. */
+function background(promise) {
+  const safe = Promise.resolve(promise).catch((error) => console.error('Storefront background job failed', error));
+  try { waitUntil(safe); } catch { /* not on Vercel (local run): the promise simply keeps running */ }
+}
+
+/** The SEO document of a page: its meta tags, or why there is none. */
+async function fetchDocument(host, routePath) {
+  const apiUrl = new URL(`${API_ORIGIN}/api/storefront-seo/document`);
+  apiUrl.searchParams.set('host', host);
+  apiUrl.searchParams.set('path', routePath);
+  const res = await fetch(apiUrl, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(5000) });
+  if (!res.ok) {
+    if (res.status === 404) return { kind: 'notfound' };
+    // Metadata is an SEO enhancement; a transient metadata outage must not prevent the client storefront from rendering a valid deep link.
+    if (res.status >= 500) return { kind: 'unavailable' };
+    return { kind: 'other', status: res.status };
+  }
+  const meta = await res.json();
+  if (meta.redirect && [301, 302, 303, 307, 308].includes(Number(meta.statusCode))) return { kind: 'redirect', meta };
+  return { kind: 'ok', meta };
+}
+
+// ---- Never slower than the plain app shell ------------------------------------------------------------------------------
+// The visitor waits for the store data and the server render only as long as the budgets below allow. Whatever is not ready
+// is finished in the BACKGROUND and kept in this instance's memory, so the next request for the same page is answered at once
+// (and, through the CDN, so is everyone after). The page a visitor gets is always at least as good as the plain shell.
+const FIRST_BYTE_BUDGET_MS = 2000; // how long (from the start) the store data may take before the shell is sent without it
+const SSR_DEADLINE_MS = 2800; // by when (from the start) a visitor-facing render must be finished
+const WARM_FRESH_MS = 30_000; // a built page is served as is for this long ...
+const WARM_USABLE_MS = 120_000; // ... and, while it is refreshed in the background, for this long after
+const WARM_MAX_ENTRIES = 100;
+const WARM_UNFINISHED_MS = 8_000;
+const NO_SSR_MS = 120_000; // a page that cannot be server-rendered (password store, other language...) is not retried for this long
+
+const warm = new Map(); // key (host + path) -> { at, meta, boot, result, complete }
+const refreshing = new Map(); // key -> running refresh (one per page)
+const noSsrUntil = new Map(); // key -> timestamp
+
+function warmGet(key) {
+  const entry = warm.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.at > WARM_USABLE_MS) { warm.delete(key); return null; }
+  warm.delete(key); warm.set(key, entry); // most recently used last
+  return entry;
+}
+
+function warmSet(key, entry) {
+  warm.delete(key);
+  warm.set(key, entry);
+  while (warm.size > WARM_MAX_ENTRIES) warm.delete(warm.keys().next().value);
+}
+
+/** Builds the page again with the full time budget (store data, SEO tags, server render) and keeps it in memory. */
+function refreshWarm(key, host, routePath) {
+  const running = refreshing.get(key);
+  if (running) return running;
+  const job = (async () => {
+    try {
+      const doc = await fetchDocument(host, routePath);
+      if (doc.kind !== 'ok') { warm.delete(key); return; } // the page is gone / moved: never serve the old copy again
+      const boot = await fetchBootstrap(host, 6000);
+      const ssr = await loadSsr();
+      if (!ssr || !boot?.store?.storeId || !boot.theme) return;
+      if (ssr.ssrSkipReason({ path: routePath, store: boot.store, theme: boot.theme })) { noSsrUntil.set(key, Date.now() + NO_SSR_MS); warm.delete(key); return; }
+      const result = await ssr.renderStorefront({ host, path: routePath, store: boot.store, theme: boot.theme, home: boot.home, budgetMs: 4500 });
+      if (result?.html) warmSet(key, { at: Date.now(), meta: doc.meta, boot, result, complete: !!result.complete });
+    } finally {
+      refreshing.delete(key);
+    }
+  })();
+  refreshing.set(key, job);
+  return job;
+}
+
+/** Turns the pieces into the HTML page and sends it. `result` is the server render (or null), `boot` the store data (or null). */
+async function sendPage(response, meta, boot, result, { source, pending, ssrForced }) {
+  const file = path.join(process.cwd(), 'dist', 'index.html');
+  const shell = stripPlatformContent(await fs.readFile(file, 'utf8'));
+  let { html, inlined } = injectBoot(injectMetadata(shell, meta), boot, { omitHome: !!result?.html });
+  let rendered = false;
+  if (inlined && result?.html) {
+    html = injectSsr(html, result, await loadManifest());
+    rendered = true;
+  }
+  response.setHeader('X-Solvexo-SSR', rendered ? 'hit' : 'off');
+  response.setHeader('X-Solvexo-SSR-Source', source);
+  // Lets one store's cached pages be purged together (e.g. when the seller publishes).
+  if (inlined && /^[a-f0-9]{24}$/i.test(String(boot?.store?.storeId))) response.setHeader('Vercel-Cache-Tag', `store-${boot.store.storeId}`);
+  // A request that forced SSR with ?__ssr=1 is a test: never cached. With the store data inside the page the cache is kept
+  // short so a publish shows up within seconds. A page that is not finished yet is kept only a moment, so the CDN soon asks
+  // again and picks up the finished copy the background job has built.
+  response.setHeader('Cache-Control', ssrForced ? 'private, no-store' : pending ? 'public, s-maxage=5, stale-while-revalidate=120' : inlined ? 'public, s-maxage=30, stale-while-revalidate=120' : 'public, s-maxage=60, stale-while-revalidate=300');
+  response.setHeader('Vary', 'Host');
+  response.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
+}
+
 export default async function handler(request, response) {
   response.setHeader('X-Powered-By', 'Solvexo');
   response.setHeader('X-Solvexo-Platform', '1');
@@ -222,72 +322,84 @@ export default async function handler(request, response) {
       response.send(await crawlResponse.text());
       return;
     }
-    // Started now, in parallel with the metadata request, so it adds no waiting time of its own.
-    const bootPromise = fetchBootstrap(host);
-    const apiUrl = new URL(`${API_ORIGIN}/api/storefront-seo/document`);
-    apiUrl.searchParams.set('host', host);
-    apiUrl.searchParams.set('path', routePath);
-    const apiResponse = await fetch(apiUrl, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(5000) });
-    if (!apiResponse.ok) {
-      if (apiResponse.status === 404) {
-        const file = path.join(process.cwd(), 'dist', 'index.html');
-        const shell = stripPlatformContent(await fs.readFile(file, 'utf8'));
-        response.setHeader('Cache-Control', 'private, no-store');
-        response.setHeader('Vary', 'Host');
-        const notFoundShell = shell
-          .replace(/<title>[\s\S]*?<\/title>/i, '<title>Page not found</title>')
-          .replace('</head>', '    <meta name="robots" content="noindex, nofollow">\n  </head>');
-        response.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send(notFoundShell);
-        return;
-      }
-      if (apiResponse.status >= 500) {
-        // Metadata is an SEO enhancement; a transient metadata outage must not
-        // prevent the client storefront from rendering a valid deep link.
-        await sendStorefrontShell(response);
-        return;
-      }
-      response.status(apiResponse.status).send('Invalid storefront route');
-      return;
-    }
-    const meta = await apiResponse.json();
-    if (meta.redirect && [301, 302, 303, 307, 308].includes(Number(meta.statusCode))) {
-      response.setHeader('Cache-Control', 'public, max-age=300');
-      response.setHeader('Location', meta.redirect);
-      response.status(Number(meta.statusCode)).send('');
-      return;
-    }
-    const file = path.join(process.cwd(), 'dist', 'index.html');
-    const shell = stripPlatformContent(await fs.readFile(file, 'utf8'));
-    // Only SEO tags are injected (the store itself loads client-side), so a short edge cache is safe and removes the
-    // function + API round trip for repeat visitors. Per-host: `host` is part of the rewritten URL and Vary is Host.
-    const withMeta = injectMetadata(shell, meta);
-    const boot = await bootPromise;
     // Real server rendering: only for a plain public store, and only when switched on (SSR_ENABLED=1) or asked for (?__ssr=1).
     const ssrFlag = String(request.query.ssr ?? '');
     const ssrForced = ssrFlag === '1';
+    const ssrOn = ssrFlag !== '0' && (process.env.SSR_ENABLED === '1' || ssrForced);
+    const key = `${host}${routePath}`;
+
+    // A page this instance already built: answer from memory at once (no API calls); refresh it in the background when it is old.
+    if (ssrOn && !ssrForced) {
+      const entry = warmGet(key);
+      if (entry) {
+        // A copy with parts still missing is refreshed sooner than a finished one.
+        if (Date.now() - entry.at > (entry.complete ? WARM_FRESH_MS : WARM_UNFINISHED_MS)) background(refreshWarm(key, host, routePath));
+        await sendPage(response, entry.meta, entry.boot, entry.result, { source: 'warm', pending: !entry.complete, ssrForced });
+        return;
+      }
+    }
+
+    const startedAt = Date.now();
+    // Started now, in parallel with the metadata request, so it adds no waiting time of its own. It keeps running after the visitor was answered.
+    const bootPromise = fetchBootstrap(host, 6000);
+    const doc = await fetchDocument(host, routePath);
+    if (doc.kind === 'notfound') {
+      const file = path.join(process.cwd(), 'dist', 'index.html');
+      const shell = stripPlatformContent(await fs.readFile(file, 'utf8'));
+      response.setHeader('Cache-Control', 'private, no-store');
+      response.setHeader('Vary', 'Host');
+      const notFoundShell = shell
+        .replace(/<title>[\s\S]*?<\/title>/i, '<title>Page not found</title>')
+        .replace('</head>', '    <meta name="robots" content="noindex, nofollow">\n  </head>');
+      response.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send(notFoundShell);
+      return;
+    }
+    if (doc.kind === 'unavailable') {
+      await sendStorefrontShell(response);
+      return;
+    }
+    if (doc.kind === 'other') {
+      response.status(doc.status).send('Invalid storefront route');
+      return;
+    }
+    if (doc.kind === 'redirect') {
+      response.setHeader('Cache-Control', 'public, max-age=300');
+      response.setHeader('Location', doc.meta.redirect);
+      response.status(Number(doc.meta.statusCode)).send('');
+      return;
+    }
+    const meta = doc.meta;
+
+    // The visitor never waits long for the store data: what is not there in time is finished in the background.
+    const wait = Math.max(0, FIRST_BYTE_BUDGET_MS - (Date.now() - startedAt));
+    const boot = await Promise.race([bootPromise, sleep(wait).then(() => null)]);
+
     let result = null;
-    if (boot?.store?.storeId && boot.theme && ssrFlag !== '0' && (process.env.SSR_ENABLED === '1' || ssrForced)) {
+    let finishInBackground = ssrOn && !ssrForced && !(noSsrUntil.get(key) > Date.now());
+    if (ssrOn && boot?.store?.storeId && boot.theme) {
       try {
         const ssr = await loadSsr();
-        result = ssr ? await ssr.renderStorefront({ host, path: routePath, store: boot.store, theme: boot.theme, home: boot.home }) : null;
+        if (ssr && ssr.ssrSkipReason({ path: routePath, store: boot.store, theme: boot.theme })) {
+          noSsrUntil.set(key, Date.now() + NO_SSR_MS); // this page is never server-rendered: nothing to finish later either
+          finishInBackground = false;
+        } else if (ssr) {
+          result = await ssr.renderStorefront({
+            host, path: routePath, store: boot.store, theme: boot.theme, home: boot.home,
+            budgetMs: ssrForced ? 3500 : Math.max(400, SSR_DEADLINE_MS - (Date.now() - startedAt)),
+            skipIfBusy: !ssrForced,
+          });
+        }
       } catch (error) {
         console.error('Storefront SSR failed, serving the app shell', error);
       }
     }
-    let { html, inlined } = injectBoot(withMeta, boot, { omitHome: !!result?.html });
-    let rendered = false;
-    if (inlined && result?.html) {
-      html = injectSsr(html, result, await loadManifest());
-      rendered = true;
+    if (ssrOn && !ssrForced && finishInBackground) {
+      if (boot && result?.complete) warmSet(key, { at: Date.now(), meta, boot, result, complete: true });
+      else background(refreshWarm(key, host, routePath));
     }
-    response.setHeader('X-Solvexo-SSR', rendered ? 'hit' : 'off');
-    // Lets one store's cached pages be purged together (e.g. when the seller publishes). Harmless until a purge is wired up.
-    if (inlined && /^[a-f0-9]{24}$/i.test(String(boot?.store?.storeId))) response.setHeader('Vercel-Cache-Tag', `store-${boot.store.storeId}`);
-    // With the store data inside the page the cache is kept shorter, so a seller's publish shows up within seconds.
-    // A request that forced SSR with ?__ssr=1 is a test: never cached.
-    response.setHeader('Cache-Control', ssrForced ? 'private, no-store' : inlined ? 'public, s-maxage=30, stale-while-revalidate=120' : 'public, s-maxage=60, stale-while-revalidate=300');
-    response.setHeader('Vary', 'Host');
-    response.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
+    // `pending`: a finished copy is being built in the background, so the CDN should ask again soon instead of keeping this one.
+    const pending = ssrOn && !ssrForced && finishInBackground && !(boot && result?.complete);
+    await sendPage(response, meta, boot, result, { source: 'fresh', pending, ssrForced });
   } catch (error) {
     console.error('Storefront document rendering failed', error);
     if (routePath === '/robots.txt' || /^\/sitemap(?:-\d+)?\.xml$/.test(routePath)) {

@@ -54,12 +54,18 @@ export interface RenderInput {
   theme: StoreThemeData;
   /** The home page data the bootstrap already fetched. */
   home?: unknown;
+  /** How long this render may gather data (default: `TOTAL_BUDGET_MS`). A visitor-facing render passes what is left of its own time. */
+  budgetMs?: number;
+  /** Give up at once (resolve null) when this process is already rendering another page, instead of waiting in line. */
+  skipIfBusy?: boolean;
 }
 
 export interface RenderOutput {
   html: string;
   /** Everything the page used, to be inlined as `window.__SX_DATA__`. */
   data: Record<string, unknown>;
+  /** True when every part of the page that needs data got it. False = some parts are still skeletons (time ran out or a request failed). */
+  complete: boolean;
   /** Which theme layout + page chunks this page needs (for the stylesheet / modulepreload links). */
   themeId: string;
   routeKey: StorefrontRouteKey;
@@ -154,18 +160,21 @@ function resetServerState(): void {
 
 // Rendering shares module-level state (the data store, the origin): one page at a time per process.
 let queue: Promise<unknown> = Promise.resolve();
+let busy = 0;
 
 /** Renders one storefront page. Resolves `null` when the page should be served by the normal app instead. */
 export function renderStorefront(input: RenderInput): Promise<RenderOutput | null> {
+  if (input.skipIfBusy && busy > 0) return Promise.resolve(null);
+  busy++;
   const run = queue.then(() => renderLocked(input), () => renderLocked(input));
-  queue = run.catch(() => undefined);
+  queue = run.catch(() => undefined).then(() => { busy--; });
   return run;
 }
 
 async function renderLocked(input: RenderInput): Promise<RenderOutput | null> {
   if (ssrSkipReason(input)) return null;
   const route = routeFor(input.path)!;
-  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  const deadline = Date.now() + Math.max(200, input.budgetMs ?? TOTAL_BUDGET_MS);
   const themeId = input.theme.themeDefinitionId as string;
   resetServerState();
   try {
@@ -176,10 +185,14 @@ async function renderLocked(input: RenderInput): Promise<RenderOutput | null> {
     if (input.home) putSsr(`home:${input.store.storeId}`, input.home);
     const tree = buildTree(input, route);
     let html = '';
+    let complete = false;
+    let hadFailure = false;
+    let dataArrived = false; // data was fetched after the last render pass
     for (let pass = 0; pass < MAX_PASSES; pass++) {
       const wanted = beginCollect();
       try { html = await renderOnce(tree, deadline); } finally { endCollect(); }
-      if (wanted.size === 0) break;
+      dataArrived = false;
+      if (wanted.size === 0) { complete = true; break; }
       await Promise.all([...wanted].map(async ([key, load]) => {
         try {
           const timeout = new Promise<never>((_, rej) => after(Math.max(50, deadline - Date.now()), () => rej(new Error('data timed out'))));
@@ -187,14 +200,21 @@ async function renderLocked(input: RenderInput): Promise<RenderOutput | null> {
         } catch (error) {
           // This part stays a skeleton on the server; the browser loads it itself.
           failSsr(key);
+          hadFailure = true;
           console.warn(`[ssr] data for "${key.slice(0, 80)}" not loaded:`, (error as Error)?.message);
         }
       }));
+      dataArrived = true;
       if (Date.now() >= deadline) break;
     }
+    // Data that arrived on the last round (time ran out right after) still goes into the page: rendering is fast.
+    if (dataArrived) {
+      try { html = await renderOnce(tree, Date.now() + 700); } catch { /* keep the previous markup; the data is inlined anyway */ }
+    }
     const data = dumpSsr();
-    if (JSON.stringify(data).length > MAX_DATA_BYTES) return { html, data: {}, themeId, routeKey: route.key };
-    return { html, data, themeId, routeKey: route.key };
+    const done = complete && !hadFailure;
+    if (JSON.stringify(data).length > MAX_DATA_BYTES) return { html, data: {}, themeId, routeKey: route.key, complete: false };
+    return { html, data, themeId, routeKey: route.key, complete: done };
   } catch (error) {
     console.error('[ssr] render failed:', (error as Error)?.message);
     return null;

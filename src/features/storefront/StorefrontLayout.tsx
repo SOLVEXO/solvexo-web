@@ -39,6 +39,7 @@ import { isLiquidStorefrontRoute } from './liquidStorefrontRouting';
 import { readBootSnapshot, writeBootSnapshot, clearBootSnapshot } from '@/utils/storefrontBootCache';
 import { preloadThemeShell } from '@/features/storefront-themes/preloadThemeShell';
 import { SsrSnapshot } from '@/components/comman/SsrSnapshot';
+import { startLinkPrefetch } from './linkPrefetch';
 
 function cookieConsentKey(storeId: string) { return `solvexo:cookie-consent:${storeId}`; }
 
@@ -328,6 +329,11 @@ export function StorefrontLayout() {
       resolveLink: resolveStorefrontLink,
     };
   }, [localizedStore, localizedTheme, cfg, slug]);
+
+  // Instant navigation: a link the shopper points at or touches gets its page code + data warmed before the click.
+  const prefetchStoreId = store?.storeId;
+  const prefetchThemeId = theme?.themeDefinitionId;
+  useEffect(() => (prefetchStoreId ? startLinkPrefetch(prefetchStoreId, prefetchThemeId) : undefined), [prefetchStoreId, prefetchThemeId]);
 
   const themeReady = !!theme;
   useEffect(() => { if (themeReady) prefetchLikelyStorefrontPages(); }, [themeReady]);
