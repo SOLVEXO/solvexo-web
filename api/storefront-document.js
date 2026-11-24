@@ -277,7 +277,7 @@ function refreshWarm(key, host, routePath) {
 }
 
 /** Turns the pieces into the HTML page and sends it. `result` is the server render (or null), `boot` the store data (or null). */
-async function sendPage(response, meta, boot, result, { source, pending, ssrForced }) {
+async function sendPage(response, meta, boot, result, { source, pending, noStore }) {
   const file = path.join(process.cwd(), 'dist', 'index.html');
   const shell = stripPlatformContent(await fs.readFile(file, 'utf8'));
   let { html, inlined } = injectBoot(injectMetadata(shell, meta), boot, { omitHome: !!result?.html });
@@ -293,7 +293,7 @@ async function sendPage(response, meta, boot, result, { source, pending, ssrForc
   // A request that forced SSR with ?__ssr=1 is a test: never cached. With the store data inside the page the cache is kept
   // short so a publish shows up within seconds. A page that is not finished yet is kept only a moment, so the CDN soon asks
   // again and picks up the finished copy the background job has built.
-  response.setHeader('Cache-Control', ssrForced ? 'private, no-store' : pending ? 'public, s-maxage=5, stale-while-revalidate=120' : inlined ? 'public, s-maxage=30, stale-while-revalidate=120' : 'public, s-maxage=60, stale-while-revalidate=300');
+  response.setHeader('Cache-Control', noStore ? 'private, no-store' : pending ? 'public, s-maxage=5, stale-while-revalidate=120' : inlined ? 'public, s-maxage=30, stale-while-revalidate=120' : 'public, s-maxage=60, stale-while-revalidate=300');
   response.setHeader('Vary', 'Host');
   response.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
 }
@@ -324,8 +324,12 @@ export default async function handler(request, response) {
     }
     // Real server rendering: only for a plain public store, and only when switched on (SSR_ENABLED=1) or asked for (?__ssr=1).
     const ssrFlag = String(request.query.ssr ?? '');
+    // ?__ssr=1 = test the server render itself (skips the in-memory copy, waits long for the data); ?__ssr=2 = test the real
+    // production path (memory copy + time budget) for this request only. Neither is cached by the CDN. ?__ssr=0 = off.
     const ssrForced = ssrFlag === '1';
-    const ssrOn = ssrFlag !== '0' && (process.env.SSR_ENABLED === '1' || ssrForced);
+    const ssrWarmTest = ssrFlag === '2';
+    const testRequest = ssrForced || ssrWarmTest;
+    const ssrOn = ssrFlag !== '0' && (process.env.SSR_ENABLED === '1' || testRequest);
     const key = `${host}${routePath}`;
 
     // A page this instance already built: answer from memory at once (no API calls); refresh it in the background when it is old.
@@ -334,7 +338,7 @@ export default async function handler(request, response) {
       if (entry) {
         // A copy with parts still missing is refreshed sooner than a finished one.
         if (Date.now() - entry.at > (entry.complete ? WARM_FRESH_MS : WARM_UNFINISHED_MS)) background(refreshWarm(key, host, routePath));
-        await sendPage(response, entry.meta, entry.boot, entry.result, { source: 'warm', pending: !entry.complete, ssrForced });
+        await sendPage(response, entry.meta, entry.boot, entry.result, { source: 'warm', pending: !entry.complete, noStore: testRequest });
         return;
       }
     }
@@ -371,7 +375,7 @@ export default async function handler(request, response) {
     const meta = doc.meta;
 
     // The visitor never waits long for the store data: what is not there in time is finished in the background.
-    const wait = Math.max(0, FIRST_BYTE_BUDGET_MS - (Date.now() - startedAt));
+    const wait = Math.max(0, (ssrForced ? 6000 : FIRST_BYTE_BUDGET_MS) - (Date.now() - startedAt));
     const boot = await Promise.race([bootPromise, sleep(wait).then(() => null)]);
 
     let result = null;
@@ -399,7 +403,7 @@ export default async function handler(request, response) {
     }
     // `pending`: a finished copy is being built in the background, so the CDN should ask again soon instead of keeping this one.
     const pending = ssrOn && !ssrForced && finishInBackground && !(boot && result?.complete);
-    await sendPage(response, meta, boot, result, { source: 'fresh', pending, ssrForced });
+    await sendPage(response, meta, boot, result, { source: 'fresh', pending, noStore: testRequest });
   } catch (error) {
     console.error('Storefront document rendering failed', error);
     if (routePath === '/robots.txt' || /^\/sitemap(?:-\d+)?\.xml$/.test(routePath)) {
