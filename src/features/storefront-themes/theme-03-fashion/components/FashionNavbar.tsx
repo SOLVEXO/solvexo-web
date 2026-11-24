@@ -188,7 +188,7 @@ export function FashionNavbar() {
                     return (
                       <MegaPanel fixedMode={o.menuOverflow === 'scroll'} className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
                         <div style={{ padding: "0 24px" }}>
-                          <div className="mx-auto flex gap-8 p-6" style={{ maxWidth: 1840, width: t.mega.width === 'fit' ? 'fit-content' : undefined, maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
+                          <div data-nav-card className="mx-auto flex gap-8 p-6" style={{ maxWidth: 1840, width: t.mega.width === 'fit' ? 'fit-content' : undefined, maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
                             <div className="grid min-w-0 flex-1 content-start gap-x-8 gap-y-6" style={{ gridTemplateColumns: t.mega.width === 'fit' ? `repeat(${item.megaColumns || t.mega.columns}, minmax(150px, max-content))` : `repeat(${item.megaColumns || t.mega.columns}, minmax(0, 1fr))` }}>
                               {plain.length > 0 && (
                                 <div>
@@ -227,7 +227,7 @@ export function FashionNavbar() {
                   })()}
                   {item.children.length > 0 && !isMegaItem(item) && (
                     <div data-nav-panel className="invisible absolute left-0 top-full z-50 min-w-[220px] pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
-                      <ul className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16 }}>
+                      <ul data-nav-card className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16 }}>
                         {item.children.map(c => (
                           <li key={c.id}>
                             <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>

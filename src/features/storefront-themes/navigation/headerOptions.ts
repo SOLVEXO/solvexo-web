@@ -326,19 +326,20 @@ export function expandCopyright(textValue: string, now = new Date()): string {
 const POP_RADIUS = { square: 0, soft: 8, round: 22 } as const;
 const POP_SHADOW = { none: 'none', soft: '0 8px 24px -8px rgba(0,0,0,.18)', strong: '0 22px 48px -12px rgba(0,0,0,.38)' } as const;
 
-/** Scoped CSS for the seller's look of the simple dropdown panels (inline theme styles need !important).
- *  Themes mark a panel `data-nav-panel`; mega panels carry `data-nav-mega` too and keep their own design. */
+/** CSS for the seller's look of every menu panel, simple dropdown AND big (mega) menu (inline theme styles need !important).
+ *  Each theme marks the visible card of a panel with `data-nav-card`. */
 export function headerPopupCss(
   o: Pick<HeaderOptions, 'dropdownBg' | 'dropdownRadius' | 'dropdownShadow' | 'dropdownHover'>,
   brand: { bg: string; ink: string },
 ): string {
-  const box = '[data-nav-panel]:not([data-nav-mega]) > ul';
+  const box = '[data-nav-card]';
   const link = box + ' a';
   const rules: string[] = [];
   const paint = o.dropdownBg === 'light' ? { bg: '#ffffff', ink: '#141414' } : o.dropdownBg === 'dark' ? { bg: '#141414', ink: '#f5f5f5' } : o.dropdownBg === 'brand' ? brand : null;
   if (paint) {
     rules.push(`${box}{background:${paint.bg}!important;border-color:color-mix(in srgb,${paint.ink} 18%,transparent)!important}`);
     rules.push(`${link}{color:${paint.ink}!important}`);
+    rules.push(`${box} :is(h2,h3,h4,h5,p){color:${paint.ink}!important}`);
   }
   if (o.dropdownRadius !== 'theme') rules.push(`${box}{border-radius:${POP_RADIUS[o.dropdownRadius]}px!important}`);
   if (o.dropdownShadow !== 'theme') rules.push(`${box}{box-shadow:${POP_SHADOW[o.dropdownShadow]}!important}`);

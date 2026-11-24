@@ -51,7 +51,7 @@ function ProductRow({ settings: s, colors }: { settings: Record<string, any>; co
   const { currency } = useCurrencyPreference();
   const scroller = useRef<HTMLDivElement>(null);
   const key = JSON.stringify(queryFor(s));
-  const { data: items, error, retry } = useLoad(() => apiGetPublicStoreProducts(store.storeId, JSON.parse(key) as PublicStoreProductsParams).then(r => r.data?.products ?? []), [store.storeId, key]);
+  const { data: items, error, retry } = useLoad(() => apiGetPublicStoreProducts(store.storeId, JSON.parse(key) as PublicStoreProductsParams).then(r => r.data?.products ?? []), [store.storeId, key], `products:${store.storeId}:${key}`);
   const viewAll = useViewAll(s, ts('pg.see_all', 'See all'), featuredViewAllPath(s));
   if (items && items.length === 0) return null;
   const nudge = (dir: 1 | -1) => scroller.current?.scrollBy({ left: dir * (scroller.current.clientWidth * 0.8) * (document.dir === 'rtl' ? -1 : 1), behavior: 'smooth' });
@@ -110,7 +110,7 @@ custom.set('tech.category_tiles', (section, blocks, colors) => {
 });
 
 /** Deal banner: a dark promo band with headline, text, button and an optional countdown date typed by the seller. */
-function Countdown({ endsAt, colors }: { endsAt: string; colors: BaseColors }) {
+function Countdown({ endsAt, colors, labels }: { endsAt: string; colors: BaseColors; labels?: { days?: string; hours?: string } }) {
   const end = new Date(endsAt).getTime();
   const [now] = useState(() => Date.now());
   const left = end - now;
@@ -118,7 +118,7 @@ function Countdown({ endsAt, colors }: { endsAt: string; colors: BaseColors }) {
   const days = Math.floor(left / 86_400_000);
   const hours = Math.floor((left % 86_400_000) / 3_600_000);
   const part = (n: number, label: string) => <span className="grid min-w-[56px] place-items-center px-2 py-2" style={{ background: colors.accent, color: colors.accentInk }}><b className="text-xl leading-none">{n}</b><span className="text-[10px] uppercase">{label}</span></span>;
-  return <div className="mt-4 flex gap-2">{part(days, ts('pg.days', 'days'))}{part(hours, ts('pg.hours', 'hours'))}</div>;
+  return <div className="mt-4 flex gap-2">{part(days, labels?.days || ts('pg.days', 'days'))}{part(hours, labels?.hours || ts('pg.hours', 'hours'))}</div>;
 }
 /** The deal banner's button: resolves the seller's own link setting (page, collection, product or external). */
 export function DealButton({ label, link }: { label: string; link: any }) {
@@ -137,7 +137,7 @@ custom.set('tech.deal_banner', (section, _blocks, colors) => {
         <div>
           <h2 className="m-0 text-[clamp(26px,3.4vw,40px)] font-semibold leading-tight" style={{ fontFamily: t.fonts.display }}><EditableText value={text(s.heading)} settingKey="heading" /></h2>
           {text(s.text) && <p className="m-0 mt-4 text-base leading-relaxed opacity-80">{text(s.text)}</p>}
-          {text(s.endsAt) && <Countdown endsAt={text(s.endsAt)} colors={colors} />}
+          {text(s.endsAt) && <Countdown endsAt={text(s.endsAt)} colors={colors} labels={{ days: text(s.daysLabel), hours: text(s.hoursLabel) }} />}
           {text(s.buttonLabel) && s.buttonLink && <div className="mt-6"><DealButton label={text(s.buttonLabel)} link={s.buttonLink} /></div>}
         </div>
         {text(s.imageUrl) && <img src={text(s.imageUrl)} alt="" loading="lazy" className="max-h-[360px] w-full object-contain" />}

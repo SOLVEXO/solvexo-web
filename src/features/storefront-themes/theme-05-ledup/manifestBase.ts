@@ -65,7 +65,7 @@ export const baseManifest: ThemeManifest = {
   name: 'Ledup',
   supportsAnnouncementBar: true,
   headerOptionChoices: { iconSets: LEDUP_ICON_SETS },
-  supportedHeaderOptions: ['logoPosition', 'sticky', 'menuOverflow', 'button', 'topBar', 'colours', 'icons'],
+  supportedHeaderOptions: ['logoPosition', 'sticky', 'menuOverflow', 'button', 'topBar', 'colours', 'icons', 'dropdown'],
   supportedFooterOptions: ['spacing', 'colours', 'headings', 'policyLinks', 'currency', 'defaultColumns'],
   templates: [
     { id: 'home', label: 'Home', group: 'home', showChrome: true, resource: { kind: 'store-page', pageType: 'home' } },

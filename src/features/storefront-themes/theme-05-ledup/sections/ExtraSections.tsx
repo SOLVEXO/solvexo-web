@@ -135,8 +135,8 @@ function DropCountdownSection({ section }: { section: Section }) {
   }, [s.targetDate]);
   if (!now) return null;
   const units: [number, string][] = [
-    [now.days, tt('countdown.days', 'Days')], [now.hours, tt('countdown.hrs', 'Hrs')],
-    [now.minutes, tt('countdown.min', 'Min')], [now.seconds, tt('countdown.sec', 'Sec')],
+    [now.days, copyText(s, 'daysLabel', tt('countdown.days', 'Days'))], [now.hours, copyText(s, 'hoursLabel', tt('countdown.hrs', 'Hrs'))],
+    [now.minutes, copyText(s, 'minutesLabel', tt('countdown.min', 'Min'))], [now.seconds, copyText(s, 'secondsLabel', tt('countdown.sec', 'Sec'))],
   ];
   return (
     <section style={{ background: t.colors.accent, color: t.colors.accentInk, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>

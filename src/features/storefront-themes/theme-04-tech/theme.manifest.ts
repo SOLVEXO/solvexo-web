@@ -180,6 +180,8 @@ export const techThemeManifest: ThemeManifest = {
         { key: 'text', kind: 'textarea', label: 'Text', rows: 3, maxLength: 400 },
         { key: 'imageUrl', kind: 'image', label: 'Photo' },
         { key: 'endsAt', kind: 'text', label: 'Deal ends on', maxLength: 30, hint: 'Optional. Type a date like 2026-12-31. A countdown shows until then and disappears afterwards.' },
+        { key: 'daysLabel', kind: 'text', label: 'Word under the days', maxLength: 16, placeholder: 'days' },
+        { key: 'hoursLabel', kind: 'text', label: 'Word under the hours', maxLength: 16, placeholder: 'hours' },
         { key: 'buttonLabel', kind: 'text', label: 'Button text', maxLength: 40 },
         { key: 'buttonLink', kind: 'link', label: 'Button link' },
       ],

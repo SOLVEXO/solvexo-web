@@ -184,7 +184,8 @@
     "loadingMore": "جارٍ التحميل…",
     "loadMore": "تحميل المزيد",
     "close": "إغلاق",
-    "showItems": "عرض {{count}} عناصر"
+    "showItems": "عرض {{count}} عناصر",
+    "sortLabel": "ترتيب"
   },
   "cart": {
     "atCheckout": "عند الدفع",
@@ -702,15 +703,21 @@
   },
   "ld": {
     "addToCart": "أضف إلى السلة",
+    "allCategories": "جميع الفئات",
+    "callUs": "اتصل بنا",
     "datasheet": "ورقة المواصفات",
+    "exploreProducts": "استكشف المنتجات",
+    "featured": "مميز",
     "invalidCredentials": "بيانات الدخول غير صحيحة. تحقق من بريدك الإلكتروني وكلمة المرور.",
     "newProducts": "منتجات جديدة",
     "noImage": "لا توجد صورة",
     "reference": "المرجع",
     "relatedProducts": "منتجات ذات صلة",
+    "searchPlaceholder": "ابحث بالاسم أو المرجع…",
     "tags": "الوسوم",
     "technicalSpecs": "المواصفات الفنية",
     "viewAll": "عرض الكل",
+    "viewAllIn": "عرض الكل في {{name}}",
     "viewAllProducts": "عرض جميع المنتجات"
   },
   "nav": {
@@ -742,7 +749,10 @@
     "wishlistAria_other": "قائمة الأمنيات، {{count}} عنصر",
     "shop": "تسوّق",
     "menu": "القائمة",
-    "closeSearch": "إغلاق البحث"
+    "closeSearch": "إغلاق البحث",
+    "signIn": "تسجيل الدخول",
+    "cartTip": "السلة ({{count}})",
+    "cart": "السلة"
   },
   "notFound": {
     "backHome": "العودة إلى الصفحة الرئيسية",
@@ -1454,7 +1464,15 @@
     "set_count": "{{n}} منتجًا",
     "set_subtotal": "المجموع الفرعي للمنتجات منفردة",
     "set_failed": "تعذّر تحميل هذه المنتجات. حاول مرة أخرى.",
-    "set_empty": "لا توجد منتجات في هذه المجموعة بعد."
+    "set_empty": "لا توجد منتجات في هذه المجموعة بعد.",
+    "share_on_linkedin": "مشاركة على LinkedIn",
+    "share_on_telegram": "مشاركة على Telegram",
+    "powered_by_solvexo": "مدعوم من Solvexo",
+    "copy": "نسخ",
+    "name": "الاسم",
+    "send": "إرسال",
+    "out_of_stock": "نفدت الكمية",
+    "retry": "إعادة المحاولة"
   },
   "product": {
     "addToCart": "أضف إلى السلة",
@@ -1524,7 +1542,22 @@
     "description": "الوصف",
     "details": "تفاصيل المنتج",
     "onSaleFrom": "عرض يبدأ من",
-    "bundleBadge": "حزمة"
+    "bundleBadge": "حزمة",
+    "bundleIncludes": "تتضمن هذه الحزمة",
+    "fbtHeading": "يُشترى معًا بشكل متكرر",
+    "fbtAdd": "أضف المحدد إلى السلة",
+    "fbtThis": "هذا المنتج",
+    "fbtTotal": "الإجمالي",
+    "qaHeading": "الأسئلة والأجوبة",
+    "qaEmpty": "لا توجد أسئلة بعد. كن أول من يسأل.",
+    "qaThanks": "شكرًا! تم إرسال سؤالك. سيظهر هنا بمجرد أن يجيب البائع.",
+    "qaAsk": "اطرح سؤالًا",
+    "qaQuestion": "سؤالك",
+    "qaName": "اسمك",
+    "qaEmail": "البريد الإلكتروني (اختياري، لا يُعرض أبدًا)",
+    "qaSending": "جارٍ الإرسال…",
+    "qaSend": "إرسال السؤال",
+    "preorderLeft": "متبقي {{count}}"
   },
   "returns": {
     "approved": "تمت الموافقة على الإرجاع",
@@ -1621,7 +1654,9 @@
     "contactStars": "{{n}} من 5 نجوم",
     "contactStepOf": "الخطوة {{n}} من {{total}}",
     "contactUploading": "جارٍ الرفع...",
-    "contactWaitFile": "يرجى الانتظار حتى ينتهي رفع الملف."
+    "contactWaitFile": "يرجى الانتظار حتى ينتهي رفع الملف.",
+    "openImage": "افتح هذه الصورة",
+    "openSlide": "افتح هذه الشريحة"
   },
   "wishlist": {
     "addAria": "أضف إلى قائمة الأمنيات",
@@ -1727,5 +1762,15 @@
     "signin_link": "تسجيل الدخول",
     "terms_notice": "تم تقديم طلبك الآن، وفاتورتك مستحقة وفق شروط الدفع الخاصة بك{{terms}}. سيسجّل المتجر مدفوعاتك.",
     "your_price": "سعر الجملة الخاص بك: {{price}} للقطعة"
+  },
+  "sub": {
+    "each_order": "كل طلب: {{amount}} (شامل الشحن والضريبة، بأسعار اليوم)",
+    "products": "المنتجات في هذا الاشتراك",
+    "qty": "الكمية {{n}}",
+    "unavailable": "لم يعد متوفرًا"
+  },
+  "card": {
+    "badgeBest": "الأكثر مبيعًا",
+    "badgeNew": "جديد"
   }
 }

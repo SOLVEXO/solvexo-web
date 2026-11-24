@@ -326,6 +326,10 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'ctaText', kind: 'text', label: 'Button text (optional)' },
       { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => !!s.ctaText },
       { key: 'endedText', kind: 'text', label: 'Text when the countdown ends', maxLength: 60, placeholder: 'Dropped!' },
+      { key: 'daysLabel', kind: 'text', label: 'Word under the days', maxLength: 16, placeholder: 'Days', half: true },
+      { key: 'hoursLabel', kind: 'text', label: 'Word under the hours', maxLength: 16, placeholder: 'Hrs', half: true },
+      { key: 'minutesLabel', kind: 'text', label: 'Word under the minutes', maxLength: 16, placeholder: 'Min', half: true },
+      { key: 'secondsLabel', kind: 'text', label: 'Word under the seconds', maxLength: 16, placeholder: 'Sec', half: true },
     ]),
   },
   // ── Shopify-parity section library ───────────────────────────────────────
