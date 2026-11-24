@@ -42,6 +42,7 @@ export const BOOK_DEMO_TEXT = siteText({
     submit: 'Book my demo',
     replyNote: 'We reply within one working day. Prefer to start now?',
     startFree: 'Start free',
+    marketingOptIn: 'Email me Solvexo tips and offers. I can unsubscribe any time.',
   },
   ar: {
     pageTitle: 'احجز عرضاً توضيحياً',
@@ -78,5 +79,6 @@ export const BOOK_DEMO_TEXT = siteText({
     submit: 'احجز العرض',
     replyNote: 'نرد خلال يوم عمل واحد. تفضّل البدء الآن؟',
     startFree: 'ابدأ مجاناً',
+    marketingOptIn: 'أرسلوا إليّ نصائح Solvexo وعروضها عبر البريد الإلكتروني. يمكنني إلغاء الاشتراك في أي وقت.',
   },
 });

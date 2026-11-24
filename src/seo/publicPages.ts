@@ -86,6 +86,7 @@ const NOINDEX_PAGES: Record<string, string> = {
   '/new-password': 'Choose a new password',
   '/onboard': 'Set up your store',
   '/start': 'Start your online store',
+  '/email-preferences/confirmed': 'Email preferences',
 };
 
 /** Hand-written search titles and descriptions (titles ≤ 60 characters, descriptions ≤ 158) for the main product and

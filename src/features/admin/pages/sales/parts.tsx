@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge, Button, Input, Modal, Select, Textarea } from '@/components/comman/ui';
+import { Badge, Button, Input, Modal, Select, Textarea, Toggle } from '@/components/comman/ui';
 import {
-  LEAD_SOURCES, LOST_REASONS, LOST_REASON_LABELS, SOURCE_LABELS, STAGE_LABELS,
-  type LeadInput, type LeadSource, type LeadStage, type SalesLead, type SalesOwner,
+  CONSENT_LABELS, LEAD_SOURCES, LOST_REASONS, LOST_REASON_LABELS, SOURCE_LABELS, STAGE_LABELS,
+  type ConsentStatus, type LeadInput, type LeadSource, type LeadStage, type SalesLead, type SalesOwner,
 } from '@/api/services/salesOps';
-import { STAGE_COLORS, errMsg } from './sales.utils';
+import { CONSENT_COLORS, STAGE_COLORS, consentSentence, errMsg } from './sales.utils';
 
 export function StageBadge({ stage }: { stage: LeadStage }) {
   return <Badge color={STAGE_COLORS[stage]} size="sm">{STAGE_LABELS[stage]}</Badge>;
+}
+
+/** Marketing-email permission: Agreed / Not asked / Asked / Unsubscribed. */
+export function ConsentBadge({ status }: { status: ConsentStatus | null | undefined }) {
+  const s = status ?? 'none';
+  return <Badge color={CONSENT_COLORS[s]} size="sm">{CONSENT_LABELS[s]}</Badge>;
 }
 
 /** Add or edit a lead. Reps never see the owner field (the server makes them the owner of what they add). */
@@ -25,6 +31,9 @@ export function LeadFormModal({ lead, owners, canAssign, onClose, onSave }: {
     sourceDetail: lead?.sourceDetail ?? '', dealValuePKR: lead?.dealValuePKR != null ? String(lead.dealValuePKR) : '',
     ownerAdminId: lead?.ownerAdminId ?? '',
   });
+  const consentWas = lead?.marketingConsent?.status === 'granted';
+  const [consent, setConsent] = useState(consentWas);
+  const [consentNote, setConsentNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ text: string; existingId?: string } | null>(null);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF(p => ({ ...p, [k]: e.target.value }));
@@ -34,6 +43,7 @@ export function LeadFormModal({ lead, owners, canAssign, onClose, onSave }: {
     if (!f.email.trim() && !f.phone.trim()) return setError({ text: 'Add an email or a phone number so you can reach them.' });
     const value = f.dealValuePKR.trim() ? Number(f.dealValuePKR.replace(/,/g, '')) : null;
     if (value !== null && (!Number.isFinite(value) || value < 0)) return setError({ text: 'Deal value must be a number in PKR.' });
+    if (consent && !consentWas && consentNote.trim().length < 3) return setError({ text: 'Say where and when the lead agreed, e.g. ‘Asked on call 24 Nov’.' });
     setBusy(true); setError(null);
     const orNull = (v: string) => v.trim() || null;
     try {
@@ -41,6 +51,8 @@ export function LeadFormModal({ lead, owners, canAssign, onClose, onSave }: {
         name: f.name.trim(), businessName: orNull(f.businessName), email: orNull(f.email), phone: orNull(f.phone),
         city: orNull(f.city), businessType: orNull(f.businessType), source: f.source, sourceDetail: orNull(f.sourceDetail),
         dealValuePKR: value, ...(canAssign ? { ownerAdminId: f.ownerAdminId || null } : {}),
+        // Only sent when it changed: turning it on records who agreed and where; off on an agreed lead = unsubscribed.
+        ...(consent !== consentWas ? { marketingConsent: consent, ...(consent ? { marketingConsentNote: consentNote.trim() } : {}) } : {}),
       });
     } catch (e) {
       const details = (e as { details?: { existingLeadId?: string } }).details;
@@ -73,6 +85,22 @@ export function LeadFormModal({ lead, owners, canAssign, onClose, onSave }: {
             <option value="">Unassigned</option>
             {owners.map(o => <option key={o._id} value={o._id}>{o.name}</option>)}
           </Select>
+        )}
+      </div>
+      <div className="mt-4 pt-3 border-t border-bone flex flex-col gap-2">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[13px] font-medium text-charcoal">Agreed to marketing emails</p>
+            <p className="text-[12px] text-slate">
+              {consent && !consentWas ? 'Only switch this on if they said yes to news and offers by email.'
+                : consentWas && !consent ? 'They will be marked as unsubscribed and get no more marketing emails.'
+                  : lead ? consentSentence(lead.marketingConsent) : 'Only switch this on if they said yes to news and offers by email.'}
+            </p>
+          </div>
+          <Toggle ariaLabel="Agreed to marketing emails" checked={consent} onChange={setConsent} />
+        </div>
+        {consent && !consentWas && (
+          <Input label="Where and when did they agree? *" placeholder="e.g. Asked on call 24 Nov" maxLength={300} value={consentNote} onChange={e => setConsentNote(e.target.value)} />
         )}
       </div>
       {error && (

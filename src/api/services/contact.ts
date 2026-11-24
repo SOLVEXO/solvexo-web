@@ -31,6 +31,8 @@ export interface SubmitContactPayload {
   email:   string;
   topic:   string;
   message: string;
+  /** Public Contact Us only: the visitor ticked "Email me Solvexo tips and offers" (never pre-ticked). */
+  marketingOptIn?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

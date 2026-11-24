@@ -33,6 +33,7 @@ export const CONTACT_US_TEXT = siteText({
     demoBody: 'Book a free 30-minute demo and we’ll show you your store, payments and delivery.',
     faqTitle: 'Looking for a quick answer?',
     faqBody: 'Check our Frequently Asked Questions first — you might not need to wait for a reply.',
+    marketingOptIn: 'Email me Solvexo tips and offers. I can unsubscribe any time.',
   },
   ar: {
     pageTitle: 'تواصل معنا',
@@ -61,5 +62,6 @@ export const CONTACT_US_TEXT = siteText({
     demoBody: 'احجز عرضاً توضيحياً مجانياً مدته 30 دقيقة، وسنريك متجرك والمدفوعات والتوصيل.',
     faqTitle: 'تبحث عن إجابة سريعة؟',
     faqBody: 'اطّلع على الأسئلة الشائعة أولاً، فقد لا تحتاج إلى انتظار الرد.',
+    marketingOptIn: 'أرسلوا إليّ نصائح Solvexo وعروضها عبر البريد الإلكتروني. يمكنني إلغاء الاشتراك في أي وقت.',
   },
 });
