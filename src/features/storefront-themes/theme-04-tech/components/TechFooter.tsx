@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { usePublicPages } from '../../core/hooks/usePublicLists';
 import { Link } from 'react-router-dom';
 import { handleOf } from '@/utils/activeStoreText';
 import { ts, tsNodes } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { VerifiedBusinessBadge } from '../../VerifiedBusinessBadge';
 import { PoweredBySolvexo } from '../../PoweredBySolvexo';
 import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../navigation/headerOptions';
@@ -18,12 +17,7 @@ import { TechSectionRenderer } from '../sections';
 /** Tech footer: full-width near-black band (newsletter on top, the seller's columns, legal row). The trust strip above it is the seller's own "Feature strip" section in Footer sections. */
 export function TechFooter() {
   const { store, theme } = useStorefront();
-  const [pages, setPages] = useState<PublicPageSummary[]>([]);
-  useEffect(() => {
-    let off = false;
-    apiListPublicStorePages(store.storeId).then(r => { if (!off) setPages(r.data ?? []); }).catch(() => {});
-    return () => { off = true; };
-  }, [store.storeId]);
+  const pages = usePublicPages(store.storeId);
 
   const opts = readFooterOptions(theme?.footer, ts('blog.label', 'Blog'));
   const light = t.footerTone === 'light';

@@ -49,6 +49,144 @@ function injectMetadata(html, meta) {
   return withLang.replace('</head>', `    ${tags}\n  </head>`);
 }
 
+const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+const hexOr = (value, fallback) => (typeof value === 'string' && HEX.test(value.trim()) ? value.trim() : fallback);
+const MAX_INLINE_BYTES = 380_000;
+
+const PLATFORM_APEXES = (process.env.VITE_PLATFORM_APEX_DOMAINS || 'solvexo.store').split(',').map((d) => d.trim().toLowerCase()).filter(Boolean);
+
+/** `hello.solvexo.store` -> `hello` (a store's own subdomain); a connected custom domain has no slug. Same rule the browser uses. */
+function slugFromHost(host) {
+  for (const apex of PLATFORM_APEXES) {
+    if (host.endsWith(`.${apex}`)) {
+      const sub = host.slice(0, -(apex.length + 1));
+      if (sub && !sub.includes('.')) return sub;
+    }
+  }
+  return null;
+}
+
+/** One request for the store, its live theme and its home page (the same endpoint the browser would call after loading). */
+async function fetchBootstrap(host) {
+  try {
+    const url = new URL(`${API_ORIGIN}/api/store/public/bootstrap`);
+    const slug = slugFromHost(host);
+    if (slug) url.searchParams.set('slug', slug); else url.searchParams.set('host', host);
+    const res = await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(2500) });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** JSON that is safe inside an inline <script>: no "</script>", no line-separator characters. */
+function safeJson(value) {
+  return JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+}
+
+/**
+ * Static first-paint placeholder per theme (the same shapes as each theme's own boot skeleton), painted BEFORE any JavaScript
+ * runs, in the seller's page colours. React replaces it when the app mounts.
+ */
+function skeletonHtml(themeId, p) {
+  const block = `color-mix(in srgb, ${p.ink} 8%, ${p.bg})`;
+  const line = `color-mix(in srgb, ${p.ink} 12%, ${p.bg})`;
+  const css = `<style>@keyframes sxp{50%{opacity:.55}}.sxb{animation:sxp 1.6s ease-in-out infinite}.sxb *{box-sizing:border-box}@media(max-width:767px){.sxb .sxm{display:none!important}}</style>`;
+  const bar = (w, h, r, bg = block) => `<div style="width:${w};height:${h};border-radius:${r};background:${bg}"></div>`;
+  if (themeId === 'theme-04-tech') {
+    return `${css}<div class="sxb" aria-hidden="true" style="min-height:100vh;background:${p.bg}"><div style="height:32px;background:${p.accent};opacity:.9"></div><div style="display:flex;align-items:center;gap:24px;height:76px;padding:0 clamp(16px,4vw,40px);border-bottom:1px solid ${line}">${bar('120px', '26px', '6px')}<div class="sxm" style="flex:1;max-width:560px;height:44px;border-radius:999px;background:${block}"></div><div style="margin-inline-start:auto;display:flex;gap:10px">${bar('36px', '36px', '999px')}${bar('36px', '36px', '999px')}</div></div><div style="display:grid;gap:16px;padding:clamp(12px,2vw,24px) clamp(16px,4vw,40px);grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))">${bar('100%', 'min(50vh,420px)', '12px')}${bar('100%', 'min(50vh,420px)', '12px')}</div></div>`;
+  }
+  if (themeId === 'theme-05-ledup') {
+    return `${css}<div class="sxb" aria-hidden="true" style="min-height:100vh;background:${p.bg};position:relative"><div style="height:min(100svh,760px);background:${block};border-radius:0 0 50px 50px"></div><div style="position:absolute;top:24px;left:clamp(12px,4vw,75px);right:clamp(12px,4vw,75px);height:56px;border-radius:999px;background:${p.bg};opacity:.85;display:flex;align-items:center;gap:22px;padding:0 24px">${bar('104px', '20px', '999px', line)}<div style="margin-inline-start:auto;display:flex;gap:10px">${bar('34px', '34px', '999px', line)}${bar('34px', '34px', '999px', line)}</div></div></div>`;
+  }
+  return `${css}<div class="sxb" aria-hidden="true" style="min-height:100vh;background:${p.bg}"><div style="height:72px;display:flex;align-items:center;gap:28px;padding:0 clamp(16px,4vw,40px);border-bottom:1px solid ${line}">${bar('112px', '22px', '8px')}<div style="margin-inline-start:auto;display:flex;gap:10px">${bar('34px', '34px', '999px')}${bar('34px', '34px', '999px')}${bar('34px', '34px', '999px')}</div></div><div style="padding:clamp(12px,2vw,24px) clamp(16px,4vw,40px)"><div style="height:min(70vh,560px);border-radius:28px;background:${block}"></div></div></div>`;
+}
+
+/**
+ * Puts the store + theme + home page into the HTML (`window.__SX_BOOT__`) so the browser makes no bootstrap request and
+ * paints the real storefront at once, and paints the seller's page colour + a themed placeholder before JS runs.
+ * Only a plain public store is ever inlined. The per-visitor field (`cookieBannerEnabled`) is left out on purpose: the
+ * page is cached for everyone, and the browser asks the live endpoint for it right after loading.
+ */
+function injectBoot(html, boot, { omitHome = false } = {}) {
+  const store = boot?.store;
+  const theme = boot?.theme;
+  if (!store?.storeId || (store.privacyMode && store.privacyMode !== 'public') || !theme) return { html, inlined: false };
+  const { cookieBannerEnabled: _visitorOnly, ...publicStore } = store;
+  // The home page travels once: in `__SX_DATA__` when the page was server-rendered, here otherwise.
+  let snapshot = { store: publicStore, theme, home: omitHome ? null : boot.home ?? null, at: Date.now() };
+  let json = safeJson(snapshot);
+  if (json.length > MAX_INLINE_BYTES) { snapshot = { ...snapshot, home: null }; json = safeJson(snapshot); }
+  if (json.length > MAX_INLINE_BYTES) return { html, inlined: false };
+  const palette = {
+    bg: hexOr(theme.theme?.bgColor, '#FFFFFF'),
+    ink: hexOr(theme.theme?.textColor, '#111111'),
+    accent: hexOr(theme.theme?.primaryColor, '#111111'),
+  };
+  const head = `<style>html,body{background:${palette.bg}}</style>\n    <script>window.__SX_BOOT__=${json};</script>`;
+  const themeId = typeof theme.themeDefinitionId === 'string' ? theme.themeDefinitionId : '';
+  const withHead = html.replace('</head>', () => `    ${head}\n  </head>`);
+  // The markers let `injectSsr` swap the placeholder for the real server-rendered page.
+  const withBody = withHead.replace(/<div id="root">\s*<\/div>/, () => `<div id="root"><!--sx-root-->${skeletonHtml(themeId, palette)}<!--/sx-root--></div>`);
+  return { html: withBody, inlined: true };
+}
+
+// Server rendering of the page itself (see src/entry-server.tsx). Off unless SSR_ENABLED=1, or asked for one request with ?__ssr=1.
+let ssrModule;
+async function loadSsr() {
+  ssrModule ??= import('../dist-ssr/entry-server.js').catch((error) => {
+    console.error('SSR bundle could not be loaded', error);
+    return null;
+  });
+  return ssrModule;
+}
+
+let manifestPromise;
+async function loadManifest() {
+  manifestPromise ??= fs.readFile(path.join(process.cwd(), 'dist', '.vite', 'manifest.json'), 'utf8').then(JSON.parse).catch(() => null);
+  return manifestPromise;
+}
+
+/** Source files of the chunks a theme needs on its first page (they are lazy chunks of the browser build). */
+const THEME_ENTRIES = {
+  'theme-04-tech': ['src/features/storefront-themes/theme-04-tech/layout/TechLayout.tsx', 'src/features/storefront-themes/theme-04-tech/pages/TechContentPages.tsx'],
+  'theme-05-ledup': ['src/features/storefront-themes/theme-05-ledup/layout/LedupLayout.tsx', 'src/features/storefront-themes/theme-05-ledup/pages/LedupContentPages.tsx'],
+};
+
+/** Stylesheets + scripts of the theme's lazy chunks, so the server-rendered page is styled the moment it paints and the scripts start early. */
+function themeAssetLinks(manifest, themeId) {
+  const roots = THEME_ENTRIES[themeId];
+  if (!manifest || !roots) return '';
+  const css = new Set();
+  const js = new Set();
+  const seen = new Set();
+  const visit = (key) => {
+    const chunk = manifest[key];
+    if (!chunk || seen.has(key)) return;
+    seen.add(key);
+    if (chunk.file) js.add(chunk.file);
+    for (const file of chunk.css ?? []) css.add(file);
+    for (const imported of chunk.imports ?? []) visit(imported);
+  };
+  roots.forEach(visit);
+  const safe = (file) => /^[\w./-]+$/.test(file);
+  return [
+    ...[...css].filter(safe).map((file) => `<link rel="stylesheet" href="/${file}">`),
+    ...[...js].filter(safe).map((file) => `<link rel="modulepreload" crossorigin href="/${file}">`),
+  ].join('\n    ');
+}
+
+/** Puts the server-rendered page (and the data it used) into the HTML. */
+function injectSsr(html, rendered, manifest) {
+  const data = safeJson(rendered.data ?? {});
+  const links = themeAssetLinks(manifest, rendered.themeId);
+  const head = `${links ? `${links}\n    ` : ''}<script>window.__SX_DATA__=${data};</script>`;
+  const withHead = html.replace('</head>', () => `    ${head}\n  </head>`);
+  return withHead.replace(/<!--sx-root-->[\s\S]*?<!--\/sx-root-->/, () => rendered.html);
+}
+
 async function sendStorefrontShell(response, status = 200) {
   const file = path.join(process.cwd(), 'dist', 'index.html');
   const shell = stripPlatformContent(await fs.readFile(file, 'utf8'));
@@ -84,6 +222,8 @@ export default async function handler(request, response) {
       response.send(await crawlResponse.text());
       return;
     }
+    // Started now, in parallel with the metadata request, so it adds no waiting time of its own.
+    const bootPromise = fetchBootstrap(host);
     const apiUrl = new URL(`${API_ORIGIN}/api/storefront-seo/document`);
     apiUrl.searchParams.set('host', host);
     apiUrl.searchParams.set('path', routePath);
@@ -120,9 +260,34 @@ export default async function handler(request, response) {
     const shell = stripPlatformContent(await fs.readFile(file, 'utf8'));
     // Only SEO tags are injected (the store itself loads client-side), so a short edge cache is safe and removes the
     // function + API round trip for repeat visitors. Per-host: `host` is part of the rewritten URL and Vary is Host.
-    response.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    const withMeta = injectMetadata(shell, meta);
+    const boot = await bootPromise;
+    // Real server rendering: only for a plain public store, and only when switched on (SSR_ENABLED=1) or asked for (?__ssr=1).
+    const ssrFlag = String(request.query.ssr ?? '');
+    const ssrForced = ssrFlag === '1';
+    let result = null;
+    if (boot?.store?.storeId && boot.theme && ssrFlag !== '0' && (process.env.SSR_ENABLED === '1' || ssrForced)) {
+      try {
+        const ssr = await loadSsr();
+        result = ssr ? await ssr.renderStorefront({ host, path: routePath, store: boot.store, theme: boot.theme, home: boot.home }) : null;
+      } catch (error) {
+        console.error('Storefront SSR failed, serving the app shell', error);
+      }
+    }
+    let { html, inlined } = injectBoot(withMeta, boot, { omitHome: !!result?.html });
+    let rendered = false;
+    if (inlined && result?.html) {
+      html = injectSsr(html, result, await loadManifest());
+      rendered = true;
+    }
+    response.setHeader('X-Solvexo-SSR', rendered ? 'hit' : 'off');
+    // Lets one store's cached pages be purged together (e.g. when the seller publishes). Harmless until a purge is wired up.
+    if (inlined && /^[a-f0-9]{24}$/i.test(String(boot?.store?.storeId))) response.setHeader('Vercel-Cache-Tag', `store-${boot.store.storeId}`);
+    // With the store data inside the page the cache is kept shorter, so a seller's publish shows up within seconds.
+    // A request that forced SSR with ?__ssr=1 is a test: never cached.
+    response.setHeader('Cache-Control', ssrForced ? 'private, no-store' : inlined ? 'public, s-maxage=30, stale-while-revalidate=120' : 'public, s-maxage=60, stale-while-revalidate=300');
     response.setHeader('Vary', 'Host');
-    response.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(injectMetadata(shell, meta));
+    response.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
   } catch (error) {
     console.error('Storefront document rendering failed', error);
     if (routePath === '/robots.txt' || /^\/sitemap(?:-\d+)?\.xml$/.test(routePath)) {

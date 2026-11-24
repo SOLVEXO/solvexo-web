@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- article block settings are seller-authored JSON */
+import { siteOrigin, sitePathname } from '@/utils/siteOrigin';
 import { useMemo } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
@@ -53,7 +54,7 @@ export function LedupBlogIndexPage() {
   const title = feed.title ?? ts('blog.label', 'Blog');
   const desc = ts('pg.stories_guides_and_news_from_store', 'Stories, guides and news from {{store}}.', { store: store.name });
   useStorefrontSeo({ title, description: desc });
-  const { origin, pathname } = window.location;
+  const origin = siteOrigin(); const pathname = sitePathname();
   const urlFor = pageUrlBuilder(origin, pathname);
   useJsonLd('blog', !feed.loading && !feed.error && feed.posts.length ? blogJsonLd({ name: title, description: desc, url: `${origin}${pathname}`, origin, posts: feed.posts, postUrl: slug => urlFor(blogPostPath(blogSlug, slug)) }) : null);
 
@@ -141,12 +142,12 @@ export function LedupBlogPostPage() {
   const { pathname } = useLocation();
   const { data: post, loading, error, retry } = useLoad(
     () => apiGetPublicBlogPost(store.storeId, postSlug).then(r => r.data).catch((e: { status?: number }) => { if (e?.status === 404) return null; throw e; }),
-    [store.storeId, postSlug],
+    [store.storeId, postSlug], `post:${store.storeId}:${postSlug}`,
   );
-  const more = useLoad(() => apiListPublicBlogPosts(store.storeId, blogSlug, 1, 12).then(r => r.data?.posts ?? []).catch(() => []), [store.storeId, blogSlug]);
+  const more = useLoad(() => apiListPublicBlogPosts(store.storeId, blogSlug, 1, 12).then(r => r.data?.posts ?? []).catch(() => []), [store.storeId, blogSlug], `posts:${store.storeId}:${blogSlug ?? ''}:related`);
 
   useStorefrontSeo({ title: post ? (post.seoTitle || post.title) : ts('blog.label', 'Blog'), description: post ? (post.seoDescription || post.excerpt || undefined) : undefined, image: post?.coverImage ?? undefined });
-  const origin = window.location.origin;
+  const origin = siteOrigin();
   const urlFor = pageUrlBuilder(origin, pathname);
   const url = `${origin}${pathname}`;
   useJsonLd('article', post ? articleJsonLd({ headline: post.title, description: post.seoDescription || post.excerpt, image: post.coverImage, datePublished: post.publishedAt, dateModified: post.updatedAt, author: post.authorName, storeName: store.name, logo: store.logo, url, origin }) : null);
@@ -186,7 +187,7 @@ export function LedupBlogPostPage() {
 export function LedupFaqsPage() {
   const { store } = useStorefront();
   useStorefrontSeo({ title: ts('faq.title', 'Frequently asked questions') });
-  const { data: source, loading, error, retry } = useLoad(() => apiListPublicStoreFaqs(store.storeId).then(r => r.data ?? []), [store.storeId]);
+  const { data: source, loading, error, retry } = useLoad(() => apiListPublicStoreFaqs(store.storeId).then(r => r.data ?? []), [store.storeId], `faqs:${store.storeId}`);
   const textIndex = useStoreTextIndex();
   const data = useMemo(() => (source ? source.map(f => localizeFields(f, `faq:${f._id}`, textIndex)) : source), [source, textIndex]);
   const jsonLd = data && data.length > 0 ? JSON.stringify({

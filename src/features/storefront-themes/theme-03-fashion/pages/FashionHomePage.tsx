@@ -6,15 +6,17 @@ import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { useJsonLd } from '../../core/hooks/useJsonLd';
 import { ErrorBlock, PageSkeleton } from './pageParts';
 import { useLoad } from '../../core/pageHooks';
+import { siteOrigin } from '@/utils/siteOrigin';
 
 /** Home: whatever sections the seller arranged on their home page, rendered by this theme. */
 export function FashionHomePage() {
   const { store } = useStorefront();
-  const { data, loading, error, retry } = useLoad(() => apiGetPublicHomePage(store.storeId).then(r => r.data), [store.storeId]);
+  const { data, loading, error, retry } = useLoad(() => apiGetPublicHomePage(store.storeId).then(r => r.data), [store.storeId], `home:${store.storeId}`);
   useStorefrontSeo({ title: data?.seo?.metaTitle || store.name, description: data?.seo?.metaDescription || data?.seo?.metaDesc, image: data?.seo?.ogImage });
+  const origin = siteOrigin();
   useJsonLd('website', {
-    '@context': 'https://schema.org', '@type': 'WebSite', name: store.name, url: window.location.origin,
-    potentialAction: { '@type': 'SearchAction', target: `${window.location.origin}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
+    '@context': 'https://schema.org', '@type': 'WebSite', name: store.name, url: origin,
+    potentialAction: { '@type': 'SearchAction', target: `${origin}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
   });
 
   if (loading) return <PageSkeleton hero />;

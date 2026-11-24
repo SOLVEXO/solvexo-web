@@ -17,7 +17,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 // incompatibility. Re-verify this comment's claim if a future
 // eslint-plugin-jsx-a11y major version changes its rule-visitor internals.
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'dist-ssr']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

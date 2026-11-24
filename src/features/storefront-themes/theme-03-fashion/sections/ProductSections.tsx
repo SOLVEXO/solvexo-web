@@ -43,6 +43,7 @@ function FeaturedProducts({ settings: s, colors }: { settings: Record<string, an
   const { data: items, error: failed, retry: load } = useLoad(
     () => apiGetPublicStoreProducts(store.storeId, JSON.parse(key) as PublicStoreProductsParams).then(r => r.data?.products ?? []),
     [store.storeId, key],
+    `products:${store.storeId}:${key}`,
   );
   const viewAll = useViewAll(s, ts('pg.view_all', 'View all'), featuredViewAllPath(s));
   if (items && items.length === 0) return null;

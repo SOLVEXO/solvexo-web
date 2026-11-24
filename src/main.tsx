@@ -12,6 +12,7 @@ import { captureSellerAcquisitionAttribution } from '@/utils/sellerAcquisitionAt
 import { reloadOnceForChunkError } from '@/components/comman/ErrorBoundary';
 import { i18nReady } from './i18n';
 import { HOME_HERO_SHELL_ID } from '@/seo/homeHeroShell';
+import { captureSsrSnapshot } from '@/utils/ssrSnapshot';
 import './index.css';
 
 // Phase 9 — Merchant Acquisition Tracking. Must run here, once, on the
@@ -32,7 +33,24 @@ const dropHomeShell = (path: string) => { if ((path.replace(/\/+$/, '') || '/') 
 dropHomeShell(router.state.location.pathname);
 router.subscribe(state => dropHomeShell(state.location.pathname));
 
-void i18nReady.then(() => createRoot(document.getElementById('root')!).render(
+/**
+ * A server-rendered store page is already on screen. React replaces it when it mounts, so first load what the first render needs
+ * (the storefront shell, the theme's layout and the chunk of this page): then nothing has to be waited for after the swap.
+ * Capped, so a slow connection never delays the app for long; the snapshot fallbacks cover whatever is still loading.
+ */
+function serverRenderedPageReady(): Promise<unknown> {
+  if (window.__SX_DATA__ === undefined) return Promise.resolve();
+  captureSsrSnapshot();
+  const themeId = window.__SX_BOOT__?.theme?.themeDefinitionId;
+  const loaded = Promise.all([
+    import('@/features/storefront/StorefrontLayout'),
+    import('@/features/storefront-themes/ThemedRoute'),
+    import('@/features/storefront-themes/preloadThemeShell').then(m => m.preloadThemeShell(themeId, window.location.pathname)),
+  ]).catch(() => undefined);
+  return Promise.race([loaded, new Promise(resolve => setTimeout(resolve, 3000))]);
+}
+
+void Promise.all([i18nReady, serverRenderedPageReady()]).then(() => createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ToastProvider>
       <AuthGateProvider>

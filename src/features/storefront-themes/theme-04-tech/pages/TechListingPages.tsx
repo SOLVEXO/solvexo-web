@@ -1,3 +1,4 @@
+import { siteOrigin, sitePathname } from '@/utils/siteOrigin';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { ts, tsNodes } from '@/utils/tStatic';
@@ -36,14 +37,14 @@ export function TechCollectionPage() {
   const localize = useLocalize();
   const { data, loading, error, retry } = useLoad(
     () => apiGetPublicCollectionBySlug(store.storeId, slugOrId).then(r => r.data).catch((e: { status?: number }) => { if (e?.status === 404) return null; throw e; }),
-    [store.storeId, slugOrId],
+    [store.storeId, slugOrId], `collection:${store.storeId}:${slugOrId}`,
   );
   const sections = useTemplateSections(store.storeId, 'collection', data?.templateKey || 'default');
   const collection = data ? localize.collection(data) : null;
   useStorefrontSeo({ title: collection?.seo?.metaTitle || collection?.name, description: collection?.seo?.metaDescription || collection?.description, image: collection?.image });
   const [listed, setListed] = useState<{ key: string; items: ListProduct[] }>({ key: '', items: [] });
   const scope = useMemo(() => ({ collectionId: data?._id, onProducts: (items: ListProduct[]) => setListed({ key: slugOrId, items }) }), [data?._id, slugOrId]);
-  const { origin, pathname } = window.location;
+  const origin = siteOrigin(); const pathname = sitePathname();
   const urlFor = pageUrlBuilder(origin, pathname);
   useJsonLd('collection', collection ? collectionJsonLd({ name: collection.name, description: collection.description, image: collection.image, url: `${origin}${pathname}`, origin, urlFor, products: listed.key === slugOrId ? listed.items : [] }) : null);
   useJsonLd('breadcrumb', collection ? breadcrumbJsonLd([{ name: store.name, url: urlFor('/') }, { name: collection.name, url: `${origin}${pathname}` }]) : null);

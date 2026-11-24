@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { apiListPublicStoreSectionDefs, type StoreSectionDef } from '@/api/services/storeSectionDefs';
 import { setStoreCustomSections } from '../themeManifest';
 import { storeDefToThemeDef } from './storeDefToThemeDef';
+import { peekSsr, wantSsr } from '@/utils/ssrData';
 
 /** One shared copy of each store's own (Section builder) section designs: the storefront draws `my.*` sections from it and the
  *  theme editor builds their forms from it. Loaded once, refreshed when the builder saves. */
@@ -41,8 +42,21 @@ export function resetStoreSectionDefsCache(): void { slots.clear(); setStoreCust
 
 /** The store's section designs (null while loading / on a store that has none yet is `[]`). Only fetches when `enabled`. */
 export function useStoreSectionDefs(storeId: string | undefined, enabled = true): StoreSectionDef[] | null {
+  // A server-rendered page carries the designs: the first render already draws `my.*` sections, no request. On the server
+  // (collecting pass) ask for them. Module state is filled here on purpose - the server resets it before every page.
+  if (enabled && storeId && !slots.has(storeId)) {
+    const key = `section-defs:${storeId}`;
+    const seeded = peekSsr<StoreSectionDef[]>(key);
+    if (seeded !== undefined) {
+      setStoreCustomSections(seeded.map(storeDefToThemeDef));
+      slots.set(storeId, { items: seeded, loading: false });
+    } else {
+      wantSsr(key, () => apiListPublicStoreSectionDefs(storeId).then(r => r.data ?? []));
+    }
+  }
   const slot = useSyncExternalStore(
     cb => { listeners.add(cb); return () => { listeners.delete(cb); }; },
+    () => (storeId ? slotOf(storeId) : EMPTY),
     () => (storeId ? slotOf(storeId) : EMPTY),
   );
   useEffect(() => {

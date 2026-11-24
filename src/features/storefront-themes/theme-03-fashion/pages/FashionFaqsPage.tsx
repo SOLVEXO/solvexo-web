@@ -23,7 +23,7 @@ export function FashionFaqsPage() {
       if (!(await apiPublicPageMayExist(store.storeId, 'faqs'))) return null;
       return apiGetPublicStorePage(store.storeId, 'faqs').then(r => r.data ?? null).catch(() => null);
     },
-    [store.storeId],
+    [store.storeId], `faqpage:${store.storeId}`,
   );
   if (loading) return <PageSkeleton />;
   if (data) return <FashionCustomPage slug="faqs" />;
@@ -35,7 +35,7 @@ function BuiltInFaqs() {
   const { store } = useStorefront();
   const [query, setQuery] = useState('');
   useStorefrontSeo({ title: ts('faq.title', 'Frequently asked questions'), description: ts('pg.answers_to_common_questions_about', 'Answers to common questions about shopping at {{store}}.', { store: store.name }) });
-  const { data: source, loading, error, retry } = useLoad(() => apiListPublicStoreFaqs(store.storeId).then(r => r.data ?? []), [store.storeId]);
+  const { data: source, loading, error, retry } = useLoad(() => apiListPublicStoreFaqs(store.storeId).then(r => r.data ?? []), [store.storeId], `faqs:${store.storeId}`);
   const textIndex = useStoreTextIndex();
   const data = useMemo(() => (source ? source.map(f => localizeFields(f, `faq:${f._id}`, textIndex)) : source), [source, textIndex]);
 

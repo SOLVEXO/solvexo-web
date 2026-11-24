@@ -1,3 +1,4 @@
+import { usePublicCollections, usePublicPages } from '../../core/hooks/usePublicLists';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased, textCaseOf } from '../../textCase';
 import { ts } from '@/utils/tStatic';
@@ -10,8 +11,6 @@ import { useContentLocale } from '@/features/storefront/storefrontMarket';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { TokenStorage } from '@/api/services/auth';
-import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
-import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { buildNavImageLookup, isMegaItem, navHasSchedule, normalizeNavItems } from '../../navigation/megaNav';
 import { NavBadge } from '../../navigation/NavBadge';
@@ -52,7 +51,7 @@ export function FashionNavbar() {
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [collections, setCollections] = useState<PublicCollectionSummary[]>([]);
+  const collections = usePublicCollections(store.storeId);
   // Click/touch toggle for a menu with children (hover and keyboard focus still open it on desktop).
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   // A menu the shopper just closed (chevron click / Esc): stays shut even while the pointer or focus is still on it, until they leave and come back.
@@ -81,19 +80,13 @@ export function FashionNavbar() {
     if (visible) { setOpenMenu(null); setDismissedMenu(id); button.blur(); }
     else { setDismissedMenu(null); setOpenMenu(id); }
   };
-  const [pages, setPages] = useState<PublicPageSummary[]>([]);
+  const pages = usePublicPages(store.storeId);
 
   const header = theme?.header;
   const o = readHeaderOptions(header, ts('blog.journal', 'Journal'));
   const transparent = o.transparentOnHome && pathname === '/';
   const scroll = useHeaderScroll(o.stickyMode, transparent);
 
-  useEffect(() => {
-    let off = false;
-    apiGetPublicCollections(store.storeId).then(r => { if (!off) setCollections(r.data ?? []); }).catch(() => {});
-    apiListPublicStorePages(store.storeId).then(r => { if (!off) setPages(r.data ?? []); }).catch(() => {});
-    return () => { off = true; };
-  }, [store.storeId]);
 
   // Menu items can carry show-when rules (signed-in state, country, language, schedule). The editor always shows every item.
   const editing = useInlineEditActive();

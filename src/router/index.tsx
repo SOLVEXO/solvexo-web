@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 import { hostMode, StripAdminPrefix } from '@/utils/platformHost';
+import { readBootSnapshot } from '@/utils/storefrontBootCache';
 import { consumeViewAsHandoff } from '@/utils/viewAsStore';
 
 // Seller host only: pick up the read-only "view as store" token an admin handed over (before any auth read).
@@ -89,6 +90,9 @@ const ThemedRoute = lazy(() => import('@/features/storefront-themes/ThemedRoute'
 if (getStoreSlugFromHost() || isCustomDomainCandidate()) {
   void import('@/features/storefront/StorefrontLayout');
   void import('@/features/storefront-themes/ThemedRoute');
+  // A repeat visitor's theme is known from the cached snapshot: fetch its layout + home chunks now too.
+  const cachedThemeId = readBootSnapshot()?.theme?.themeDefinitionId;
+  if (cachedThemeId) void import('@/features/storefront-themes/preloadThemeShell').then(m => m.preloadThemeShell(cachedThemeId, window.location.pathname));
 }
 const DiscountLinkPage = lazy(() => import('@/features/storefront/DiscountLinkPage'));
 const MaintenancePage = lazy(() => import('@/features/buyer/pages/MaintenancePage').then(m => ({ default: m.MaintenancePage })));

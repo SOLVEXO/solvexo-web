@@ -7,7 +7,7 @@ interface More { scope: string; posts: BlogPostSummary[]; page: number; totalPag
 
 /** First page of a blog (with loading / error / retry) plus "load more" paging that never mixes two blogs. */
 export function useBlogFeed(storeId: string, blogSlug: string | undefined, pageSize = BLOG_PAGE_SIZE) {
-  const first = useLoad(() => apiListPublicBlogPosts(storeId, blogSlug, 1, pageSize).then(r => ({ ...r.data, posts: r.data?.posts ?? [] })), [storeId, blogSlug, pageSize]);
+  const first = useLoad(() => apiListPublicBlogPosts(storeId, blogSlug, 1, pageSize).then(r => ({ ...r.data, posts: r.data?.posts ?? [] })), [storeId, blogSlug, pageSize], `blog:${storeId}:${blogSlug ?? ''}:${pageSize}`);
   const scope = `${storeId}|${blogSlug ?? ''}|${pageSize}`;
   const [more, setMore] = useState<More | null>(null);
   const extra = more && more.scope === scope ? more : null;

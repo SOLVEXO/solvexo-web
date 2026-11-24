@@ -1,3 +1,4 @@
+import { useProductReviews } from '../../core/hooks/useProductReviews';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased } from '../../textCase';
 import { imgProps } from '../components/imgProps';
@@ -6,8 +7,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Minus, Play, Plus, Star, ZoomIn } from 'lucide-react';
 import { parseProductVideo } from '@/utils/productVideo';
+import { siteOrigin, sitePathname } from '@/utils/siteOrigin';
 import type { ProductVariant } from '@/api/services/marketplace';
-import { apiGetProductReviews, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
+
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { TokenStorage, isGuestUser } from '@/api/services/auth';
@@ -100,8 +102,7 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
   // The gallery position belongs to the chosen variant: picking another variant starts at that variant's own photo.
   const [gallery, setGallery] = useState<{ vid: string; i: number }>({ vid: '', i: 0 });
   const [zoom, setZoom] = useState(false);
-  const [reviews, setReviews] = useState<{ stats: ProductReviewStats; reviews: ProductReviewEntry[] } | null>(null);
-  const [reviewsTick, setReviewsTick] = useState(0);
+  const { reviews, refetch: refetchReviews } = useProductReviews(detail?.product._id, t.pagination.reviewsPerPage);
   const [writingReview, setWritingReview] = useState(false);
   const { byProduct: myReviews, reload: reloadMyReviews } = useReviewedProducts();
 
@@ -127,13 +128,6 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
     if (v?.options?.length) setPicked(Object.fromEntries(v.options.map(o => [o.name, o.value])));
   }, [detail?.product._id, variants]);
 
-  useEffect(() => {
-    if (!detail?.product._id) return;
-    let off = false;
-    apiGetProductReviews(detail.product._id, { limit: t.pagination.reviewsPerPage, sort: 'most_helpful' }).then(r => { if (!off) setReviews({ stats: r.data.stats, reviews: r.data.reviews }); }).catch(() => {});
-    return () => { off = true; };
-  }, [detail?.product._id, reviewsTick]);
-
   const images = useMemo(() => variantGallery(variant, variants, detail?.product.images), [variant, variants, detail?.product.images]);
   // Optional product video: one more item in the gallery, first or last as the seller chose.
   const video = useMemo(() => parseProductVideo(variant?.videoUrl || detail?.product.videoUrl), [variant?.videoUrl, detail?.product.videoUrl]);
@@ -157,7 +151,8 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
   }, [images]);
 
   useStorefrontSeo({ disabled: embedded, title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
-  const { origin, pathname } = window.location;
+  const origin = siteOrigin();
+  const pathname = sitePathname();
   const pageUrl = `${origin}${pathname}`;
   useJsonLd('product', !embedded && product && variant ? productJsonLd({
     name: product.name, description: product.description, images, sku: variant.sku, vendor: detail?.product.vendor,
@@ -413,7 +408,7 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
       {t.stickyBuyBar && !embedded && <StickyBuyBar targetId="fx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={!canBuy ? tr('product.soldOut', 'Sold out') : pre ? tr('product.preorder', 'Pre-order') : tr('product.addToCart', 'Add to cart')} />}
       {writingReview && (
         <ReviewEditDialog review={myReviews.get(product._id)} target={{ productId: product._id, productName: product.name, variantId: variant._id }}
-          onClose={() => setWritingReview(false)} onSaved={() => { setWritingReview(false); reloadMyReviews(); setReviewsTick(n => n + 1); }} />
+          onClose={() => setWritingReview(false)} onSaved={() => { setWritingReview(false); reloadMyReviews(); refetchReviews(); }} />
       )}
       {zoom && <FashionImageLightbox images={images} index={photoIndex} alt={product.name} onIndexChange={i => setImageIndex(mediaOfPhoto(i))} onClose={() => setZoom(false)} />}
     </ProductPageContext.Provider>

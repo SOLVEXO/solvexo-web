@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Link } from 'react-router-dom';
 import type { Block, Section } from '@/api/services/storefrontTypes';
-import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
+import { usePublicCollectionsOrNull } from './core/hooks/usePublicLists';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { handleOf } from '@/utils/activeStoreText';
 import { imageFit } from './imageFit';
@@ -31,12 +31,7 @@ export interface CollectionTileData {
  *  No tiles added = the automatic list (first `limit` collections). Tiles added = exactly those tiles, in order. */
 export function useCollectionTiles(section: Section, blocks: Block[]): CollectionTileData[] | null {
   const { store } = useStorefront();
-  const [items, setItems] = useState<PublicCollectionSummary[] | null>(null);
-  useEffect(() => {
-    let off = false;
-    apiGetPublicCollections(store.storeId).then(r => { if (!off) setItems(r.data ?? []); }).catch(() => { if (!off) setItems([]); });
-    return () => { off = true; };
-  }, [store.storeId]);
+  const items = usePublicCollectionsOrNull(store.storeId);
   const limit = Math.min(24, Math.max(1, Number(section.settings.limit) || 6));
   const showDesc = section.settings.showDescription === true;
   return useMemo(() => {

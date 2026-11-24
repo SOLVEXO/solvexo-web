@@ -6,7 +6,22 @@ import type { StoreThemeData } from '@/api/services/storeTheme';
  * (stale-while-revalidate): the layout shows the cached store immediately and refreshes it from the server in the
  * background. Public data only (what the storefront already receives) and never kept for a password-gated store.
  */
-export interface BootSnapshot { store: PublicStoreData; theme: StoreThemeData; at: number }
+export interface BootSnapshot {
+  store: PublicStoreData;
+  theme: StoreThemeData;
+  at: number;
+  /** Home page data when it came inline from the edge (so the first paint needs no request for it). */
+  home?: unknown;
+  /**
+   * Came from the edge HTML (shared by every visitor of the host), not from this browser's own last visit. It carries no
+   * per-visitor field (`cookieBannerEnabled` is left out): the layout waits for the real store response before it decides
+   * cookie consent, so no tracking script ever starts from this copy alone.
+   */
+  provisional?: boolean;
+}
+
+/** Filled by `api/storefront-document.js` for a plain public store (see that file). */
+declare global { interface Window { __SX_BOOT__?: BootSnapshot } }
 
 const VERSION = 'v1';
 const MAX_AGE_MS = 7 * 24 * 3600 * 1000;
@@ -16,6 +31,11 @@ const keyFor = (host: string) => `solvexo:sf-boot:${VERSION}:${host.toLowerCase(
 
 export function readBootSnapshot(host: string = window.location.hostname): BootSnapshot | null {
   try {
+    // The edge already put this store's data into the HTML: fresher than anything this browser stored last time.
+    const inline = typeof window !== 'undefined' ? window.__SX_BOOT__ : undefined;
+    if (inline?.store?.storeId && inline.theme && (!inline.store.privacyMode || inline.store.privacyMode === 'public')) {
+      return { ...inline, at: typeof inline.at === 'number' ? inline.at : Date.now(), provisional: true };
+    }
     const raw = localStorage.getItem(keyFor(host));
     if (!raw) return null;
     const snap = JSON.parse(raw) as BootSnapshot;

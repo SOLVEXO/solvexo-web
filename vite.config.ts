@@ -30,8 +30,11 @@ function seoFiles(): Plugin {
   }
 }
 
-export default defineConfig({
-  plugins: [react(), tailwindcss(), seoFiles()],
+// `isSsrBuild` = the server bundle for storefront rendering (`vite build --ssr src/entry-server.tsx --outDir dist-ssr`, see vercel.json).
+export default defineConfig(({ isSsrBuild }) => ({
+  plugins: [react(), tailwindcss(), ...(isSsrBuild ? [] : [seoFiles()])],
+  // The server bundle must be self-contained: the serverless function ships only what the bundle contains.
+  ssr: isSsrBuild ? { noExternal: true } : undefined,
   server: {
     port: 3000,
     // Store subdomains (`hello.localhost:3000`) are a real, separate host
@@ -40,11 +43,14 @@ export default defineConfig({
     allowedHosts: ['.localhost'],
   },
   build: {
+    // The browser build writes a manifest so the edge function can link a theme's stylesheet + scripts before the page loads.
+    manifest: !isSsrBuild,
+    copyPublicDir: !isSsrBuild,
     rollupOptions: {
       output: {
         // Heavy libraries get their own long-cached chunks so the app shell stays small and a deploy does not re-download them.
         manualChunks(id: string) {
-          if (!id.includes('node_modules')) return undefined;
+          if (isSsrBuild || !id.includes('node_modules')) return undefined;
           const pkg = id.split('node_modules/').pop()?.split('/')[0] ?? '';
           if (['react', 'react-dom', 'react-router', 'react-router-dom', 'scheduler'].includes(pkg)) return 'vendor-react';
           // Charts and Stripe are NOT grouped here any more: a named group also captured small shared pieces the
@@ -61,4 +67,4 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-})
+}))

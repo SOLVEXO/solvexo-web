@@ -1,10 +1,11 @@
 {
+  "buildCommand": "npm run build && npx vite build --ssr src/entry-server.tsx --outDir dist-ssr",
   "regions": [
     "sin1"
   ],
   "functions": {
     "api/storefront-document.js": {
-      "includeFiles": "dist/index.html"
+      "includeFiles": "{dist/index.html,dist/.vite/manifest.json,dist-ssr/**}"
     }
   },
   "headers": [

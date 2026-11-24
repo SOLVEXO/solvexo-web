@@ -1,3 +1,4 @@
+import { siteOrigin, sitePathname } from '@/utils/siteOrigin';
 import { VariantOptionPicker } from '../../core/product/VariantOptionPicker';
 import { cased } from '../../textCase';
 import { buildOptionValues, resolveOptionStyle } from '../../core/product/variantOptions';
@@ -118,7 +119,7 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
   const wholesale = useWholesaleGate();
   const wholesalePrice = useWholesalePrice(variant?._id, qty, wholesale.approved);
 
-  const { origin, pathname } = window.location;
+  const origin = siteOrigin(); const pathname = sitePathname();
   const pageUrl = `${origin}${pathname}`;
   useStorefrontSeo({ disabled: embedded, title: product?.name, description: product?.description?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160), image: images[0] });
   useJsonLd('product', !embedded && product && variant ? productJsonLd({

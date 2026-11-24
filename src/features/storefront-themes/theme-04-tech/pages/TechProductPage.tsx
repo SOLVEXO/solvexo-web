@@ -1,3 +1,5 @@
+import { useProductReviews } from '../../core/hooks/useProductReviews';
+import { siteOrigin, sitePathname } from '@/utils/siteOrigin';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased } from '../../textCase';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -5,7 +7,7 @@ import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { Minus, Plus, ShoppingCart, ZoomIn } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
 import type { ProductVariant } from '@/api/services/marketplace';
-import { apiGetProductReviews, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
+
 import { TokenStorage, isGuestUser } from '@/api/services/auth';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
@@ -96,8 +98,7 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
   const [qty, setQty] = useState(1);
   const [gallery, setGallery] = useState<{ vid: string; i: number }>({ vid: '', i: 0 });
   const [zoom, setZoom] = useState(false);
-  const [reviews, setReviews] = useState<{ stats: ProductReviewStats; reviews: ProductReviewEntry[] } | null>(null);
-  const [reviewsTick, setReviewsTick] = useState(0);
+  const { reviews, refetch: refetchReviews } = useProductReviews(detail?.product._id, 5);
   const [writingReview, setWritingReview] = useState(false);
   const { byProduct: myReviews, reload: reloadMyReviews } = useReviewedProducts();
 
@@ -124,19 +125,12 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
     if (v?.options?.length) setPicked(Object.fromEntries(v.options.map(o => [o.name, o.value])));
   }, [detail?.product._id, variants]);
 
-  useEffect(() => {
-    if (!detail?.product._id) return;
-    let off = false;
-    apiGetProductReviews(detail.product._id, { limit: 5, sort: 'most_helpful' }).then(r => { if (!off) setReviews({ stats: r.data.stats, reviews: r.data.reviews }); }).catch(() => {});
-    return () => { off = true; };
-  }, [detail?.product._id, reviewsTick]);
-
   const images = useMemo(() => variantGallery(variant, variants, detail?.product.images), [variant, variants, detail?.product.images]);
   const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, images.length - 1)) : 0;
   const setImageIndex = (i: number) => setGallery({ vid: variant?._id ?? '', i });
 
   useStorefrontSeo({ disabled: embedded, title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
-  const { origin, pathname } = window.location;
+  const origin = siteOrigin(); const pathname = sitePathname();
   const pageUrl = `${origin}${pathname}`;
   useJsonLd('product', !embedded && product && variant ? productJsonLd({
     name: product.name, description: product.description, images, sku: variant.sku, vendor: detail?.product.vendor,
@@ -380,7 +374,7 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
       {b.stickyBuyBar && !embedded && <StickyBuyBar targetId="tx-buy" name={product.name} price={show(variant.price)} disabled={!canBuy} loading={busy} onAdd={() => add(false)} label={addLabel} />}
       {writingReview && (
         <ReviewEditDialog review={myReviews.get(product._id)} target={{ productId: product._id, productName: product.name, variantId: variant._id }}
-          onClose={() => setWritingReview(false)} onSaved={() => { setWritingReview(false); reloadMyReviews(); setReviewsTick(n => n + 1); }} />
+          onClose={() => setWritingReview(false)} onSaved={() => { setWritingReview(false); reloadMyReviews(); refetchReviews(); }} />
       )}
       {zoom && <TechImageLightbox images={images} index={imageIndex} alt={product.name} onIndexChange={setImageIndex} onClose={() => setZoom(false)} />}
     </ProductPageContext.Provider>

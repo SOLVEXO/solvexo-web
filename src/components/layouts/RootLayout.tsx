@@ -10,13 +10,14 @@ import { ToastContainer } from '@/components/comman/ui/ToastContainer';
 import { GoogleOneTapPrompt } from '@/components/comman/ui/GoogleOneTapPrompt';
 import { SiteAnalyticsTracker } from '@/components/comman/SiteAnalyticsTracker';
 import { SeoHead } from '@/components/comman/SeoHead';
+import { SsrSnapshot } from '@/components/comman/SsrSnapshot';
 import { SiteLanguageProvider } from '@/i18n/site/SiteLanguageProvider';
 
 // A store's own host must never show the platform's orange loader: its visitors never signed up to Solvexo.
 const ON_STORE_HOST = !!(getStoreSlugFromHost() || isCustomDomainCandidate());
 
 function PageSpinner() {
-  if (ON_STORE_HOST) return <div className="min-h-[55vh]" aria-busy="true" />;
+  if (ON_STORE_HOST) return <SsrSnapshot fallback={<div className="min-h-[55vh]" aria-busy="true" />} />;
   return (
     <div className="flex items-center justify-center min-h-[55vh]">
       <div className="w-5 h-5 rounded-full border-2 border-brand-orange border-t-transparent animate-spin" />

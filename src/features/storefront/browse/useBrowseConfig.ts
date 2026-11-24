@@ -24,7 +24,7 @@ const NONE: BrowseSettings = { showCounts: true };
 export function useBrowseConfig(): BrowseSettings {
   const { store } = useStorefront();
   const storeId = store?.storeId;
-  const cfg = useSyncExternalStore(cb => { listeners.add(cb); return () => { listeners.delete(cb); }; }, () => (storeId ? cache.get(storeId) : undefined));
+  const cfg = useSyncExternalStore(cb => { listeners.add(cb); return () => { listeners.delete(cb); }; }, () => (storeId ? cache.get(storeId) : undefined), () => (storeId ? cache.get(storeId) : undefined));
   useEffect(() => { if (storeId) load(storeId); }, [storeId]);
   return cfg ? { filters: cfg.filters, sorts: cfg.sorts, showCounts: cfg.showCounts !== false } : NONE;
 }

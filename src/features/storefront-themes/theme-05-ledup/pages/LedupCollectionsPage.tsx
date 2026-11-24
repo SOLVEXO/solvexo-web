@@ -12,7 +12,7 @@ import { LedupBox, LedupError, LedupSkeleton } from '../ui/ledupUi';
 export function LedupCollectionsPage() {
   const { store } = useStorefront();
   useStorefrontSeo({ title: ts('nav.collections', 'Collections') });
-  const { data, loading, error, retry } = useLoad(() => apiGetPublicCollections(store.storeId).then(r => r.data ?? []), [store.storeId]);
+  const { data, loading, error, retry } = useLoad(() => apiGetPublicCollections(store.storeId).then(r => r.data ?? []), [store.storeId], `collections:${store.storeId}`);
 
   return (
     <div className="py-16">

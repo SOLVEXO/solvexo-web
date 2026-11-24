@@ -1,3 +1,4 @@
+import { siteOrigin, sitePathname } from '@/utils/siteOrigin';
 import { useState } from 'react';
 import { ts } from '@/utils/tStatic';
 import { Link, useParams } from 'react-router-dom';
@@ -24,7 +25,7 @@ export function TechBlogIndexPage() {
   const title = feed.title ?? ts('blog.label', 'Blog');
   useStorefrontSeo({ title, description: ts('pg.stories_guides_and_news_from_store', 'Stories, guides and news from {{store}}.', { store: store.name }) });
 
-  const { origin, pathname } = window.location;
+  const origin = siteOrigin(); const pathname = sitePathname();
   const urlFor = pageUrlBuilder(origin, pathname);
   const description = ts('pg.stories_guides_and_news_from_store', 'Stories, guides and news from {{store}}.', { store: store.name });
   useJsonLd('blog', !feed.loading && !feed.error && feed.posts.length ? blogJsonLd({

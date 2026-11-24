@@ -1,3 +1,4 @@
+import { usePublicCollections, usePublicPages } from '../../core/hooks/usePublicLists';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased } from '../../textCase';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -10,8 +11,6 @@ import { useContentLocale } from '@/features/storefront/storefrontMarket';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { TokenStorage } from '@/api/services/auth';
-import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
-import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { useCartDrawer } from '../../cartDrawerContext';
 import { buildNavImageLookup, isMegaItem, navHasSchedule, normalizeNavItems } from '../../navigation/megaNav';
 import { NavAnchor } from '../../navigation/NavAnchor';
@@ -176,8 +175,8 @@ export function TechNavbar() {
   const { openDrawer, mounted: drawerMounted } = useCartDrawer();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [collections, setCollections] = useState<PublicCollectionSummary[]>([]);
-  const [pages, setPages] = useState<PublicPageSummary[]>([]);
+  const collections = usePublicCollections(store.storeId);
+  const pages = usePublicPages(store.storeId);
   const header = theme?.header;
   const o = readHeaderOptions(header, ts('blog.label', 'Blog'));
   const scroll = useHeaderScroll(t.stickyHeader ? 'always' : 'off', false);
@@ -186,12 +185,6 @@ export function TechNavbar() {
   const searchFirst = variant === 'search-first';
   const padY = variant === 'compact' ? 6 : 12;
 
-  useEffect(() => {
-    let off = false;
-    apiGetPublicCollections(store.storeId).then(r => { if (!off) setCollections(r.data ?? []); }).catch(() => {});
-    apiListPublicStorePages(store.storeId).then(r => { if (!off) setPages(r.data ?? []); }).catch(() => {});
-    return () => { off = true; };
-  }, [store.storeId]);
 
   // Menu items can carry show-when rules (signed-in state, country, language, schedule). The editor always shows every item.
   const editing = useInlineEditActive();

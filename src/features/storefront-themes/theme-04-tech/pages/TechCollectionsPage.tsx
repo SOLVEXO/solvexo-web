@@ -13,7 +13,7 @@ import { useLoad } from '../../core/pageHooks';
 export function TechCollectionsPage() {
   const { store } = useStorefront();
   const localize = useLocalize();
-  const { data, loading, error, retry } = useLoad(() => apiGetPublicCollections(store.storeId).then(r => r.data ?? []), [store.storeId]);
+  const { data, loading, error, retry } = useLoad(() => apiGetPublicCollections(store.storeId).then(r => r.data ?? []), [store.storeId], `collections:${store.storeId}`);
   useStorefrontSeo({ title: ts('collections.title', 'Collections') });
 
   if (loading) return <PageSkeleton />;

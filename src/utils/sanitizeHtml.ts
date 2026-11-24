@@ -3,6 +3,8 @@
 // every element/attribute that can run code or leave the page, and returns
 // the cleaned markup. The backend rejects the obvious cases on save; this is
 // the render-time guarantee.
+import { sanitizeHtmlServer } from './sanitizeHtmlServer';
+
 const BLOCKED_TAGS = ['script', 'iframe', 'object', 'embed', 'link', 'meta', 'base', 'form', 'frame', 'frameset', 'applet', 'noscript', 'template', 'svg', 'math'];
 const URL_ATTRS = ['href', 'src', 'srcset', 'action', 'formaction', 'xlink:href', 'poster', 'background', 'data'];
 
@@ -13,7 +15,9 @@ function isSafeUrl(value: string): boolean {
 }
 
 export function sanitizeHtml(input: string): string {
-  if (!input || typeof DOMParser === 'undefined') return '';
+  if (!input) return '';
+  // No DOM (the page is being rendered on the server): the strict allow-list sanitizer, never the raw text.
+  if (typeof DOMParser === 'undefined') return sanitizeHtmlServer(input);
   const doc = new DOMParser().parseFromString(`<body>${input}</body>`, 'text/html');
   doc.body.querySelectorAll(BLOCKED_TAGS.join(',')).forEach(el => el.remove());
   doc.body.querySelectorAll('*').forEach(el => {

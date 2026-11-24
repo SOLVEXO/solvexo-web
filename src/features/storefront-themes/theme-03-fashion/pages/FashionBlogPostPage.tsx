@@ -1,3 +1,4 @@
+import { siteOrigin } from '@/utils/siteOrigin';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { AccentText } from '../ui/AccentText';
 import { ts, tsNodes } from '@/utils/tStatic';
@@ -34,15 +35,15 @@ export function FashionBlogPostPage() {
       .then(r => Object.fromEntries(r.data.map(v => [`${v.namespace}:${v.key}`, v.value])) as Record<string, string>)
       .catch(() => ({} as Record<string, string>));
     return { post, dynamic };
-  }, [store.storeId, postSlug]);
+  }, [store.storeId, postSlug], `post:${store.storeId}:${postSlug}`);
 
-  const related = useLoad(() => apiListPublicBlogPosts(store.storeId, blogSlug, 1, 12).then(r => r.data?.posts ?? []).catch(() => []), [store.storeId, blogSlug]);
+  const related = useLoad(() => apiListPublicBlogPosts(store.storeId, blogSlug, 1, 12).then(r => r.data?.posts ?? []).catch(() => []), [store.storeId, blogSlug], `posts:${store.storeId}:${blogSlug ?? ''}:related`);
   const { before, after } = splitAround(useTemplateSections(store.storeId, 'page', 'blog-article'), 'article_content');
 
   const post = data?.post ?? null;
   useStorefrontSeo({ title: post ? (post.seoTitle || post.title) : ts('blog.journal', 'Journal'), description: post ? (post.seoDescription || post.excerpt || undefined) : undefined, image: post?.coverImage ?? undefined });
 
-  const origin = window.location.origin;
+  const origin = siteOrigin();
   const urlFor = pageUrlBuilder(origin, pathname);
   const url = `${origin}${pathname}`;
   useJsonLd('article', post ? articleJsonLd({

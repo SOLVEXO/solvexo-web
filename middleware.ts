@@ -44,6 +44,9 @@ export default function middleware(request: Request) {
   const target = new URL('/api/storefront-document', request.url);
   target.searchParams.set('host', hostname);
   target.searchParams.set('path', pathname);
+  // `?__ssr=1` renders this one request on the server even while SSR is not switched on for everyone; `?__ssr=0` skips it.
+  const ssrParam = new URL(request.url).searchParams.get('__ssr');
+  if (ssrParam === '1' || ssrParam === '0') target.searchParams.set('ssr', ssrParam);
   return rewrite(target);
 }
 

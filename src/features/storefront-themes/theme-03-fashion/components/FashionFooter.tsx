@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { usePublicPages } from '../../core/hooks/usePublicLists';
 import { handleOf } from '@/utils/activeStoreText';
 import { ts, tsNodes } from '@/utils/tStatic';
 import { Link } from 'react-router-dom';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { VerifiedBusinessBadge } from '../../VerifiedBusinessBadge';
 import { PoweredBySolvexo } from '../../PoweredBySolvexo';
 import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../navigation/headerOptions';
@@ -19,12 +18,7 @@ import { EditableText, useInlineEditActive } from '../../inlineEdit';
 /** Footer: a dark rounded panel with the retailer's columns, newsletter and socials, plus a legal row. */
 export function FashionFooter() {
   const { store, theme } = useStorefront();
-  const [pages, setPages] = useState<PublicPageSummary[]>([]);
-  useEffect(() => {
-    let off = false;
-    apiListPublicStorePages(store.storeId).then(r => { if (!off) setPages(r.data ?? []); }).catch(() => {});
-    return () => { off = true; };
-  }, [store.storeId]);
+  const pages = usePublicPages(store.storeId);
 
   const opts = readFooterOptions(theme?.footer, ts('blog.journal', 'Journal'));
   const bg = opts.bgColor ?? t.colors.ink;

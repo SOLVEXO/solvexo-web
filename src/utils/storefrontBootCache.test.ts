@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { clearBootSnapshot, readBootSnapshot, writeBootSnapshot } from './storefrontBootCache';
 import type { PublicStoreData } from '@/api/services/store';
 import type { StoreThemeData } from '@/api/services/storeTheme';
@@ -39,6 +39,29 @@ describe('storefront boot cache', () => {
     expect(readBootSnapshot('h.test')).toBeNull();
     localStorage.setItem(key, '{not json');
     expect(readBootSnapshot('h.test')).toBeNull();
+  });
+
+  describe('edge-inlined copy (window.__SX_BOOT__)', () => {
+    afterEach(() => { delete window.__SX_BOOT__; });
+
+    it('wins over the browser copy and is marked provisional', () => {
+      writeBootSnapshot(store({ name: 'Old' }), theme, window.location.hostname);
+      window.__SX_BOOT__ = { store: store({ name: 'Fresh' }), theme, at: Date.now(), home: { sections: [] } };
+      const snap = readBootSnapshot();
+      expect(snap?.store.name).toBe('Fresh');
+      expect(snap?.provisional).toBe(true);
+      expect(snap?.home).toEqual({ sections: [] });
+    });
+
+    it('is never used for a password or coming-soon store', () => {
+      window.__SX_BOOT__ = { store: store({ privacyMode: 'password' }), theme, at: Date.now() };
+      expect(readBootSnapshot()).toBeNull();
+    });
+
+    it('needs a theme to be used', () => {
+      window.__SX_BOOT__ = { store: store(), theme: undefined as unknown as StoreThemeData, at: Date.now() };
+      expect(readBootSnapshot()).toBeNull();
+    });
   });
 
   it('clear removes it', () => {

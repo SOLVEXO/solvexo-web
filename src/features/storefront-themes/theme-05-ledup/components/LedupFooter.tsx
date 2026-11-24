@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { usePublicPages } from '../../core/hooks/usePublicLists';
 import { Link } from 'react-router-dom';
 import { handleOf } from '@/utils/activeStoreText';
 import { ts, tsNodes } from '@/utils/tStatic';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { VerifiedBusinessBadge } from '../../VerifiedBusinessBadge';
 import { PoweredBySolvexo } from '../../PoweredBySolvexo';
 import { expandCopyright, readFooterOptions, visibleFooterBlocks } from '../../navigation/headerOptions';
@@ -17,12 +16,7 @@ import { LedupSectionRenderer } from '../sections/LedupSectionRenderer';
 /** Curved espresso footer. Everything in it is the seller's: footer blocks (columns, contact, newsletter, social, payment icons), legal pages and copyright. */
 export function LedupFooter() {
   const { store, theme } = useStorefront();
-  const [pages, setPages] = useState<PublicPageSummary[]>([]);
-  useEffect(() => {
-    let off = false;
-    apiListPublicStorePages(store.storeId).then(r => { if (!off) setPages(r.data ?? []); }).catch(() => {});
-    return () => { off = true; };
-  }, [store.storeId]);
+  const pages = usePublicPages(store.storeId);
 
   const opts = readFooterOptions(theme?.footer, ts('blog.label', 'Blog'));
   const fg = opts.textColor ?? t.colors.footerInk;

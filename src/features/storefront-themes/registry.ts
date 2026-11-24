@@ -14,6 +14,10 @@ import { FashionSearchPage } from './theme-03-fashion/pages/FashionSearchPage';
 import { FashionNotFoundPage } from './theme-03-fashion/pages/FashionNotFoundPage';
 import { FashionStorefrontGate } from './theme-03-fashion/pages/FashionStorefrontGate';
 import { FashionCookieBanner } from './theme-03-fashion/components/FashionCookieBanner';
+import { FashionBootSkeleton } from './theme-03-fashion/layout/FashionBootSkeleton';
+import { TechBootSkeleton } from './theme-04-tech/layout/TechBootSkeleton';
+import { LedupBootSkeleton } from './theme-05-ledup/layout/LedupBootSkeleton';
+import type { BootSkeletonProps } from './core/bootPalette';
 import { FashionAuthGateModal } from './theme-03-fashion/components/FashionAuthGateModal';
 // Pages a visitor rarely opens first (checkout, account, orders, blog, auth...) load on demand so the storefront opens faster.
 const FashionCheckoutPage = lazy(() => import('./theme-03-fashion/pages/FashionCheckoutPage').then(m => ({ default: m.FashionCheckoutPage })));
@@ -166,6 +170,8 @@ interface NewThemeImpl {
   pages: Partial<Record<StorefrontRouteKey, ComponentType>>;
   /** Rendered instead of `Layout`/`pages` while the store is password/coming-soon gated and this tab has not unlocked it. */
   GatePage: ComponentType<{ store: PublicStoreData; onUnlocked: () => void }>;
+  /** First-paint placeholder in this theme's own look, shown while its layout chunk / the store data arrive. */
+  BootSkeleton?: ComponentType<BootSkeletonProps>;
   /** The visitor's cookie-consent banner in this theme's own look. A theme without one gets the platform banner. */
   CookieBanner?: ComponentType<CookieBannerProps>;
   /** The "sign in to continue" pop-up in this theme's own look. A theme without one gets the platform pop-up. */
@@ -187,6 +193,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
   'theme-03-fashion': {
     Layout: FashionLayout,
     GatePage: FashionStorefrontGate,
+    BootSkeleton: FashionBootSkeleton,
     CookieBanner: FashionCookieBanner,
     AuthGateModal: FashionAuthGateModal,
     pages: {
@@ -247,6 +254,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
   'theme-04-tech': {
     Layout: TechLayout,
     GatePage: TechGate,
+    BootSkeleton: TechBootSkeleton,
     CookieBanner: TechCookie,
     AuthGateModal: TechAuthGate,
     pages: {
@@ -300,6 +308,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
   'theme-05-ledup': {
     Layout: LedupLayout,
     GatePage: LedupGate,
+    BootSkeleton: LedupBootSkeleton,
     CookieBanner: LedupCookie,
     AuthGateModal: LedupAuthGate,
     pages: {

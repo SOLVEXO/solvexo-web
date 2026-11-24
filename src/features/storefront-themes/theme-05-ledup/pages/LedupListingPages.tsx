@@ -1,3 +1,4 @@
+import { siteOrigin, sitePathname } from '@/utils/siteOrigin';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { LedupSectionRenderer } from '../sections';
 import { splitAround, useLoad, useTemplateSections } from '../../core/pageHooks';
@@ -25,11 +26,11 @@ export function LedupCollectionPage() {
   const localize = useLocalize();
   const { data, loading, error, retry } = useLoad(
     () => apiGetPublicCollectionBySlug(store.storeId, slugOrId).then(r => r.data).catch((e: { status?: number }) => { if (e?.status === 404) return null; throw e; }),
-    [store.storeId, slugOrId],
+    [store.storeId, slugOrId], `collection:${store.storeId}:${slugOrId}`,
   );
   const collection = data ? localize.collection(data) : null;
   useStorefrontSeo({ title: collection?.seo?.metaTitle || collection?.name, description: collection?.seo?.metaDescription || collection?.description, image: collection?.image });
-  const { origin, pathname } = window.location;
+  const origin = siteOrigin(); const pathname = sitePathname();
   const urlFor = pageUrlBuilder(origin, pathname);
   useJsonLd('collection', collection ? collectionJsonLd({ name: collection.name, description: collection.description, image: collection.image, url: `${origin}${pathname}`, origin, urlFor, products: [] }) : null);
   useJsonLd('breadcrumb', collection ? breadcrumbJsonLd([{ name: store.name, url: urlFor('/') }, { name: collection.name, url: `${origin}${pathname}` }]) : null);

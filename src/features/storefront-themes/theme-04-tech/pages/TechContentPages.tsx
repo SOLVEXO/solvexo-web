@@ -7,6 +7,7 @@ import { useLocalize } from '@/hooks/useLocalize';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { useJsonLd } from '../../core/hooks/useJsonLd';
 import { useLoad } from '../../core/pageHooks';
+import { siteOrigin } from '@/utils/siteOrigin';
 import { TechNotFoundPage } from './TechNotFoundPage';
 import { TechSectionRenderer } from '../sections';
 import { TechBox, TechError, TechSkeleton } from '../ui/techUi';
@@ -14,11 +15,12 @@ import { TechBox, TechError, TechSkeleton } from '../ui/techUi';
 /** Home: whatever sections the seller arranged on their home page, rendered by this theme. */
 export function TechHomePage() {
   const { store } = useStorefront();
-  const { data, loading, error, retry } = useLoad(() => apiGetPublicHomePage(store.storeId).then(r => r.data), [store.storeId]);
+  const { data, loading, error, retry } = useLoad(() => apiGetPublicHomePage(store.storeId).then(r => r.data), [store.storeId], `home:${store.storeId}`);
   useStorefrontSeo({ title: data?.seo?.metaTitle || store.name, description: data?.seo?.metaDescription || data?.seo?.metaDesc, image: data?.seo?.ogImage });
+  const origin = siteOrigin();
   useJsonLd('website', {
-    '@context': 'https://schema.org', '@type': 'WebSite', name: store.name, url: window.location.origin,
-    potentialAction: { '@type': 'SearchAction', target: `${window.location.origin}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
+    '@context': 'https://schema.org', '@type': 'WebSite', name: store.name, url: origin,
+    potentialAction: { '@type': 'SearchAction', target: `${origin}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
   });
   if (loading) return <TechBox><TechSkeleton h={280} rows={3} /></TechBox>;
   if (error || !data) return <TechError message={ts('pg.we_couldn_t_load_the_store_right_now', "We couldn't load the store right now.")} onRetry={retry} />;
@@ -36,7 +38,7 @@ export function TechCustomPage({ slug }: { slug?: string } = {}) {
       if (!(await apiPublicPageMayExist(store.storeId, pageSlug))) return null;
       return apiGetPublicStorePage(store.storeId, pageSlug).then(r => r.data).catch((e: { status?: number }) => { if (e?.status === 404) return null; throw e; });
     },
-    [store.storeId, pageSlug],
+    [store.storeId, pageSlug], `page:${store.storeId}:${pageSlug}`,
   );
   const page = data ? localize.page(data) : null;
   useStorefrontSeo({ title: page?.seo?.metaTitle || page?.title, description: page?.seo?.metaDescription || page?.seo?.metaDesc, image: page?.seo?.ogImage, noindex: page?.seo?.noindex });

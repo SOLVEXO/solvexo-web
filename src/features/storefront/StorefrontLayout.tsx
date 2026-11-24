@@ -1,10 +1,11 @@
-import { Suspense, useEffect, useLayoutEffect, useRef, useState, useMemo, type ComponentType } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useState, useMemo, type ComponentType } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { SkeletonBox } from '@/components/comman/ui';
 import { Store } from 'lucide-react';
 import { apiGetPublicStore, apiGetStorefrontBootstrap, apiResolveStoreByDomain, type PublicStoreData } from '@/api/services/store';
 import { seedDedupedGet } from '@/utils/dedupedGet';
+import { putSsr } from '@/utils/ssrData';
 import { apiGetPublicStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
 import { getStoreSlugFromHost } from '@/utils/storefrontUrl';
 import { CartProvider } from '@/contexts/CartContext';
@@ -36,6 +37,8 @@ import { PublishedLiquidStorefront } from './PublishedLiquidStorefront';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { isLiquidStorefrontRoute } from './liquidStorefrontRouting';
 import { readBootSnapshot, writeBootSnapshot, clearBootSnapshot } from '@/utils/storefrontBootCache';
+import { preloadThemeShell } from '@/features/storefront-themes/preloadThemeShell';
+import { SsrSnapshot } from '@/components/comman/SsrSnapshot';
 
 function cookieConsentKey(storeId: string) { return `solvexo:cookie-consent:${storeId}`; }
 
@@ -90,12 +93,21 @@ export function StorefrontLayout() {
   const location = useLocation();
   const slug = getStoreSlugFromHost();
   // Repeat visit: paint the last-known store + theme at once and refresh them in the background (see storefrontBootCache.ts).
-  const boot = useRef(readBootSnapshot());
-  const [store, setStore] = useState<PublicStoreData | null>(() => boot.current?.store ?? null);
-  const [theme, setTheme] = useState<StoreThemeData | null>(() => boot.current?.theme ?? null);
+  const [boot] = useState(() => {
+    const snapshot = readBootSnapshot();
+    // Edge-inlined copy: hand the home page to the components that ask for it so the first paint makes no request.
+    if (snapshot?.provisional) {
+      const id = snapshot.store.storeId;
+      seedDedupedGet(`theme:${id}`, { success: true, data: snapshot.theme });
+      if (snapshot.home) { seedDedupedGet(`home:${id}`, { success: true, data: snapshot.home }); putSsr(`home:${id}`, snapshot.home); }
+    }
+    return snapshot;
+  });
+  const [store, setStore] = useState<PublicStoreData | null>(() => boot?.store ?? null);
+  const [theme, setTheme] = useState<StoreThemeData | null>(() => boot?.theme ?? null);
   // Set while rendering (not in an effect) so the very first price already follows the seller's format.
   setCurrencyDisplay(store?.currencyDisplay);
-  const [loading, setLoading] = useState(() => boot.current === null);
+  const [loading, setLoading] = useState(() => boot === null);
   const [error, setError] = useState('');
   // The server could not be reached (network error / 5xx): a different message from a store that really does not exist.
   const [unavailable, setUnavailable] = useState(false);
@@ -103,7 +115,7 @@ export function StorefrontLayout() {
   // unlock, checked the instant the store loads so a password-protected
   // store never flashes its real content first. See `FashionStorefrontGate`/
   // `FashionStorefrontGate`'s own doc comments for the full rationale.
-  const [unlocked, setUnlocked] = useState(() => boot.current !== null);
+  const [unlocked, setUnlocked] = useState(() => boot !== null);
   // Real Customer-Privacy cookie consent — `null` means "not yet decided,
   // show the banner"; a real object means the visitor (or a store that
   // never enabled `cookieBannerEnabled`, resolved to full consent
@@ -111,8 +123,11 @@ export function StorefrontLayout() {
   // Preferences" semantics — see the pixel effect below, which now waits on
   // this instead of firing unconditionally.
   const [cookieConsent, setCookieConsent] = useState<CookieConsentCategories | null>(() => {
-    const cached = boot.current?.store;
-    return cached ? (!cached.cookieBannerEnabled ? FULL_CONSENT : readSavedConsent(cached.storeId)) : null;
+    const cached = boot?.store;
+    if (!cached) return null;
+    // Edge copy has no per-visitor cookie rule: use only a consent this visitor already gave, otherwise wait for the real response.
+    if (boot?.provisional) return readSavedConsent(cached.storeId);
+    return !cached.cookieBannerEnabled ? FULL_CONSENT : readSavedConsent(cached.storeId);
   });
 
   // Affiliate referral links land here with ?ref=CODE — remembered for
@@ -132,13 +147,15 @@ export function StorefrontLayout() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!boot.current) setLoading(true);
+    if (!boot) setLoading(true);
     setError('');
     setUnavailable(false);
     // One request for store + theme + home page; an older API without it falls back to the separate calls.
     const load = apiGetStorefrontBootstrap(slug ? { slug } : { host: window.location.hostname })
       .then(b => {
         const id = b.data.store.storeId;
+        // First visit: the theme is known the moment the bootstrap arrives, so its chunks start downloading now.
+        void preloadThemeShell((b.data.theme as { themeDefinitionId?: string | null } | null)?.themeDefinitionId, window.location.pathname);
         if (b.data.theme) seedDedupedGet(`theme:${id}`, { success: true, data: b.data.theme });
         if (b.data.home) seedDedupedGet(`home:${id}`, { success: true, data: b.data.home });
         return { ...b, data: b.data.store };
@@ -172,7 +189,7 @@ export function StorefrontLayout() {
       .catch((err) => {
         if (cancelled) return;
         // A cached storefront stays on screen through a network blip; a real 404 clears it.
-        if (boot.current && err?.status !== 404) return;
+        if (boot && err?.status !== 404) return;
         const serverProblem = !!err?.isNetworkError || (typeof err?.status === 'number' && err.status >= 500);
         // Only a real 404 means the store is gone; a server problem keeps the cached copy for the next try.
         if (!serverProblem) clearBootSnapshot();
@@ -183,7 +200,7 @@ export function StorefrontLayout() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [slug]);
+  }, [slug, boot]);
 
   // First-visit currency default + country/market resolution now live in StorefrontMarketProvider
   // (market currency when enabled, else the IP suggestion; an explicit buyer choice always wins).
@@ -358,6 +375,7 @@ export function StorefrontLayout() {
   const themeId = theme?.themeDefinitionId;
   const impl = (themeId && NEW_THEME_REGISTRY[themeId]) || NEW_THEME_REGISTRY[DEFAULT_THEME_ID];
   const Layout = impl.Layout;
+  const BootSkeleton = impl.BootSkeleton;
   const CookieBanner = impl.CookieBanner ?? CookieConsentBanner;
   const liquidRoute = isLiquidStorefrontRoute(location.pathname);
 
@@ -387,8 +405,8 @@ export function StorefrontLayout() {
         <WishlistProvider storeId={store.storeId}>
           {theme?.sourcePackageVersion != null && liquidRoute
             ? <PublishedLiquidStorefront key={`${store.storeId}:${theme.sourcePackageVersion}`} storeId={store.storeId} />
-            // A theme loaded on demand (Tech) has a lazy Layout: keep the screen blank-but-tall while its chunk arrives.
-            : <Suspense fallback={<div style={{ minHeight: '100vh' }} aria-busy="true" />}><Layout><Outlet /></Layout></Suspense>}
+            // A theme loaded on demand (Tech, Ledup) has a lazy Layout: show that theme's own skeleton while its chunk arrives.
+            : <Suspense fallback={<SsrSnapshot fallback={BootSkeleton ? <BootSkeleton theme={theme} /> : <div style={{ minHeight: '100vh' }} aria-busy="true" />} />}><Layout><Outlet /></Layout></Suspense>}
           {impl.AuthGateModal && <ThemedAuthGateHost Gate={impl.AuthGateModal} />}
           {store.floatingContact?.enabled && (
             <FloatingContactBar config={store.floatingContact} brandColor={cfg.primaryColor} font={cfg.font} radius={cfg.buttonRadiusPx} />

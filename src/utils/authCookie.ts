@@ -62,6 +62,8 @@ export function setAuthCookie(name: string, value: string): void {
 }
 
 export function getAuthCookie(name: string): string | null {
+  // Server render: always the anonymous visitor (the page is shared by everyone, never per person).
+  if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }

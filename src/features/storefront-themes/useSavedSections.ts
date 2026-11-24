@@ -2,6 +2,7 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { Section } from '@/api/services/storefrontTypes';
 import { apiListPublicSavedSections, type SavedSectionEntry } from '@/api/services/savedSections';
 import { hasSavedSectionRefs, resolveSavedSections } from './savedSectionsResolve';
+import { peekSsr, wantSsr } from '@/utils/ssrData';
 
 /** One shared copy of each store's library (the same data every section of a page needs), loaded once and refreshed when the
  *  editor changes an entry. */
@@ -41,8 +42,18 @@ export function resetSavedSectionsCache(): void { slots.clear(); emit(); }
  *  (no request is made). While the library loads, references draw nothing. */
 export function useResolvedSavedSections(sections: Section[], storeId: string | undefined): Section[] {
   const needed = !!storeId && hasSavedSectionRefs(sections);
+  // A server-rendered page carries the library: the first render already draws the saved sections, no request. On the server
+  // (collecting pass) ask for it. Module state is filled here on purpose - the server resets it before every page.
+  if (needed && storeId && !slots.has(storeId)) {
+    const key = `saved-sections:${storeId}`;
+    const seeded = peekSsr<SavedSectionEntry[]>(key);
+    if (seeded !== undefined) slots.set(storeId, { items: seeded, loading: false, failed: false });
+    else wantSsr(key, () => apiListPublicSavedSections(storeId).then(r => r.data ?? []));
+  }
   const slot = useSyncExternalStore(
     cb => { listeners.add(cb); return () => { listeners.delete(cb); }; },
+    () => (storeId ? slotOf(storeId) : EMPTY),
+    // Server render and the first browser render both start from what is in the cache (nothing yet): identical markup.
     () => (storeId ? slotOf(storeId) : EMPTY),
   );
   useEffect(() => {

@@ -52,7 +52,7 @@ function ProductRow({ settings: s, colors }: { settings: Record<string, any>; co
   const { currency } = useCurrencyPreference();
   const scroller = useRef<HTMLDivElement>(null);
   const key = JSON.stringify(queryFor(s));
-  const { data: items, error, retry } = useLoad(() => apiGetPublicStoreProducts(store.storeId, JSON.parse(key) as PublicStoreProductsParams).then(r => r.data?.products ?? []), [store.storeId, key]);
+  const { data: items, error, retry } = useLoad(() => apiGetPublicStoreProducts(store.storeId, JSON.parse(key) as PublicStoreProductsParams).then(r => r.data?.products ?? []), [store.storeId, key], `products:${store.storeId}:${key}`);
   const viewAll = useViewAll(s, ts('pg.see_all', 'See all'), featuredViewAllPath(s));
   if (items && items.length === 0) return null;
   const nudge = (dir: 1 | -1) => scroller.current?.scrollBy({ left: dir * (scroller.current.clientWidth * 0.8) * (document.dir === 'rtl' ? -1 : 1), behavior: 'smooth' });

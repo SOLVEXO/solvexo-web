@@ -1,3 +1,4 @@
+import { siteOrigin, sitePathname } from '@/utils/siteOrigin';
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useJsonLd } from '../../core/hooks/useJsonLd';
@@ -24,7 +25,7 @@ export function FashionCollectionPage() {
   const localize = useLocalize();
   const { data, loading, error, retry } = useLoad(
     () => apiGetPublicCollectionBySlug(store.storeId, slugOrId).then(r => r.data).catch((e: { status?: number }) => { if (e?.status === 404) return null; throw e; }),
-    [store.storeId, slugOrId],
+    [store.storeId, slugOrId], `collection:${store.storeId}:${slugOrId}`,
   );
   const sections = useTemplateSections(store.storeId, 'collection', data?.templateKey || 'default');
   const collection = data ? localize.collection(data) : null;
@@ -32,7 +33,7 @@ export function FashionCollectionPage() {
 
   const [listed, setListed] = useState<{ key: string; items: ListProduct[] }>({ key: '', items: [] });
   const scope = useMemo(() => ({ collectionId: data?._id, onProducts: (items: ListProduct[]) => setListed({ key: slugOrId, items }) }), [data?._id, slugOrId]);
-  const { origin, pathname } = window.location;
+  const origin = siteOrigin(); const pathname = sitePathname();
   const urlFor = pageUrlBuilder(origin, pathname);
   const pageUrl = `${origin}${pathname}`;
   useJsonLd('collection', collection ? collectionJsonLd({

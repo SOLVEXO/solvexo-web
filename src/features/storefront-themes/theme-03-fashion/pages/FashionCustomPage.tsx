@@ -20,7 +20,7 @@ export function FashionCustomPage({ slug }: { slug?: string } = {}) {
       if (!(await apiPublicPageMayExist(store.storeId, pageSlug))) return null;
       return apiGetPublicStorePage(store.storeId, pageSlug).then(r => r.data).catch((e: { status?: number }) => { if (e?.status === 404) return null; throw e; });
     },
-    [store.storeId, pageSlug],
+    [store.storeId, pageSlug], `page:${store.storeId}:${pageSlug}`,
   );
   const page = data ? localize.page(data) : null;
   useStorefrontSeo({ title: page?.seo?.metaTitle || page?.title, description: page?.seo?.metaDescription || page?.seo?.metaDesc, image: page?.seo?.ogImage, noindex: page?.seo?.noindex });

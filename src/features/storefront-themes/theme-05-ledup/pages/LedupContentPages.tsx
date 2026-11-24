@@ -8,6 +8,7 @@ import { useLocalize } from '@/hooks/useLocalize';
 import { useStorefrontSeo } from '../../core/hooks/useStorefrontSeo';
 import { useJsonLd } from '../../core/hooks/useJsonLd';
 import { useLoad } from '../../core/pageHooks';
+import { siteOrigin } from '@/utils/siteOrigin';
 import { LedupSectionRenderer } from '../sections';
 import { LedupBox, LedupSkeleton, LedupError } from '../ui/ledupUi';
 
@@ -16,6 +17,7 @@ export function LedupHomePage() {
   const { data, loading, error, retry } = useLoad(
     () => apiGetPublicHomePage(store.storeId).then(r => r.data),
     [store.storeId],
+    `home:${store.storeId}`,
   );
 
   useStorefrontSeo({
@@ -23,7 +25,7 @@ export function LedupHomePage() {
     description: data?.seo?.metaDescription || store.description || undefined,
     image: data?.seo?.ogImage,
   });
-  useJsonLd('website', { '@context': 'https://schema.org', '@type': 'WebSite', name: store.name, url: window.location.origin });
+  useJsonLd('website', { '@context': 'https://schema.org', '@type': 'WebSite', name: store.name, url: siteOrigin() });
 
   if (loading) return <LedupBox><LedupSkeleton h={320} rows={3} /></LedupBox>;
   if (error || !data) return <LedupBox><LedupError message={ts('pg.we_couldn_t_load_this_page', "We couldn't load this page.")} onRetry={retry} /></LedupBox>;
@@ -52,7 +54,7 @@ export function LedupCustomPage({ slug }: { slug?: string } = {}) {
         throw e;
       });
     },
-    [store.storeId, pageSlug],
+    [store.storeId, pageSlug], `page:${store.storeId}:${pageSlug}`,
   );
 
   const page = data ? localize.page(data) : null;
