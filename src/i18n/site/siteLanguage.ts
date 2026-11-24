@@ -35,7 +35,7 @@ export function detectSiteLang(fullPathname: string, saved: SiteLang | null = sa
 /** Router paths (country prefix already removed) that belong to the public website and sign-up: the only pages that switch to Arabic. */
 const SITE_EXACT = new Set([
   '/', '/pricing', '/sellers', '/faq', '/contact-us', '/book-demo', '/about', '/security', '/products', '/solutions',
-  '/manuals', '/start', '/login', '/register', '/signup', '/verify-otp', '/forgot-password', '/new-password', '/onboard',
+  '/manuals', '/start', '/email-preferences/confirmed', '/login', '/register', '/signup', '/verify-otp', '/forgot-password', '/new-password', '/onboard',
 ]);
 // Legal pages (privacy, terms, cookies) stay English: a legal text needs a reviewed translation, not a draft.
 const SITE_PREFIXES = ['/products/', '/solutions/', '/onboard/'];

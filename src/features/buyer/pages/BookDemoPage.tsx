@@ -30,6 +30,8 @@ export function BookDemoPage() {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState('');
+  // Marketing emails need a separate, unticked opt-in: booking a demo is not a yes to newsletters.
+  const [optIn, setOptIn] = useState(false);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF(p => ({ ...p, [k]: e.target.value }));
 
   async function submit(e: React.FormEvent) {
@@ -45,7 +47,7 @@ export function BookDemoPage() {
       const r = await apiDemoRequest({
         name: f.name.trim(), phone: f.phone.trim(), email: opt(f.email), businessName: opt(f.businessName), city: opt(f.city),
         businessType: opt(f.businessType), message: opt(f.message), preferredTime: f.preferredTime, website: opt(f.website),
-        page: window.location.pathname, ...campaignTags(search), partnerCode,
+        page: window.location.pathname, ...campaignTags(search), partnerCode, ...(optIn ? { marketingOptIn: true } : {}),
       });
       setDone(t.sentMessage ?? r.message);
     } catch (err) {
@@ -106,6 +108,10 @@ export function BookDemoPage() {
               <div aria-hidden="true" className="absolute -start-[9999px] w-px h-px overflow-hidden">
                 <label>Website<input tabIndex={-1} autoComplete="off" value={f.website} onChange={set('website')} /></label>
               </div>
+              <label className="flex items-start gap-2 text-[12.5px] text-charcoal cursor-pointer">
+                <input type="checkbox" checked={optIn} onChange={e => setOptIn(e.target.checked)} className="accent-brand-orange mt-0.5" />
+                {t.marketingOptIn}
+              </label>
               {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
               <Button type="submit" variant="primary" fullWidth loading={sending} icon={!sending && <CalendarCheck size={14} />}>
                 {sending ? t.sending : t.submit}
