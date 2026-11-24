@@ -123,8 +123,8 @@ export function NavScrollRow({
     };
     el.addEventListener('keydown', onKey);
     window.addEventListener('resize', later);
-    const ro = new ResizeObserver(later);
-    ro.observe(el);
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(later);
+    ro?.observe(el);
     const mo = new MutationObserver(later);
     mo.observe(el, { childList: true, subtree: true, characterData: true });
     // a language switch flips `<html dir>` without touching the menu items
@@ -139,7 +139,7 @@ export function NavScrollRow({
       el.removeEventListener('click', onGroup, true);
       el.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', later);
-      ro.disconnect(); mo.disconnect(); dirMo.disconnect();
+      ro?.disconnect(); mo.disconnect(); dirMo.disconnect();
       resetPanels(el);
     };
   }, [enabled, update]);
