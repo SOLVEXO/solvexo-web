@@ -21,7 +21,7 @@ import { MegaPromoCards } from '../../navigation/MegaPromoCards';
 import { useNavRuleContext } from '../../navigation/useNavRuleContext';
 import { useInlineEditActive } from '../../inlineEdit';
 import { useHeaderScroll } from '../../navigation/useHeaderScroll';
-import { logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
+import { headerPopupCss, logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
 import { techTheme as t } from '../theme.config';
 import { TechSectionRenderer } from '../sections/TechSectionRenderer';
 import { techButtonStyle } from '../ui/techStyle';
@@ -317,6 +317,7 @@ export function TechNavbar() {
     <>
       {t.topBar && bar && <TopBar bar={bar} />}
       <header ref={el => scroll.attach(el)} className="relative" style={{ ...scroll.style, background: t.colors.bg, color: t.colors.ink, borderBottom: `1px solid ${t.colors.border}`, fontFamily: t.fonts.body }}>
+      <style>{headerPopupCss(o, { bg: t.colors.accent, ink: t.colors.accentInk })}</style>
         {rows}
       </header>
       {(header?.sections?.length ?? 0) > 0 && <TechSectionRenderer sections={header?.sections ?? []} />}

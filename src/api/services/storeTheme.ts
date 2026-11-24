@@ -234,6 +234,16 @@ export interface StorefrontHeader {
   iconStroke?:          'thin' | 'regular' | 'bold';
   iconTooltips?:        boolean;
   iconLabels?:          'none' | 'below';
+  iconTipStyle?:        'theme' | 'dark' | 'light' | 'brand';
+  iconTipPosition?:     'below' | 'above';
+  iconTipSearch?:       string | null;
+  iconTipAccount?:      string | null;
+  iconTipWishlist?:     string | null;
+  iconTipCart?:         string | null;
+  dropdownBg?:          'theme' | 'light' | 'dark' | 'brand';
+  dropdownRadius?:      'theme' | 'square' | 'soft' | 'round';
+  dropdownShadow?:      'theme' | 'none' | 'soft' | 'strong';
+  dropdownHover?:       'theme' | 'tint' | 'underline' | 'none';
   ctaLabel?:           string | null;
   ctaLink?:             string | null;
   topBarEnabled?:       boolean;

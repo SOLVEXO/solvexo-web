@@ -20,7 +20,7 @@ import { useNavRuleContext } from '../../navigation/useNavRuleContext';
 import { NavAnchor } from '../../navigation/NavAnchor';
 import { NavScrollRow } from '../../navigation/NavScrollRow';
 import { useHeaderScroll } from '../../navigation/useHeaderScroll';
-import { headerNavCss, logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
+import { headerNavCss, headerPopupCss, logoImageProps, readHeaderOptions } from '../../navigation/headerOptions';
 import { fashionTheme as t } from '../theme.config';
 import { FashionPredictiveSearch } from './browse/FashionPredictiveSearch';
 import { FashionLocaleControls } from './FashionLocaleControls';
@@ -159,7 +159,7 @@ export function FashionNavbar() {
     <>
       {o.topBar && <HeaderTopBar bar={o.topBar} fallbackBg={t.colors.ink} fallbackColor={t.colors.bg} fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} />}
       <header className="relative" ref={el => scroll.attach(el)} data-sx-header={scope} style={{ ...scroll.style, background: headerBg, color: fg, borderBottom: o.showDivider && !(transparent && scroll.clear) ? `1px solid ${t.colors.border}` : '1px solid transparent', fontFamily: t.fonts.body, backdropFilter: o.stickyMode !== 'off' ? 'saturate(1.4) blur(10px)' : undefined }}>
-        <style>{headerNavCss(scope, { ...o, navHoverStyle: o.navHoverStyle === 'pill' ? 'none' : o.navHoverStyle }) + maisonNoLinkNavCss(scope, o)}</style>
+        <style>{headerNavCss(scope, { ...o, navHoverStyle: o.navHoverStyle === 'pill' ? 'none' : o.navHoverStyle }) + maisonNoLinkNavCss(scope, o) + headerPopupCss(o, { bg: t.colors.accent, ink: t.colors.accentInk })}</style>
         <div className={`mx-auto grid grid-cols-[1fr_auto_1fr] items-center ${layout.grid} ${layout.rows}`} style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, columnGap: 16 }}>
           <div className={`col-start-1 row-start-1 flex min-w-0 items-center gap-2 ${layout.logo}`}>
             <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: fg }}><Menu size={22} /></button>

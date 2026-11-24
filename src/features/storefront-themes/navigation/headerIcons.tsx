@@ -22,6 +22,9 @@ export interface IconSkin {
   tileRadius: number;
   /** Glyph colour on a solid (filled) container: normally the page background of the theme. */
   inverse: string;
+  /** The theme's brand colour (+ text on it), for the seller's "Brand colour" tooltip. */
+  brandBg?: string;
+  brandInk?: string;
 }
 
 /** What the seller chose, resolved against the active theme's own sets. */
@@ -31,6 +34,9 @@ export interface HeaderIconPrefs {
   stroke: 'thin' | 'regular' | 'bold';
   tooltips: boolean;
   labels: 'none' | 'below';
+  tipStyle?: 'theme' | 'dark' | 'light' | 'brand';
+  tipPosition?: 'below' | 'above';
+  tips?: Partial<Record<HeaderIconKind, string>>;
 }
 
 const GLYPHS: Record<HeaderIconSetDef['family'], Record<HeaderIconKind, LucideIcon>> = {
@@ -44,9 +50,9 @@ const STROKE = { thin: 1.25, regular: 2, bold: 2.75 } as const;
 const SIZE_DELTA = { sm: -2, md: 0, lg: 4 } as const;
 
 /** The seller's choice against the theme's sets; an unknown/missing id falls back to the theme's first (default) set. */
-export function resolveIconPrefs(o: Pick<HeaderOptions, 'iconSet' | 'iconSize' | 'iconStroke' | 'iconTooltips' | 'iconLabels'>, sets: HeaderIconSetDef[]): HeaderIconPrefs {
+export function resolveIconPrefs(o: Pick<HeaderOptions, 'iconSet' | 'iconSize' | 'iconStroke' | 'iconTooltips' | 'iconLabels'> & Partial<Pick<HeaderOptions, 'iconTipStyle' | 'iconTipPosition' | 'iconTips'>>, sets: HeaderIconSetDef[]): HeaderIconPrefs {
   const set = sets.find(s => s.id === o.iconSet) ?? sets[0];
-  return { set, size: o.iconSize, stroke: o.iconStroke, tooltips: o.iconTooltips, labels: o.iconLabels };
+  return { set, size: o.iconSize, stroke: o.iconStroke, tooltips: o.iconTooltips, labels: o.iconLabels, tipStyle: o.iconTipStyle, tipPosition: o.iconTipPosition, tips: o.iconTips };
 }
 
 export function HeaderIconGlyph({ kind, prefs, skin, base = 20, glyph }: {
@@ -93,6 +99,12 @@ export const HEADER_ICON_CSS = `
 .sx-hi:hover .sx-hi-tip,.sx-hi:has(:focus-visible) .sx-hi-tip{opacity:1;visibility:visible;transform:translate(-50%,0);transition-delay:.25s,.25s,0s}
 .sx-hi:hover .sx-hi-tip[data-align=end],.sx-hi:has(:focus-visible) .sx-hi-tip[data-align=end],
 .sx-hi:hover .sx-hi-tip[data-align=start],.sx-hi:has(:focus-visible) .sx-hi-tip[data-align=start]{transform:translateY(0)}
+.sx-hi-tip[data-pos=above]{top:auto;bottom:calc(100% + 8px);transform:translate(-50%,3px)}
+.sx-hi-tip[data-pos=above]::before{top:auto;bottom:-4px}
+.sx-hi-tip[data-pos=above][data-align=end],.sx-hi-tip[data-pos=above][data-align=start]{transform:translateY(3px)}
+.sx-hi:hover .sx-hi-tip[data-pos=above],.sx-hi:has(:focus-visible) .sx-hi-tip[data-pos=above]{transform:translate(-50%,0)}
+.sx-hi:hover .sx-hi-tip[data-pos=above][data-align=end],.sx-hi:has(:focus-visible) .sx-hi-tip[data-pos=above][data-align=end],
+.sx-hi:hover .sx-hi-tip[data-pos=above][data-align=start],.sx-hi:has(:focus-visible) .sx-hi-tip[data-pos=above][data-align=start]{transform:translateY(0)}
 @media (hover:none){.sx-hi-tip{display:none}}
 @media (prefers-reduced-motion:reduce){.sx-hi-tip{transition:none}}
 .sx-hi-col{flex-direction:column!important;gap:2px!important;height:auto!important;width:auto!important;min-width:44px;padding:5px 8px!important;border-radius:12px!important}
@@ -118,24 +130,29 @@ export function HeaderIconButton({
   align?: 'center' | 'end' | 'start'; base?: number; glyph?: ReactNode;
 }) {
   const below = prefs.labels === 'below';
+  const text = prefs.tips?.[kind]?.trim() || label;
   const content = (
     <>
       <HeaderIconGlyph kind={kind} prefs={prefs} skin={skin} base={base} glyph={glyph} />
       {badge}
-      {below && <span className="sx-hi-label">{label}</span>}
+      {below && <span className="sx-hi-label">{text}</span>}
     </>
   );
   const cls = `${className}${below ? ' sx-hi-col' : ''}`;
-  const aria = ariaLabel ?? label;
+  const aria = ariaLabel ?? text;
+  const look = prefs.tipStyle ?? 'theme';
+  const tipBg = look === 'dark' ? '#141414' : look === 'light' ? '#ffffff' : look === 'brand' ? (skin.brandBg ?? skin.tipBg) : skin.tipBg;
+  const tipInk = look === 'dark' ? '#ffffff' : look === 'light' ? '#141414' : look === 'brand' ? (skin.brandInk ?? skin.tipInk) : skin.tipInk;
+  const tipShadow = look === 'light' ? '0 6px 18px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08)' : (skin.tipShadow ?? 'none');
   const tipStyle = {
-    '--tip-bg': skin.tipBg, '--tip-ink': skin.tipInk, '--tip-radius': `${skin.tipRadius}px`, '--tip-font': skin.tipFont, '--tip-shadow': skin.tipShadow ?? 'none',
+    '--tip-bg': tipBg, '--tip-ink': tipInk, '--tip-radius': `${skin.tipRadius}px`, '--tip-font': skin.tipFont, '--tip-shadow': tipShadow,
   } as CSSProperties;
   return (
     <span className={`sx-hi ${wrapClassName ?? ''}`}>
       {to
         ? <Link to={to} className={cls} aria-label={aria} style={style}>{content}</Link>
         : <button type="button" className={cls} aria-label={aria} aria-expanded={expanded} aria-haspopup={popup ? 'true' : undefined} onClick={onClick} style={style}>{content}</button>}
-      {prefs.tooltips && !below && <span className="sx-hi-tip" data-align={align === 'center' ? undefined : align} aria-hidden="true" style={tipStyle}>{label}</span>}
+      {prefs.tooltips && !below && <span className="sx-hi-tip" data-align={align === 'center' ? undefined : align} data-pos={prefs.tipPosition === 'above' ? 'above' : undefined} aria-hidden="true" style={tipStyle}>{text}</span>}
     </span>
   );
 }

@@ -154,7 +154,7 @@ export interface ThemeStylePreset {
  *  (like a Shopify theme's own settings schema), so a control never appears for a theme that would ignore it. */
 export type HeaderOptionKey =
   | 'logoPosition' | 'menuPosition' | 'menuAlignment' | 'searchBar' | 'searchPosition'
-  | 'sticky' | 'transparent' | 'menuStyle' | 'menuOverflow' | 'button' | 'topBar' | 'colours' | 'icons';
+  | 'sticky' | 'transparent' | 'menuStyle' | 'menuOverflow' | 'button' | 'topBar' | 'colours' | 'icons' | 'dropdown';
 
 /** How a header icon set is drawn. Containers (circle/solid/tile/box) draw their own shape; the rest only change the glyph. */
 export type HeaderIconTreatment = 'line' | 'bold' | 'filled' | 'duotone' | 'sharp' | 'circle' | 'solid' | 'tile' | 'box';

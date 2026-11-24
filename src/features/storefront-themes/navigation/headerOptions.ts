@@ -52,10 +52,20 @@ export interface HeaderOptions {
   /** Hover/focus tooltip on every icon (on unless switched off). */
   iconTooltips: boolean;
   iconLabels: 'none' | 'below';
+  /** Tooltip bubble: the theme's own look, or dark / light / the brand colour; above or below the icon; own words per icon (blank = default). */
+  iconTipStyle: 'theme' | 'dark' | 'light' | 'brand';
+  iconTipPosition: 'below' | 'above';
+  iconTips: { search?: string; account?: string; wishlist?: string; cart?: string };
+  /** Simple dropdown panels of the top menu (blank/'theme' = the theme's own look). */
+  dropdownBg: 'theme' | 'light' | 'dark' | 'brand';
+  dropdownRadius: 'theme' | 'square' | 'soft' | 'round';
+  dropdownShadow: 'theme' | 'none' | 'soft' | 'strong';
+  dropdownHover: 'theme' | 'tint' | 'underline' | 'none';
   cta: { label: string; link: string } | null;
   topBar: TopStripData | null;
 }
 
+const tipText = (v: unknown): string => (typeof v === 'string' ? v.trim().slice(0, 30) : '');
 const SAFE_LINK = /^(https?:\/\/\S+|\/(?!\/)\S*)$/i;
 const NAV_FONT_PX = { sm: 13, md: 14, lg: 16 } as const;
 
@@ -142,6 +152,18 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     iconStroke: h.iconStroke === 'thin' || h.iconStroke === 'bold' ? h.iconStroke : 'regular',
     iconTooltips: h.iconTooltips !== false,
     iconLabels: h.iconLabels === 'below' ? 'below' : 'none',
+    iconTipStyle: h.iconTipStyle === 'dark' || h.iconTipStyle === 'light' || h.iconTipStyle === 'brand' ? h.iconTipStyle : 'theme',
+    iconTipPosition: h.iconTipPosition === 'above' ? 'above' : 'below',
+    iconTips: {
+      ...(tipText(h.iconTipSearch) ? { search: tipText(h.iconTipSearch) } : {}),
+      ...(tipText(h.iconTipAccount) ? { account: tipText(h.iconTipAccount) } : {}),
+      ...(tipText(h.iconTipWishlist) ? { wishlist: tipText(h.iconTipWishlist) } : {}),
+      ...(tipText(h.iconTipCart) ? { cart: tipText(h.iconTipCart) } : {}),
+    },
+    dropdownBg: h.dropdownBg === 'light' || h.dropdownBg === 'dark' || h.dropdownBg === 'brand' ? h.dropdownBg : 'theme',
+    dropdownRadius: h.dropdownRadius === 'square' || h.dropdownRadius === 'soft' || h.dropdownRadius === 'round' ? h.dropdownRadius : 'theme',
+    dropdownShadow: h.dropdownShadow === 'none' || h.dropdownShadow === 'soft' || h.dropdownShadow === 'strong' ? h.dropdownShadow : 'theme',
+    dropdownHover: h.dropdownHover === 'tint' || h.dropdownHover === 'underline' || h.dropdownHover === 'none' ? h.dropdownHover : 'theme',
     cta: typeof h.ctaLabel === 'string' && h.ctaLabel.trim() && typeof h.ctaLink === 'string' && SAFE_LINK.test(h.ctaLink)
       ? { label: h.ctaLabel.trim(), link: h.ctaLink } : null,
     topBar: h.topBarEnabled && (h.topBarText || h.topBarPhone || h.topBarEmail || readTopBarItems(h.topBarItems).length)
@@ -299,4 +321,29 @@ export function visibleFooterBlocks(footer: Partial<StorefrontFooter> | null | u
 /** `{year}` in the copyright text becomes the current year. */
 export function expandCopyright(textValue: string, now = new Date()): string {
   return textValue.replace(/\{year\}/gi, String(now.getFullYear()));
+}
+
+const POP_RADIUS = { square: 0, soft: 8, round: 22 } as const;
+const POP_SHADOW = { none: 'none', soft: '0 8px 24px -8px rgba(0,0,0,.18)', strong: '0 22px 48px -12px rgba(0,0,0,.38)' } as const;
+
+/** Scoped CSS for the seller's look of the simple dropdown panels (inline theme styles need !important).
+ *  Themes mark a panel `data-nav-panel`; mega panels carry `data-nav-mega` too and keep their own design. */
+export function headerPopupCss(
+  o: Pick<HeaderOptions, 'dropdownBg' | 'dropdownRadius' | 'dropdownShadow' | 'dropdownHover'>,
+  brand: { bg: string; ink: string },
+): string {
+  const box = '[data-nav-panel]:not([data-nav-mega]) > ul';
+  const link = box + ' a';
+  const rules: string[] = [];
+  const paint = o.dropdownBg === 'light' ? { bg: '#ffffff', ink: '#141414' } : o.dropdownBg === 'dark' ? { bg: '#141414', ink: '#f5f5f5' } : o.dropdownBg === 'brand' ? brand : null;
+  if (paint) {
+    rules.push(`${box}{background:${paint.bg}!important;border-color:color-mix(in srgb,${paint.ink} 18%,transparent)!important}`);
+    rules.push(`${link}{color:${paint.ink}!important}`);
+  }
+  if (o.dropdownRadius !== 'theme') rules.push(`${box}{border-radius:${POP_RADIUS[o.dropdownRadius]}px!important}`);
+  if (o.dropdownShadow !== 'theme') rules.push(`${box}{box-shadow:${POP_SHADOW[o.dropdownShadow]}!important}`);
+  if (o.dropdownHover === 'tint') rules.push(`${link}:hover,${link}:focus-visible{background:color-mix(in srgb,currentColor 12%,transparent)!important;text-decoration:none!important}`);
+  if (o.dropdownHover === 'underline') rules.push(`${link}:hover,${link}:focus-visible{background:none!important;text-decoration:underline!important}`);
+  if (o.dropdownHover === 'none') rules.push(`${link}:hover,${link}:focus-visible{background:none!important;text-decoration:none!important}`);
+  return rules.join('');
 }
