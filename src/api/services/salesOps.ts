@@ -1,4 +1,5 @@
 import client from '../client';
+import { downloadBlob } from '@/utils/downloadBlob';
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 
@@ -32,6 +33,9 @@ export interface SalesLead {
   sellerId: string | null; storeId: string | null; linkedAt: string | null; createdAt: string;
   utm?: { source: string | null; medium: string | null; campaign: string | null } | null;
   aiDraft?: { channel: 'whatsapp' | 'email'; text: string; createdAt: string } | null;
+  /** Older responses may not carry these two. */
+  marketingConsent?: MarketingConsent | null;
+  brevo?: LeadBrevoSync | null;
 }
 export interface LeadSummary {
   stages: { stage: LeadStage; count: number; valuePKR: number }[];
@@ -60,8 +64,10 @@ export interface LeadInput {
   name?: string; businessName?: string | null; email?: string | null; phone?: string | null; city?: string | null;
   businessType?: string | null; source?: LeadSource; sourceDetail?: string | null; ownerAdminId?: string | null;
   dealValuePKR?: number | null; tags?: string[];
+  /** true = they agreed (needs `marketingConsentNote` when set by hand); false on an agreed lead = unsubscribed. */
+  marketingConsent?: boolean; marketingConsentNote?: string;
 }
-export interface LeadQuery { stage?: LeadStage; owner?: string; source?: LeadSource; q?: string; due?: 'overdue' | 'today'; page?: number; limit?: number }
+export interface LeadQuery { stage?: LeadStage; owner?: string; source?: LeadSource; q?: string; due?: 'overdue' | 'today'; consent?: ConsentStatus; page?: number; limit?: number }
 
 const BASE = '/api/admin/sales';
 
@@ -90,6 +96,37 @@ export const apiSaveTemplate = (id: string | null, t: { name: string; subject: s
      : client.post<never, ApiResponse<SalesTemplate[]>>(`${BASE}/templates`, t);
 export const apiDeleteTemplate = (id: string) => client.delete<never, ApiResponse<SalesTemplate[]>>(`${BASE}/templates/${id}`);
 
+// ── Marketing consent & Brevo ─────────────────────────────────────────────
+
+export const CONSENT_STATUSES = ['none', 'asked', 'granted', 'withdrawn'] as const;
+export type ConsentStatus = (typeof CONSENT_STATUSES)[number];
+export const CONSENT_LABELS: Record<ConsentStatus, string> = { none: 'Not asked', asked: 'Asked', granted: 'Agreed', withdrawn: 'Unsubscribed' };
+export type ConsentSource = 'demo_form' | 'contact_form' | 'manual' | 'email_confirm' | 'brevo';
+export interface MarketingConsent { status: ConsentStatus; at: string | null; source: ConsentSource | null; note: string | null; askedAt: string | null }
+export interface LeadBrevoSync { syncedAt: string | null; error: string | null; pending: boolean }
+export interface BrevoStatus {
+  connected: boolean; accountEmail: string | null; keyHint: string | null; listId: number | string | null; listName: string | null;
+  connectedAt: string | null; lastSyncAt: string | null; lastError: string | null; webhookUrl: string;
+  counts: { granted: number; synced: number; pending: number; failed: number; asked: number; withdrawn: number };
+}
+
+/** Accepts `{ success, data }` or the bare object, so a small API shape change can't blank the panel. */
+const unwrap = <T,>(r: unknown): T => (r && typeof r === 'object' && 'data' in r && (r as { data: unknown }).data != null ? (r as { data: T }).data : r as T);
+
+export const apiBrevoStatus = async () => unwrap<BrevoStatus>(await client.get(`${BASE}/brevo`));
+export const apiBrevoConnect = async (apiKey: string) => unwrap<BrevoStatus>(await client.put(`${BASE}/brevo`, { apiKey }));
+export const apiBrevoDisconnect = async () => unwrap<BrevoStatus>(await client.delete(`${BASE}/brevo`));
+export const apiBrevoSync = async () => unwrap<{ queued: number; synced: number; failed: number }>(await client.post(`${BASE}/brevo/sync`));
+/** Sends the one-time "Can we keep you posted?" email. The server skips leads without an email or already asked/agreed/unsubscribed. */
+export const apiAskMarketingConsent = async (leadIds?: string[]) =>
+  unwrap<{ sent: number; skipped: number }>(await client.post(`${BASE}/leads/consent-requests`, leadIds ? { leadIds } : {}));
+/** CSV of the leads (matching these filters) who agreed to marketing emails, in Brevo's import format. */
+export async function apiExportBrevoCsv(params: LeadQuery = {}) {
+  const clean = Object.fromEntries(Object.entries({ ...params, page: undefined, limit: undefined }).filter(([, v]) => v !== undefined && v !== ''));
+  const blob = await client.get<never, Blob>(`${BASE}/leads/export/brevo`, { params: clean, responseType: 'blob' });
+  downloadBlob(blob, `solvexo-leads-brevo-${new Date().toISOString().slice(0, 10)}.csv`);
+}
+
 // ── Lead capture ───────────────────────────────────────────────────────────
 
 export interface ImportRow { name?: string; email?: string; phone?: string; businessName?: string; city?: string; businessType?: string; dealValuePKR?: string; note?: string }
@@ -107,6 +144,8 @@ export const apiSyncStalled = () => client.post<never, { success: boolean; check
 export interface DemoRequest {
   name: string; phone: string; email?: string; businessName?: string; city?: string; businessType?: string; message?: string;
   preferredTime?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string; page?: string; website?: string; partnerCode?: string;
+  /** The visitor ticked "Email me Solvexo tips and offers" (never pre-ticked). */
+  marketingOptIn?: boolean;
 }
 /** Public, no login: the Book-a-demo form on solvexo.store. */
 export const apiDemoRequest = (body: DemoRequest) => client.post<never, { success: boolean; message: string }>('/api/sales/demo-request', body);

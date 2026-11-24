@@ -33,6 +33,8 @@ export function ContactUsPage() {
   const [error, setError]     = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent]       = useState(false);
+  // Never pre-ticked: asking a question is not a yes to marketing emails.
+  const [optIn, setOptIn]     = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +45,7 @@ export function ContactUsPage() {
     setError('');
     setSending(true);
     try {
-      await apiSubmitContact({ name, email, topic, message });
+      await apiSubmitContact({ name, email, topic, message, ...(optIn ? { marketingOptIn: true } : {}) });
       setSent(true);
     } catch (err) {
       // Server messages are English: the Arabic page shows its own text instead.
@@ -113,6 +115,10 @@ export function ContactUsPage() {
                   placeholder={t.messagePlaceholder}
                   value={message} onChange={e => setMessage(e.target.value)}
                 />
+                <label className="flex items-start gap-2 text-[12.5px] text-charcoal cursor-pointer">
+                  <input type="checkbox" checked={optIn} onChange={e => setOptIn(e.target.checked)} className="accent-brand-orange mt-0.5" />
+                  {t.marketingOptIn}
+                </label>
                 {error && (
                   <motion.p className="text-[12px] text-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
                     {error}

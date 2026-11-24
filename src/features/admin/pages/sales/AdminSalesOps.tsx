@@ -1,26 +1,27 @@
 import { useCallback, useEffect, useMemo, useState, type DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { CalendarClock, Columns3, FileUp, List, Plus, Target, Trash2, UserRoundSearch } from 'lucide-react';
+import { CalendarClock, Columns3, Download, FileUp, List, MailQuestion, Plus, Target, Trash2, UserRoundSearch } from 'lucide-react';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 import { Button, EmptyState, Input, MetricCard, Modal, SearchInput, Select, TabBar, Textarea } from '@/components/comman/ui';
 import { can } from '@/hooks/auth/useCan';
 import {
-  LEAD_SOURCES, LEAD_STAGES, SOURCE_LABELS, STAGE_LABELS, apiChangeStage, apiCreateLead, apiSyncStalled, apiDeleteTemplate, apiListLeads,
-  apiListTasks, apiListTemplates, apiSalesOwners, apiSaveTemplate, apiUpdateTask, formatPKR,
-  type LeadList, type LeadQuery, type LeadSource, type LeadStage, type SalesLead, type SalesOwner, type SalesTask, type SalesTemplate,
+  CONSENT_LABELS, LEAD_SOURCES, LEAD_STAGES, SOURCE_LABELS, STAGE_LABELS, apiAskMarketingConsent, apiChangeStage, apiCreateLead, apiExportBrevoCsv, apiSyncStalled,
+  apiDeleteTemplate, apiListLeads, apiListTasks, apiListTemplates, apiSalesOwners, apiSaveTemplate, apiUpdateTask, formatPKR,
+  type ConsentStatus, type LeadList, type LeadQuery, type LeadSource, type LeadStage, type SalesLead, type SalesOwner, type SalesTask, type SalesTemplate,
 } from '@/api/services/salesOps';
-import { LeadFormModal, LostReasonModal, StageBadge } from './parts';
+import { ConsentBadge, LeadFormModal, LostReasonModal, StageBadge } from './parts';
 import { ImportLeadsModal } from './ImportLeadsModal';
 import { CampaignsTab } from './CampaignsTab';
 import { TeamTab } from './TeamTab';
 import { PartnersTab } from './PartnersTab';
 import { AgentTab } from './AgentTab';
 import { WhatsAppTab } from './WhatsAppTab';
+import { BrevoTab } from './BrevoTab';
 import { VisitsTab } from './visits/VisitsTab';
 import { errMsg, isOverdue, relDay, useStableToast } from './sales.utils';
 
-type TabId = 'pipeline' | 'visits' | 'tasks' | 'whatsapp' | 'campaigns' | 'team' | 'partners' | 'agent' | 'templates';
+type TabId = 'pipeline' | 'visits' | 'tasks' | 'whatsapp' | 'brevo' | 'campaigns' | 'team' | 'partners' | 'agent' | 'templates';
 
 /** Super Admin → Sales Ops: the lead pipeline, follow-up tasks and email templates. Reps see only their own leads. */
 export function AdminSalesOps() {
@@ -35,7 +36,7 @@ export function AdminSalesOps() {
       <AdminPageHeader title="Sales Ops" subtitle={isManager ? 'Every lead, follow-up and deal across the sales team.' : 'Your leads, follow-ups and deals.'} icon={<Target size={18} />} />
       <div className="px-4 sm:px-7 pt-2">
         <TabBar
-          tabs={[{ id: 'pipeline', label: 'Pipeline' }, { id: 'visits', label: 'Visits' }, { id: 'tasks', label: 'Follow-ups' }, { id: 'whatsapp', label: 'WhatsApp' }, ...(isManager ? [{ id: 'campaigns', label: 'Campaigns' }] : []), { id: 'team', label: 'Team' }, ...(isManager ? [{ id: 'partners', label: 'Partners' }, { id: 'agent', label: 'AI agent' }] : []), { id: 'templates', label: 'Email templates' }]}
+          tabs={[{ id: 'pipeline', label: 'Pipeline' }, { id: 'visits', label: 'Visits' }, { id: 'tasks', label: 'Follow-ups' }, { id: 'whatsapp', label: 'WhatsApp' }, { id: 'brevo', label: 'Brevo' }, ...(isManager ? [{ id: 'campaigns', label: 'Campaigns' }] : []), { id: 'team', label: 'Team' }, ...(isManager ? [{ id: 'partners', label: 'Partners' }, { id: 'agent', label: 'AI agent' }] : []), { id: 'templates', label: 'Email templates' }]}
           active={tab}
           onChange={id => setParams(id === 'pipeline' ? {} : { tab: id }, { replace: true })}
         />
@@ -49,6 +50,7 @@ export function AdminSalesOps() {
         {tab === 'partners' && isManager && <PartnersTab />}
         {tab === 'agent' && isManager && <AgentTab />}
         {tab === 'whatsapp' && <WhatsAppTab isManager={isManager} />}
+        {tab === 'brevo' && <BrevoTab isManager={isManager} />}
         {tab === 'templates' && <TemplatesTab isManager={isManager} />}
       </div>
     </>
@@ -70,6 +72,9 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
   const [syncing, setSyncing] = useState(false);
   const [losing, setLosing] = useState<SalesLead | null>(null);
   const [dragOver, setDragOver] = useState<LeadStage | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [asking, setAsking] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(() => {
     setError('');
@@ -103,7 +108,16 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
   }, [data]);
   const stageTotal = (s: LeadStage) => data?.summary.stages.find(x => x.stage === s);
   const s = data?.summary;
-  const setFilter = (k: keyof LeadQuery, v: string) => setFilters(f => ({ ...f, [k]: v || undefined }));
+  const setFilter = (k: keyof LeadQuery, v: string) => { setSelected(new Set()); setFilters(f => ({ ...f, [k]: v || undefined })); };
+  // Only ids still on screen count as selected (a filter or search may have hidden some).
+  const selectedLeads = (data?.items ?? []).filter(l => selected.has(l._id));
+  const toggleSelect = (id: string) => setSelected(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const exportBrevo = async () => {
+    setExporting(true);
+    try { await apiExportBrevoCsv({ ...filters, q: search.trim() || undefined }); }
+    catch (e) { toast.error(errMsg(e, 'Could not export.')); }
+    setExporting(false);
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -128,6 +142,10 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
         <div className="w-[calc(50%-4px)] sm:w-40"><Select aria-label="Follow-up" value={filters.due ?? ''} onChange={e => setFilter('due', e.target.value)}>
           <option value="">Any follow-up</option><option value="overdue">Overdue</option><option value="today">Due today</option>
         </Select></div>
+        <div className="w-[calc(50%-4px)] sm:w-40"><Select aria-label="Marketing emails" value={filters.consent ?? ''} onChange={e => setFilter('consent', e.target.value as ConsentStatus)}>
+          <option value="">All</option>
+          {(['granted', 'none', 'asked', 'withdrawn'] as const).map(c => <option key={c} value={c}>{CONSENT_LABELS[c]}</option>)}
+        </Select></div>
         <div className="ml-auto flex flex-wrap justify-end items-center gap-2">
           <div className="flex rounded-md border border-bone overflow-hidden" role="group" aria-label="View">
             <button aria-pressed={view === 'board'} onClick={() => switchView('board')} className={clsx('px-2.5 py-1.5 border-0 cursor-pointer', view === 'board' ? 'bg-brand-pale-orange text-brand-deep-orange' : 'bg-white text-slate')} title="Board"><Columns3 size={15} /></button>
@@ -141,6 +159,14 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
               setSyncing(false);
             }}><UserRoundSearch size={14} /> Stalled sign-ups</Button>
           )}
+          {isManager && (
+            <>
+              <Button variant="ghost" title="Email leads who haven’t been asked yet, once, to ask if Solvexo may send them news and offers" onClick={() => setAsking(true)}>
+                <MailQuestion size={14} /> Ask for permission{selectedLeads.length ? ` (${selectedLeads.length})` : ''}
+              </Button>
+              <Button variant="ghost" loading={exporting} title="CSV of the leads matching these filters who agreed to marketing emails" onClick={() => void exportBrevo()}><Download size={14} /> Export for Brevo</Button>
+            </>
+          )}
           <Button variant="outline" onClick={() => setImporting(true)}><FileUp size={14} /> Import</Button>
           <Button onClick={() => setAdding(true)}><Plus size={14} /> Add lead</Button>
         </div>
@@ -148,7 +174,7 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
 
       {error ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center"><p className="text-[13px] text-slate">{error}</p><Button onClick={load}>Retry</Button></div>
-      ) : data && data.total === 0 && !search && !filters.owner && !filters.source && !filters.due ? (
+      ) : data && data.total === 0 && !search && !filters.owner && !filters.source && !filters.due && !filters.consent ? (
         <EmptyState icon={<Target size={28} />} title="No leads yet" description="Add a lead by hand or import a CSV. Demo requests from solvexo.store, Contact Us messages about selling, and stalled sign-ups arrive here on their own." action={{ label: 'Add lead', onClick: () => setAdding(true) }} />
       ) : view === 'board' ? (
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x">
@@ -178,7 +204,9 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
           })}
         </div>
       ) : (
-        <LeadTable leads={data?.items ?? []} loading={!data} showOwner={isManager} onOpen={id => navigate(`/admin/sales/leads/${id}`)} />
+        <LeadTable leads={data?.items ?? []} loading={!data} showOwner={isManager} onOpen={id => navigate(`/admin/sales/leads/${id}`)}
+          selected={isManager ? selected : undefined} onToggle={toggleSelect}
+          onToggleAll={on => setSelected(on ? new Set((data?.items ?? []).map(l => l._id)) : new Set())} />
       )}
       {data && data.total > data.items.length && <p className="text-[12px] text-slate">Showing {data.items.length} of {data.total}. Narrow the filters to see the rest.</p>}
 
@@ -193,6 +221,15 @@ function PipelineTab({ owners, isManager }: { owners: SalesOwner[]; isManager: b
           setAdding(false); toast.success('Lead added.');
           navigate(`/admin/sales/leads/${r.data.lead._id}`);
         }} />
+      )}
+      {asking && (
+        <AskConsentModal
+          leads={selectedLeads.length ? selectedLeads : data?.items ?? []}
+          scope={selectedLeads.length ? 'selected' : 'filtered'}
+          moreNotShown={!selectedLeads.length && data ? data.total - data.items.length : 0}
+          onClose={() => setAsking(false)}
+          onSent={() => { setSelected(new Set()); void load(); }}
+        />
       )}
       {losing && <LostReasonModal name={losing.name} onClose={() => setLosing(null)} onConfirm={async (reason, note) => { const l = losing; setLosing(null); await moveTo(l, 'lost', reason, note); }} />}
     </div>
@@ -218,7 +255,10 @@ function LeadCard({ lead, showOwner, onOpen, onMove }: { lead: SalesLead; showOw
         )}
       </div>
       <div className="flex items-center justify-between gap-2 mt-2">
-        {showOwner ? <span className="text-[11px] text-slate truncate">{lead.ownerName ?? 'Unassigned'}</span> : <span />}
+        <span className="flex items-center gap-1.5 min-w-0">
+          {showOwner && <span className="text-[11px] text-slate truncate">{lead.ownerName ?? 'Unassigned'}</span>}
+          {lead.marketingConsent && lead.marketingConsent.status !== 'none' && <ConsentBadge status={lead.marketingConsent.status} />}
+        </span>
         {/* Keyboard / touch alternative to dragging. */}
         <select aria-label={`Move ${lead.name}`} value={lead.stage} onChange={e => onMove(e.target.value as LeadStage)} className="text-[11px] border border-bone rounded px-1 py-0.5 bg-white text-slate cursor-pointer">
           {LEAD_STAGES.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
@@ -228,31 +268,80 @@ function LeadCard({ lead, showOwner, onOpen, onMove }: { lead: SalesLead; showOw
   );
 }
 
-function LeadTable({ leads, loading, showOwner, onOpen }: { leads: SalesLead[]; loading: boolean; showOwner: boolean; onOpen: (id: string) => void }) {
+function LeadTable({ leads, loading, showOwner, onOpen, selected, onToggle, onToggleAll }: {
+  leads: SalesLead[]; loading: boolean; showOwner: boolean; onOpen: (id: string) => void;
+  /** Managers pick leads to ask for marketing permission; undefined hides the checkboxes. */
+  selected?: Set<string>; onToggle?: (id: string) => void; onToggleAll?: (on: boolean) => void;
+}) {
   if (loading) return <div className="h-40 rounded-xl bg-cream animate-pulse" />;
   if (!leads.length) return <p className="text-[13px] text-slate py-10 text-center">No leads match these filters.</p>;
+  const allOn = !!selected && leads.every(l => selected.has(l._id));
   return (
     <div className="overflow-x-auto rounded-xl border border-bone bg-white">
       <table className="w-full text-[13px]">
         <thead><tr className="text-left text-[11px] uppercase tracking-wide text-slate border-b border-bone">
+          {selected && <th className="pl-3 py-2 w-6"><input type="checkbox" aria-label="Select all leads" checked={allOn} onChange={e => onToggleAll?.(e.target.checked)} className="size-4 accent-brand-orange cursor-pointer" /></th>}
           <th className="px-3 py-2 font-semibold">Lead</th><th className="px-3 py-2 font-semibold">Stage</th><th className="px-3 py-2 font-semibold">Source</th>
           <th className="px-3 py-2 font-semibold text-right">Value</th><th className="px-3 py-2 font-semibold">Next follow-up</th>
           {showOwner && <th className="px-3 py-2 font-semibold">Owner</th>}
+          <th className="px-3 py-2 font-semibold">Marketing emails</th>
         </tr></thead>
         <tbody>
           {leads.map(l => (
             <tr key={l._id} onClick={() => onOpen(l._id)} className="border-b border-bone last:border-0 hover:bg-cream cursor-pointer">
+              {selected && <td className="pl-3 py-2" onClick={e => e.stopPropagation()}><input type="checkbox" aria-label={`Select ${l.name}`} checked={selected.has(l._id)} onChange={() => onToggle?.(l._id)} className="size-4 accent-brand-orange cursor-pointer" /></td>}
               <td className="px-3 py-2"><p className="font-medium text-charcoal">{l.name}</p><p className="text-[12px] text-slate">{l.businessName ?? l.email ?? l.phone}</p></td>
               <td className="px-3 py-2"><StageBadge stage={l.stage} /></td>
               <td className="px-3 py-2 text-slate">{SOURCE_LABELS[l.source]}</td>
               <td className="px-3 py-2 text-right tabular-nums">{l.dealValuePKR ? formatPKR(l.dealValuePKR) : '—'}</td>
               <td className={clsx('px-3 py-2', l.stage !== 'won' && l.stage !== 'lost' && isOverdue(l.nextFollowUpAt) ? 'text-error font-medium' : 'text-slate')}>{relDay(l.nextFollowUpAt) || '—'}</td>
               {showOwner && <td className="px-3 py-2 text-slate">{l.ownerName ?? 'Unassigned'}</td>}
+              <td className="px-3 py-2"><ConsentBadge status={l.marketingConsent?.status} /></td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+  );
+}
+
+/** One-time "Can we keep you posted?" email to leads who haven't been asked. Only a click on its button counts as agreeing. */
+function AskConsentModal({ leads, scope, moreNotShown, onClose, onSent }: {
+  leads: SalesLead[]; scope: 'selected' | 'filtered'; moreNotShown: number; onClose: () => void; onSent: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<{ sent: number; skipped: number } | null>(null);
+  const eligible = leads.filter(l => l.email && (l.marketingConsent?.status ?? 'none') === 'none').length;
+  const send = async () => {
+    setBusy(true); setError('');
+    try { setResult(await apiAskMarketingConsent(leads.map(l => l._id))); onSent(); }
+    catch (e) { setError(errMsg(e, 'Could not send the emails.')); }
+    setBusy(false);
+  };
+  return (
+    <Modal title="Ask for permission to send marketing emails" onClose={onClose} width={520}
+      footer={<div className="flex justify-end gap-2">
+        {result ? <Button onClick={onClose}>Done</Button> : <><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} disabled={!leads.length} onClick={() => void send()}>Send permission email</Button></>}
+      </div>}>
+      {result ? (
+        <div role="status" className="flex flex-col gap-1 text-[13px] text-charcoal">
+          <p><strong>Sent to {result.sent} lead{result.sent === 1 ? '' : 's'}.</strong></p>
+          <p className="text-slate">Skipped {result.skipped}: no email, or already asked, agreed or unsubscribed.</p>
+          <p className="text-slate">Anyone who taps “Yes” is marked Agreed and goes to Brevo on the next sync.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 text-[13px] text-charcoal">
+          <p>Each lead gets one short email from Solvexo asking <strong>“Can we keep you posted?”</strong> with a button to say yes. Only people who tap it are marked Agreed. Nobody is asked twice, and leads without an email, or who were already asked, agreed or unsubscribed, are skipped.</p>
+          <p className="text-slate">
+            {scope === 'selected' ? `${leads.length} selected lead${leads.length === 1 ? '' : 's'}` : `${leads.length} lead${leads.length === 1 ? '' : 's'} matching these filters`}
+            {`, about ${eligible} can be asked.`}
+            {moreNotShown > 0 && ` ${moreNotShown} more match but aren’t loaded; narrow the filters to reach them.`}
+          </p>
+          {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
+        </div>
+      )}
+    </Modal>
   );
 }
 

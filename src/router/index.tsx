@@ -67,6 +67,7 @@ const PrivacyPolicyPage    = lazy(() => import('@/features/buyer/pages/PrivacyPo
 const TermsOfServicePage   = lazy(() => import('@/features/buyer/pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
 const CookiePolicyPage     = lazy(() => import('@/features/buyer/pages/CookiePolicyPage').then(m => ({ default: m.CookiePolicyPage })));
 const ContactUsPage        = lazy(() => import('@/features/buyer/pages/ContactUsPage').then(m => ({ default: m.ContactUsPage })));
+const EmailPreferencesConfirmedPage = lazy(() => import('@/features/buyer/pages/EmailPreferencesConfirmedPage').then(m => ({ default: m.EmailPreferencesConfirmedPage })));
 const AboutPage            = lazy(() => import('@/features/buyer/pages/AboutPage').then(m => ({ default: m.AboutPage })));
 const SecurityPage         = lazy(() => import('@/features/buyer/pages/SecurityPage').then(m => ({ default: m.SecurityPage })));
 const ProductsOverviewPage = lazy(() => import('@/features/buyer/pages/products/ProductsOverviewPage').then(m => ({ default: m.ProductsOverviewPage })));
@@ -340,6 +341,8 @@ const mainRouter = createBrowserRouter([
               { path: 'book-demo',       element: <BookDemoPage /> },
               { path: 'demo',            element: <Navigate to="/book-demo" replace /> },
               { path: 'contact',         element: <Navigate to="/contact-us" replace /> },
+              // Where the API sends people after they tap the link in the "Can we keep you posted?" email (noindex).
+              { path: 'email-preferences/confirmed', element: <EmailPreferencesConfirmedPage /> },
               { path: 'about',           element: <AboutPage /> },
               { path: 'security',        element: <SecurityPage /> },
               { path: 'products',        element: <ProductsOverviewPage /> },

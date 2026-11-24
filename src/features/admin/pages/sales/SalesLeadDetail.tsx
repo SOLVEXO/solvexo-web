@@ -13,9 +13,9 @@ import {
   apiGetLead, apiLeadChats, apiResolveAiDraft, apiWaOpenForLead, apiListTemplates, apiLogActivity, apiSalesOwners, apiSendLeadEmail, apiUpdateLead, apiUpdateTask, fillTemplate, formatPKR,
   type ChatTranscript, type LeadDetail, type LeadStage, type LogType, type SalesActivity, type SalesOwner, type SalesTemplate,
 } from '@/api/services/salesOps';
-import { LeadFormModal, LostReasonModal, StageBadge } from './parts';
+import { ConsentBadge, LeadFormModal, LostReasonModal, StageBadge } from './parts';
 import { Transcript } from './AgentTab';
-import { errMsg, isOverdue, relDay, useStableToast } from './sales.utils';
+import { brevoLine, consentSentence, errMsg, isOverdue, relDay, useStableToast } from './sales.utils';
 
 const ACTIVITY_ICON: Record<string, LucideIcon> = {
   note: NotebookPen, call: Phone, whatsapp: MessageCircle, meeting: Users, email: Mail,
@@ -127,6 +127,7 @@ export function SalesLeadDetail() {
               <dt className="text-slate">Last touch</dt><dd className="text-charcoal text-right">{relDay(lead.lastActivityAt) || '—'}</dd>
             </dl>
           </section>
+          <MarketingConsentCard lead={lead} onEdit={() => setEditing(true)} />
           <section className="rounded-xl border border-bone bg-white p-4 text-[13px]">
             <p className="text-[11px] font-bold uppercase tracking-wide text-slate mb-2 flex items-center gap-1.5"><Store size={12} /> Solvexo account</p>
             {d.merchant ? (
@@ -160,6 +161,26 @@ export function SalesLeadDetail() {
         </Modal>
       )}
     </>
+  );
+}
+
+/** Marketing-email permission in plain words, and where the lead stands in Brevo. */
+function MarketingConsentCard({ lead, onEdit }: { lead: LeadDetail['lead']; onEdit: () => void }) {
+  const c = lead.marketingConsent;
+  const sync = c?.status === 'granted' ? brevoLine(lead.brevo) : null;
+  return (
+    <section className="rounded-xl border border-bone bg-white p-4 text-[13px]" aria-label="Marketing emails">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-slate flex items-center gap-1.5"><Mail size={12} /> Marketing emails</p>
+        <ConsentBadge status={c?.status} />
+      </div>
+      <p className="text-charcoal">{consentSentence(c)}</p>
+      {c?.note && <p className="text-[12px] text-slate mt-0.5">“{c.note}”</p>}
+      {sync && <p className={clsx('text-[12px] mt-1.5', sync.tone === 'error' ? 'text-error' : sync.tone === 'wait' ? 'text-warning' : 'text-success')}>{sync.text}</p>}
+      {(c?.status ?? 'none') !== 'granted' && c?.status !== 'withdrawn' && (
+        <button onClick={onEdit} className="mt-2 text-[12px] font-medium text-brand-orange bg-transparent border-0 p-0 cursor-pointer hover:underline">They agreed? Record it</button>
+      )}
+    </section>
   );
 }
 
