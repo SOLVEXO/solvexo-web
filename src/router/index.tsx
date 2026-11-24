@@ -79,6 +79,7 @@ const NotFoundPage   = lazy(() => import('@/features/buyer/pages/NotFoundPage').
 const BlogIndexPage  = lazy(() => import('@/features/buyer/pages/blog/BlogIndexPage').then(m => ({ default: m.BlogIndexPage })));
 const BlogPostPage   = lazy(() => import('@/features/buyer/pages/blog/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
 const ManualsPage    = lazy(() => import('@/features/buyer/pages/ManualsPage').then(m => ({ default: m.ManualsPage })));
+const DevelopersPage = lazy(() => import('@/features/buyer/pages/DevelopersPage').then(m => ({ default: m.DevelopersPage })));
 const StartPage      = lazy(() => import('@/features/buyer/pages/StartPage').then(m => ({ default: m.StartPage })));
 const PartnersPage   = lazy(() => import('@/features/buyer/pages/PartnersPage').then(m => ({ default: m.PartnersPage })));
 
@@ -356,6 +357,7 @@ const mainRouter = createBrowserRouter([
               { path: 'blog',            element: <BlogIndexPage /> },
               { path: 'blog/:slug',      element: <BlogPostPage /> },
               { path: 'manuals',         element: <ManualsPage /> },
+              { path: 'developers',      element: <DevelopersPage /> },
               { path: 'start',           element: <StartPage /> },
               { path: 'online-store-pakistan', element: <StartPage variant="pakistan" /> },
               { path: 'partners',        element: <PartnersPage /> },

@@ -98,6 +98,13 @@ function contentFor(page: PublicPageSeo): string {
       '<h2>How joining works</h2><ol><li>Apply on this page.</li><li>Upload your documents.</li><li>Sign the partner agreement.</li><li>Your first 30 days: demo store, training, certification, first sellers live.</li></ol>',
     ].join('');
   }
+  if (page.path === '/developers') {
+    return [
+      '<p>Connect any app, marketing tool or back office to a Solvexo store: read orders, products, stock and customers, ship orders, and get webhooks when things change.</p>',
+      '<h2>Get started</h2><ol><li>The store owner creates an API token in Settings, Webhooks &amp; API, and chooses its permissions.</li><li>Send it as a Bearer token to https://api.solvexo.store/api/merchant/v1.</li><li>Add a webhook to hear about new orders, stock and customer changes.</li></ol>',
+      '<h2>API reference</h2><p>Store, orders, order fulfilment, products, collections, inventory and customers, with cursor paging, rate-limit headers and idempotent writes. The full description is the OpenAPI file at https://api.solvexo.store/api/merchant/v1/openapi.json.</p>',
+    ].join('');
+  }
   if (page.path === '/faq') {
     return `<h2>For sellers</h2>${faqHtml(SELLER_FAQ)}`;
   }
