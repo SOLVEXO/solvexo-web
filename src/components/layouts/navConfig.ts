@@ -105,6 +105,7 @@ const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIc
       { id: 'connected-apps', Icon: Package, label: 'Connected apps', path: 'app-platform', requiredPermission: ['apps.view', 'apps.manage'], requiredEntitlement: 'apiWebhooksAllowed' },
       { id: 'search-settings', Icon: Package, label: 'Search & discovery', path: 'search-settings', requiredPermission: 'onlinestore.themes.manage' },
       { id: 'security', Icon: Package, label: 'Security (2FA)', path: 'security' },
+      { id: 'build-apps', Icon: Package, label: 'Build apps', path: 'build-apps' },
       { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders', requiredPermission: ['draft_orders.view', 'draft_orders.manage'] },
       // Hidden until this store has payment proofs or connects its own "Bank Transfer" in
       // Integrations (see `hiddenNavIds`) — buyers who pay that way upload a proof here for the
@@ -308,10 +309,10 @@ const LAYOUT: { group: string; ids: string[]; collapsible?: boolean; groupIcon?:
 ];
 
 /** Personal (account-level) pages: reached from the avatar/Account page and the command palette, not the store sidebar. */
-export const ACCOUNT_NAV: NavItem[] = pick(['security']);
+export const ACCOUNT_NAV: NavItem[] = pick(['security', 'build-apps']);
 
 /** Ids that no longer appear in the sidebar on purpose (kept as routes). */
-export const NAV_UNLISTED_IDS = ['security'];
+export const NAV_UNLISTED_IDS = ['security', 'build-apps'];
 
 export const NAV: Group[] = LAYOUT
   .map(g => ({ group: g.group, collapsible: g.collapsible, groupIcon: g.groupIcon, items: pick(g.ids) }))

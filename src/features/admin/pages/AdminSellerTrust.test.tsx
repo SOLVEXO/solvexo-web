@@ -161,6 +161,6 @@ describe('AdminSellerTrust', () => {
     const confirm = screen.getByRole('alertdialog', { name: 'Confirm reminders' });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Send reminders' }));
     await waitFor(() => expect(api.apiTrustRemind).toHaveBeenCalledWith({ filter: expect.objectContaining({ risk: 'high' }) }));
-    expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('Reminders sent: 1. Skipped: 1'));
+    expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('Sending 1 reminder now (email and in-app). Skipped: 1'));
   });
 });

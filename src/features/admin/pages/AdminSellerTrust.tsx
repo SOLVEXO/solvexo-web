@@ -317,7 +317,7 @@ export function AdminSellerTrust() {
     try {
       const r = await apiTrustRemind(body);
       const { sent = 0, skipped = 0 } = r.data ?? {};
-      toast.success(`Reminders sent: ${sent}. Skipped: ${skipped} (verified or reminded in the last 24 hours).`);
+      toast.success(`Sending ${sent} reminder${sent === 1 ? '' : 's'} now (email and in-app). Skipped: ${skipped} (verified or reminded in the last 24 hours).`);
       setSelected(new Set());
       setConfirmRemindAll(false);
       loadList();

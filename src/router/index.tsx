@@ -155,6 +155,7 @@ const ExperimentsHub = lazy(() => import('@/features/seller/store/Dashboard/Stor
 const ConnectedAppsHub = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/ConnectedAppsHub'));
 const AppAuthorizePage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/AppAuthorizePage'));
 const AppEmbedPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/appPlatform/AppEmbedPage'));
+const BuildAppsPage = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/developers/BuildAppsPage'));
 const AdminAppPlatform = lazy(() => import('@/features/admin/pages/AdminAppPlatform').then(m => ({ default: m.AdminAppPlatform })));
 const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList').then(m => ({ default: m.StoreOrderList })));
 const StoreOrderDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail').then(m => ({ default: m.StoreOrderDetail })));
@@ -444,6 +445,7 @@ const mainRouter = createBrowserRouter([
           { path: 'app-platform',                     element: <ConnectedAppsHub /> },
           { path: 'app-platform/authorize',           element: <AppAuthorizePage /> },
           { path: 'app-platform/:installId',          element: <AppEmbedPage /> },
+          { path: 'build-apps',                       element: <BuildAppsPage /> },
           { path: 'cod-protection',                   element: <Navigate to="../settings/cod-protection" replace /> },
           { path: 'messaging',                        element: <MessagingHub /> },
           { path: 'sales-channels',                   element: <SalesChannelsPage /> },

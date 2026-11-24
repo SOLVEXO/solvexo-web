@@ -3,6 +3,8 @@ import client from '../client';
 export interface PlatformAppPublic {
   id: string; name: string; slug: string; description: string; developerName: string; clientId: string;
   scopes: string[]; redirectUrls: string[]; hasEmbed: boolean; embedTitle: string;
+  /** The store owner's own app, not listed for other stores (see Build apps). */
+  private?: boolean;
 }
 export interface AvailableApp extends PlatformAppPublic { installed: boolean; scopeLabels: string[] }
 export interface InstalledApp { installId: string; app: PlatformAppPublic; grantedScopes: string[]; scopeLabels: string[]; installedAt: string; embed: { title: string } | null }
@@ -24,6 +26,9 @@ export interface AdminAppRow {
   _id: string; name: string; slug: string; description: string; developerName: string; developerEmail: string; clientId: string; clientSecretHint: string;
   redirectUrls: string[]; requestedScopes: string[]; webhookUrl: string | null; webhookEvents: string[]; uninstallWebhookUrl: string | null; embedUrl: string | null; embedTitle: string;
   status: 'draft' | 'approved' | 'suspended';
+  /** Set when a developer (a seller account) registered it; null for apps a Solvexo admin registered. */
+  ownerSellerId?: string | null;
+  reviewStatus?: 'none' | 'submitted' | 'rejected'; reviewNote?: string; submittedAt?: string | null;
 }
 export interface AdminAppInput {
   name: string; description?: string; developerName?: string; developerEmail?: string; redirectUrls: string[]; requestedScopes: string[];
@@ -33,5 +38,6 @@ export const apiAdminListApps = () => client.get('/api/admin/app-platform') as P
 export const apiAdminCreateApp = (body: AdminAppInput) => client.post('/api/admin/app-platform', body) as Promise<{ id: string; clientId: string; clientSecret: string; sessionSecret: string }>;
 export const apiAdminUpdateApp = (id: string, body: Partial<AdminAppInput>) => client.patch(`/api/admin/app-platform/${id}`, body) as Promise<AdminAppRow>;
 export const apiAdminApproveApp = (id: string) => client.post(`/api/admin/app-platform/${id}/approve`) as Promise<AdminAppRow>;
+export const apiAdminRejectApp = (id: string, note: string) => client.post(`/api/admin/app-platform/${id}/reject`, { note }) as Promise<AdminAppRow>;
 export const apiAdminSuspendApp = (id: string) => client.post(`/api/admin/app-platform/${id}/suspend`) as Promise<{ success: boolean; uninstalled: number }>;
 export const apiAdminRotateAppSecrets = (id: string) => client.post(`/api/admin/app-platform/${id}/rotate-secrets`) as Promise<{ clientSecret: string; sessionSecret: string }>;

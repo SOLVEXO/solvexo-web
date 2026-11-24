@@ -11,6 +11,7 @@ export function planStatusLabel(status: string | null | undefined, opts: { cance
     case 'past_due': return { label: 'Payment due', tone: 'error' };
     case 'locked': return { label: 'Store paused', tone: 'error' };
     case 'canceled': return { label: 'Subscription ended', tone: 'error' };
+    case 'development': return { label: 'Development store', tone: 'info' };
     default: return { label: status ? status.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()) : 'Unknown', tone: 'info' };
   }
 }
