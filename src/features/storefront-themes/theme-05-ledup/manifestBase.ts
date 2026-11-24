@@ -1,4 +1,5 @@
 import type { ThemeManifest, ThemeStylePreset } from '../themeManifest';
+import { LEDUP_ICON_SETS } from './headerIconSets';
 import { TEXT_CASE_FIELDS } from '../textCaseFields';
 import { CARD_BORDER_FIELDS, PAGE_BG_FIELDS } from '../pageBackground';
 import { SPECS_FIELDS } from '../specsLook';
@@ -63,8 +64,8 @@ export const baseManifest: ThemeManifest = {
   id: 'theme-05-ledup',
   name: 'Ledup',
   supportsAnnouncementBar: true,
-  headerOptionChoices: {},
-  supportedHeaderOptions: ['logoPosition', 'sticky', 'menuOverflow', 'button', 'topBar', 'colours'],
+  headerOptionChoices: { iconSets: LEDUP_ICON_SETS },
+  supportedHeaderOptions: ['logoPosition', 'sticky', 'menuOverflow', 'button', 'topBar', 'colours', 'icons'],
   supportedFooterOptions: ['spacing', 'colours', 'headings', 'policyLinks', 'currency', 'defaultColumns'],
   templates: [
     { id: 'home', label: 'Home', group: 'home', showChrome: true, resource: { kind: 'store-page', pageType: 'home' } },

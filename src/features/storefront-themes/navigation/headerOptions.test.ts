@@ -11,6 +11,7 @@ describe('readHeaderOptions', () => {
       headerStyle: 'standard', navAlignment: 'left', logoPosition: 'left', menuPosition: 'beside', bgColor: null, textColor: null, paddingDelta: 0, showDivider: true,
       stickyMode: 'off', transparentOnHome: false, transparentTextColor: '#ffffff', navFontSize: 'md', navUppercase: false,
       navHoverStyle: 'none', searchStyle: 'icon', searchPosition: 'icons', cta: null, topBar: null,
+      menuOverflow: 'scroll', showCart: true, iconSet: null, iconSize: 'md', iconStroke: 'regular', iconTooltips: true, iconLabels: 'none',
     });
     // the old sticky switch still works
     expect(readHeaderOptions({ sticky: true }, 'Journal').stickyMode).toBe('always');
@@ -37,6 +38,15 @@ describe('readHeaderOptions', () => {
     expect(o.headerStyle).toBe('standard');
     expect(o.navAlignment).toBe('left');
     expect(o.shopLabel).toBe('Shop');
+  });
+});
+
+describe('header icon settings', () => {
+  it('reads the seller icon choices and ignores junk', () => {
+    expect(readHeaderOptions({ showCart: false, iconSet: 'maison-soft', iconSize: 'lg', iconStroke: 'thin', iconTooltips: false, iconLabels: 'below' }, 'J'))
+      .toMatchObject({ showCart: false, iconSet: 'maison-soft', iconSize: 'lg', iconStroke: 'thin', iconTooltips: false, iconLabels: 'below' });
+    expect(readHeaderOptions({ iconSet: 'Bad Id!', iconSize: 'huge' as never, iconStroke: 'x' as never, iconLabels: 'side' as never }, 'J'))
+      .toMatchObject({ iconSet: null, iconSize: 'md', iconStroke: 'regular', iconLabels: 'none' });
   });
 });
 

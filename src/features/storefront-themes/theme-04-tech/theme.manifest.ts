@@ -1,5 +1,6 @@
 import { registerThemeManifest, type ThemeManifest, type ThemeSettingsFieldDef, type ThemeStylePreset } from '../themeManifest';
 import { baseManifest } from './manifestBase';
+import { TECH_ICON_SETS } from './headerIconSets';
 import type { StorefrontColors } from '@/api/services/storeTheme';
 
 const SHOW_HIDE = [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }];
@@ -62,7 +63,8 @@ export const techThemeManifest: ThemeManifest = {
   id: 'theme-04-tech',
   name: 'Tech Store',
   supportsAnnouncementBar: true,
-  supportedHeaderOptions: ['searchBar', 'sticky', 'button', 'topBar', 'colours', 'menuStyle', 'menuOverflow'],
+  headerOptionChoices: { iconSets: TECH_ICON_SETS },
+  supportedHeaderOptions: ['searchBar', 'sticky', 'button', 'topBar', 'colours', 'menuStyle', 'menuOverflow', 'icons'],
   supportedFooterOptions: ['spacing', 'newsletterTop', 'mobileAccordion', 'colours', 'headings', 'socialStyle', 'socialColour', 'socialSize', 'policyLinks', 'currency', 'logo', 'defaultColumns', 'wordmark', 'bottomLayout', 'poweredBy'],
   defaultSettings: DEFAULTS,
   styles: STYLES,

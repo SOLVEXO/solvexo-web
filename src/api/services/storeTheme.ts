@@ -227,7 +227,14 @@ export interface StorefrontHeader {
   /** Search box only: next to the icons, or centered on its own row. */
   /** A choice the active theme offers (see its manifest `headerOptionChoices`); unknown values read as the default. */
   searchPosition?:      string;
-  ctaLabel?:            string | null;
+  showCart?:            boolean;
+  /** Id of one of the active theme's own icon sets (manifest `headerOptionChoices.iconSets`); unknown = the theme default. */
+  iconSet?:             string | null;
+  iconSize?:            'sm' | 'md' | 'lg';
+  iconStroke?:          'thin' | 'regular' | 'bold';
+  iconTooltips?:        boolean;
+  iconLabels?:          'none' | 'below';
+  ctaLabel?:           string | null;
   ctaLink?:             string | null;
   topBarEnabled?:       boolean;
   topBarText?:          string | null;

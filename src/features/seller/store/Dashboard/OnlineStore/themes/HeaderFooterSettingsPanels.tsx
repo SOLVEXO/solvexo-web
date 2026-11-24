@@ -5,7 +5,8 @@ import type { StorefrontHeader, StorefrontFooter, LogoLink } from '@/api/service
 import { LinkTargetFields, type LinkTarget } from '../builder/LinkTargetFields';
 import { ChromeItemsEditor } from './ChromeItemsEditor';
 import { readHeaderOptions } from '@/features/storefront-themes/navigation/headerOptions';
-import type { FooterOptionKey, HeaderChoice, HeaderOptionKey } from '@/features/storefront-themes/themeManifest';
+import type { FooterOptionKey, HeaderChoice, HeaderIconSetDef, HeaderOptionKey } from '@/features/storefront-themes/themeManifest';
+import { HeaderIconGlyph, type HeaderIconKind, type IconSkin } from '@/features/storefront-themes/navigation/headerIcons';
 
 const SELECT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const INPUT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
@@ -94,14 +95,69 @@ function TextField({ label, value, onChange, placeholder, maxLength, disabled }:
   );
 }
 
+const PREVIEW_SKIN: IconSkin = { tipBg: '#111', tipInk: '#fff', tipRadius: 6, tipFont: 'inherit', tileRadius: 8, inverse: '#fff' };
+const PREVIEW_KINDS: HeaderIconKind[] = ['search', 'account', 'wishlist', 'cart'];
+
+/** Icon controls of the Header panel: cart switch, the theme's own icon sets (each previewed with its 4 icons), size, line weight, labels, tooltips. */
+function IconLook({ header, sets, set }: { header: StorefrontHeader; sets: HeaderIconSetDef[]; set: (patch: Partial<StorefrontHeader>) => void }) {
+  const eff = readHeaderOptions(header, '');
+  const active = sets.find(x => x.id === header.iconSet) ?? sets[0];
+  return (
+    <>
+      <SwitchRow label="Cart" hint="If you hide it, shoppers can only reach the cart through a link you add." checked={header.showCart !== false} onChange={v => set({ showCart: v })} />
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[11.5px] text-charcoal" id="hdr-icon-style">Icon style</span>
+        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-labelledby="hdr-icon-style">
+          {sets.map(def => {
+            const on = def.id === active.id;
+            return (
+              <button key={def.id} type="button" role="radio" aria-checked={on} onClick={() => set({ iconSet: def.id })}
+                className={`flex cursor-pointer flex-col items-start gap-2 rounded-lg border bg-white p-2.5 text-left ${on ? 'border-brand-orange ring-1 ring-brand-orange' : 'border-bone hover:border-slate'}`}>
+                <span className="flex items-center gap-1.5 text-charcoal">
+                  {PREVIEW_KINDS.map(k => <HeaderIconGlyph key={k} kind={k} base={16} skin={PREVIEW_SKIN} prefs={{ set: def, size: 'sm', stroke: eff.iconStroke, tooltips: false, labels: 'none' }} />)}
+                </span>
+                <span className="text-[11.5px] font-medium text-charcoal">{def.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {active.hint && <span className="text-[10.5px] text-slate">{active.hint}</span>}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1">
+          <span className="text-[11.5px] text-charcoal">Icon size</span>
+          <select className={SELECT} value={eff.iconSize} onChange={e => set({ iconSize: e.target.value as StorefrontHeader['iconSize'] })}>
+            <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[11.5px] text-charcoal">Line weight</span>
+          <select className={SELECT} value={eff.iconStroke} onChange={e => set({ iconStroke: e.target.value as StorefrontHeader['iconStroke'] })}>
+            <option value="thin">Thin</option><option value="regular">Regular</option><option value="bold">Bold</option>
+          </select>
+        </label>
+      </div>
+      <label className="flex flex-col gap-1">
+        <span className="text-[11.5px] text-charcoal">Text with the icons</span>
+        <select className={SELECT} value={eff.iconLabels} onChange={e => set({ iconLabels: e.target.value as StorefrontHeader['iconLabels'] })}>
+          <option value="none">Icons only</option>
+          <option value="below">Icon with a small label below</option>
+        </select>
+      </label>
+      <SwitchRow label="Tooltip on hover" hint="A small name bubble when a shopper points at an icon. Not shown on touch screens or when labels are on." checked={header.iconTooltips !== false} onChange={v => set({ iconTooltips: v })} />
+    </>
+  );
+}
+
 /** Header section settings, grouped like Shopify's header settings. Every control falls back to the theme's own look. */
 export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [], choices }: {
   header: StorefrontHeader; onChange: (next: StorefrontHeader) => void; logoSlot?: ReactNode;
   /** Optional controls the active theme actually renders (its manifest's `supportedHeaderOptions`). */
   supports?: HeaderOptionKey[];
   /** The active theme's own choices for the options that vary per theme (its manifest `headerOptionChoices`). */
-  choices?: { searchPosition?: HeaderChoice[] };
+  choices?: { searchPosition?: HeaderChoice[]; iconSets?: HeaderIconSetDef[] };
 }) {
+  const iconSets = choices?.iconSets ?? [];
   const searchChoices = choices?.searchPosition ?? [{ value: 'icons', label: 'Next to the icons' }];
   const can = (k: HeaderOptionKey) => supports.includes(k);
   const set = (patch: Partial<StorefrontHeader>) => onChange({ ...header, ...patch });
@@ -275,7 +331,9 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
         )}
         <SwitchRow label="Account" checked={header.showAccount !== false} onChange={v => set({ showAccount: v })} />
         <SwitchRow label="Wishlist (signed-in shoppers)" checked={header.showWishlist !== false} onChange={v => set({ showWishlist: v })} />
-        <p className="text-[10.5px] text-slate">The cart icon always stays.</p>
+        {can('icons') && iconSets.length > 0
+          ? <IconLook header={header} sets={iconSets} set={set} />
+          : <p className="text-[10.5px] text-slate">The cart icon always stays.</p>}
       </Group>
 
       <Group title="Automatic menu items">

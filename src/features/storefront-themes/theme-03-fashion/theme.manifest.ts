@@ -2,6 +2,7 @@ import { registerThemeManifest, type ThemeManifest, type ThemeStylePreset } from
 import { TEXT_CASE_FIELDS } from '../textCaseFields';
 import { CARD_BORDER_FIELDS, PAGE_BG_FIELDS } from '../pageBackground';
 import { SPECS_FIELDS } from '../specsLook';
+import { MAISON_ICON_SETS } from './headerIconSets';
 import type { StorefrontColors } from '@/api/services/storeTheme';
 
 const RADIUS = [{ value: 'none', label: 'Square' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'full', label: 'Pill' }];
@@ -45,8 +46,9 @@ export const fashionThemeManifest: ThemeManifest = {
       { value: 'row', label: 'In the logo row, between the logo and the icons', hint: 'The menu moves to its own row below. Needs the logo on the left; otherwise the box shows on its own row.' },
       { value: 'center', label: 'Centered, on its own row' },
     ],
+    iconSets: MAISON_ICON_SETS,
   },
-  supportedHeaderOptions: ['logoPosition', 'menuPosition', 'menuAlignment', 'searchBar', 'searchPosition', 'sticky', 'transparent', 'menuStyle', 'menuOverflow', 'button', 'topBar', 'colours'],
+  supportedHeaderOptions: ['logoPosition', 'menuPosition', 'menuAlignment', 'searchBar', 'searchPosition', 'sticky', 'transparent', 'menuStyle', 'menuOverflow', 'button', 'topBar', 'colours', 'icons'],
   // Maison's footer is a dark rounded panel: it has no background photo and no "compact" layout, so those two are not offered.
   supportedFooterOptions: ['spacing', 'alignment', 'newsletterTop', 'mobileAccordion', 'colours', 'headings', 'socialStyle', 'socialColour', 'socialSize', 'policyLinks', 'currency', 'backToTop', 'logo', 'defaultColumns', 'shape', 'wordmark', 'bottomLayout', 'poweredBy'],
   defaultSettings: DEFAULTS,

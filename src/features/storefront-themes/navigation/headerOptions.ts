@@ -43,6 +43,15 @@ export interface HeaderOptions {
   menuOverflow: 'scroll' | 'wrap';
   /** Theme-defined slug (default 'icons'); each theme interprets the ones it offers. */
   searchPosition: string;
+  /** Cart icon: on unless the seller turns it off. */
+  showCart: boolean;
+  /** Id of one of the active theme's icon sets; null = the theme's default set. */
+  iconSet: string | null;
+  iconSize: 'sm' | 'md' | 'lg';
+  iconStroke: 'thin' | 'regular' | 'bold';
+  /** Hover/focus tooltip on every icon (on unless switched off). */
+  iconTooltips: boolean;
+  iconLabels: 'none' | 'below';
   cta: { label: string; link: string } | null;
   topBar: TopStripData | null;
 }
@@ -127,6 +136,12 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     searchStyle: h.searchStyle === 'bar' ? 'bar' : 'icon',
     menuOverflow: h.menuOverflow === 'wrap' ? 'wrap' : 'scroll',
     searchPosition: typeof h.searchPosition === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(h.searchPosition) ? h.searchPosition : 'icons',
+    showCart: h.showCart !== false,
+    iconSet: typeof h.iconSet === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(h.iconSet) ? h.iconSet : null,
+    iconSize: h.iconSize === 'sm' || h.iconSize === 'lg' ? h.iconSize : 'md',
+    iconStroke: h.iconStroke === 'thin' || h.iconStroke === 'bold' ? h.iconStroke : 'regular',
+    iconTooltips: h.iconTooltips !== false,
+    iconLabels: h.iconLabels === 'below' ? 'below' : 'none',
     cta: typeof h.ctaLabel === 'string' && h.ctaLabel.trim() && typeof h.ctaLink === 'string' && SAFE_LINK.test(h.ctaLink)
       ? { label: h.ctaLabel.trim(), link: h.ctaLink } : null,
     topBar: h.topBarEnabled && (h.topBarText || h.topBarPhone || h.topBarEmail || readTopBarItems(h.topBarItems).length)

@@ -1,8 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased, textCaseOf } from '../../textCase';
 import { ts } from '@/utils/tStatic';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ChevronDown, Menu, X } from 'lucide-react';
+import { HeaderIconButton, HeaderIconStyles, resolveIconPrefs } from '../../navigation/headerIcons';
+import { MAISON_ICON_SETS, maisonIconSkin } from '../headerIconSets';
 import { useStorefront, type StorefrontNavItemSettings, type ResolvedStorefrontNavItem } from '@/features/storefront/StorefrontContext';
 import { useContentLocale } from '@/features/storefront/storefrontMarket';
 import { useCartContext } from '@/contexts/CartContext';
@@ -141,6 +143,8 @@ export function FashionNavbar() {
   };
 
   const openCart = () => (drawerMounted ? openDrawer() : navigate('/cart'));
+  const iconPrefs = resolveIconPrefs(o, MAISON_ICON_SETS);
+  const iconSkin = maisonIconSkin(t);
 
   const iconBtn = 'relative flex size-10 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 transition-colors hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]';
   const badge = (n: number) => n > 0 && (
@@ -264,10 +268,11 @@ export function FashionNavbar() {
                 <FashionPredictiveSearch inputId="fx-search-bar" placeholder={ts('pg.search_the_collection', 'Search the collection')} maxWidth="100%" />
               </div>
             )}
-            {o.showSearch && <button type="button" className={`${iconBtn}${searchBar ? ' lg:hidden' : ''}`} aria-label={ts('nav.search', 'Search')} onClick={() => setSearchOpen(s => !s)} style={{ color: fg }}>{searchOpen ? <X size={20} /> : <Search size={20} />}</button>}
-            {o.showAccount && <Link to={accountTo} className={`${iconBtn} hidden sm:flex`} aria-label={ts('nav.account', 'Account')} style={{ color: fg }}><User size={20} /></Link>}
-            {o.showWishlist && <Link to="/wishlist" className={`${iconBtn} hidden sm:flex`} aria-label={ts('nav.wishlist', 'Wishlist')} style={{ color: fg }}><Heart size={20} />{badge(wishlistCount)}</Link>}
-            <button type="button" className={iconBtn} aria-label={ts('nav.cartAria', 'Cart, {{count}} items', { count: cartCount })} onClick={openCart} style={{ color: fg }}><ShoppingBag size={20} />{badge(cartCount)}</button>
+            <HeaderIconStyles />
+            {o.showSearch && <HeaderIconButton kind="search" prefs={iconPrefs} skin={iconSkin} label={ts('nav.search', 'Search')} wrapClassName={searchBar ? 'lg:hidden' : undefined} className={iconBtn} style={{ color: fg }} onClick={() => setSearchOpen(s => !s)} expanded={searchOpen} glyph={searchOpen ? <X size={20} aria-hidden /> : undefined} />}
+            {o.showAccount && <HeaderIconButton kind="account" prefs={iconPrefs} skin={iconSkin} label={TokenStorage.isLoggedIn() ? ts('nav.account', 'Account') : ts('nav.signIn', 'Sign in')} ariaLabel={ts('nav.account', 'Account')} to={accountTo} wrapClassName="hidden sm:inline-flex" className={iconBtn} style={{ color: fg }} />}
+            {o.showWishlist && <HeaderIconButton kind="wishlist" prefs={iconPrefs} skin={iconSkin} label={ts('nav.wishlist', 'Wishlist')} to="/wishlist" wrapClassName="hidden sm:inline-flex" className={iconBtn} style={{ color: fg }} badge={badge(wishlistCount)} />}
+            {o.showCart && <HeaderIconButton kind="cart" prefs={iconPrefs} skin={iconSkin} label={cartCount > 0 ? ts('nav.cartTip', 'Cart ({{count}})', { count: cartCount }) : ts('nav.cart', 'Cart')} ariaLabel={ts('nav.cartAria', 'Cart, {{count}} items', { count: cartCount })} align="end" className={iconBtn} style={{ color: fg }} onClick={openCart} badge={badge(cartCount)} />}
           </div>
         </div>
 

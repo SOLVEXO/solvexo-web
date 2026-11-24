@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { cased } from '../../textCase';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, Search, User, ShoppingBag, Menu, X, ArrowUpRight, Phone } from 'lucide-react';
+import { ChevronDown, Search, User, Menu, X, ArrowUpRight, Phone } from 'lucide-react';
+import { HeaderIconButton, HeaderIconStyles, resolveIconPrefs } from '../../navigation/headerIcons';
+import { LEDUP_ICON_SETS, LEDUP_ICON_SKIN } from '../headerIconSets';
 import { ts } from '@/utils/tStatic';
 import { TokenStorage } from '@/api/services/auth';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -38,6 +40,7 @@ export function LedupNavbar() {
   const logoUrl = header?.logoSource === 'custom' && header.customLogoUrl ? header.customLogoUrl : store.logo;
   const logo = logoImageProps(o);
   const cta = o.cta;
+  const iconPrefs = resolveIconPrefs(o, LEDUP_ICON_SETS);
   const panelOpen = megaId !== null || searchOpen;
 
   // The logo turns white while the header sits over a dark section (marked data-ld-dark), like ledup.pt.
@@ -110,17 +113,18 @@ export function LedupNavbar() {
             {cta && (
               <Link to={cta.link} className="ld-ctabtn ld-cta-desktop">{cta.label} <ArrowUpRight size={13} aria-hidden /></Link>
             )}
-            <button type="button" className="ld-iconbtn ld-hide-md" aria-expanded={searchOpen} aria-label={ts('nav.search', 'Search')} onClick={() => { setMegaId(null); setSearchOpen(v => !v); }}>
-              {searchOpen ? <X size={16} aria-hidden /> : <Search size={16} aria-hidden />}
-            </button>
-            <div className="relative ld-hide-md">
-              <button type="button" className="ld-iconbtn" aria-expanded={authOpen} aria-label={ts('nav.account', 'Account')} onClick={() => setAuthOpen(v => !v)}><User size={16} aria-hidden /></button>
-              <LedupAuthPopover isOpen={authOpen} onClose={() => setAuthOpen(false)} />
-            </div>
-            <button type="button" className="ld-iconbtn" aria-label={ts('nav.cartAria', 'Cart, {{count}} items', { count: cartCount })} onClick={openCart}>
-              <ShoppingBag size={16} aria-hidden />
-              {cartCount > 0 && <span className="absolute -end-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold shadow-sm" style={{ color: 'var(--ld-accent)' }}>{cartCount > 99 ? '99+' : cartCount}</span>}
-            </button>
+            <HeaderIconStyles />
+            {o.showSearch && <HeaderIconButton kind="search" prefs={iconPrefs} skin={LEDUP_ICON_SKIN} base={16} label={ts('nav.search', 'Search')} wrapClassName="ld-hide-md" className="ld-iconbtn" expanded={searchOpen} onClick={() => { setMegaId(null); setSearchOpen(v => !v); }} glyph={searchOpen ? <X size={16} aria-hidden /> : undefined} />}
+            {o.showAccount && (
+              <div className="relative ld-hide-md">
+                <HeaderIconButton kind="account" prefs={iconPrefs} skin={LEDUP_ICON_SKIN} base={16} label={TokenStorage.isLoggedIn() ? ts('nav.account', 'Account') : ts('nav.signIn', 'Sign in')} ariaLabel={ts('nav.account', 'Account')} className="ld-iconbtn" expanded={authOpen} onClick={() => setAuthOpen(v => !v)} />
+                <LedupAuthPopover isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+              </div>
+            )}
+            {o.showCart && (
+              <HeaderIconButton kind="cart" prefs={iconPrefs} skin={LEDUP_ICON_SKIN} base={16} label={cartCount > 0 ? ts('nav.cartTip', 'Cart ({{count}})', { count: cartCount }) : ts('nav.cart', 'Cart')} ariaLabel={ts('nav.cartAria', 'Cart, {{count}} items', { count: cartCount })} align="end" className="ld-iconbtn" onClick={openCart}
+                badge={cartCount > 0 ? <span className="absolute -end-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold shadow-sm" style={{ color: 'var(--ld-accent)' }}>{cartCount > 99 ? '99+' : cartCount}</span> : undefined} />
+            )}
             <button type="button" className="ld-iconbtn ld-burger" aria-expanded={mobileOpen} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => { setSearchOpen(false); setMobileOpen(v => !v); }}>
               {mobileOpen ? <X size={18} aria-hidden /> : <Menu size={18} aria-hidden />}
             </button>

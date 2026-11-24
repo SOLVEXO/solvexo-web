@@ -154,7 +154,21 @@ export interface ThemeStylePreset {
  *  (like a Shopify theme's own settings schema), so a control never appears for a theme that would ignore it. */
 export type HeaderOptionKey =
   | 'logoPosition' | 'menuPosition' | 'menuAlignment' | 'searchBar' | 'searchPosition'
-  | 'sticky' | 'transparent' | 'menuStyle' | 'menuOverflow' | 'button' | 'topBar' | 'colours';
+  | 'sticky' | 'transparent' | 'menuStyle' | 'menuOverflow' | 'button' | 'topBar' | 'colours' | 'icons';
+
+/** How a header icon set is drawn. Containers (circle/solid/tile/box) draw their own shape; the rest only change the glyph. */
+export type HeaderIconTreatment = 'line' | 'bold' | 'filled' | 'duotone' | 'sharp' | 'circle' | 'solid' | 'tile' | 'box';
+
+/** One complete header icon set a theme offers (search, account, wishlist and cart drawn alike). The first set of a theme is its default. */
+export interface HeaderIconSetDef {
+  /** Short slug saved on the store. */
+  id: string;
+  label: string;
+  hint?: string;
+  /** Which glyph family: bag/handbag/basket/cart changes the account + cart pictograms. */
+  family: 'bag' | 'cart' | 'handbag' | 'basket';
+  treatment: HeaderIconTreatment;
+}
 
 /** Optional footer controls a theme chooses to support. The Footer settings panel only shows the ones its active theme lists,
  *  so a switch never appears for a theme that would ignore it. A theme with no list shows all of them (older themes keep working). */
@@ -220,7 +234,7 @@ export interface ThemeManifest {
   /** Which optional footer controls this theme renders. Missing = all of them. */
   supportedFooterOptions?: FooterOptionKey[];
   /** The values this theme offers for options that vary per theme. The first one is the default. */
-  headerOptionChoices?: { searchPosition?: HeaderChoice[] };
+  headerOptionChoices?: { searchPosition?: HeaderChoice[]; iconSets?: HeaderIconSetDef[] };
   /** Sections only this theme offers (shown in Add section, edited with the generic form). */
   customSections?: ThemeCustomSectionDef[];
   templates: ThemeTemplateScopeDef[];

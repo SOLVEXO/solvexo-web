@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased } from '../../textCase';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Heart, Menu, Search, ShoppingCart, User, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Heart, Menu, User, X } from 'lucide-react';
+import { HeaderIconButton, HeaderIconStyles, resolveIconPrefs } from '../../navigation/headerIcons';
+import { TECH_ICON_SETS, techIconSkin } from '../headerIconSets';
 import { ts } from '@/utils/tStatic';
 import { useStorefront, type ResolvedStorefrontNavItem, type StorefrontNavItemSettings } from '@/features/storefront/StorefrontContext';
 import { useContentLocale } from '@/features/storefront/storefrontMarket';
@@ -212,6 +214,8 @@ export function TechNavbar() {
   const wordmark = logoUrl
     ? <img src={logoUrl} alt={store.name} className={logo.className} style={logo.style} />
     : <span className="whitespace-nowrap text-xl font-bold leading-none" style={{ fontFamily: t.fonts.display }}>{store.name}</span>;
+  const iconPrefs = resolveIconPrefs(o, TECH_ICON_SETS);
+  const iconSkin = techIconSkin(t, t.buttonRadiusPx);
   const iconBtn = 'relative grid size-10 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0';
   const badge = (n: number) => n > 0 && <span className="absolute end-0 top-0 grid h-4 min-w-4 place-items-center px-1 text-[10px] font-semibold" style={{ background: t.colors.accent, color: t.colors.accentInk, borderRadius: 9999 }}>{n > 99 ? '99+' : n}</span>;
   const cta = o.cta;
@@ -258,16 +262,15 @@ export function TechNavbar() {
 
   /** The search icon: opens the search bar (always visible from the large breakpoint in the search-first and centered layouts). */
   const searchToggle = o.showSearch && (
-    <button type="button" className={`${iconBtn}${searchFirst || centered ? ' lg:hidden' : ''}`} aria-label={searchOpen ? ts('nav.closeSearch', 'Close search') : ts('nav.search', 'Search')} aria-expanded={searchOpen} onClick={() => setSearchOpen(s => !s)} style={{ color: searchOpen ? t.colors.accent : t.colors.ink }}>
-      {searchOpen ? <X size={20} /> : <Search size={20} />}
-    </button>
+    <HeaderIconButton kind="search" prefs={iconPrefs} skin={iconSkin} label={searchOpen ? ts('nav.closeSearch', 'Close search') : ts('nav.search', 'Search')} wrapClassName={searchFirst || centered ? 'lg:hidden' : undefined} className={iconBtn} style={{ color: searchOpen ? t.colors.accent : t.colors.ink }} expanded={searchOpen} onClick={() => setSearchOpen(s => !s)} glyph={searchOpen ? <X size={20} aria-hidden /> : undefined} />
   );
   const icons = (
     <div className="ms-auto flex items-center gap-0.5">
+      <HeaderIconStyles />
       {searchToggle}
-      {o.showWishlist && <Link to="/wishlist" className={`${iconBtn} hidden sm:grid`} aria-label={ts('nav.wishlist', 'Wishlist')} style={{ color: t.colors.ink }}><Heart size={20} />{badge(wishlistCount)}</Link>}
-      <button type="button" className={iconBtn} aria-label={ts('nav.cartAria', 'Cart, {{count}} items', { count: cartCount })} onClick={openCart} style={{ color: t.colors.ink }}><ShoppingCart size={20} />{badge(cartCount)}</button>
-      {o.showAccount && <Link to={accountTo} className={`${iconBtn} hidden sm:grid`} aria-label={ts('nav.account', 'Account')} style={{ color: t.colors.ink }}><User size={20} /></Link>}
+      {o.showWishlist && <HeaderIconButton kind="wishlist" prefs={iconPrefs} skin={iconSkin} label={ts('nav.wishlist', 'Wishlist')} to="/wishlist" wrapClassName="hidden sm:inline-flex" className={iconBtn} style={{ color: t.colors.ink }} badge={badge(wishlistCount)} />}
+      {o.showCart && <HeaderIconButton kind="cart" prefs={iconPrefs} skin={iconSkin} label={cartCount > 0 ? ts('nav.cartTip', 'Cart ({{count}})', { count: cartCount }) : ts('nav.cart', 'Cart')} ariaLabel={ts('nav.cartAria', 'Cart, {{count}} items', { count: cartCount })} className={iconBtn} style={{ color: t.colors.ink }} onClick={openCart} badge={badge(cartCount)} />}
+      {o.showAccount && <HeaderIconButton kind="account" prefs={iconPrefs} skin={iconSkin} label={TokenStorage.isLoggedIn() ? ts('nav.account', 'Account') : ts('nav.signIn', 'Sign in')} ariaLabel={ts('nav.account', 'Account')} to={accountTo} align="end" wrapClassName="hidden sm:inline-flex" className={iconBtn} style={{ color: t.colors.ink }} />}
     </div>
   );
   const box = { maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}` };
