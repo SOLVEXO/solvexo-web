@@ -216,7 +216,7 @@ export default function StoreAddProduct() {
               ...customsPayload(phys),
               sku: r.sku.trim() || undefined,
               barcode: r.barcode.trim() || undefined,
-              images: r.image ? [r.image] : [], videoUrl: r.video.trim(),
+              images: r.images, videoUrl: r.video.trim(),
             }))
           : [{
               price: Number(phys.price),
@@ -390,11 +390,11 @@ export default function StoreAddProduct() {
 
           {/* Product Images */}
           <Card title="Product Images">
-            <p className="text-[12px] text-slate mb-3">Upload up to 5 images (JPG, PNG or WebP, max 20 MB each) — select several at once. First image is the cover shown to buyers; drag images to reorder.</p>
+            <p className="text-[12px] text-slate mb-3">Upload up to 250 images (JPG, PNG or WebP, max 20 MB each) — select several at once. First image is the cover shown to buyers; drag images to reorder. Link photos to a colour or other option in the Variants section below.</p>
             <ImageUpload
               value={cur.images}
               onChange={urls => pType === 'physical' ? sp('images', urls) : sd('images', urls)}
-              maxFiles={5}
+              maxFiles={250}
               showCover={!(cur.videoUrl && cur.videoFirst)}
               storeId={storeId}
             />

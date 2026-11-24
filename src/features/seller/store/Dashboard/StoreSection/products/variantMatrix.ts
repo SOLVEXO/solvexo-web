@@ -76,14 +76,14 @@ export interface VariantRow {
   barcode: string;
   stock: string;
   unlimitedStock: boolean;
-  /** One of the product's own images shown when a shopper picks this variant ('' = none). */
-  image: string;
+  /** The product's own images linked to this variant (Shopify: variant media). Empty = the shopper sees the whole gallery. */
+  images: string[];
   /** Optional video for this variant (uploaded file or YouTube / Vimeo link); '' = use the product's video. */
   video: string;
 }
 
 export function blankVariantRow(combo: VariantCombination): VariantRow {
-  return { key: combo.key, options: combo.options, price: '', compareAtPrice: '', sku: '', barcode: '', stock: '', unlimitedStock: false, image: '', video: '' };
+  return { key: combo.key, options: combo.options, price: '', compareAtPrice: '', sku: '', barcode: '', stock: '', unlimitedStock: false, images: [], video: '' };
 }
 
 export function mergeExistingRows<Row extends { key: string }>(
