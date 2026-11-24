@@ -136,6 +136,7 @@ const GUIDES: { title: string; body: React.ReactNode }[] = [
   { title: 'Rate limits', body: <>120 requests a minute per token. Every answer has {code('X-RateLimit-Remaining')} and {code('X-RateLimit-Reset')}; a 429 also has {code('Retry-After')} in seconds.</> },
   { title: 'Safe retries', body: <>Every change needs an {code('Idempotency-Key')} header, such as a UUID. Sending the same key again returns the first answer and never applies the change twice.</> },
   { title: 'Webhook signatures', body: <>Check {code('X-Solvexo-Signature: t=…,v1=…')}: v1 is the HMAC-SHA256 of {code('"<t>.<raw body>"')} with your webhook secret. Refuse ones older than 5 minutes and ignore a repeated {code('X-Solvexo-Delivery')}.</> },
+  { title: 'Apps for every seller (OAuth)', body: <>Register an app in the dashboard under <strong>Build apps</strong>. Send store owners to {code('https://www.solvexo.store/oauth/authorize')} with {code('client_id')}, {code('redirect_uri')}, {code('scope')} and {code('state')}. They pick a store and allow it; swap the {code('code')} you get back at {code('POST /api/app-platform/oauth/token')} (grant_type authorization_code). Test it on a free development store.</> },
   { title: 'Money and dates', body: <>Amounts are in major units of the record's currency (an order's {code('currency')}). Dates are ISO 8601 in UTC.</> },
 ];
 

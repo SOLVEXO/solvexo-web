@@ -109,6 +109,7 @@ const MaintenancePage = lazy(() => import('@/features/buyer/pages/MaintenancePag
 // reachable from anywhere and so aren't imported here any more — left on
 // disk, not deleted, in case anything else still needs them.
 const SellerAreaRedirect = lazy(() => import('@/features/seller/SellerAreaRedirect').then(m => ({ default: m.SellerAreaRedirect })));
+const OAuthAuthorizePage = lazy(() => import('@/features/seller/OAuthAuthorizePage'));
 const PagesPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage').then(m => ({ default: m.PagesPage })));
 const SectionBuilderPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/sectionBuilder/SectionBuilderPage').then(m => ({ default: m.SectionBuilderPage })));
 const MenuManagerPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MenuManagerPage').then(m => ({ default: m.MenuManagerPage })));
@@ -428,6 +429,8 @@ const mainRouter = createBrowserRouter([
       // dashboard instead, via the same resolver login already uses. See
       // SellerAreaRedirect's doc comment.
       { path: '/seller/*',        element: <SellerAreaRedirect /> },
+      // The fixed install address for apps and tools like Zapier and Make: sign in, pick a store, then that store's consent screen.
+      { path: '/oauth/authorize', element: <OAuthAuthorizePage /> },
 
       // ── Store Workspace (each store's own mini-admin panel) ──────────
       {
