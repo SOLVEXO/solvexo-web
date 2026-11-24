@@ -11,3 +11,11 @@ export function copyText(settings: Record<string, unknown> | undefined, key: str
 export function showEyebrow(settings: Record<string, unknown> | undefined): boolean {
   return settings?.showEyebrow !== false;
 }
+
+/** The small label above a heading: ONLY what the seller typed (and not switched off). Themes add no words of their own,
+ *  so a section never shows text the seller never wrote. */
+export function eyebrowText(settings: Record<string, unknown> | undefined): string | undefined {
+  if (settings?.showEyebrow === false) return undefined;
+  const v = settings?.eyebrow;
+  return typeof v === 'string' && v.trim() ? v : undefined;
+}

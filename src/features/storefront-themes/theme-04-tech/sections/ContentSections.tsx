@@ -8,7 +8,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
 import { RichContent, renderRichText } from '@/utils/richText';
 import { PreviewBlock } from '../../previewInspector';
-import { copyText, showEyebrow } from '../../sectionCopy';
+import { eyebrowText, copyText, showEyebrow } from '../../sectionCopy';
 import { imageFit } from '../../imageFit';
 import { baseTheme as t, type BaseColors } from '../theme.base';
 import { registerTechSection } from './techSectionRegistry';
@@ -165,7 +165,7 @@ function Newsletter({ settings: s, colors }: { settings: Record<string, any>; co
   return (
     <section style={{ background: colors.bgAlt, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto max-w-[620px] text-center">
-        {showEyebrow(s) && <p className="m-0 mb-3 text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: colors.inkMuted }}>{copyText(s, 'eyebrow', 'Private notes')}</p>}
+        {eyebrowText(s) && <p className="m-0 mb-3 text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: colors.inkMuted }}>{eyebrowText(s)}</p>}
         <h2 className="m-0 mb-4 text-[clamp(28px,3.6vw,44px)] leading-[1.1]" style={{ fontFamily: t.fonts.display, fontWeight: t.headingWeight }}>{s.heading || ts('pg.stay_in_the_loop', 'Stay in the loop')}</h2>
         {s.subtext && <p className="m-0 mb-8 text-[15px] leading-[1.7]" style={{ color: colors.inkMuted }}>{s.subtext}</p>}
         {state === 'done' ? <p role="status" className="m-0 text-[15px]" style={{ color: t.colors.success }}>{message}</p> : (

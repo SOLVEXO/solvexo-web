@@ -138,6 +138,7 @@ export const techThemeManifest: ThemeManifest = {
         { key: 'phone', kind: 'text', label: 'Phone', maxLength: 40 },
         { key: 'email', kind: 'text', label: 'Email', maxLength: 120 },
         { key: 'mapLink', kind: 'url', label: 'Map link (https)' },
+        { key: 'directionsLabel', kind: 'text', label: 'Map link text', maxLength: 40, placeholder: 'Get directions' },
         { key: 'note', kind: 'text', label: 'Short note', maxLength: 160 },
       ],
       defaults: { heading: 'Visit our showroom' },

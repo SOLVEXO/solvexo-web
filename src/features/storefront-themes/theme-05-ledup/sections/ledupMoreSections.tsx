@@ -114,7 +114,7 @@ ledupCustom.set('tech.showroom', (section, _blocks, colors: BaseColors) => {
         <div>
           <h2 className="m-0 text-xl font-semibold" style={{ fontFamily: t.fonts.display }}>{text(s.heading) || ts('tx.showroom.title', 'Visit our showroom')}</h2>
           {text(s.note) && <p className="m-0 mt-3 text-sm" style={{ color: t.colors.inkMuted }}>{text(s.note)}</p>}
-          {map && <a href={map} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block text-sm font-semibold" style={{ color: t.colors.accent }}>{ts('tx.showroom.directions', 'Get directions')}</a>}
+          {map && <a href={map} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block text-sm font-semibold" style={{ color: t.colors.accent }}>{text(s.directionsLabel) || ts('tx.showroom.directions', 'Get directions')}</a>}
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           {address && row(<MapPin size={18} aria-hidden />, <p className="m-0 whitespace-pre-line">{address}</p>)}

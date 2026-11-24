@@ -4,7 +4,7 @@ import { CardOverridesProvider } from '../../core/product/cardOverrides';
 import { Plus } from 'lucide-react';
 import { renderRichText } from '@/utils/richText';
 import { PreviewBlock } from '../../previewInspector';
-import { copyText, showEyebrow } from '../../sectionCopy';
+import { eyebrowText } from '../../sectionCopy';
 import { useStoreFaqBlocks } from '../../useStoreFaqBlocks';
 import { fashionTheme as t } from '../theme.config';
 import { registerFashionSection } from './sectionRegistry';
@@ -86,7 +86,7 @@ function Faq({ settings: s, blocks, colors }: { settings: Record<string, any>; b
   // Like Shopify, an empty accordion still shows its heading (so the seller sees the section exists) instead of vanishing.
   if (items.length === 0 && !s.heading) return null;
   return (
-    <SectionShell colors={colors} heading={s.heading} eyebrow={showEyebrow(s) ? copyText(s, 'eyebrow', 'Good to know') : undefined} align="center">
+    <SectionShell colors={colors} heading={s.heading} eyebrow={eyebrowText(s)} align="center">
       {items.length === 0 && <p className="m-0 text-center text-sm" style={{ color: colors.inkMuted }}>{ts('pg.no_questions_added_yet', 'No questions added yet.')}</p>}
       <ul className="mx-auto m-0 flex max-w-[780px] list-none flex-col gap-3 p-0">
         {items.map((b, i) => {

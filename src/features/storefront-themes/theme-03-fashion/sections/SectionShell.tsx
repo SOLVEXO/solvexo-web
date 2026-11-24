@@ -31,15 +31,15 @@ export function SectionShell({ colors, eyebrow, heading, action, align = 'left',
 }
 
 /** "See all" pill with the sliding arrow chip. */
-export function TextLink({ to, children, colors }: { to: string; children: ReactNode; colors?: FashionColors }) {
+export function TextLink({ to, href, newTab, children, colors }: { to?: string; href?: string; newTab?: boolean; children: ReactNode; colors?: FashionColors }) {
   const cta = ctaLook('primary', colors);
   // size + hover padding live in `.fx-cta-sm` (inline padding would beat the hover rule and park the chip on the text)
-  return (
-    <Link to={to} className="fx-cta fx-cta-sm" style={cta.button}>
-      <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
-      <span className="fx-cta-icon" style={cta.chip}><ArrowUpRight size={15} className="fx-flip-rtl" /></span>
-    </Link>
-  );
+  const inner = <>
+    <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
+    <span className="fx-cta-icon" style={cta.chip}><ArrowUpRight size={15} className="fx-flip-rtl" /></span>
+  </>;
+  if (!to && href) return <a href={href} {...newTabProps({ newTab })} className="fx-cta fx-cta-sm" style={cta.button}>{inner}</a>;
+  return <Link to={to ?? '/'} {...newTabProps({ newTab })} className="fx-cta fx-cta-sm" style={cta.button}>{inner}</Link>;
 }
 
 /** A button-looking link that resolves a seller-authored link setting. */
