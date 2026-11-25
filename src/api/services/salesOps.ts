@@ -58,7 +58,20 @@ export interface LinkedMerchant {
 }
 export interface LeadDetail { lead: SalesLead; activities: SalesActivity[]; tasks: SalesTask[]; merchant: LinkedMerchant | null }
 export interface SalesOwner { _id: string; name: string; email: string }
-export interface SalesTemplate { _id: string; name: string; subject: string; body: string }
+export interface SalesTemplate { _id: string; name: string; subject: string; body: string; reason?: MessageReason }
+
+/** Why a template is sent; reps pick a reason first, then a template. */
+export const MESSAGE_REASONS = ['follow_up', 'demo_reminder', 'payment_reminder', 'onboarding', 'win_back', 'other'] as const;
+export type MessageReason = (typeof MESSAGE_REASONS)[number];
+export const MESSAGE_REASON_LABELS: Record<MessageReason, string> = {
+  follow_up: 'Follow-up', demo_reminder: 'Demo reminder', payment_reminder: 'Payment reminder', onboarding: 'Onboarding', win_back: 'Win-back', other: 'Other',
+};
+export const reasonLabel = (r?: string | null) => MESSAGE_REASON_LABELS[(r ?? 'other') as MessageReason] ?? 'Other';
+
+/** What a rep may send to their clients: off · templates (approved templates only) · full (templates + own text). */
+export type MessagingLevel = 'off' | 'templates' | 'full';
+export interface MessagingRules { whatsapp: MessagingLevel; email: MessagingLevel; waTemplateKeys: string[] | null; emailTemplateIds: string[] | null }
+export const FULL_MESSAGING: MessagingRules = { whatsapp: 'full', email: 'full', waTemplateKeys: null, emailTemplateIds: null };
 
 export interface LeadInput {
   name?: string; businessName?: string | null; email?: string | null; phone?: string | null; city?: string | null;
@@ -80,8 +93,9 @@ export const apiChangeStage = (id: string, stage: LeadStage, lostReason?: string
   client.post<never, ApiResponse<LeadDetail>>(`${BASE}/leads/${id}/stage`, { stage, lostReason, note });
 export const apiLogActivity = (id: string, type: LogType, body: string, outcome?: string) =>
   client.post<never, ApiResponse<LeadDetail>>(`${BASE}/leads/${id}/activities`, { type, body, outcome });
-export const apiSendLeadEmail = (id: string, subject: string, body: string) =>
-  client.post<never, ApiResponse<LeadDetail>>(`${BASE}/leads/${id}/email`, { subject, body });
+/** `templateId`: the template used; a rep allowed templates only must send one, and it goes out as saved. */
+export const apiSendLeadEmail = (id: string, subject: string, body: string, templateId?: string | null) =>
+  client.post<never, ApiResponse<LeadDetail>>(`${BASE}/leads/${id}/email`, { subject, body, ...(templateId ? { templateId } : {}) });
 export const apiCreateTask = (leadId: string, title: string, dueAt: string, assigneeAdminId?: string) =>
   client.post<never, ApiResponse<LeadDetail>>(`${BASE}/leads/${leadId}/tasks`, { title, dueAt, assigneeAdminId });
 export const apiListTasks = (params: { scope?: 'mine' | 'all'; status?: 'open' | 'done' } = {}) =>
@@ -91,7 +105,13 @@ export const apiUpdateTask = (id: string, patch: { done?: boolean; title?: strin
 export const apiDeleteTask = (id: string) => client.delete<never, ApiResponse<{ id: string }>>(`${BASE}/tasks/${id}`);
 export const apiSalesOwners = () => client.get<never, ApiResponse<SalesOwner[]>>(`${BASE}/owners`);
 export const apiListTemplates = () => client.get<never, ApiResponse<SalesTemplate[]>>(`${BASE}/templates`);
-export const apiSaveTemplate = (id: string | null, t: { name: string; subject: string; body: string }) =>
+/** What the signed-in person may send to clients (managers: everything). */
+export const apiMyMessaging = () => client.get<never, ApiResponse<MessagingRules>>(`${BASE}/messaging/me`);
+/** Sales Ops → Team: saved rules per rep (reps not listed use the defaults: full, all templates). */
+export const apiTeamMessaging = () => client.get<never, ApiResponse<Record<string, MessagingRules>>>(`${BASE}/team/messaging`);
+export const apiSaveTeamMessaging = (adminId: string, rules: Partial<MessagingRules>) =>
+  client.put<never, ApiResponse<Record<string, MessagingRules>>>(`${BASE}/team/messaging/${adminId}`, rules);
+export const apiSaveTemplate = (id: string | null, t: { name: string; subject: string; body: string; reason?: MessageReason }) =>
   id ? client.patch<never, ApiResponse<SalesTemplate[]>>(`${BASE}/templates/${id}`, t)
      : client.post<never, ApiResponse<SalesTemplate[]>>(`${BASE}/templates`, t);
 export const apiDeleteTemplate = (id: string) => client.delete<never, ApiResponse<SalesTemplate[]>>(`${BASE}/templates/${id}`);
@@ -334,7 +354,7 @@ export interface WaConnection {
   connectedAt: string | null; lastEventAt: string | null; webhookUrl: string; aiDrafts: boolean;
 }
 /** An approved Meta template reps can pick to restart a chat after 24 hours. `key` is `name:lang`. */
-export interface WaTemplate { key: string; label: string; name: string; lang: string; usesName?: boolean; body: string | null }
+export interface WaTemplate { key: string; label: string; name: string; lang: string; usesName?: boolean; body: string | null; reason?: MessageReason }
 export interface WaConversationRow {
   _id: string; waId: string; name: string; businessName: string | null; leadId: string | null; stage: LeadStage | null;
   unread: number; lastMessageAt: string | null; lastMessageText: string | null; windowOpen: boolean; hasDraft: boolean;
@@ -345,6 +365,8 @@ export interface WaConversation {
   lead: { _id: string; name: string; businessName: string | null; stage: LeadStage; city: string | null } | null;
   windowOpen: boolean; windowClosesAt: string | null; aiDraft: { text: string; createdAt: string } | null;
   template: { name: string; lang: string } | null; templates: WaTemplate[]; messages: WaMessage[];
+  /** False for a rep allowed approved templates only. */
+  canWriteText?: boolean;
 }
 
 export const apiWaConnection = () => client.get<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/connection`);
@@ -356,7 +378,7 @@ export const apiWaConversations = (params: { leadId?: string; unread?: boolean }
 export const apiWaConversation = (id: string) => client.get<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}`);
 export const apiWaSend = (id: string, text: string, fromAiDraft: boolean) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/send`, { text, fromAiDraft });
 export const apiWaSendTemplate = (id: string, key?: string) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/template`, key ? { key } : {});
-export const apiWaSaveTemplates = (templates: { label: string; name: string; lang: string }[]) =>
+export const apiWaSaveTemplates = (templates: { label: string; name: string; lang: string; reason?: MessageReason }[]) =>
   client.put<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/templates`, { templates });
 export const apiWaRedraft = (id: string) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/draft`);
 export const apiWaDiscardDraft = (id: string) => client.delete<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/draft`);

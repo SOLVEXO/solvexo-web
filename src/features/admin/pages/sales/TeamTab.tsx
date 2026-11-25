@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
-import { Shuffle, Trophy } from 'lucide-react';
-import { Button, EmptyState, Input, Modal, Toggle, MonthField } from '@/components/comman/ui';
+import { MessageSquareLock, Shuffle, Trophy } from 'lucide-react';
+import { Button, EmptyState, Input, Modal, Select, Toggle, MonthField } from '@/components/comman/ui';
 import {
-  apiSalesSettings, apiSalesTeam, apiSaveSalesSettings, apiSaveTargets, formatPKR,
-  type LeaderRow, type SalesOwner, type SalesSettings, type Target, type TeamReport,
+  FULL_MESSAGING, apiListTemplates, apiSalesSettings, apiSalesTeam, apiSaveSalesSettings, apiSaveTargets, apiSaveTeamMessaging, apiTeamMessaging, apiWaConnection, formatPKR, reasonLabel,
+  type LeaderRow, type MessagingLevel, type MessagingRules, type SalesOwner, type SalesSettings, type SalesTemplate, type Target, type TeamReport, type WaTemplate,
 } from '@/api/services/salesOps';
 import { errMsg, useStableToast } from './sales.utils';
 
@@ -86,6 +86,7 @@ export function TeamTab({ isManager, owners }: { isManager: boolean; owners: Sal
       <p className="text-[11.5px] text-slate">Activities are calls, WhatsApps, meetings and emails logged that month. Visits are field visits saved from the visit form. Value won is the deal value of leads marked Won that month. Months follow Pakistan time.</p>
 
       {isManager && <AutoAssignCard owners={owners} />}
+      {isManager && <MessagingCard owners={owners} />}
       {editing && data && (
         <TargetsModal month={month} reps={data.reps} onClose={() => setEditing(false)}
           onSave={async targets => { setData((await apiSaveTargets(month, targets)).data); setEditing(false); toast.success('Targets saved.'); setTick(t => t + 1); }} />
@@ -178,5 +179,98 @@ function AutoAssignCard({ owners }: { owners: SalesOwner[] }) {
       </div>
       {!s.autoAssign && s.assigneeIds.length === 0 && <p className="text-[11.5px] text-slate mt-2">Tick at least one person, then switch it on.</p>}
     </section>
+  );
+}
+
+const LEVEL_LABEL: Record<MessagingLevel, string> = { off: 'Off', templates: 'Approved templates only', full: 'Templates + own text' };
+const templatesNote = (list: string[] | null, total: number) => (list === null ? 'all templates' : `${list.length} of ${total} templates`);
+
+/** What each rep may send to their own clients on WhatsApp and by email. Managers are never limited. */
+function MessagingCard({ owners }: { owners: SalesOwner[] }) {
+  const toast = useStableToast();
+  const [rules, setRules] = useState<Record<string, MessagingRules> | null>(null);
+  const [wa, setWa] = useState<WaTemplate[]>([]);
+  const [email, setEmail] = useState<SalesTemplate[]>([]);
+  const [editing, setEditing] = useState<SalesOwner | null>(null);
+  useEffect(() => {
+    apiTeamMessaging().then(r => setRules(r.data)).catch(e => { setRules({}); toast.error(errMsg(e, 'Could not load what reps can send.')); });
+    apiWaConnection().then(r => setWa(r.data.templates ?? [])).catch(() => undefined);
+    apiListTemplates().then(r => setEmail(r.data)).catch(() => undefined);
+  }, [toast]);
+  if (!rules) return null;
+  return (
+    <section className="rounded-xl border border-bone bg-white p-4">
+      <p className="text-[13px] font-semibold text-charcoal flex items-center gap-1.5"><MessageSquareLock size={14} className="text-brand-orange" /> What reps can send to their clients</p>
+      <p className="text-[12px] text-slate mt-0.5">For each rep: WhatsApp and email can be off, approved templates only, or templates plus their own text, and you choose which templates they may use. Managers can always send everything.</p>
+      <ul className="mt-3 divide-y divide-bone" aria-label="What reps can send">
+        {owners.map(o => {
+          const r = rules[o._id] ?? FULL_MESSAGING;
+          return (
+            <li key={o._id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2 text-[12.5px]">
+              <span className="font-medium text-charcoal min-w-[140px]">{o.name}</span>
+              <span className="text-slate flex-1 min-w-[220px]">WhatsApp: <span className="text-charcoal">{LEVEL_LABEL[r.whatsapp]}</span>{r.whatsapp !== 'off' && ` (${templatesNote(r.waTemplateKeys, wa.length)})`} · Email: <span className="text-charcoal">{LEVEL_LABEL[r.email]}</span>{r.email !== 'off' && ` (${templatesNote(r.emailTemplateIds, email.length)})`}</span>
+              <Button size="xs" variant="ghost" aria-label={`Edit what ${o.name} can send`} onClick={() => setEditing(o)}>Edit</Button>
+            </li>
+          );
+        })}
+      </ul>
+      {editing && (
+        <MessagingModal owner={editing} rules={rules[editing._id] ?? FULL_MESSAGING} wa={wa} email={email} onClose={() => setEditing(null)}
+          onSave={async next => { setRules((await apiSaveTeamMessaging(editing._id, next)).data); setEditing(null); toast.success(`Saved what ${editing.name} can send.`); }} />
+      )}
+    </section>
+  );
+}
+
+function MessagingModal({ owner, rules, wa, email, onClose, onSave }: {
+  owner: SalesOwner; rules: MessagingRules; wa: WaTemplate[]; email: SalesTemplate[]; onClose: () => void; onSave: (r: MessagingRules) => Promise<void>;
+}) {
+  const [v, setV] = useState<MessagingRules>(rules);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const channel = (key: 'whatsapp' | 'email', listKey: 'waTemplateKeys' | 'emailTemplateIds', title: string, items: { id: string; label: string; reason?: string }[]) => {
+    const list = v[listKey];
+    return (
+      <fieldset className="flex flex-col gap-2 border-0 p-0 m-0">
+        <legend className="text-[13px] font-semibold text-charcoal mb-1">{title}</legend>
+        <Select aria-label={`${title} access`} value={v[key]} onChange={e => setV({ ...v, [key]: e.target.value as MessagingLevel })}>
+          <option value="full">{LEVEL_LABEL.full}</option><option value="templates">{LEVEL_LABEL.templates}</option><option value="off">{LEVEL_LABEL.off}</option>
+        </Select>
+        {v[key] !== 'off' && (
+          <>
+            <label className="flex items-center gap-2 text-[12.5px] cursor-pointer">
+              <input type="checkbox" className="accent-brand-orange" checked={list === null} onChange={e => setV({ ...v, [listKey]: e.target.checked ? null : items.map(i => i.id) })} />
+              All {title === 'WhatsApp' ? 'approved WhatsApp' : 'email'} templates, including ones added later
+            </label>
+            {list !== null && (
+              items.length === 0 ? <p className="text-[12px] text-slate">No templates yet.</p> : (
+                <div className="flex flex-wrap gap-2" role="group" aria-label={`${title} templates ${owner.name} may use`}>
+                  {items.map(i => {
+                    const on = list.includes(i.id);
+                    return (
+                      <label key={i.id} className={clsx('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12.5px] cursor-pointer', on ? 'border-brand-orange bg-brand-pale-orange/50 text-brand-deep-orange' : 'border-bone text-charcoal')}>
+                        <input type="checkbox" className="accent-brand-orange" checked={on} onChange={() => setV({ ...v, [listKey]: on ? list.filter(x => x !== i.id) : [...list, i.id] })} />
+                        {i.label} <span className="text-slate">· {reasonLabel(i.reason)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )
+            )}
+          </>
+        )}
+      </fieldset>
+    );
+  };
+  return (
+    <Modal title={`What ${owner.name} can send`} onClose={onClose} width={620}
+      footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={async () => { setBusy(true); setError(''); try { await onSave(v); } catch (e) { setError(errMsg(e, 'Could not save.')); setBusy(false); } }}>Save</Button></div>}>
+      <div className="flex flex-col gap-5">
+        <p className="text-[12.5px] text-slate">Applies to {owner.name}’s own clients. With “Approved templates only”, they pick a reason and a template and cannot change the text. If {owner.name} is a manager, these limits do not apply.</p>
+        {channel('whatsapp', 'waTemplateKeys', 'WhatsApp', wa.map(t => ({ id: t.key, label: t.label, reason: t.reason ?? 'follow_up' })))}
+        {channel('email', 'emailTemplateIds', 'Email', email.map(t => ({ id: t._id, label: t.name, reason: t.reason })))}
+        {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
+      </div>
+    </Modal>
   );
 }

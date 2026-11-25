@@ -2,10 +2,13 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 const api = vi.hoisted(() => ({
   apiListCampaigns: vi.fn(), apiGetCampaign: vi.fn(), apiSaveCampaign: vi.fn(), apiAddSpend: vi.fn(), apiRemoveSpend: vi.fn(),
   apiSalesTeam: vi.fn(), apiSaveTargets: vi.fn(), apiSalesSettings: vi.fn(), apiSaveSalesSettings: vi.fn(),
+  apiTeamMessaging: vi.fn(async (): Promise<unknown> => ({ data: {} })), apiSaveTeamMessaging: vi.fn(),
+  apiWaConnection: vi.fn(async (): Promise<unknown> => ({ data: { templates: [] } })), apiListTemplates: vi.fn(async (): Promise<unknown> => ({ data: [] })),
 }));
 vi.mock('@/api/services/salesOps', async (orig) => ({ ...(await orig<typeof import('@/api/services/salesOps')>()), ...api }));
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
@@ -86,6 +89,30 @@ describe('TeamTab', () => {
     await waitFor(() => expect(sw).not.toBeDisabled());
     fireEvent.click(sw);
     await waitFor(() => expect(api.apiSaveSalesSettings).toHaveBeenLastCalledWith({ autoAssign: true, assigneeIds: ['Sana'] }));
+  });
+
+  it('lets a manager set what one rep can send: templates only, and which templates', async () => {
+    api.apiSalesTeam.mockResolvedValue({ data: { month: '2026-11', reps: [], unassignedOpen: 0 } });
+    api.apiSalesSettings.mockResolvedValue({ data: { autoAssign: false, assigneeIds: [] } });
+    api.apiTeamMessaging.mockResolvedValue({ data: {} });
+    api.apiWaConnection.mockResolvedValue({ data: { templates: [
+      { key: 'follow:en', label: 'Follow-up', name: 'follow', lang: 'en', body: 'Hi', reason: 'follow_up' },
+      { key: 'pay:en', label: 'Payment due', name: 'pay', lang: 'en', body: 'Pay', reason: 'payment_reminder' },
+    ] } });
+    api.apiListTemplates.mockResolvedValue({ data: [{ _id: 't1', name: 'First follow-up', subject: 's', body: 'b', reason: 'follow_up' }] });
+    api.apiSaveTeamMessaging.mockResolvedValue({ data: { Sana: { whatsapp: 'templates', email: 'off', waTemplateKeys: ['follow:en'], emailTemplateIds: null } } });
+    render(<TeamTab isManager owners={[{ _id: 'Sana', name: 'Sana', email: '' }]} />);
+    const card = await screen.findByRole('list', { name: 'What reps can send' });
+    expect(within(card).getByText(/WhatsApp:/)).toHaveTextContent('WhatsApp: Templates + own text (all templates) · Email: Templates + own text (all templates)');
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit what Sana can send' }));
+    chooseValue(dropdown('WhatsApp access'), 'templates');
+    fireEvent.click(screen.getByRole('checkbox', { name: /All approved WhatsApp templates/ }));
+    // Untick the payment template: Sana may send the follow-up only.
+    fireEvent.click(screen.getByRole('checkbox', { name: /Payment due/ }));
+    chooseValue(dropdown('Email access'), 'off');
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.apiSaveTeamMessaging).toHaveBeenCalledWith('Sana', { whatsapp: 'templates', email: 'off', waTemplateKeys: ['follow:en'], emailTemplateIds: null }));
+    expect(await within(card).findByText(/WhatsApp:/)).toHaveTextContent('WhatsApp: Approved templates only (1 of 2 templates) · Email: Off');
   });
 
   it('shows a rep the leaderboard without manager controls', async () => {
