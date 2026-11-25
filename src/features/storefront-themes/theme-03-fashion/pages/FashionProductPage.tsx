@@ -34,6 +34,7 @@ import { stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../.
 import { VariantOptionPicker } from '../../core/product/VariantOptionPicker';
 import { buildOptionValues } from '../../core/product/variantOptions';
 import { variantGallery } from '../../core/product/variantGallery';
+import { usePreloadVariantCovers } from '../../core/product/usePreloadVariantCovers';
 import { ProductTrustBadges } from '../../core/product/trustBadges';
 import type { Section } from '@/api/services/storefrontTypes';
 import { ProductQuestions } from '../../core/product/ProductQuestions';
@@ -149,6 +150,7 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
       img.src = p.src;
     });
   }, [images]);
+  usePreloadVariantCovers(variants, detail?.product.images, src => imgProps(src, [480, 768, 1024, 1440], '(min-width: 1024px) 58vw, 100vw'));
 
   useStorefrontSeo({ disabled: embedded, title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
   const origin = siteOrigin();

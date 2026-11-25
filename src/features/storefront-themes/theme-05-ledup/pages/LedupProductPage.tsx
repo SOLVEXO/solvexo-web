@@ -4,6 +4,7 @@ import { cased } from '../../textCase';
 import { buildOptionValues, resolveOptionStyle } from '../../core/product/variantOptions';
 import { useProductPickerSettings } from '../../core/product/pickerSettings';
 import { variantGallery } from '../../core/product/variantGallery';
+import { usePreloadVariantCovers } from '../../core/product/usePreloadVariantCovers';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
@@ -116,6 +117,7 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
   const images = useMemo(() => variantGallery(variant, variants, detail?.product.images), [variant, variants, detail?.product.images]);
   const video = useMemo(() => parseProductVideo(variant?.videoUrl || detail?.product.videoUrl), [variant?.videoUrl, detail?.product.videoUrl]);
   const [videoOn, setVideoOn] = useState(false);
+  usePreloadVariantCovers(variants, detail?.product.images, src => ({ src }));
   const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, images.length - 1)) : 0;
 
   // Wholesale gate + price: hooks stay above the early return below.
