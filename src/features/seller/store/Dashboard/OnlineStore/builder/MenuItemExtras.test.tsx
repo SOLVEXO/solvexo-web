@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { chooseColor, chooseDateTime, typeColor } from '@/components/comman/ui/pickerTesting';
+import { chooseColor, chooseDateTime } from '@/components/comman/ui/pickerTesting';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { useState } from 'react';
 import { BlockFields } from './BlockFields';

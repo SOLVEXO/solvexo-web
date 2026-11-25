@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'; // adds the toBeInTheDocument/toHaveValue... matcher types
-import { chooseColor, chooseDateTime, typeColor } from '@/components/comman/ui/pickerTesting';
+import { typeColor } from '@/components/comman/ui/pickerTesting';
 import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
