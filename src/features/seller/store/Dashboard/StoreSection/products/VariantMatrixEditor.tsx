@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Plus, Trash2 } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { ImagePlus, Plus, Trash2 } from 'lucide-react';
 import { colorForValue, isColorOptionName } from '@/features/storefront-themes/core/product/variantOptions';
 import { Toggle } from '@/components/comman/ui/Toggle';
 import {
   buildCombinations, mergeExistingRows, blankVariantRow, MAX_OPTION_TYPES, MAX_VARIANT_COMBINATIONS,
   setSwatchColor, type OptionSwatch, type OptionType, type VariantRow,
 } from './variantMatrix';
+import { groupValue, photoOptionName, rowName } from './variantPhotos';
+import { VariantPhotosScreen } from './VariantPhotosScreen';
 
 const inp = 'w-full px-2.5 py-[7px] text-[12.5px] border border-bone rounded-md text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none focus:border-brand-orange';
 
@@ -146,142 +147,57 @@ export function VariantOptionsEditor({
   );
 }
 
-/** Link product photos to a variant (Shopify: variant media). A photo can belong to several variants; the shopper sees these first, then the photos no variant claims.
- *  Works on a draft: toggling photos is free, "Done" (or closing) saves the choice. */
-function VariantImagePicker({ images, value, onChange, label, triggerLabel }: { images: string[]; value: string[]; onChange: (urls: string[]) => void; label: string; /** A text button instead of the thumbnail (used by the bulk "Add images" bar). */ triggerLabel?: string }) {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-  const [draft, setDraft] = useState<string[]>([]);
-  const btn = useRef<HTMLButtonElement>(null);
-  const draftRef = useRef<string[]>([]);
-  draftRef.current = draft;
-  const valueRef = useRef(value);
-  valueRef.current = value;
-  const close = useCallback((save: boolean) => {
-    if (save) {
-      const next = draftRef.current;
-      const prev = valueRef.current;
-      if (next.length !== prev.length || next.some((u, i) => u !== prev[i])) onChange(next);
-    }
-    setPos(null);
-    btn.current?.focus();
-  }, [onChange]);
-  useEffect(() => {
-    if (!pos) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(false); };
-    const hide = () => setPos(null);
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('resize', hide);
-    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('resize', hide); };
-  }, [pos, close]);
-
-  if (images.length === 0) return <span className="text-[11px] text-slate">Add product images first</span>;
-  const open = () => {
-    const r = btn.current?.getBoundingClientRect();
-    if (!r) return;
-    const width = 300;
-    setDraft(value.filter(u => images.includes(u)));
-    setPos({ top: Math.max(8, Math.min(r.bottom + 6, window.innerHeight - 340)), left: Math.max(8, Math.min(r.left, window.innerWidth - width - 8)) });
-  };
-  const flip = (url: string) => setDraft(d => (d.includes(url) ? d.filter(u => u !== url) : [...d, url]));
-  const shown = value.filter(u => images.includes(u));
+/** Little photo stack on a variant: up to 4 thumbnails + "+N", or a dashed "Add photos" placeholder. One tap opens the Photos screen. */
+function PhotoStrip({ urls, label, onOpen, big = false, hasVideo = false }: { urls: string[]; label: string; onOpen: () => void; big?: boolean; hasVideo?: boolean }) {
+  const size = big ? 'size-12' : 'size-10';
   return (
-    <>
-      {triggerLabel ? (
-        <button ref={btn} type="button" onClick={open} aria-haspopup="dialog" aria-expanded={!!pos}
-          className="rounded-md border border-bone bg-white px-3 py-1.5 text-[12px] font-semibold text-charcoal cursor-pointer hover:border-brand-orange">{triggerLabel}</button>
+    <button type="button" onClick={onOpen} aria-label={`${urls.length ? `${urls.length} photos for` : 'Add photos for'} ${label}. Open photos`}
+      className="flex cursor-pointer items-center gap-2 rounded-lg border border-bone bg-white py-1 pl-1 pr-3 hover:border-brand-orange">
+      {urls.length === 0 ? (
+        <span className={`${size} flex items-center justify-center rounded-md border border-dashed border-slate/50 text-slate`}><ImagePlus size={16} /></span>
       ) : (
-      <button ref={btn} type="button" onClick={open} aria-haspopup="dialog" aria-expanded={!!pos} aria-label={`Images for ${label}: ${shown.length ? `${shown.length} linked, change` : 'choose'}`}
-        className="relative size-10 p-0 overflow-visible rounded-md border border-bone bg-white cursor-pointer flex items-center justify-center text-[11px] text-slate hover:border-brand-orange">
-        {shown.length ? <img src={shown[0]} alt="" className="size-full rounded-md object-cover" /> : <span>None</span>}
-        {shown.length > 1 && <span className="absolute -right-1.5 -top-1.5 rounded-full bg-brand-orange px-1.5 text-[10px] font-semibold leading-4 text-white">{shown.length}</span>}
-      </button>
+        <span className="flex">
+          {urls.slice(0, 4).map((u, i) => (
+            <img key={u + i} src={u} alt="" loading="lazy" className={`${size} -ml-3 rounded-md border-2 border-white object-cover first:ml-0`} style={{ zIndex: 5 - i }} />
+          ))}
+        </span>
       )}
-      {pos && createPortal(
-        <div className="fixed inset-0 z-[10050]">
-          <button type="button" tabIndex={-1} aria-label="Close" onClick={() => close(true)} className="fixed inset-0 cursor-default border-0 bg-transparent p-0" />
-          <div role="dialog" aria-label={`Choose images for ${label}`} style={{ top: pos.top, left: pos.left, width: 300 }}
-            className="fixed rounded-lg border border-bone bg-white p-2">
-            <div className="mb-2 flex items-center justify-between gap-2 text-[12px]">
-              <span className="font-semibold text-charcoal">{draft.length} of {images.length} selected</span>
-              <span className="flex gap-3">
-                <button type="button" onClick={() => setDraft([...images])} className="bg-transparent border-none cursor-pointer p-0 text-slate underline">All</button>
-                <button type="button" onClick={() => setDraft([])} className="bg-transparent border-none cursor-pointer p-0 text-slate underline">None</button>
-              </span>
-            </div>
-            <div className="grid max-h-[260px] grid-cols-5 gap-1.5 overflow-y-auto" role="group" aria-label={`Images for ${label}`}>
-              {images.map((src, i) => {
-                const on = draft.includes(src);
-                return (
-                  <button key={src + i} type="button" aria-pressed={on} aria-label={`Image ${i + 1} for ${label}`} onClick={() => flip(src)}
-                    className={`relative size-[52px] p-0 overflow-hidden rounded-md border-2 cursor-pointer bg-white ${on ? 'border-brand-orange' : 'border-transparent'}`}>
-                    <img src={src} alt="" loading="lazy" className="size-full object-cover" />
-                    {on && <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-brand-orange text-[10px] leading-none text-white">✓</span>}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-2 flex justify-end gap-2">
-              <button type="button" onClick={() => close(false)} className="rounded-md border border-bone bg-white px-3 py-1.5 text-[12px] text-charcoal cursor-pointer">Cancel</button>
-              <button type="button" onClick={() => close(true)} className="rounded-md border-none bg-brand-orange px-3 py-1.5 text-[12px] font-semibold text-white cursor-pointer">Done</button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
-    </>
+      <span className="text-left text-[12px] font-semibold leading-tight text-charcoal">
+        {urls.length === 0 ? 'Add photos' : `${urls.length} ${urls.length === 1 ? 'photo' : 'photos'}`}{hasVideo ? ' + video' : ''}
+        <span className="block text-[11px] font-normal text-brand-orange">{urls.length === 0 ? 'Photos or video' : 'Change'}</span>
+      </span>
+    </button>
   );
 }
 
+const cellInput = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none focus:border-brand-orange';
+
 export function VariantTableEditor({
-  rows, onRowsChange, currencySymbol, productImages = [],
+  rows, onRowsChange, currencySymbol, productImages = [], onProductImagesChange, storeId,
 }: {
   rows: VariantRow[];
   onRowsChange: (next: VariantRow[]) => void;
   currencySymbol: string;
   /** The product's own photos (first step of the form) the seller can assign to a variant. */
   productImages?: string[];
+  /** Lets photos uploaded inside a variant also join the product gallery. */
+  onProductImagesChange?: (next: string[]) => void;
+  /** Needed to upload straight from a variant (same Files Library as the product gallery). */
+  storeId?: string;
 }) {
+  const [photosFor, setPhotosFor] = useState<string | null>(null);
   const updateRow = (key: string, patch: Partial<VariantRow>) => {
     onRowsChange(rows.map(r => r.key === key ? { ...r, ...patch } : r));
   };
-  // Shopify: tick variants (or a whole Color value), then "Add images" links the chosen photos to every ticked variant.
-  const [ticked, setTicked] = useState<string[]>([]);
-  const live = ticked.filter(k => rows.some(r => r.key === k));
-  const toggle = (key: string) => setTicked(t => (t.includes(key) ? t.filter(k => k !== key) : [...t, key]));
-  const allTicked = rows.length > 0 && live.length === rows.length;
-  const addImages = (urls: string[]) => onRowsChange(rows.map(r => (live.includes(r.key) ? { ...r, images: [...r.images, ...urls.filter(u => !r.images.includes(u))] } : r)));
-  const clearImages = () => onRowsChange(rows.map(r => (live.includes(r.key) ? { ...r, images: [] } : r)));
-  // one chip per option value (Color: Black ...): ticks every variant that has it, so all sizes of a colour get the same photos
-  const valueChips = Array.from(new Map(rows.flatMap(r => r.options.map(o => [`${o.name}\u0000${o.value}`, o] as const))).values());
-  const optionNames = Array.from(new Set(valueChips.map(o => o.name)));
-  const tickValue = (name: string, value: string) => {
-    const keys = rows.filter(r => r.options.some(o => o.name === name && o.value === value)).map(r => r.key);
-    setTicked(keys);
-  };
-  const bulkBar = productImages.length > 0 && (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-bone bg-cream/60 px-3 py-2">
-      <label className="flex items-center gap-2 text-[12px] font-medium text-charcoal cursor-pointer">
-        <input type="checkbox" checked={allTicked} onChange={() => setTicked(allTicked ? [] : rows.map(r => r.key))} aria-label="Select all variants" />
-        {live.length > 0 ? `${live.length} selected` : 'Select variants'}
-      </label>
-      {live.length > 0 && (
-        <>
-          <VariantImagePicker images={productImages} value={[]} onChange={addImages} label={`${live.length} selected variants`} triggerLabel="Link images" />
-          <button type="button" onClick={clearImages} className="bg-transparent border-none cursor-pointer text-[12px] text-slate underline">Remove images</button>
-        </>
-      )}
-      {optionNames.length > 0 && rows.length > 1 && (
-        <div className="flex w-full flex-wrap items-center gap-1.5 text-[11px] text-slate">
-          <span>Select all variants with:</span>
-          {valueChips.map(o => (
-            <button key={o.name + o.value} type="button" onClick={() => tickValue(o.name, o.value)} title={`Select every variant with ${o.name}: ${o.value}`}
-              className="rounded-full border border-bone bg-white px-2 py-0.5 text-[11px] text-charcoal cursor-pointer hover:border-brand-orange">{o.value}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
+  const optionName = photoOptionName(rows);
+  // Groups (all sizes of one colour) get ONE photo header; with one variant per colour every row carries its own photos.
+  const groups: { value: string | null; rows: VariantRow[] }[] = [];
+  for (const r of rows) {
+    const v = groupValue(r, optionName);
+    const g = groups.find(x => x.value === v);
+    if (g) g.rows.push(r); else groups.push({ value: v, rows: [r] });
+  }
+  const grouped = !!optionName && groups.some(g => g.rows.length > 1);
   const overCap = rows.length > MAX_VARIANT_COMBINATIONS;
 
   if (rows.length === 0) {
@@ -292,42 +208,69 @@ export function VariantTableEditor({
     );
   }
 
+  if (photosFor) {
+    return (
+      <VariantPhotosScreen
+        rows={rows} onRowsChange={onRowsChange} rowKey={photosFor} optionName={optionName}
+        productImages={productImages} onProductImagesChange={onProductImagesChange} storeId={storeId}
+        onBack={() => setPhotosFor(null)}
+      />
+    );
+  }
+
+  const photosOf = (r: VariantRow) => r.images.filter(u => productImages.includes(u));
+
+  const fields = (row: VariantRow, name: string) => (
+    <>
+      <td className="px-2 py-2"><input type="number" min="0" value={row.price} onChange={e => updateRow(row.key, { price: e.target.value })} className={cellInput} placeholder="0.00" aria-label={`Price for ${name}`} /></td>
+      <td className="px-2 py-2"><input type="number" min="0" value={row.compareAtPrice} onChange={e => updateRow(row.key, { compareAtPrice: e.target.value })} className={cellInput} placeholder="0.00" aria-label={`Compare-at price for ${name}`} /></td>
+      <td className="px-2 py-2"><input value={row.sku} onChange={e => updateRow(row.key, { sku: e.target.value })} className={cellInput} placeholder="Auto" aria-label={`SKU for ${name}`} /></td>
+      <td className="px-2 py-2"><input value={row.barcode} onChange={e => updateRow(row.key, { barcode: e.target.value })} className={cellInput} placeholder="Optional" aria-label={`Barcode for ${name}`} /></td>
+      <td className="px-2 py-2"><input type="number" min="0" value={row.stock} disabled={row.unlimitedStock} onChange={e => updateRow(row.key, { stock: e.target.value })} className={`${cellInput} disabled:bg-cream disabled:text-slate`} placeholder="0" aria-label={`Stock for ${name}`} /></td>
+      <td className="px-2 py-2 text-center"><Toggle checked={row.unlimitedStock} size="sm" onChange={v => updateRow(row.key, { unlimitedStock: v })} ariaLabel={`Unlimited stock for ${name}`} /></td>
+    </>
+  );
+
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {overCap && (
         <p className="text-[12px] text-red-500 font-medium">
           This would create {rows.length} variants — Solvexo supports up to {MAX_VARIANT_COMBINATIONS} per product. Go back and remove some values before saving.
         </p>
       )}
-      {bulkBar}
+      <div className="rounded-lg border border-bone bg-cream/60 px-3 py-2.5 text-[12.5px] text-charcoal">
+        <b>{rows.length} {rows.length === 1 ? 'variant' : 'variants'}.</b>{' '}
+        {grouped
+          ? <>Photos are set once per {optionName?.toLowerCase()}: tap <b>Add photos</b> on a {optionName?.toLowerCase()} and upload or choose its photos. They apply to every size of it.</>
+          : <>Tap <b>Add photos</b> on a variant to upload or choose the photos shoppers see when they pick it.</>}
+      </div>
+
       {/* Phones: one labelled card per variant (a 7-column table can't fit). */}
       <div className="flex flex-col gap-3 sm:hidden">
         {rows.map(row => {
-          const name = row.options.map(o => o.value).join(' / ');
+          const name = rowName(row);
           return (
-            <div key={row.key} className="border border-bone rounded-lg p-3 bg-white">
-              <label className="mb-2 flex items-start gap-2 text-[13px] font-semibold text-charcoal break-words cursor-pointer"><input type="checkbox" className="mt-1" checked={live.includes(row.key)} onChange={() => toggle(row.key)} aria-label={`Select ${name}`} />{name}</label>
-              <div className="mb-2 flex flex-col gap-1 text-[11px] font-medium text-graphite">Image
-                <VariantImagePicker images={productImages} value={row.images} onChange={images => updateRow(row.key, { images })} label={name} />
-              </div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+            <div key={row.key} className="rounded-xl border border-bone bg-white p-3">
+              <p className="mb-2 break-words text-[14px] font-semibold text-charcoal">{name}</p>
+              <div className="mb-3"><PhotoStrip urls={photosOf(row)} label={name} onOpen={() => setPhotosFor(row.key)} hasVideo={!!row.video} /></div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
                 <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Price ({currencySymbol})
-                  <input type="number" inputMode="decimal" min="0" value={row.price} onChange={e => updateRow(row.key, { price: e.target.value })} className={inp} placeholder="0.00" />
+                  <input type="number" inputMode="decimal" min="0" value={row.price} onChange={e => updateRow(row.key, { price: e.target.value })} className={cellInput} placeholder="0.00" />
                 </label>
                 <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Compare-at
-                  <input type="number" inputMode="decimal" min="0" value={row.compareAtPrice} onChange={e => updateRow(row.key, { compareAtPrice: e.target.value })} className={inp} placeholder="0.00" />
+                  <input type="number" inputMode="decimal" min="0" value={row.compareAtPrice} onChange={e => updateRow(row.key, { compareAtPrice: e.target.value })} className={cellInput} placeholder="0.00" />
                 </label>
                 <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">SKU
-                  <input value={row.sku} onChange={e => updateRow(row.key, { sku: e.target.value })} className={inp} placeholder="Auto" />
+                  <input value={row.sku} onChange={e => updateRow(row.key, { sku: e.target.value })} className={cellInput} placeholder="Auto" />
                 </label>
                 <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Barcode
-                  <input value={row.barcode} onChange={e => updateRow(row.key, { barcode: e.target.value })} className={inp} placeholder="Optional" />
+                  <input value={row.barcode} onChange={e => updateRow(row.key, { barcode: e.target.value })} className={cellInput} placeholder="Optional" />
                 </label>
                 <label className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Stock
-                  <input type="number" inputMode="numeric" min="0" value={row.stock} disabled={row.unlimitedStock} onChange={e => updateRow(row.key, { stock: e.target.value })} className={`${inp} disabled:bg-cream disabled:text-slate`} placeholder="0" />
+                  <input type="number" inputMode="numeric" min="0" value={row.stock} disabled={row.unlimitedStock} onChange={e => updateRow(row.key, { stock: e.target.value })} className={`${cellInput} disabled:bg-cream disabled:text-slate`} placeholder="0" />
                 </label>
                 <div className="flex flex-col gap-1 text-[11px] font-medium text-graphite">Unlimited
-                  <div className="h-[34px] flex items-center">
+                  <div className="flex h-[38px] items-center">
                     <Toggle checked={row.unlimitedStock} size="sm" onChange={v => updateRow(row.key, { unlimitedStock: v })} ariaLabel={`Unlimited stock for ${name}`} />
                   </div>
                 </div>
@@ -337,45 +280,54 @@ export function VariantTableEditor({
         })}
       </div>
 
-      {/* Tablet/desktop: table with fixed column minimums so Price/Stock never collapse; scrolls sideways only if the modal is narrower than the table. */}
-      <div className="hidden sm:block overflow-x-auto border border-bone rounded-lg">
-        <table className="w-full text-[12.5px] border-collapse" style={{ minWidth: 990 }}>
+      {/* Tablet/desktop */}
+      <div className="hidden overflow-x-auto rounded-xl border border-bone sm:block">
+        <table className="w-full border-collapse text-[13px]" style={{ minWidth: grouped ? 900 : 1040 }}>
           <thead>
             <tr className="bg-cream text-left">
-              <th className="w-8 px-2 py-2"><span className="sr-only">Select</span></th>
-              <th className="px-3 py-2 font-semibold text-graphite" style={{ minWidth: 170 }}>Variant</th>
-              <th className="px-2 py-2 font-semibold text-graphite" style={{ minWidth: 150 }}>Image</th>
-              <th className="px-2 py-2 font-semibold text-graphite whitespace-nowrap" style={{ minWidth: 110 }}>Price ({currencySymbol})</th>
-              <th className="px-2 py-2 font-semibold text-graphite whitespace-nowrap" style={{ minWidth: 110 }}>Compare-at</th>
-              <th className="px-2 py-2 font-semibold text-graphite" style={{ minWidth: 120 }}>SKU</th>
-              <th className="px-2 py-2 font-semibold text-graphite" style={{ minWidth: 120 }}>Barcode</th>
-              <th className="px-2 py-2 font-semibold text-graphite" style={{ minWidth: 90 }}>Stock</th>
-              <th className="px-2 py-2 font-semibold text-graphite whitespace-nowrap text-center" style={{ minWidth: 80 }}>Unlimited</th>
+              <th className="px-4 py-2.5 font-semibold text-graphite" style={{ minWidth: 150 }}>Variant</th>
+              {!grouped && <th className="px-2 py-2.5 font-semibold text-graphite" style={{ minWidth: 170 }}>Photos</th>}
+              <th className="whitespace-nowrap px-2 py-2.5 font-semibold text-graphite" style={{ minWidth: 120 }}>Price ({currencySymbol})</th>
+              <th className="whitespace-nowrap px-2 py-2.5 font-semibold text-graphite" style={{ minWidth: 120 }}>Compare-at</th>
+              <th className="px-2 py-2.5 font-semibold text-graphite" style={{ minWidth: 130 }}>SKU</th>
+              <th className="px-2 py-2.5 font-semibold text-graphite" style={{ minWidth: 120 }}>Barcode</th>
+              <th className="px-2 py-2.5 font-semibold text-graphite" style={{ minWidth: 100 }}>Stock</th>
+              <th className="whitespace-nowrap px-2 py-2.5 text-center font-semibold text-graphite" style={{ minWidth: 90 }}>Unlimited</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(row => (
-              <tr key={row.key} className="border-t border-bone">
-                <td className="w-8 px-2 py-2"><input type="checkbox" checked={live.includes(row.key)} onChange={() => toggle(row.key)} aria-label={`Select ${row.options.map(o => o.value).join(' / ')}`} /></td>
-                <td className="px-3 py-2 font-medium text-charcoal break-words">{row.options.map(o => o.value).join(' / ')}</td>
-                <td className="px-2 py-1.5"><div className="flex flex-col gap-1.5"><VariantImagePicker images={productImages} value={row.images} onChange={images => updateRow(row.key, { images })} label={row.options.map(o => o.value).join(' / ')} /></div></td>
-                <td className="px-2 py-1.5"><input type="number" min="0" value={row.price} onChange={e => updateRow(row.key, { price: e.target.value })} className={inp} placeholder="0.00" aria-label="Price" /></td>
-                <td className="px-2 py-1.5"><input type="number" min="0" value={row.compareAtPrice} onChange={e => updateRow(row.key, { compareAtPrice: e.target.value })} className={inp} placeholder="0.00" aria-label="Compare-at price" /></td>
-                <td className="px-2 py-1.5"><input value={row.sku} onChange={e => updateRow(row.key, { sku: e.target.value })} className={inp} placeholder="Auto" aria-label="SKU" /></td>
-                <td className="px-2 py-1.5"><input value={row.barcode} onChange={e => updateRow(row.key, { barcode: e.target.value })} className={inp} placeholder="Optional" aria-label="Barcode" /></td>
-                <td className="px-2 py-1.5"><input type="number" min="0" value={row.stock} disabled={row.unlimitedStock} onChange={e => updateRow(row.key, { stock: e.target.value })} className={`${inp} disabled:bg-cream disabled:text-slate`} placeholder="0" aria-label="Stock" /></td>
-                <td className="px-2 py-1.5 text-center">
-                  <Toggle
-                    checked={row.unlimitedStock} size="sm"
-                    onChange={v => updateRow(row.key, { unlimitedStock: v })}
-                    ariaLabel={`Unlimited stock for ${row.options.map(o => o.value).join(' / ')}`}
-                  />
-                </td>
-              </tr>
+            {groups.map(g => (
+              <GroupRows key={g.value ?? 'all'} header={grouped ? (
+                <tr className="border-t border-bone bg-cream/70">
+                  <td colSpan={7} className="px-4 py-2.5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-[13.5px] font-semibold text-charcoal">{g.value}</span>
+                      <span className="text-[11.5px] text-slate">{g.rows.length} {g.rows.length === 1 ? 'variant' : 'variants'}</span>
+                      <PhotoStrip urls={photosOf(g.rows[0])} label={String(g.value)} onOpen={() => setPhotosFor(g.rows[0].key)} big hasVideo={!!g.rows[0].video} />
+                    </div>
+                  </td>
+                </tr>
+              ) : null}>
+                {g.rows.map(row => {
+                  const name = rowName(row);
+                  return (
+                    <tr key={row.key} className="border-t border-bone">
+                      <td className={`px-4 py-2 font-medium text-charcoal break-words ${grouped ? 'pl-8' : ''}`}>{name}</td>
+                      {!grouped && <td className="px-2 py-2"><PhotoStrip urls={photosOf(row)} label={name} onOpen={() => setPhotosFor(row.key)} hasVideo={!!row.video} /></td>}
+                      {fields(row, name)}
+                    </tr>
+                  );
+                })}
+              </GroupRows>
             ))}
           </tbody>
         </table>
       </div>
     </div>
   );
+}
+
+/** Renders an optional group header row followed by the group's variant rows (a fragment, so the table markup stays valid). */
+function GroupRows({ header, children }: { header: ReactNode; children: ReactNode }) {
+  return <>{header}{children}</>;
 }

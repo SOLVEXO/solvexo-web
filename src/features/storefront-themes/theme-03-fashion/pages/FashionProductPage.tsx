@@ -34,6 +34,7 @@ import { stockState, variantAvailable, variantCanBuy, variantMaxQty } from '../.
 import { VariantOptionPicker } from '../../core/product/VariantOptionPicker';
 import { buildOptionValues } from '../../core/product/variantOptions';
 import { variantGallery } from '../../core/product/variantGallery';
+import { usePreloadVariantCovers } from '../../core/product/usePreloadVariantCovers';
 import { ProductTrustBadges } from '../../core/product/trustBadges';
 import type { Section } from '@/api/services/storefrontTypes';
 import { ProductQuestions } from '../../core/product/ProductQuestions';
@@ -149,6 +150,7 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
       img.src = p.src;
     });
   }, [images]);
+  usePreloadVariantCovers(variants, detail?.product.images, src => imgProps(src, [480, 768, 1024, 1440], '(min-width: 1024px) 58vw, 100vw'));
 
   useStorefrontSeo({ disabled: embedded, title: product?.name, description: product?.description?.replace(/\s+/g, ' ').slice(0, 160), image: images[0] });
   const origin = siteOrigin();
@@ -336,7 +338,8 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
                     </div>
                   )}
                   {mediaCount > 1 && (
-                    <div className={`fx-hide-scroll flex gap-3 overflow-x-auto ${layout.media.layout === 'thumbs_bottom' ? '' : 'md:w-[84px] md:flex-col md:overflow-y-auto md:overflow-x-hidden'}`} style={{ maxHeight: 'min(640px, 70vh)' }}>
+                    <div className={layout.media.layout === 'thumbs_bottom' ? '' : 'md:relative md:w-[84px] md:shrink-0'}>
+                    <div className={`fx-hide-scroll flex gap-3 overflow-x-auto ${layout.media.layout === 'thumbs_bottom' ? '' : 'md:absolute md:inset-0 md:flex-col md:overflow-y-auto md:overflow-x-hidden'}`}>
                       {Array.from({ length: mediaCount }, (_, i) => {
                         const isVideo = i === videoAt;
                         const photo = video && i > videoAt ? i - 1 : i;
@@ -349,6 +352,7 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
                           </button>
                         );
                       })}
+                    </div>
                     </div>
                   )}
                 </div>
