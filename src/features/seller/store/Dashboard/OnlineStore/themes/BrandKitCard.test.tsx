@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { chooseColor, chooseDateTime, typeColor } from '@/components/comman/ui/pickerTesting';
+import { typeColor } from '@/components/comman/ui/pickerTesting';
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import type { StorefrontColors, BrandKit } from '@/api/services/storeTheme';
 

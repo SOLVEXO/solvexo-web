@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { chooseColor, chooseDateTime, typeColor } from '@/components/comman/ui/pickerTesting';
+import { chooseColor } from '@/components/comman/ui/pickerTesting';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SellingOptionsField, initSellingOptions, sellingOptionsFromProduct, sellingOptionsPayload, type SellingOptionsForm } from './SellingOptionsField';
