@@ -179,13 +179,13 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
 
 function ConnectionModal({ conn, onClose, onSaved }: { conn: WaConnection; onClose: () => void; onSaved: (c: WaConnection) => void }) {
   const toast = useStableToast();
-  const [f, setF] = useState({ phoneNumberId: conn.phoneNumberId ?? '', accessToken: '', templateName: conn.templateName ?? '', templateLang: conn.templateLang || 'en', templateUsesName: conn.templateUsesName });
+  const [f, setF] = useState({ phoneNumberId: conn.phoneNumberId ?? '', accessToken: '', templateName: conn.templateName ?? '', templateLang: conn.templateLang || 'en', templateUsesName: conn.templateUsesName, wabaId: conn.wabaId ?? '' });
   const [busy, setBusy] = useState<'save' | 'disconnect' | null>(null);
   const [error, setError] = useState('');
   const save = async () => {
     setBusy('save'); setError('');
     try {
-      const r = await apiWaConnect({ phoneNumberId: f.phoneNumberId.trim(), ...(f.accessToken.trim() ? { accessToken: f.accessToken.trim() } : {}), templateName: f.templateName.trim() || null, templateLang: f.templateLang.trim() || 'en', templateUsesName: f.templateUsesName });
+      const r = await apiWaConnect({ phoneNumberId: f.phoneNumberId.trim(), ...(f.accessToken.trim() ? { accessToken: f.accessToken.trim() } : {}), templateName: f.templateName.trim() || null, templateLang: f.templateLang.trim() || 'en', templateUsesName: f.templateUsesName, wabaId: f.wabaId.trim() || null });
       toast.success(`Connected ${r.data.displayNumber ?? ''}.`); onSaved(r.data);
     } catch (e) { setError(errMsg(e, 'Could not connect.')); }
     setBusy(null);
@@ -208,7 +208,8 @@ function ConnectionModal({ conn, onClose, onSaved }: { conn: WaConnection; onClo
         <div className="flex items-center gap-2 rounded-lg border border-bone bg-cream/60 px-3 py-2"><code className="flex-1 break-all text-[12px]">{conn.webhookUrl}</code><CopyIconButton value={conn.webhookUrl} title="Copy webhook URL" size={14} /></div>
         <div className="grid sm:grid-cols-2 gap-3">
           <Input label="Phone number ID" inputMode="numeric" value={f.phoneNumberId} onChange={e => setF({ ...f, phoneNumberId: e.target.value.replace(/\D/g, '') })} />
-          <Input label={conn.connected ? `Access token (saved: ${conn.tokenHint ?? '—'})` : 'Permanent access token'} type="password" autoComplete="off" placeholder={conn.connected ? 'Leave empty to keep it' : 'EAAG…'} value={f.accessToken} onChange={e => setF({ ...f, accessToken: e.target.value })} />
+          <Input label="WhatsApp Business Account ID (optional)" inputMode="numeric" placeholder="Found automatically if empty" value={f.wabaId} onChange={e => setF({ ...f, wabaId: e.target.value.replace(/\D/g, '') })} />
+          <div className="sm:col-span-2"><Input label={conn.connected ? `Access token (saved: ${conn.tokenHint ?? '—'})` : 'Permanent access token'} type="password" autoComplete="off" placeholder={conn.connected ? 'Leave empty to keep it' : 'EAAG…'} value={f.accessToken} onChange={e => setF({ ...f, accessToken: e.target.value })} /></div>
           <Input label="Approved template name (optional)" placeholder="e.g. sales_follow_up" value={f.templateName} onChange={e => setF({ ...f, templateName: e.target.value })} />
           <Input label="Template language code" placeholder="en, ur, en_US" value={f.templateLang} onChange={e => setF({ ...f, templateLang: e.target.value })} />
         </div>

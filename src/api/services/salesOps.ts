@@ -345,7 +345,7 @@ export interface WaConversation {
 }
 
 export const apiWaConnection = () => client.get<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/connection`);
-export const apiWaConnect = (body: { phoneNumberId: string; accessToken?: string; templateName?: string | null; templateLang?: string; templateUsesName?: boolean }) =>
+export const apiWaConnect = (body: { phoneNumberId: string; accessToken?: string; templateName?: string | null; templateLang?: string; templateUsesName?: boolean; wabaId?: string | null }) =>
   client.put<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/connection`, body);
 export const apiWaDisconnect = () => client.delete<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/connection`);
 export const apiWaConversations = (params: { leadId?: string; unread?: boolean } = {}) =>
