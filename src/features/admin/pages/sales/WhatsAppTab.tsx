@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Check, CheckCheck, Clock, MessageCircle, RefreshCw, Send, Settings2, Sparkles, TriangleAlert, X } from 'lucide-react';
-import { Badge, Button, CopyIconButton, EmptyState, Input, Modal, Textarea } from '@/components/comman/ui';
+import { Check, CheckCheck, Clock, FileText, MessageCircle, Plus, RefreshCw, Send, Settings2, Sparkles, Trash2, TriangleAlert, X } from 'lucide-react';
+import { Badge, Button, CopyIconButton, EmptyState, Input, Modal, RadioButton, Textarea } from '@/components/comman/ui';
 import {
-  apiWaConnect, apiWaConnection, apiWaConversation, apiWaConversations, apiWaDisconnect, apiWaDiscardDraft, apiWaRedraft, apiWaSend, apiWaSendTemplate,
-  type WaConnection, type WaConversation, type WaConversationRow, type WaMessage,
+  apiWaConnect, apiWaConnection, apiWaConversation, apiWaConversations, apiWaDisconnect, apiWaDiscardDraft, apiWaRedraft, apiWaSaveTemplates, apiWaSend, apiWaSendTemplate,
+  type WaConnection, type WaTemplate, type WaConversation, type WaConversationRow, type WaMessage,
 } from '@/api/services/salesOps';
 import { StageBadge } from './parts';
 import { errMsg, relDay, useStableToast } from './sales.utils';
@@ -28,6 +28,7 @@ export function WhatsAppTab({ isManager }: { isManager: boolean }) {
   const [rows, setRows] = useState<WaConversationRow[] | null>(null);
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const selected = params.get('c');
 
   const loadList = useCallback(() => apiWaConversations({ unread: onlyUnread }).then(r => setRows(r.data)).catch(e => { setRows([]); toast.error(errMsg(e, 'Could not load WhatsApp chats.')); }), [onlyUnread, toast]);
@@ -59,6 +60,7 @@ export function WhatsAppTab({ isManager }: { isManager: boolean }) {
         <label className="flex items-center gap-2 text-[12.5px] text-slate cursor-pointer"><input type="checkbox" className="accent-brand-orange" checked={onlyUnread} onChange={e => setOnlyUnread(e.target.checked)} /> Unread only</label>
         <div className="flex items-center gap-2">
           {conn?.connected && <span className="text-[12px] text-slate">{conn.verifiedName ?? 'Solvexo'} · {conn.displayNumber}</span>}
+          {isManager && conn?.connected && <Button size="sm" variant="ghost" onClick={() => setTemplatesOpen(true)}><FileText size={14} /> Templates</Button>}
           {isManager && <Button size="sm" variant="ghost" onClick={() => setSettingsOpen(true)}><Settings2 size={14} /> Settings</Button>}
         </div>
       </div>
@@ -95,6 +97,7 @@ export function WhatsAppTab({ isManager }: { isManager: boolean }) {
         </section>
       </div>
 
+      {templatesOpen && conn && <TemplatesModal templates={conn.templates ?? []} onClose={() => setTemplatesOpen(false)} onSaved={c => { setConn(c); setTemplatesOpen(false); }} />}
       {settingsOpen && conn && <ConnectionModal conn={conn} onClose={() => setSettingsOpen(false)} onSaved={c => { setConn(c); setSettingsOpen(false); }} />}
     </div>
   );
@@ -106,6 +109,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
   const [text, setText] = useState('');
   const [fromDraft, setFromDraft] = useState(false);
   const [busy, setBusy] = useState<'send' | 'template' | 'redraft' | null>(null);
+  const [picking, setPicking] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   // The parent re-creates onChanged on every render; keep the latest in a ref so loading doesn't re-run because of it.
@@ -118,9 +122,11 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
   if (!c) return <div className="m-4 h-40 rounded-lg bg-cream animate-pulse" />;
   const run = async (kind: 'send' | 'template' | 'redraft', fn: () => Promise<{ data: WaConversation }>, ok: string) => {
     setBusy(kind);
-    try { setC((await fn()).data); changedRef.current(); if (ok) toast.success(ok); if (kind === 'send') { setText(''); setFromDraft(false); } }
+    let done = false;
+    try { setC((await fn()).data); changedRef.current(); if (ok) toast.success(ok); if (kind === 'send') { setText(''); setFromDraft(false); } done = true; }
     catch (e) { toast.error(errMsg(e, 'Could not send.')); }
     setBusy(null);
+    return done;
   };
 
   return (
@@ -168,10 +174,13 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
       ) : (
         <div className="p-3 border-t border-bone mt-2 text-[12.5px] text-charcoal flex flex-wrap items-center justify-between gap-2">
           <p className="flex items-center gap-1.5"><Clock size={14} className="text-slate" /> More than 24 hours since they last wrote. WhatsApp only allows your approved template now.</p>
-          {c.template ? <Button size="sm" loading={busy === 'template'} onClick={() => void run('template', () => apiWaSendTemplate(c._id), 'Template sent.')}>Send template “{c.template.name}”</Button>
-            : <span className="text-slate">Ask a manager to set the template in WhatsApp settings.</span>}
+          {(c.templates ?? []).length === 1 ? <Button size="sm" loading={busy === 'template'} onClick={() => void run('template', () => apiWaSendTemplate(c._id, c.templates[0].key), 'Template sent.')}>Send template “{c.templates[0].label}”</Button>
+            : (c.templates ?? []).length > 1 ? <Button size="sm" onClick={() => setPicking(true)}>Choose a template</Button>
+            : <span className="text-slate">Ask a manager to add an approved template in WhatsApp → Templates.</span>}
         </div>
       )}
+      {picking && <TemplatePicker templates={c.templates} name={(c.lead?.name ?? c.profileName ?? '').trim().split(/\s+/)[0] || 'there'} busy={busy === 'template'}
+        onClose={() => setPicking(false)} onSend={key => void run('template', () => apiWaSendTemplate(c._id, key), 'Template sent.').then(done => { if (done) setPicking(false); })} />}
       {c.windowOpen && c.windowClosesAt && <p className="px-3 pb-2 text-[11px] text-slate">You can reply freely until {new Date(c.windowClosesAt).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}.</p>}
     </>
   );
@@ -179,13 +188,13 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
 
 function ConnectionModal({ conn, onClose, onSaved }: { conn: WaConnection; onClose: () => void; onSaved: (c: WaConnection) => void }) {
   const toast = useStableToast();
-  const [f, setF] = useState({ phoneNumberId: conn.phoneNumberId ?? '', accessToken: '', templateName: conn.templateName ?? '', templateLang: conn.templateLang || 'en', templateUsesName: conn.templateUsesName, wabaId: conn.wabaId ?? '' });
+  const [f, setF] = useState({ phoneNumberId: conn.phoneNumberId ?? '', accessToken: '', wabaId: conn.wabaId ?? '' });
   const [busy, setBusy] = useState<'save' | 'disconnect' | null>(null);
   const [error, setError] = useState('');
   const save = async () => {
     setBusy('save'); setError('');
     try {
-      const r = await apiWaConnect({ phoneNumberId: f.phoneNumberId.trim(), ...(f.accessToken.trim() ? { accessToken: f.accessToken.trim() } : {}), templateName: f.templateName.trim() || null, templateLang: f.templateLang.trim() || 'en', templateUsesName: f.templateUsesName, wabaId: f.wabaId.trim() || null });
+      const r = await apiWaConnect({ phoneNumberId: f.phoneNumberId.trim(), ...(f.accessToken.trim() ? { accessToken: f.accessToken.trim() } : {}), wabaId: f.wabaId.trim() || null });
       toast.success(`Connected ${r.data.displayNumber ?? ''}.`); onSaved(r.data);
     } catch (e) { setError(errMsg(e, 'Could not connect.')); }
     setBusy(null);
@@ -210,13 +219,75 @@ function ConnectionModal({ conn, onClose, onSaved }: { conn: WaConnection; onClo
           <Input label="Phone number ID" inputMode="numeric" value={f.phoneNumberId} onChange={e => setF({ ...f, phoneNumberId: e.target.value.replace(/\D/g, '') })} />
           <Input label="WhatsApp Business Account ID (optional)" inputMode="numeric" placeholder="Found automatically if empty" value={f.wabaId} onChange={e => setF({ ...f, wabaId: e.target.value.replace(/\D/g, '') })} />
           <div className="sm:col-span-2"><Input label={conn.connected ? `Access token (saved: ${conn.tokenHint ?? '—'})` : 'Permanent access token'} type="password" autoComplete="off" placeholder={conn.connected ? 'Leave empty to keep it' : 'EAAG…'} value={f.accessToken} onChange={e => setF({ ...f, accessToken: e.target.value })} /></div>
-          <Input label="Approved template name (optional)" placeholder="e.g. sales_follow_up" value={f.templateName} onChange={e => setF({ ...f, templateName: e.target.value })} />
-          <Input label="Template language code" placeholder="en, ur, en_US" value={f.templateLang} onChange={e => setF({ ...f, templateLang: e.target.value })} />
         </div>
-        <label className="flex items-center gap-2 text-[12.5px] cursor-pointer"><input type="checkbox" className="accent-brand-orange" checked={f.templateUsesName} onChange={e => setF({ ...f, templateUsesName: e.target.checked })} /> The template’s text has {'{{1}}'} for the person’s first name</label>
-        <p className="text-[11.5px] text-slate">The template is used to restart a chat after 24 hours without a reply from the person (WhatsApp’s rule). Replies are always sent by a person; the AI only drafts them. Turn drafts on or off in the AI agent tab.</p>
+        <p className="text-[11.5px] text-slate">Replies are always sent by a person; the AI only drafts them. Turn drafts on or off in the AI agent tab. Approved templates (to restart a chat after 24 hours) are set under Templates.</p>
         {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
       </div>
+    </Modal>
+  );
+}
+
+/** The approved Meta templates reps can pick from. Solvexo checks each one with Meta when saved. */
+function TemplatesModal({ templates, onClose, onSaved }: { templates: WaTemplate[]; onClose: () => void; onSaved: (c: WaConnection) => void }) {
+  const toast = useStableToast();
+  const [rows, setRows] = useState(() => (templates.length ? templates : [{ label: '', name: '', lang: 'en', body: null }]).map(t => ({ label: t.label, name: t.name, lang: t.lang, body: t.body })));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const set = (i: number, patch: Partial<(typeof rows)[number]>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch, body: null } : r)));
+  const save = async () => {
+    setBusy(true); setError('');
+    try {
+      const list = rows.filter(r => r.name.trim()).map(r => ({ label: r.label.trim(), name: r.name.trim(), lang: r.lang.trim() }));
+      const res = await apiWaSaveTemplates(list);
+      toast.success(list.length ? 'Templates saved.' : 'Templates removed.'); onSaved(res.data);
+    } catch (e) { setError(errMsg(e, 'Could not save the templates.')); }
+    setBusy(false);
+  };
+  return (
+    <Modal title="WhatsApp templates" onClose={onClose} width={680}
+      footer={<div className="flex justify-end gap-2 w-full"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={save}>Save</Button></div>}>
+      <div className="flex flex-col gap-3 text-[13px]">
+        <p className="text-[12.5px] text-slate">After 24 hours without a message from the person, WhatsApp only allows an approved template. Create them in WhatsApp Manager → Message templates, then list them here. Solvexo checks each one with Meta and shows reps its text. A template can use {'{{1}}'} for the person’s first name, and nothing else.</p>
+        {rows.length > 0 && (
+          <div aria-hidden className="grid grid-cols-[1fr_1fr_88px_auto] gap-2 px-2.5 -mb-1.5 text-[12px] font-medium text-charcoal">
+            <span>Shown to reps as</span><span>Template name in Meta</span><span>Language</span><span className="w-[13px]" />
+          </div>
+        )}
+        {rows.map((r, i) => (
+          <div key={i} className="rounded-lg border border-bone p-2.5">
+            <div className="grid grid-cols-[1fr_1fr_88px_auto] items-center gap-2">
+              <Input aria-label={`Template ${i + 1} label`} placeholder="e.g. Follow-up (English)" value={r.label} onChange={e => set(i, { label: e.target.value })} />
+              <Input aria-label={`Template ${i + 1} name`} placeholder="sales_follow_up" value={r.name} onChange={e => set(i, { name: e.target.value.trim() })} />
+              <Input aria-label={`Template ${i + 1} language`} placeholder="en" value={r.lang} onChange={e => set(i, { lang: e.target.value.trim() })} />
+              <button aria-label={`Remove template ${i + 1}`} onClick={() => setRows(rows.filter((_, j) => j !== i))} className="self-center bg-transparent border-0 text-slate hover:text-error cursor-pointer"><Trash2 size={13} /></button>
+            </div>
+            {r.body && <p dir="auto" className="mt-1.5 text-[12px] text-slate whitespace-pre-line">{r.body}</p>}
+          </div>
+        ))}
+        {rows.length < 20 && <Button size="xs" variant="ghost" onClick={() => setRows([...rows, { label: '', name: '', lang: 'en', body: null }])}><Plus size={12} /> Add a template</Button>}
+        <p className="text-[11.5px] text-slate">Language is the code Meta shows for that version: en, en_US, en_GB or ur. The first template is the one used when there is only one choice.</p>
+        {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
+      </div>
+    </Modal>
+  );
+}
+
+/** Pick which approved template restarts this chat; each shows the text the person will receive. */
+function TemplatePicker({ templates, name, busy, onClose, onSend }: { templates: WaTemplate[]; name: string; busy: boolean; onClose: () => void; onSend: (key: string) => void }) {
+  const [key, setKey] = useState(templates[0]?.key ?? '');
+  const chosen = templates.find(t => t.key === key);
+  return (
+    <Modal title="Send a template" onClose={onClose} width={560}
+      footer={<div className="flex justify-end gap-2 w-full"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} disabled={!key} onClick={() => onSend(key)}><Send size={14} /> Send</Button></div>}>
+      <RadioButton name="wa-template" layout="col" value={key} onChange={setKey}
+        options={templates.map(t => ({ value: t.key, label: `${t.label} · ${t.lang}` }))} />
+      {/* The chosen template's text, as the person will get it ({{1}} = their first name). */}
+      {chosen && (
+        <div className="mt-3 rounded-lg bg-[#d9fdd3] px-3 py-2 text-[13px]">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-slate mb-1">They will get</p>
+          <p dir="auto" className="whitespace-pre-line break-words text-charcoal">{chosen.body ? chosen.body.replace(/\{\{\s*1\s*\}\}/g, name) : `Template ${chosen.name} (its text is shown in WhatsApp Manager)`}</p>
+        </div>
+      )}
     </Modal>
   );
 }
