@@ -1,4 +1,4 @@
-import { Field, Input, Toggle } from '@/components/comman/ui';
+import { Field, Input, Toggle, DateField, ColorField } from '@/components/comman/ui';
 import type { ProductSellingOptions } from '@/api/services/product';
 import { badgeAccent } from '@/features/storefront-themes/cardBadgeTheme';
 
@@ -78,8 +78,7 @@ export function SellingOptionsField({ value, onChange }: { value: SellingOptions
                 style={{ background: c.hex }} />
             ))}
             <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-bone bg-white py-0.5 ps-1 pe-2.5 text-[11px] font-medium text-charcoal" title="Pick any colour">
-              <input type="color" aria-label="Badge colour: custom" value={picked || '#4B5563'} onChange={e => set('cardBadgeColor', e.target.value.toUpperCase())}
-                className="size-6 cursor-pointer rounded-full border-0 bg-transparent p-0" />
+              <ColorField compact aria-label="Badge colour: custom" value={picked || '#4B5563'} onChange={e => set('cardBadgeColor', e.target.value.toUpperCase())} />
               {picked && !BADGE_SWATCHES.some(c => c.hex === picked) ? picked : 'Custom'}
             </label>
             <span className="ms-1 rounded-full px-2.5 py-0.5 text-[12px] font-medium" style={{ background: preview.bg, color: preview.ink }}>{text}</span>
@@ -98,7 +97,7 @@ export function SellingOptionsField({ value, onChange }: { value: SellingOptions
           <Toggle checked={value.preorder} onChange={v => set('preorder', v)} />
         </div>
         {value.preorder && (
-          <Field label="Expected ship date (optional)"><Input type="date" value={value.preorderOn} onChange={e => set('preorderOn', e.target.value)} aria-label="Pre-order ship date" /></Field>
+          <Field label="Expected ship date (optional)"><DateField value={value.preorderOn} onChange={e => set('preorderOn', e.target.value)} aria-label="Pre-order ship date" /></Field>
         )}
       </div>
     </div>

@@ -6,7 +6,7 @@ import { TokenStorage } from '@/api/services/auth';
 import { SupplierReturnModal, type ReturnLine } from '@/features/seller/store/Dashboard/Operations/inventory/SupplierReturnModal';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
-import { Modal, Select } from '@/components/comman/ui';
+import { Modal, Select, DateField } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore/builder/EntityPickerModal';
 import { useToast } from '@/contexts/ToastContext';
@@ -400,7 +400,7 @@ export default function PurchaseOrderForm() {
 
             <div className="mt-3">
               <label className="text-[12px] font-medium text-graphite mb-1 block">Expected delivery date (optional)</label>
-              <input type="date" className={inp} value={expectedAt} onChange={e => setExpectedAt(e.target.value)} disabled={!isEditable} />
+              <DateField value={expectedAt} onChange={e => setExpectedAt(e.target.value)} disabled={!isEditable} />
             </div>
           </div>
 
@@ -604,9 +604,7 @@ function ReceiveShipmentModal({ storeId, po, onClose, onReceived }: {
                       <input placeholder="Lot number (optional)" className="flex-1 px-2 py-1.5 text-[11.5px] border border-bone rounded-md"
                         value={lines[item._id]?.lotNumber ?? ''}
                         onChange={e => setLines(prev => ({ ...prev, [item._id]: { ...prev[item._id], lotNumber: e.target.value } }))} />
-                      <input type="date" className="px-2 py-1.5 text-[11.5px] border border-bone rounded-md"
-                        value={lines[item._id]?.expiryDate ?? ''}
-                        onChange={e => setLines(prev => ({ ...prev, [item._id]: { ...prev[item._id], expiryDate: e.target.value } }))} />
+                      <DateField value={lines[item._id]?.expiryDate ?? ''} onChange={e => setLines(prev => ({ ...prev, [item._id]: { ...prev[item._id], expiryDate: e.target.value } }))} />
                     </div>
                     <textarea
                       placeholder="Serial numbers — one per line or comma-separated (required only if this SKU tracks serials)"

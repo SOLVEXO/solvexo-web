@@ -4,7 +4,7 @@ import { errorMessage } from '@/api/errorMessage';
 import { can } from '@/hooks/auth/useCan';
 import { useToast } from '@/contexts/ToastContext';
 import { useKeyedLoad } from '@/components/comman/dashboard/useKeyedLoad';
-import { Badge, Button, Card, Input, Select, Table } from '@/components/comman/ui';
+import { Badge, Button, Card, Input, Select, Table, DateField } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui/Table';
 import { Modal } from '@/components/comman/ui/Modal';
 
@@ -90,7 +90,7 @@ export function RenewalQueue({ storeId, plans }: { storeId: string; plans: PlanO
           <option value="">All plans</option>
           {plans.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
         </Select>
-        <Input label="Due on or before" type="date" value={dueBefore} onChange={(e) => setDueBefore(e.target.value)} />
+        <DateField label="Due on or before" value={dueBefore} onChange={(e) => setDueBefore(e.target.value)} />
       </div>
       {res.error ? (
         <div role="alert" className="flex items-center gap-3 rounded-lg border border-error-border bg-error-bg px-4 py-3 text-[13px] text-error"><span className="flex-1">{res.error}</span><Button size="xs" variant="outline" onClick={res.retry}>Retry</Button></div>

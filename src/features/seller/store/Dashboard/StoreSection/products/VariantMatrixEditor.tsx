@@ -8,6 +8,7 @@ import {
 } from './variantMatrix';
 import { groupValue, photoOptionName, rowName } from './variantPhotos';
 import { VariantPhotosScreen } from './VariantPhotosScreen';
+import { ColorField } from '@/components/comman/ui';
 
 const inp = 'w-full px-2.5 py-[7px] text-[12.5px] border border-bone rounded-md text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none focus:border-brand-orange';
 
@@ -92,8 +93,7 @@ export function VariantOptionsEditor({
               <span key={v} className="bg-white border border-bone rounded-[6px] px-2 py-[3px] text-[12px] text-charcoal flex items-center gap-1">
                 {onSwatchesChange && isColorOptionName(type.name) && (
                   <>
-                    <input type="color" value={chosen || colorForValue(v) || '#cccccc'} onChange={e => onSwatchesChange(setSwatchColor(swatches, type.name, v, e.target.value))}
-                      aria-label={`Swatch colour for ${v}`} title={chosen ? 'Swatch colour you chose' : 'Pick the swatch colour'} className="size-4 cursor-pointer border-0 bg-transparent p-0" />
+                    <ColorField compact value={chosen || colorForValue(v) || '#cccccc'} onChange={e => onSwatchesChange(setSwatchColor(swatches, type.name, v, e.target.value))} aria-label={`Swatch colour for ${v}`} />
                     {chosen && <button type="button" onClick={() => onSwatchesChange(setSwatchColor(swatches, type.name, v, ''))} aria-label={`Clear swatch colour for ${v}`} className="bg-transparent border-none cursor-pointer p-0 text-[10px] text-slate underline">reset</button>}
                   </>
                 )}

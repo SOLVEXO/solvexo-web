@@ -5,7 +5,7 @@ import { errorMessage } from '@/api/errorMessage';
 import type { StaffPermission } from '@/api/services/staff';
 import { can } from '@/hooks/auth/useCan';
 import { useToast } from '@/contexts/ToastContext';
-import { Badge, Button, Card, Input, Select, Table } from '@/components/comman/ui';
+import { Badge, Button, Card, Input, Select, Table, DateField } from '@/components/comman/ui';
 import { Modal } from '@/components/comman/ui/Modal';
 import type { TableColumn } from '@/components/comman/ui/Table';
 import { ErrorLine } from '../wholesale/ErrorLine';
@@ -50,8 +50,8 @@ export function ExpensesTab({ storeId, exponent, currency, accounts, tick, refre
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-40"><Input label="From" type="date" value={f.from} onChange={e => setF({ ...f, from: e.target.value })} /></div>
-        <div className="w-40"><Input label="To" type="date" value={f.to} onChange={e => setF({ ...f, to: e.target.value })} /></div>
+        <div className="w-40"><DateField label="From" value={f.from} onChange={e => setF({ ...f, from: e.target.value })} /></div>
+        <div className="w-40"><DateField label="To" value={f.to} onChange={e => setF({ ...f, to: e.target.value })} /></div>
         <div className="w-44"><Select label="Status" value={f.status} onChange={e => setF({ ...f, status: e.target.value })}>
           <option value="all">All</option><option value="recorded">Awaiting approval</option><option value="approved">Approved</option><option value="rejected">Rejected</option>
         </Select></div>
@@ -101,7 +101,7 @@ function ExpenseFormModal({ storeId, exponent, currency, onClose, onDone }: { st
         <Select label="Paid by" value={f.method} onChange={e => setF({ ...f, method: e.target.value })}>
           <option value="bank">Bank</option><option value="cash">Cash (not from a till)</option><option value="other">Other (owner paid personally)</option>
         </Select>
-        <Input label="Date" type="date" max={dayIso(new Date())} value={f.date} onChange={e => setF({ ...f, date: e.target.value })} />
+        <DateField label="Date" max={dayIso(new Date())} value={f.date} onChange={e => setF({ ...f, date: e.target.value })} />
         <Input label="Paid to (optional)" value={f.payee} onChange={e => setF({ ...f, payee: e.target.value })} />
         <Input label={f.category === 'other' ? 'Note (required)' : 'Note'} value={f.note} onChange={e => setF({ ...f, note: e.target.value })} />
         <p className="m-0 text-xs text-slate sm:col-span-2">Money paid from a till drawer is recorded in the POS app, so the shift's cash stays right. Expenses you record here are approved at once and post to the books.</p>
@@ -235,7 +235,7 @@ export function CashBookTab({ storeId, exponent, currency, accounts, openLedger 
       <section className="flex flex-col gap-2">
         <div className="flex flex-wrap items-end gap-3">
           <h3 className="m-0 text-[14px] font-semibold text-carbon">Till daybook</h3>
-          <div className="ml-auto w-44"><Input label="Day" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+          <div className="ml-auto w-44"><DateField label="Day" value={date} onChange={e => setDate(e.target.value)} /></div>
         </div>
         {r.error ? <ErrorLine message={errorMessage(r.error)} onRetry={r.reload} /> : r.loading && !r.data ? <div className="h-24 animate-pulse rounded-xl bg-cream" /> : (r.data?.data.shifts ?? []).length === 0 ? (
           <p className="m-0 text-[13px] text-slate">No till shifts opened on this day.</p>
@@ -338,8 +338,8 @@ export function ProfitTaxTab({ storeId, exponent, currency }: TabProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-40"><Input label="From" type="date" value={from} onChange={e => setFrom(e.target.value)} /></div>
-        <div className="w-40"><Input label="To" type="date" value={to} onChange={e => setTo(e.target.value)} /></div>
+        <div className="w-40"><DateField label="From" value={from} onChange={e => setFrom(e.target.value)} /></div>
+        <div className="w-40"><DateField label="To" value={to} onChange={e => setTo(e.target.value)} /></div>
         <p className="m-0 text-xs text-slate">Point-of-sale figures, by the store's time zone; up to a year at a time.</p>
       </div>
       <section className="flex flex-col gap-2">

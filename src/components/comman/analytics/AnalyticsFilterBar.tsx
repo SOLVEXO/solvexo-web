@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Download, SlidersHorizontal, FileText } from 'lucide-react';
-import { Button, FilterDropdown, Input, Toggle } from '@/components/comman/ui';
+import { Button, FilterDropdown, Toggle, DateRangePicker } from '@/components/comman/ui';
 import { COMPARE_TO_OPTIONS, RANGE_PRESET_OPTIONS, type AnalyticsCompareTo, type BaseAnalyticsUIFilters } from './analyticsFilters';
 
 interface FilterOption { value: string; label: string }
@@ -47,19 +47,12 @@ export function AnalyticsFilterBar<T extends BaseAnalyticsUIFilters>({
         />
 
         {filters.range === 'custom' && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Input
-              type="date"
-              value={filters.from}
-              onChange={e => patch({ from: e.target.value } as Partial<T>)}
-              className="w-[140px]"
-            />
-            <span className="text-slate text-[12px]">to</span>
-            <Input
-              type="date"
-              value={filters.to}
-              onChange={e => patch({ to: e.target.value } as Partial<T>)}
-              className="w-[140px]"
+          <div className="w-[260px] max-w-full">
+            <DateRangePicker
+              aria-label="Custom date range"
+              value={{ from: filters.from ?? '', to: filters.to ?? '' }}
+              onChange={r => patch({ from: r.from, to: r.to } as Partial<T>)}
+              clearable={false}
             />
           </div>
         )}

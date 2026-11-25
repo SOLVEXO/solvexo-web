@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { chooseColor, chooseDateTime, typeColor } from '@/components/comman/ui/pickerTesting';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { useState } from 'react';
 import { BlockFields } from './BlockFields';
@@ -26,7 +27,7 @@ describe('NavBadgeField', () => {
     render(<Harness initial={{ badge: '', badgeColor: '' } as NavExtrasValue} spy={spy}>{(v, set) => <NavBadgeField value={v} onChange={set} />}</Harness>);
     fireEvent.change(screen.getByLabelText('Badge text'), { target: { value: '<b>New' } });
     expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ badge: 'bNew' }));
-    fireEvent.change(screen.getByLabelText('Badge colour'), { target: { value: '#ff0000' } });
+    chooseColor(screen.getByLabelText('Badge colour'), '#ff0000');
     expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ badgeColor: '#ff0000' }));
     fireEvent.click(screen.getByText('Theme colour'));
     expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ badgeColor: '' }));
@@ -57,13 +58,12 @@ describe('NavRulesField', () => {
     expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ showTo: 'customers' }));
     fireEvent.change(screen.getByPlaceholderText('PK, AE, GB'), { target: { value: 'PK, AE' } });
     fireEvent.change(screen.getByPlaceholderText('en, ur'), { target: { value: 'en' } });
-    const [from] = Array.from(document.querySelectorAll('input[type="datetime-local"]')) as HTMLInputElement[];
-    fireEvent.change(from, { target: { value: '2026-12-01T09:30' } });
+    chooseDateTime(screen.getAllByText('Select date & time')[0].closest('button') as HTMLElement, '2026-12-01T09:30');
     const last = spy.mock.calls.at(-1)![0] as NavExtrasValue;
     expect(last).toMatchObject({ showTo: 'customers', showCountries: 'PK, AE', showLanguages: 'en' });
     expect(last.showFrom).toBe(new Date(2026, 11, 1, 9, 30).toISOString());
     // and it reads back on the seller's own clock
-    expect((Array.from(document.querySelectorAll('input[type="datetime-local"]')) as HTMLInputElement[])[0].value).toBe('2026-12-01T09:30');
+    expect(screen.getByText(/Dec 1, 2026, 9:30 AM/)).toBeTruthy();
   });
 });
 

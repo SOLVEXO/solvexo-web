@@ -3,9 +3,8 @@ import { ImagePlus, Loader2, Lock, Unlock, AlertTriangle, CheckCircle2, ChevronD
 import { useToast } from '@/contexts/ToastContext';
 import { apiGetBrandKit, apiSaveBrandKit, apiSetBrandKitLocked, brandKitColors, type BrandKit, type StorefrontColors } from '@/api/services/storeTheme';
 import { paletteFromPixels } from './brandPalette';
+import { ColorField } from '@/components/comman/ui';
 
-const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
-const lbl = 'text-[11.5px] font-bold uppercase tracking-wide text-slate';
 const HEX6 = /^#[0-9a-f]{6}$/i;
 
 function luminance(hex: string) {
@@ -44,16 +43,14 @@ async function extractPalette(file: File): Promise<string[]> {
 
 function Swatch({ label, value, onChange, hint, optional, onClear }: { label: string; value: string; onChange: (v: string) => void; hint?: string; optional?: boolean; onClear?: () => void }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className={lbl}>{label}{optional && <span className="normal-case font-medium"> (optional)</span>}</label>
-      <div className="flex items-center gap-2">
-        <input type="color" aria-label={label} title={optional && !value ? 'Auto â€” the theme picks this' : undefined} value={HEX6.test(value) ? value : '#000000'} onChange={e => onChange(e.target.value)}
-          className="w-10 h-9 rounded-lg border border-bone cursor-pointer shrink-0 p-0.5 bg-white" style={{ opacity: optional && !value ? 0.25 : 1 }} />
-        <input className={inp} value={value} onChange={e => onChange(e.target.value)} placeholder="#000000" />
-        {optional && value && onClear && <button type="button" onClick={onClear} className="text-[12px] text-slate font-semibold bg-transparent border-none cursor-pointer shrink-0">Auto</button>}
-      </div>
-      {hint && <p className="text-[11.5px] text-slate">{hint}</p>}
-    </div>
+    <ColorField
+      label={optional ? `${label} (optional)` : label}
+      value={HEX6.test(value) ? value : ''}
+      allowEmpty={!!optional}
+      emptyLabel="Auto"
+      hint={hint}
+      onValueChange={v => { if (v) onChange(v); else if (onClear) onClear(); else onChange(''); }}
+    />
   );
 }
 

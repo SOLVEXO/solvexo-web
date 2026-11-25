@@ -3,7 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import client from '@/api/client';
 import { errorMessage } from '@/api/errorMessage';
 import { useToast } from '@/contexts/ToastContext';
-import { Badge, Button, Input, Select, Table } from '@/components/comman/ui';
+import { Badge, Button, Input, Select, Table, DateField } from '@/components/comman/ui';
 import { Modal } from '@/components/comman/ui/Modal';
 import type { TableColumn } from '@/components/comman/ui/Table';
 import { ErrorLine } from '../wholesale/ErrorLine';
@@ -94,7 +94,7 @@ export function ManualEntryModal({ storeId, accounts, exponent, currency, minDat
       footer={<><Button variant="outline" size="sm" onClick={onClose}>Cancel</Button><Button size="sm" loading={busy} disabled={!ok} onClick={() => void save()}>Post entry</Button></>}>
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Input label="Date" type="date" min={minDate} value={date} onChange={e => setDate(e.target.value)} />
+          <DateField label="Date" min={minDate} value={date} onChange={e => setDate(e.target.value)} />
           <Input label="Reference" value={reference} onChange={e => setReference(e.target.value)} placeholder="Voucher or bill number" />
           <Input label="Description" value={memo} onChange={e => setMemo(e.target.value)} />
         </div>
@@ -189,8 +189,8 @@ export function LedgerModal({ storeId, account, exponent, onClose, onOpenEntry }
     <Modal title={`${account.code} · ${account.name}`} onClose={onClose} width={900}>
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="w-40"><Input label="From" type="date" value={from} onChange={e => setFrom(e.target.value)} /></div>
-          <div className="w-40"><Input label="To" type="date" value={to} onChange={e => setTo(e.target.value)} /></div>
+          <div className="w-40"><DateField label="From" value={from} onChange={e => setFrom(e.target.value)} /></div>
+          <div className="w-40"><DateField label="To" value={to} onChange={e => setTo(e.target.value)} /></div>
           {r.data && <p className="m-0 ml-auto text-[13px] text-carbon">Opening {fmt(r.data.opening, exponent)} · Closing <strong>{fmt(r.data.closing, exponent)}</strong> {r.data.currency}</p>}
         </div>
         {r.error ? <ErrorLine message={errorMessage(r.error)} onRetry={r.reload} /> : (

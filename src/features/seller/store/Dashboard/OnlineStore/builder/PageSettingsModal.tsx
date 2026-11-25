@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Button, Field, Toggle, Select } from '@/components/comman/ui';
+import { Modal, Button, Field, Toggle, Select, DateTimeField } from '@/components/comman/ui';
 import { apiUpdateStorePage, type StorePageData, type StorePagePolicyType } from '@/api/services/storePages';
 import { MetafieldsEditor } from '../customize/MetafieldsEditor';
 
@@ -150,7 +150,7 @@ export function PageSettingsModal({ page, storeId, onClose, onSaved }: {
           <div className="border-t border-bone pt-3">
             <Field label="Publish on (optional)" hint="The page goes live by itself at this time. Leave empty to publish manually.">
               <div className="flex gap-2">
-                <input type="datetime-local" className={inp} value={publishAt} min={toLocalInput(new Date().toISOString())} onChange={e => setPublishAt(e.target.value)} />
+                <DateTimeField allowPast={false} value={publishAt} min={toLocalInput(new Date().toISOString())} onChange={e => setPublishAt(e.target.value)} />
                 {publishAt && <button type="button" onClick={() => setPublishAt('')} className="shrink-0 px-3 rounded-lg border border-bone bg-white text-[12px] font-semibold cursor-pointer">Clear</button>}
               </div>
             </Field>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pagination, Select } from '@/components/comman/ui';
+import { Pagination, Select, DateField } from '@/components/comman/ui';
 import client from '@/api/client';
 import { errorMessage } from '@/api/errorMessage';
 import { useKeyedLoad } from '@/components/comman/dashboard/useKeyedLoad';
@@ -40,7 +40,7 @@ function LessonEditor({ l, onChange, onRemove }: { l: Lesson; onChange: (l: Less
           </Select>
         </label>
         {l.dripMode === 'days' && <input aria-label="Days after joining" type="number" min={0} max={3650} className={`${inp} w-24`} value={l.unlockAfterDays ?? 0} onChange={(e) => set({ unlockAfterDays: Number(e.target.value) })} />}
-        {l.dripMode === 'date' && <input aria-label="Unlock date" type="date" className={inp} value={dateInput(l.unlockAt)} onChange={(e) => set({ unlockAt: e.target.value })} />}
+        {l.dripMode === 'date' && <DateField aria-label="Unlock date" value={dateInput(l.unlockAt)} onChange={(e) => set({ unlockAt: e.target.value })} />}
         <button type="button" className={`${btn} text-error`} onClick={onRemove}>Remove</button>
       </div>
       {l.type === 'text' && <textarea aria-label="Lesson text" className="rounded-lg border border-bone p-2 text-[13px] min-h-24" maxLength={50000} value={l.text ?? ''} onChange={(e) => set({ text: e.target.value })} />}

@@ -1,7 +1,7 @@
 import { PageJump } from '@/components/comman/ui/Pagination';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, Link2, RefreshCw, ShieldCheck, Trash2, LogOut, Users, History, ClipboardCheck } from 'lucide-react';
-import { Button, Modal, Toggle, Select } from '@/components/comman/ui';
+import { Button, Modal, Toggle, Select, DateField } from '@/components/comman/ui';
 import { SettingsCard, SettingsRow, SettingsChoice } from '@/components/comman/settings';
 import { useToast } from '@/contexts/ToastContext';
 import {
@@ -211,7 +211,7 @@ function AdminFormModal({ roles, admin, onClose, onSave }: { roles: AdminRole[];
             {roles.map(r => <option key={r._id} value={r._id}>{r.name}{r.readOnly ? ' (read-only)' : ''}</option>)}
           </Select></div>
         <div><label htmlFor="at-exp" className="text-[13px] font-medium text-charcoal mb-1 block">Access ends on (optional — temporary access)</label>
-          <input id="at-exp" type="date" className={INPUT} value={f.accessExpiresAt ?? ''} onChange={e => setF({ ...f, accessExpiresAt: e.target.value || null })} /></div>
+          <DateField id="at-exp" value={f.accessExpiresAt ?? ''} onChange={e => setF({ ...f, accessExpiresAt: e.target.value || null })} /></div>
         {admin && (
           <div className="border border-bone rounded-xl px-4">
             <SettingsRow label="Account active" description="An inactive admin cannot sign in until this is switched back on.">

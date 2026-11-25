@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Field, ImageUpload, Toggle, Select } from '@/components/comman/ui';
+import { Field, ImageUpload, Toggle, Select, DateTimeField, ColorField } from '@/components/comman/ui';
 import { useUpload } from '@/hooks/upload/useUpload';
 import { apiUploadMediaAsset } from '@/api/services/mediaLibrary';
 import { EntityPickerModal, type EntityPickerMode } from './EntityPickerModal';
@@ -452,12 +452,7 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
       // Empty = "use the theme's own colour"; the backend only accepts #RRGGBB.
       return (
         <div className="flex items-center gap-2">
-          <input
-            type="color" aria-label={field.label}
-            className="h-9 w-14 rounded-lg border border-bone bg-white p-1 cursor-pointer"
-            value={/^#[0-9a-fA-F]{6}$/.test(value ?? '') ? value : '#ffffff'}
-            onChange={e => set({ [field.key]: e.target.value })}
-          />
+          <ColorField compact aria-label={field.label} value={/^#[0-9a-fA-F]{6}$/.test(value ?? '') ? value : '#ffffff'} onChange={e => set({ [field.key]: e.target.value })} />
           <span className="text-[12px] text-slate">{value || 'Theme default'}</span>
           {value && (
             <button type="button" className="text-[12px] text-slate underline" onClick={() => set({ [field.key]: '' })}>Reset</button>
@@ -483,11 +478,7 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
 
     case 'datetime':
       return (
-        <input
-          type="datetime-local" className={inp}
-          value={isoToLocalInput(value)}
-          onChange={e => set({ [field.key]: e.target.value ? new Date(e.target.value).toISOString() : '' })}
-        />
+        <DateTimeField value={isoToLocalInput(value)} onChange={e => set({ [field.key]: e.target.value ? new Date(e.target.value).toISOString() : '' })} />
       );
 
     case 'categoryPicker':

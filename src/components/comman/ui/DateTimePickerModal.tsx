@@ -1,347 +1,184 @@
-import { useId, useState, type KeyboardEvent } from 'react';
-import { X, ChevronLeft, ChevronRight, CalendarClock } from 'lucide-react';
+import { useId, useMemo, useState } from 'react';
+import { X, CalendarClock, CalendarDays, Clock } from 'lucide-react';
 import { DialogShell } from './DialogShell';
-
-const MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const WEEK_DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-const HOURS     = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-const MINS      = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
-
-const CX = 110, CY = 110, R_BG = 100, R_ITEM = 78;
-
-function polar(val: number, outOf: number, r: number) {
-  const a = ((val / outOf) * 360 - 90) * (Math.PI / 180);
-  return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) };
-}
+import { Calendar } from './Calendar';
+import { ClockFace } from './ClockFace';
+import {
+  defaultLocale, formatDate, parseDateString, parseTimeString, to12h, to24h, todayYmd, toDateString, toDateTimeString,
+  toTimeString, type Ymd,
+} from './dateUtils';
 
 export interface DateTimePickerModalProps {
+  /** "YYYY-MM-DDTHH:mm" (datetime), "YYYY-MM-DD" (date) or "HH:mm" (time). Empty = nothing chosen yet. */
   value: string;
   onChange: (v: string) => void;
   onClose: () => void;
-  /** Defaults to the original "Schedule Go-Live" copy (product scheduling) — override for other callers (e.g. Announcements). */
+  /** Defaults to the original "Schedule Go-Live" copy (product scheduling): override for other callers. */
   title?: string;
+  /** What is picked. Default `datetime`. */
+  mode?: 'datetime' | 'date' | 'time';
+  /** Allow days (and, for today, times) that already passed. Default false: scheduling dialogs only look forward. */
+  allowPast?: boolean;
+  /** Earliest / latest allowed day, "YYYY-MM-DD" (a datetime string works too). */
+  min?: string;
+  max?: string;
+  /** Show a "Clear" button that calls `onChange('')`. */
+  clearable?: boolean;
+  confirmLabel?: string;
+  /** Small line under the title. */
+  subtitle?: string;
+  /** Heading of the preview strip once something is chosen ("Going live on"). */
+  previewLabel?: string;
+  locale?: string;
 }
 
-type Mode = 'hour' | 'minute';
-type Sel  = { y: number; m: number; d: number };
+const DEFAULT_TITLE = 'Schedule Go-Live';
 
-export function DateTimePickerModal({ value, onChange, onClose, title = 'Schedule Go-Live' }: DateTimePickerModalProps) {
-  const titleId   = useId();
+export function DateTimePickerModal({
+  value, onChange, onClose, title = DEFAULT_TITLE, mode = 'datetime', allowPast = false, min, max, clearable = false,
+  confirmLabel, subtitle, previewLabel, locale,
+}: DateTimePickerModalProps) {
+  const titleId = useId();
+  const loc = locale ?? defaultLocale();
+  const now = useMemo(() => new Date(), []);
+  const today = useMemo(() => todayYmd(now), [now]);
 
-  const init = value ? new Date(value) : null;
-  const now  = new Date();
+  const withDate = mode !== 'time';
+  const withTime = mode !== 'date';
 
-  const [viewY, setViewY] = useState(init?.getFullYear() ?? now.getFullYear());
-  const [viewM, setViewM] = useState(init?.getMonth()    ?? now.getMonth());
-  const [sel,   setSel]   = useState<Sel | null>(
-    init ? { y: init.getFullYear(), m: init.getMonth(), d: init.getDate() } : null,
-  );
+  const initDate = parseDateString(value);
+  const initTime = parseTimeString(value);
+  const [sel, setSel] = useState<Ymd | null>(initDate);
+  const start12 = to12h(initTime?.h24 ?? 10);
+  const [clock, setClock] = useState({ hour: start12.hour, minute: initTime?.minute ?? 0, ampm: start12.ampm });
 
-  const [mode,   setMode]   = useState<Mode>('hour');
-  const [hour,   setHour]   = useState(init ? (init.getHours() % 12 || 12) : 10);
-  const [minute, setMinute] = useState(init ? Math.round(init.getMinutes() / 5) * 5 % 60 : 0);
-  const [ampm,   setAmpm]   = useState<'AM'|'PM'>(init ? (init.getHours() >= 12 ? 'PM' : 'AM') : 'AM');
+  const minDay = useMemo(() => {
+    const m = parseDateString(min);
+    if (m) return m;
+    return allowPast ? null : today;
+  }, [min, allowPast, today]);
+  const maxDay = useMemo(() => parseDateString(max), [max]);
 
-  // ─── Calendar ──────────────────────────────────────────────────────────────
-  const firstDOW  = new Date(viewY, viewM, 1).getDay();
-  const daysInMon = new Date(viewY, viewM + 1, 0).getDate();
-  const cells: (number | null)[] = [
-    ...Array(firstDOW).fill(null),
-    ...Array.from({ length: daysInMon }, (_, i) => i + 1),
-  ];
-  while (cells.length % 7 !== 0) cells.push(null);
+  const h24 = to24h(clock.hour, clock.ampm);
+  const ready = withDate ? !!sel : true;
 
-  const today  = { y: now.getFullYear(), m: now.getMonth(), d: now.getDate() };
-  const isPast = (d: number) => {
-    if (viewY < today.y) return true;
-    if (viewY === today.y && viewM < today.m) return true;
-    if (viewY === today.y && viewM === today.m && d < today.d) return true;
-    return false;
-  };
-  const isSel   = (d: number) => sel?.y === viewY && sel?.m === viewM && sel?.d === d;
-  const isToday = (d: number) => viewY === today.y && viewM === today.m && d === today.d;
+  // Choosing today with a time that is already behind us is allowed (it can be deliberate), but say so.
+  const inThePast = !allowPast && withDate && withTime && !!sel
+    && toDateTimeString(sel, h24, clock.minute) < toDateTimeString(today, now.getHours(), now.getMinutes());
 
-  const prevMonth = () => {
-    if (viewM === 0) { setViewM(11); setViewY(y => y - 1); }
-    else setViewM(m => m - 1);
-  };
-  const nextMonth = () => {
-    if (viewM === 11) { setViewM(0); setViewY(y => y + 1); }
-    else setViewM(m => m + 1);
-  };
-
-  // ─── Clock hand position ───────────────────────────────────────────────────
-  const handPos = mode === 'hour'
-    ? polar(hour === 12 ? 0 : hour, 12, R_ITEM)
-    : polar(minute, 60, R_ITEM);
-
-  // ─── Confirm ───────────────────────────────────────────────────────────────
   const confirm = () => {
-    if (!sel) return;
-    const h24 = ampm === 'AM' ? (hour === 12 ? 0 : hour) : (hour === 12 ? 12 : hour + 12);
-    const p   = (n: number) => String(n).padStart(2, '0');
-    onChange(`${sel.y}-${p(sel.m + 1)}-${p(sel.d)}T${p(h24)}:${p(minute)}`);
+    if (!ready) return;
+    if (mode === 'date' && sel) onChange(toDateString(sel));
+    else if (mode === 'time') onChange(toTimeString(h24, clock.minute));
+    else if (sel) onChange(toDateTimeString(sel, h24, clock.minute));
     onClose();
   };
 
-  const hh        = String(hour).padStart(2, '0');
-  const mm        = String(minute).padStart(2, '0');
-  const dateLabel = sel
-    ? new Date(sel.y, sel.m, sel.d).toLocaleDateString('en-US', {
-        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-      })
-    : null;
+  const timeLabel = new Date(2023, 0, 1, h24, clock.minute).toLocaleTimeString(loc, { hour: 'numeric', minute: '2-digit' });
+  const dateLabel = sel ? formatDate(sel, loc, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  const preview = mode === 'time' ? timeLabel : mode === 'date' ? dateLabel : dateLabel ? `${dateLabel}  ·  ${timeLabel}` : null;
+
+  const HeaderIcon = mode === 'time' ? Clock : mode === 'date' ? CalendarDays : CalendarClock;
+  const sub = subtitle ?? (mode === 'time' ? 'Choose a time' : mode === 'date' ? 'Choose a date' : 'Choose date & time');
+  const idleText = mode === 'time' ? 'Set the time above' : 'Select a date from the calendar above';
+  const live = previewLabel ?? (title === DEFAULT_TITLE ? 'Going live on' : 'Selected');
+  const okText = confirmLabel ?? (title === DEFAULT_TITLE ? 'Confirm Schedule' : 'Confirm');
 
   return (
     <DialogShell onClose={onClose} ariaLabelledBy={titleId} className="max-w-[360px] max-h-[92vh]">
-
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="shrink-0 flex items-center justify-between px-5 py-[14px] border-b border-bone">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
-              <CalendarClock size={15} className="text-brand-orange" />
-            </div>
-            <div>
-              <p id={titleId} className="text-[14px] font-bold text-charcoal leading-tight">{title}</p>
-              <p className="text-[11px] text-slate mt-[1px]">Choose date &amp; time</p>
-            </div>
+      <div className="flex shrink-0 items-center justify-between border-b border-bone px-5 py-[14px]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-brand-pale-orange">
+            <HeaderIcon size={15} className="text-brand-orange" />
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close dialog"
-            className="w-7 h-7 pointer-coarse:w-11 pointer-coarse:h-11 rounded-full bg-bone flex items-center justify-center border-none cursor-pointer text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors shrink-0"
-          >
-            <X size={13} />
-          </button>
-        </div>
-
-        {/* ── Scrollable body ──────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto">
-
-          {/* Calendar */}
-          <div className="px-5 pt-4 pb-2">
-            <div className="flex items-center justify-between mb-3">
-              <button
-                type="button"
-                onClick={prevMonth}
-                aria-label="Previous month"
-                className="w-7 h-7 pointer-coarse:w-11 pointer-coarse:h-11 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <span className="text-[13px] font-bold text-charcoal">{MONTHS[viewM]} {viewY}</span>
-              <button
-                type="button"
-                onClick={nextMonth}
-                aria-label="Next month"
-                className="w-7 h-7 pointer-coarse:w-11 pointer-coarse:h-11 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-7 mb-1">
-              {WEEK_DAYS.map(d => (
-                <div key={d} className="text-center text-[10px] font-bold text-slate uppercase tracking-wide py-1">
-                  {d}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 mb-1">
-              {cells.map((day, i) => {
-                if (!day) return <div key={i} className="h-9" />;
-                const past = isPast(day);
-                const s    = isSel(day);
-                const t    = isToday(day);
-                return (
-                  <div key={i} className="flex items-center justify-center h-9">
-                    <button
-                      type="button"
-                      disabled={past}
-                      onClick={() => !past && setSel({ y: viewY, m: viewM, d: day })}
-                      className="w-8 h-8 pointer-coarse:min-h-11 rounded-full border-none flex items-center justify-center text-[12px] pointer-coarse:text-[14px] transition-all duration-100"
-                      style={{
-                        background: s ? '#D97757' : 'transparent',
-                        color:      s ? '#fff' : past ? '#C5C3BB' : '#141413',
-                        fontWeight: s || t ? 700 : 400,
-                        cursor:     past ? 'default' : 'pointer',
-                        border:     t && !s ? '1.5px solid #D97757' : '1.5px solid transparent',
-                      }}
-                    >
-                      {day}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="h-px mx-5 bg-bone" />
-
-          {/* Time section */}
-          <div className="px-5 pt-4 pb-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-slate mb-3">Time</p>
-
-            {/* Digital display: HH : MM + AM/PM */}
-            <div className="flex items-center justify-center gap-2 mb-5">
-              <button
-                type="button"
-                onClick={() => setMode('hour')}
-                className="w-[60px] h-[48px] rounded-[10px] border-none cursor-pointer text-[26px] font-bold transition-all duration-150 flex items-center justify-center select-none"
-                style={{ background: mode === 'hour' ? '#D97757' : '#F5F4EF', color: mode === 'hour' ? '#fff' : '#141413' }}
-              >
-                {hh}
-              </button>
-              <span className="text-[26px] font-bold text-[#c8c4bb] select-none leading-none">:</span>
-              <button
-                type="button"
-                onClick={() => setMode('minute')}
-                className="w-[60px] h-[48px] rounded-[10px] border-none cursor-pointer text-[26px] font-bold transition-all duration-150 flex items-center justify-center select-none"
-                style={{ background: mode === 'minute' ? '#D97757' : '#F5F4EF', color: mode === 'minute' ? '#fff' : '#141413' }}
-              >
-                {mm}
-              </button>
-              <div className="flex flex-col gap-1.5 ml-1">
-                {(['AM', 'PM'] as const).map(p => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setAmpm(p)}
-                    className="w-[40px] h-[22px] pointer-coarse:min-h-11 rounded-[6px] text-[11px] pointer-coarse:text-[13px] font-bold border-none cursor-pointer transition-all duration-150 flex items-center justify-center"
-                    style={{ background: ampm === p ? '#D97757' : '#E8E6DC', color: ampm === p ? '#fff' : '#8C8A82' }}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Clock face */}
-            <div className="flex justify-center">
-              <svg width="220" height="220" viewBox="0 0 220 220" style={{ display: 'block' }}>
-
-                {/* Track */}
-                <circle cx={CX} cy={CY} r={R_BG} fill="#F5F4EF" stroke="#E8E6DC" strokeWidth="1.5" />
-
-                {/* Hand */}
-                <line
-                  x1={CX} y1={CY}
-                  x2={handPos.x} y2={handPos.y}
-                  stroke="#D97757" strokeWidth="2" strokeLinecap="round"
-                />
-
-                {/* Selected indicator circle */}
-                <circle cx={handPos.x} cy={handPos.y} r="15" fill="#D97757" />
-
-                {/* Center dot */}
-                <circle cx={CX} cy={CY} r="3.5" fill="#D97757" />
-
-                {/* Hour or minute numbers */}
-                {mode === 'hour'
-                  ? HOURS.map(h => {
-                      const pos      = polar(h === 12 ? 0 : h, 12, R_ITEM);
-                      const isActive = h === hour;
-                      const pick     = () => { setHour(h); setMode('minute'); };
-                      return (
-                        <g
-                          key={h}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`${h} o'clock`}
-                          aria-pressed={isActive}
-                          style={{ cursor: 'pointer' }}
-                          onClick={pick}
-                          onKeyDown={(e: KeyboardEvent<SVGGElement>) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }}
-                        >
-                          <circle cx={pos.x} cy={pos.y} r="16" fill="transparent" />
-                          <text
-                            x={pos.x} y={pos.y}
-                            textAnchor="middle" dominantBaseline="central"
-                            fontSize="13" fill={isActive ? '#fff' : '#141413'}
-                            style={{ fontWeight: isActive ? 700 : 500, userSelect: 'none', pointerEvents: 'none' }}
-                          >
-                            {h}
-                          </text>
-                        </g>
-                      );
-                    })
-                  : MINS.map(m => {
-                      const pos      = polar(m, 60, R_ITEM);
-                      const isActive = m === minute;
-                      const pick     = () => setMinute(m);
-                      return (
-                        <g
-                          key={m}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`${m} minutes`}
-                          aria-pressed={isActive}
-                          style={{ cursor: 'pointer' }}
-                          onClick={pick}
-                          onKeyDown={(e: KeyboardEvent<SVGGElement>) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }}
-                        >
-                          <circle cx={pos.x} cy={pos.y} r="16" fill="transparent" />
-                          <text
-                            x={pos.x} y={pos.y}
-                            textAnchor="middle" dominantBaseline="central"
-                            fontSize="12" fill={isActive ? '#fff' : '#141413'}
-                            style={{ fontWeight: isActive ? 700 : 500, userSelect: 'none', pointerEvents: 'none' }}
-                          >
-                            {String(m).padStart(2, '0')}
-                          </text>
-                        </g>
-                      );
-                    })
-                }
-              </svg>
-            </div>
-
-            <p className="text-center text-[11px] text-slate mt-1.5">
-              {mode === 'hour' ? 'Tap an hour · then set minutes' : 'Tap a minute to set time'}
-            </p>
-          </div>
-
-          {/* Preview strip */}
-          <div
-            className="mx-5 mb-4 px-4 py-3 rounded-[10px] border transition-all duration-200"
-            style={{ background: sel ? '#FBECE4' : '#F5F4EF', borderColor: sel ? 'rgba(217,119,87,0.3)' : '#E8E6DC' }}
-          >
-            <p
-              className="text-[10px] font-bold uppercase tracking-[0.07em] mb-[3px]"
-              style={{ color: sel ? '#D97757' : '#8C8A82' }}
-            >
-              {sel ? 'Going live on' : 'No date selected'}
-            </p>
-            <p className="text-[13px] font-semibold text-charcoal">
-              {sel
-                ? `${dateLabel}  ·  ${hh}:${mm} ${ampm}`
-                : 'Select a date from the calendar above'}
-            </p>
+          <div>
+            <p id={titleId} className="text-[14px] font-bold leading-tight text-charcoal">{title}</p>
+            <p className="mt-[1px] text-[11px] text-slate">{sub}</p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close dialog"
+          className="flex h-7 w-7 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-bone text-slate transition-colors hover:bg-[#e0ded6] hover:text-charcoal"
+        >
+          <X size={13} />
+        </button>
+      </div>
 
-        {/* ── Footer ──────────────────────────────────────────────────────── */}
-        <div className="shrink-0 flex gap-2.5 px-5 py-4 border-t border-bone">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 h-[42px] rounded-[10px] border border-bone bg-white text-[13px] font-semibold text-slate cursor-pointer hover:bg-cream transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={confirm}
-            disabled={!sel}
-            className="flex-1 h-[42px] rounded-[10px] border-none text-[13px] font-semibold transition-all duration-150"
-            style={{ background: sel ? '#D97757' : '#E8E6DC', color: sel ? '#fff' : '#B5B3AC', cursor: sel ? 'pointer' : 'not-allowed' }}
-          >
-            Confirm Schedule
-          </button>
+      <div className="flex-1 overflow-y-auto">
+        {withDate && (
+          <div className="px-2 pt-1">
+            <Calendar value={sel} onSelect={setSel} min={minDay} max={maxDay} locale={loc} autoFocusDay={false} />
+            <div className="mx-3 flex flex-wrap gap-1.5 pb-2">
+              <QuickChip onClick={() => { if (!minDay || toDateString(today) >= toDateString(minDay)) setSel(today); }} disabled={!!minDay && toDateString(today) < toDateString(minDay)}>Today</QuickChip>
+              {sel && clearable && <QuickChip onClick={() => setSel(null)}>No date</QuickChip>}
+            </div>
+          </div>
+        )}
+
+        {withDate && withTime && <div className="mx-5 h-px bg-bone" />}
+
+        {withTime && (
+          <div className="px-5 pb-3 pt-4">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.09em] text-slate">Time</p>
+            <ClockFace hour={clock.hour} minute={clock.minute} ampm={clock.ampm} onChange={setClock} />
+          </div>
+        )}
+
+        <div
+          className="mx-5 mb-4 rounded-[10px] border px-4 py-3 transition-colors duration-200"
+          style={{ background: preview && ready ? '#FBECE4' : '#F5F4EF', borderColor: preview && ready ? 'rgba(217,119,87,0.3)' : '#E8E6DC' }}
+          aria-live="polite"
+        >
+          <p className="mb-[3px] text-[10px] font-bold uppercase tracking-[0.07em]" style={{ color: preview && ready ? '#D97757' : '#8C8A82' }}>
+            {preview && ready ? live : 'Nothing selected'}
+          </p>
+          <p className="text-[13px] font-semibold text-charcoal">{preview && ready ? preview : idleText}</p>
+          {inThePast && <p className="mt-1 text-[11px] text-[#B45309]">That time has already passed today.</p>}
         </div>
+      </div>
 
+      <div className="flex shrink-0 gap-2.5 border-t border-bone px-5 py-4">
+        {clearable && value ? (
+          <button
+            type="button"
+            onClick={() => { onChange(''); onClose(); }}
+            className="h-[42px] cursor-pointer rounded-[10px] border border-bone bg-white px-4 text-[13px] font-semibold text-slate transition-colors hover:bg-cream"
+          >
+            Clear
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={onClose}
+          className="h-[42px] flex-1 cursor-pointer rounded-[10px] border border-bone bg-white text-[13px] font-semibold text-slate transition-colors hover:bg-cream"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={confirm}
+          disabled={!ready}
+          className="h-[42px] flex-1 rounded-[10px] border-none text-[13px] font-semibold transition-colors duration-150"
+          style={{ background: ready ? '#D97757' : '#E8E6DC', color: ready ? '#fff' : '#B5B3AC', cursor: ready ? 'pointer' : 'not-allowed' }}
+        >
+          {okText}
+        </button>
+      </div>
     </DialogShell>
+  );
+}
+
+function QuickChip({ children, onClick, disabled }: { children: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="h-7 pointer-coarse:h-11 cursor-pointer rounded-full border border-bone bg-white px-3 text-[12px] font-medium text-carbon transition-colors hover:bg-cream disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+    </button>
   );
 }

@@ -5,7 +5,7 @@ import { errorMessage } from '@/api/errorMessage';
 import type { StaffPermission } from '@/api/services/staff';
 import { can } from '@/hooks/auth/useCan';
 import { useToast } from '@/contexts/ToastContext';
-import { Badge, Button, Card, Input, Select, Table, TabBar } from '@/components/comman/ui';
+import { Badge, Button, Card, Select, Table, TabBar, DateField } from '@/components/comman/ui';
 import { Modal } from '@/components/comman/ui/Modal';
 import type { TableColumn } from '@/components/comman/ui/Table';
 import { ErrorLine } from '../wholesale/ErrorLine';
@@ -57,8 +57,8 @@ function ProfitAndLoss({ storeId, exponent, currency, tick }: TabProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-40"><Input label="From" type="date" value={f.from} onChange={e => setF({ ...f, from: e.target.value })} /></div>
-        <div className="w-40"><Input label="To" type="date" value={f.to} onChange={e => setF({ ...f, to: e.target.value })} /></div>
+        <div className="w-40"><DateField label="From" value={f.from} onChange={e => setF({ ...f, from: e.target.value })} /></div>
+        <div className="w-40"><DateField label="To" value={f.to} onChange={e => setF({ ...f, to: e.target.value })} /></div>
         <div className="w-40"><Select label="Columns" value={f.groupBy} onChange={e => setF({ ...f, groupBy: e.target.value })}><option value="month">By month</option><option value="channel">By channel</option><option value="location">By branch</option></Select></div>
         <div className="w-44"><Select label="Channel" value={f.channel} onChange={e => setF({ ...f, channel: e.target.value })}><option value="">All channels</option><option value="pos">Point of sale</option><option value="online">Online store</option><option value="b2b">B2B / wholesale</option><option value="other">Not channel-specific</option></Select></div>
         {(p?.locations.length ?? 0) > 0 && <div className="w-44"><Select label="Branch" value={f.locationId} onChange={e => setF({ ...f, locationId: e.target.value })}><option value="">All branches</option>{p!.locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}<option value="unassigned">Not branch-specific</option></Select></div>}
@@ -111,7 +111,7 @@ function BalanceSheet({ storeId, exponent, currency, tick }: TabProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-44"><Input label="As of" type="date" value={asOf} onChange={e => setAsOf(e.target.value)} /></div>
+        <div className="w-44"><DateField label="As of" value={asOf} onChange={e => setAsOf(e.target.value)} /></div>
         {b && (b.totals.balanced ? <Badge color="green">Assets = liabilities + equity</Badge> : <Badge color="red">Does not balance</Badge>)}
         <div className="ml-auto"><ExcelDownload storeId={storeId} kind="balance-sheet" query={{ asOf }} fileName={`balance-sheet-${asOf}.xlsx`} /></div>
       </div>
@@ -143,8 +143,8 @@ function SalesTax({ storeId, exponent, currency, tick }: TabProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-40"><Input label="From" type="date" value={f.from} onChange={e => setF({ ...f, from: e.target.value })} /></div>
-        <div className="w-40"><Input label="To" type="date" value={f.to} onChange={e => setF({ ...f, to: e.target.value })} /></div>
+        <div className="w-40"><DateField label="From" value={f.from} onChange={e => setF({ ...f, from: e.target.value })} /></div>
+        <div className="w-40"><DateField label="To" value={f.to} onChange={e => setF({ ...f, to: e.target.value })} /></div>
         <div className="ml-auto"><ExcelDownload storeId={storeId} kind="sales-tax" query={f} fileName={`sales-tax-${f.from}-to-${f.to}.xlsx`} /></div>
       </div>
       {r.error ? <ErrorLine message={errorMessage(r.error)} onRetry={r.reload} /> : (
@@ -235,7 +235,7 @@ function ImportModal({ storeId, sources, onClose, onDone }: { storeId: string; s
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Select label="From" value={gateway} onChange={e => setGateway(e.target.value)}>{sources.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}</Select>
-          <Input label="Date it reached your bank" type="date" value={settledOn} onChange={e => setSettledOn(e.target.value)} />
+          <DateField label="Date it reached your bank" value={settledOn} onChange={e => setSettledOn(e.target.value)} />
         </div>
         <label className="flex flex-col gap-1 text-[13px] text-carbon">
           Settlement file (CSV)

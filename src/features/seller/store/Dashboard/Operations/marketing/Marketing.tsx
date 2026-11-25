@@ -5,7 +5,7 @@ import { Navigate, useParams } from 'react-router-dom';
 import { FEATURES } from '@/constants/features';
 import { Mail, ShoppingCart, Handshake, Trash2, Plus, Target, Zap, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { EmptyState, SkeletonBox, Modal, Button, PlanFeatureLock, Select } from '@/components/comman/ui';
+import { EmptyState, SkeletonBox, Modal, Button, PlanFeatureLock, Select, DateTimeField } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import {
@@ -87,7 +87,7 @@ function EmailCampaignScheduleModal({ storeId, campaign, onClose, onScheduled }:
       <div className="flex flex-col gap-3">
         <div>
           <label className="block text-[12px] font-medium text-charcoal mb-1.5">Send at</label>
-          <input type="datetime-local" value={scheduledAt} min={minLocal} onChange={e => setScheduledAt(e.target.value)} className={INPUT_CLS} />
+          <DateTimeField allowPast={false} value={scheduledAt} min={minLocal} onChange={e => setScheduledAt(e.target.value)} />
         </div>
         {error && <p className="text-[12px] text-error">{error}</p>}
       </div>

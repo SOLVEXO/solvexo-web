@@ -5,7 +5,7 @@ import {
   Heading1, Type, Image as ImageIcon, MousePointerClick, ShoppingBag, Columns2, Ticket, Minus, MoveVertical, Share2, PanelTop,
   ArrowUp, ArrowDown, Package, type LucideIcon,
 } from 'lucide-react';
-import { Button, Select } from '@/components/comman/ui';
+import { Button, Select, ColorField as ColorPickerField } from '@/components/comman/ui';
 import type { StoreData } from '@/api/services/store';
 import { apiGetStoreInventory, type InventoryProduct } from '@/api/services/product';
 import {
@@ -87,12 +87,7 @@ function Field({ label, children, hint }: { label: string; children: (id: string
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <Field label={label}>
-      {id => (
-        <div className="flex items-center gap-2">
-          <input id={id} type="color" value={value} onChange={e => onChange(e.target.value)} className="w-9 h-9 p-0.5 border border-bone rounded-md bg-white cursor-pointer" />
-          <input aria-label={`${label} hex`} value={value} onChange={e => onChange(e.target.value)} className={`${INPUT} max-w-[120px] font-mono`} />
-        </div>
-      )}
+      {id => <ColorPickerField id={id} value={value} onValueChange={onChange} />}
     </Field>
   );
 }

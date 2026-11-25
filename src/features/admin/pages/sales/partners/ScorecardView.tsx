@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { CheckCircle2, Circle, MinusCircle, XCircle } from 'lucide-react';
-import { Badge, Button, Input, Select, Textarea } from '@/components/comman/ui';
+import { Badge, Button, Input, Select, Textarea, DateField } from '@/components/comman/ui';
 import { formatPKR } from '@/api/services/salesOps';
 import {
   LOG_LABELS, TIER_LABELS, apiAddPartnerLog, apiConduct, apiResolveComplaint, fmtDay, pct, type Milestone, type Scorecard, type ScorecardDetail,
@@ -137,7 +137,7 @@ function LogSection({ d, manage, onChange }: { d: ScorecardDetail; manage?: bool
               <option value="monthly_review">Monthly pipeline review</option><option value="qbr">Quarterly business review</option>
               <option value="complaint">Complaint</option><option value="note">Internal note</option>
             </Select>
-            <Input label="Date" type="date" value={f.at} max={new Date().toISOString().slice(0, 10)} onChange={e => setF({ ...f, at: e.target.value })} />
+            <DateField label="Date" value={f.at} max={new Date().toISOString().slice(0, 10)} onChange={e => setF({ ...f, at: e.target.value })} />
             {type === 'complaint' && <Input label="From (seller / store)" value={f.about} onChange={e => setF({ ...f, about: e.target.value })} />}
           </div>
           <Input label="Summary" value={f.summary} placeholder={type === 'qbr' ? 'Results against milestones, retention, complaints' : type === 'monthly_review' ? 'Prospects, demos, stores live, paying sellers, open issues' : ''} onChange={e => setF({ ...f, summary: e.target.value })} />
@@ -211,7 +211,7 @@ function ConductSection({ d, onChange }: { d: ScorecardDetail; onChange?: (d: Sc
           <p className="text-[11.5px] text-slate">{CONDUCT[action].help}</p>
           <Input label="Reason (sent to the partner)" value={f.reason} onChange={e => setF({ ...f, reason: e.target.value })} />
           {action === 'improvement_plan' && <Textarea label="What must change" rows={2} value={f.plan} onChange={e => setF({ ...f, plan: e.target.value })} />}
-          {(action === 'warning' || action === 'improvement_plan') && <Input label="Put right by (default: 60 days)" type="date" value={f.dueAt} onChange={e => setF({ ...f, dueAt: e.target.value })} />}
+          {(action === 'warning' || action === 'improvement_plan') && <DateField label="Put right by (default: 60 days)" value={f.dueAt} onChange={e => setF({ ...f, dueAt: e.target.value })} />}
           <div className="flex justify-end"><Button size="sm" variant={action === 'suspend' ? 'danger' : 'primary'} loading={busy} onClick={save}>{CONDUCT[action].label}</Button></div>
         </div>
       )}

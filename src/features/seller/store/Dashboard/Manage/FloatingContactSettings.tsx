@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { ChromeItemsEditor } from '@/features/seller/store/Dashboard/OnlineStore/themes/ChromeItemsEditor';
-import { Button, Select } from '@/components/comman/ui';
+import { Button, Select, ColorField } from '@/components/comman/ui';
 import { Toggle } from '@/components/comman/ui/Toggle';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
@@ -135,10 +135,10 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
           <Pick label="Button shape" value={cfg.shape} onChange={v => set('shape', v)} options={[{ value: 'flush', label: 'Tabs on the screen edge' }, { value: 'round', label: 'Round buttons in the corner' }]} />
           {text('bubbleText', 'Speech bubble text', 'Shown next to the buttons, e.g. "Need help? Chat with us". Leave empty for none.', 'Need help? Chat with us')}
           <Field label="Button colour (all)" hint="Leave empty to use the colours above.">
-            {id => <input id={id} type="color" className="h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white" value={cfg.customBg || '#25D366'} disabled={!canManage} onChange={e => set('customBg', e.target.value)} />}
+            {id => <ColorField compact id={id} value={cfg.customBg || '#25D366'} disabled={!canManage} onChange={e => set('customBg', e.target.value)} />}
           </Field>
           <Field label="Icon colour (all)">
-            {id => <input id={id} type="color" className="h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white" value={cfg.customFg || '#ffffff'} disabled={!canManage} onChange={e => set('customFg', e.target.value)} />}
+            {id => <ColorField compact id={id} value={cfg.customFg || '#ffffff'} disabled={!canManage} onChange={e => set('customFg', e.target.value)} />}
           </Field>
         </div>
         <div className="mt-4 grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))]">

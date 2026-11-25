@@ -4,7 +4,7 @@ import client from '@/api/client';
 import { errorMessage } from '@/api/errorMessage';
 import { can } from '@/hooks/auth/useCan';
 import { useToast } from '@/contexts/ToastContext';
-import { Badge, Button, Input, Select, StatusBadge, Table } from '@/components/comman/ui';
+import { Badge, Button, Input, Select, StatusBadge, Table, DateField } from '@/components/comman/ui';
 import { Modal } from '@/components/comman/ui/Modal';
 import type { TableColumn } from '@/components/comman/ui/Table';
 import { ErrorLine } from './ErrorLine';
@@ -113,7 +113,7 @@ function PaymentModal({ base, order, onClose, onDone }: { base: string; order: O
         <Input label="Amount" type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
         <Input label="Method (bank transfer, cash, cheque…)" maxLength={40} value={method} onChange={(e) => setMethod(e.target.value)} />
         <Input label="Reference (optional)" maxLength={100} value={reference} onChange={(e) => setReference(e.target.value)} />
-        <Input label="Date received" type="date" value={date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} />
+        <DateField label="Date received" value={date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} />
         {live.length > 0 && (
           <div>
             <strong className="text-[13px] text-carbon">Recorded so far</strong>

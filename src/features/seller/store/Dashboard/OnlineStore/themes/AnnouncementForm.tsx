@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Eye, EyeOff, GripVertical, Megaphone, Plus, Trash2, Copy } from 'lucide-react';
-import { Toggle, Select as DropdownSelect } from '@/components/comman/ui';
+import { Toggle, Select as DropdownSelect, DateTimeField } from '@/components/comman/ui';
 import type { StoreAnnouncementBar as StoreAnnouncementBarValue, StoreAnnouncementType } from '@/api/services/store';
 import { ANNOUNCEMENT_TYPE_LABEL } from './announcementDefaults';
 import { Group, ColorField } from './HeaderFooterSettingsPanels';
@@ -217,7 +217,7 @@ export function AnnouncementForm({ value, onChange }: { value: Value; onChange: 
       <Group title="Countdown timer">
         <label className="flex flex-col gap-1">
           <span className={LABEL}>Count down to</span>
-          <input type="datetime-local" value={toDatetimeLocal(value.countdownEndAt)} onChange={e => set({ countdownEndAt: fromDatetimeLocal(e.target.value) })} className={INPUT} />
+          <DateTimeField value={toDatetimeLocal(value.countdownEndAt)} onChange={e => set({ countdownEndAt: fromDatetimeLocal(e.target.value) })} />
           <span className="text-[10.5px] text-slate">Shows a live “2d 04:12:09” timer next to your messages. It disappears when the time is up.</span>
         </label>
         {value.countdownEndAt && (
@@ -239,11 +239,11 @@ export function AnnouncementForm({ value, onChange }: { value: Value; onChange: 
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-[10.5px] text-slate">Starts</span>
-            <input type="datetime-local" value={toDatetimeLocal(value.startAt)} onChange={e => set({ startAt: fromDatetimeLocal(e.target.value) })} className="text-[12.5px] px-2.5 py-2 rounded-lg border border-bone bg-white" />
+            <DateTimeField value={toDatetimeLocal(value.startAt)} onChange={e => set({ startAt: fromDatetimeLocal(e.target.value) })} />
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-[10.5px] text-slate">Ends</span>
-            <input type="datetime-local" value={toDatetimeLocal(value.endAt)} onChange={e => set({ endAt: fromDatetimeLocal(e.target.value) })} className="text-[12.5px] px-2.5 py-2 rounded-lg border border-bone bg-white" />
+            <DateTimeField value={toDatetimeLocal(value.endAt)} onChange={e => set({ endAt: fromDatetimeLocal(e.target.value) })} />
           </label>
         </div>
         <p className="text-[10.5px] text-slate">Leave blank to show as soon as it's on, with no end date.</p>

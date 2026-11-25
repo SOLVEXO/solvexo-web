@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import { Shuffle, Trophy } from 'lucide-react';
-import { Button, EmptyState, Input, Modal, Toggle } from '@/components/comman/ui';
+import { Button, EmptyState, Input, Modal, Toggle, MonthField } from '@/components/comman/ui';
 import {
   apiSalesSettings, apiSalesTeam, apiSaveSalesSettings, apiSaveTargets, formatPKR,
   type LeaderRow, type SalesOwner, type SalesSettings, type Target, type TeamReport,
@@ -43,7 +43,7 @@ export function TeamTab({ isManager, owners }: { isManager: boolean; owners: Sal
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="w-48"><Input label="Month" type="month" value={month} max={thisMonth()} onChange={e => { if (e.target.value) { setData(null); setMonth(e.target.value); } }} /></div>
+        <div className="w-48"><MonthField label="Month" value={month} max={thisMonth()} onChange={e => { if (e.target.value) { setData(null); setMonth(e.target.value); } }} /></div>
         {isManager && <Button variant="outline" onClick={() => setEditing(true)} disabled={!data?.reps.length}>Set targets for {monthLabel(month)}</Button>}
       </div>
 

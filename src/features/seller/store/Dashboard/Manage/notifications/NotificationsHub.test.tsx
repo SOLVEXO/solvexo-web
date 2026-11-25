@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest'; // adds the toBeInTheDocument/toHaveValue... matcher types
+import { chooseColor, chooseDateTime, typeColor } from '@/components/comman/ui/pickerTesting';
 import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -262,10 +263,9 @@ describe('NotificationsHub — Look & sender', () => {
 
   it('rejects a bad colour and a bad extra recipient without calling the server', async () => {
     await openLook();
-    fireEvent.change(screen.getByLabelText('Email colour'), { target: { value: 'red' } });
-    fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }));
-    expect(await screen.findByText('Use a colour like #d97757.')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Email colour'), { target: { value: '' } });
+    typeColor(screen.getByLabelText('Email colour'), 'red');
+    expect(await screen.findByText('Use a colour like #D97757.')).toBeInTheDocument(); // the colour box refuses it by itself
+    typeColor(screen.getByLabelText('Email colour'), '');
     const staff = screen.getByPlaceholderText('Type an email, press Enter');
     fireEvent.change(staff, { target: { value: 'broken' } });
     fireEvent.keyDown(staff, { key: 'Enter' });

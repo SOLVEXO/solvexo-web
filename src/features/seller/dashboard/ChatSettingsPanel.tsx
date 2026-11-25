@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ImagePlus, Plus, Store as StoreIcon, Trash2 } from 'lucide-react';
-import { Input } from '@/components/comman/ui';
+import { Input, TimeField } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
 import { apiUploadMediaAsset } from '@/api/services/mediaLibrary';
@@ -139,9 +139,9 @@ export function ChatSettingsPanel({ storeId, storeName, storeLogo, initial, onCl
                       </label>
                       {h.open ? (
                         <>
-                          <input type="time" aria-label={`${DAY_NAMES[d]} opens`} value={h.from} onChange={e => setDay(d, { from: e.target.value })} className="h-9 rounded-lg border border-bone px-2" />
+                          <TimeField aria-label={`${DAY_NAMES[d]} opens`} value={h.from} onChange={e => setDay(d, { from: e.target.value })} />
                           <span className="text-slate">to</span>
-                          <input type="time" aria-label={`${DAY_NAMES[d]} closes`} value={h.to} onChange={e => setDay(d, { to: e.target.value })} className="h-9 rounded-lg border border-bone px-2" />
+                          <TimeField aria-label={`${DAY_NAMES[d]} closes`} value={h.to} onChange={e => setDay(d, { to: e.target.value })} />
                         </>
                       ) : <span className="text-slate">Closed</span>}
                     </div>

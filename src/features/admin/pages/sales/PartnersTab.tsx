@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import { Handshake, Plus, RefreshCw, Trash2 } from 'lucide-react';
-import { Badge, Button, CopyIconButton, EmptyState, Input, MetricCard, Modal, Select, Textarea } from '@/components/comman/ui';
+import { Badge, Button, CopyIconButton, EmptyState, Input, MetricCard, Modal, Select, Textarea, DateField, MonthField } from '@/components/comman/ui';
 import { can } from '@/hooks/auth/useCan';
 import {
   LINE_STATUS_LABELS, PARTNER_KINDS, PARTNER_KIND_LABELS, PAYOUT_LABELS, PAYOUT_METHODS, REFERRAL_SOURCE_LABELS,
@@ -358,7 +358,7 @@ export function StatementView({ month, onMonth, s }: { month: string; onMonth: (
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <div className="w-44"><Input label="Month" type="month" value={month} max={thisMonth()} onChange={e => e.target.value && onMonth(e.target.value)} /></div>
+        <div className="w-44"><MonthField label="Month" value={month} max={thisMonth()} onChange={e => e.target.value && onMonth(e.target.value)} /></div>
         {s && <Button size="sm" variant="ghost" onClick={() => window.print()}>Print</Button>}
       </div>
       {!s ? <div className="h-24 rounded-lg bg-cream animate-pulse" /> : (
@@ -411,7 +411,7 @@ function PayoutsSection({ d, act }: { d: PartnerDetail; act: Act }) {
           <div className="grid sm:grid-cols-4 gap-2 items-end">
             <Select label="Paid by" value={f.method} onChange={e => setF({ ...f, method: e.target.value as PayoutMethod })}>{PAYOUT_METHODS.map(m => <option key={m} value={m}>{PAYOUT_LABELS[m]}</option>)}</Select>
             <Input label="Transaction ref" value={f.reference} onChange={e => setF({ ...f, reference: e.target.value })} />
-            <Input label="Date paid" type="date" value={f.paidAt} onChange={e => setF({ ...f, paidAt: e.target.value })} />
+            <DateField label="Date paid" value={f.paidAt} onChange={e => setF({ ...f, paidAt: e.target.value })} />
             <Button loading={busy === 'pay'} onClick={async () => { setBusy('pay'); await act(() => apiRecordPayout(d.partner._id, { method: f.method, reference: f.reference.trim() || undefined, paidAt: new Date(f.paidAt).toISOString(), note: f.note.trim() || undefined }), 'Payout recorded.'); setBusy(null); }}>Record payout</Button>
           </div>
         )}

@@ -24,6 +24,7 @@ import { TabBar } from '@/components/comman/ui/TabBar';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { formatMoneyCompact, currencySymbol, fmt2 } from '@/utils/currency';
+import { DateField } from '@/components/comman/ui';
 
 const PER_PAGE = 20;
 
@@ -562,11 +563,9 @@ export default function StoreCustomerList() {
                 <FilterDropdown placeholder="Email marketing" options={MARKETING_OPTIONS} value={marketing} onChange={setMarketing} className="shrink-0" />
                 <div className="flex items-center gap-1.5 text-[12px] text-slate shrink-0">
                   <span className="shrink-0">Last order</span>
-                  <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                    className="px-2 py-[6px] text-[12px] border border-bone rounded-lg outline-none text-charcoal bg-white shrink-0" />
+                  <DateField value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
                   <span>–</span>
-                  <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                    className="px-2 py-[6px] text-[12px] border border-bone rounded-lg outline-none text-charcoal bg-white shrink-0" />
+                  <DateField value={dateTo} onChange={e => setDateTo(e.target.value)} />
                 </div>
                 <Button size="xs" variant="outline" icon={<Download size={12} />} loading={exporting} onClick={() => handleExport()} className="ml-auto">
                   Export

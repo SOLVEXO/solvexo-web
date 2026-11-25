@@ -8,6 +8,7 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
 import { currencySymbol, fmt2 } from '@/utils/currency';
+import { DateField } from '@/components/comman/ui';
 
 const TYPE_LABEL: Record<string, string> = {
   issue: 'Credit issued',
@@ -184,7 +185,7 @@ export function CustomerStoreCreditCard({ storeId, customerId, fallbackCurrency,
             {mode === 'add' && (
               <div>
                 <label htmlFor="sc-expiry" className="text-xs font-medium text-graphite mb-[5px] block">Expiry date <span className="text-slate font-normal">(optional)</span></label>
-                <input id="sc-expiry" type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} className={inputCls} />
+                <DateField id="sc-expiry" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
               </div>
             )}
           </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { chooseColor, chooseDateTime, typeColor } from '@/components/comman/ui/pickerTesting';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SellingOptionsField, initSellingOptions, sellingOptionsFromProduct, sellingOptionsPayload, type SellingOptionsForm } from './SellingOptionsField';
@@ -37,7 +38,7 @@ describe('Selling options: vendor and card badge', () => {
     expect(screen.getAllByRole('button', { name: /^Badge colour: / }).length).toBeGreaterThanOrEqual(11); // theme + 10 quick picks
     fireEvent.click(screen.getByRole('button', { name: 'Badge colour: Purple' }));
     expect(seen[seen.length - 1].cardBadgeColor).toBe('#7C3AED');
-    fireEvent.change(screen.getByLabelText('Badge colour: custom'), { target: { value: '#12ab9f' } }); // any colour
+    chooseColor(screen.getByLabelText('Badge colour: custom'), '#12ab9f'); // any colour
     expect(seen[seen.length - 1].cardBadgeColor).toBe('#12AB9F');
     fireEvent.click(screen.getByRole('button', { name: 'Badge colour: theme colour' }));
     expect(seen[seen.length - 1].cardBadgeColor).toBe('');

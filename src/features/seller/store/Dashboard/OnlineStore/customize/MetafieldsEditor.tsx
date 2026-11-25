@@ -6,7 +6,7 @@ import {
 } from '@/api/services/metafields';
 
 import { MEASURE_UNITS, isMeasureType, joinMeasure, splitMeasure } from '@/features/seller/store/Dashboard/StoreSection/products/metafieldUnits';
-import { Select } from '@/components/comman/ui';
+import { Select, DateField, ColorField } from '@/components/comman/ui';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const ta  = `${inp} resize-y min-h-[70px]`;
@@ -33,13 +33,13 @@ export function ValueInput({ entry, value, onChange }: { entry: MetafieldValueEn
         </Select>
       );
     case 'date':
-      return <input type="date" className={inp} value={value} onChange={e => onChange(e.target.value)} />;
+      return <DateField value={value} onChange={e => onChange(e.target.value)} />;
     case 'url':
       return <input type="url" className={inp} placeholder="https://…" value={value} onChange={e => onChange(e.target.value)} />;
     case 'color':
       return (
         <div className="flex items-center gap-2">
-          <input type="color" value={value || '#000000'} onChange={e => onChange(e.target.value)} className="w-9 h-9 rounded border border-bone cursor-pointer p-0.5" />
+          <ColorField compact value={value || '#000000'} onChange={e => onChange(e.target.value)} />
           <input className={inp} value={value} onChange={e => onChange(e.target.value)} placeholder="#000000" />
         </div>
       );

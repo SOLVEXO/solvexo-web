@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { chooseColor, chooseDateTime, typeColor } from '@/components/comman/ui/pickerTesting';
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import type { StorefrontColors, BrandKit } from '@/api/services/storeTheme';
 
@@ -67,7 +68,7 @@ describe('BrandKitCard', () => {
     const { onApply } = await mount({ showAccent: false });
     open();
     const main = screen.getAllByPlaceholderText('#000000')[0];
-    fireEvent.change(main, { target: { value: '#e20303' } });
+    typeColor(main, '#e20303');
     fireEvent.click(applyBtn());
     await waitFor(() => expect(api.apiSaveBrandKit).toHaveBeenCalledTimes(1));
     expect(api.apiSaveBrandKit).toHaveBeenCalledWith('store-1', { primaryColor: '#e20303', accentColor: '#e20303', bgColor: null, textColor: null, saleColor: null, locked: true }, 'inst-1');
@@ -78,9 +79,9 @@ describe('BrandKitCard', () => {
   it('includes optional bg/text/sale only when the seller filled them in', async () => {
     const { onApply } = await mount();
     open();
-    const fields = screen.getAllByPlaceholderText('#000000'); // main, bg, text, sale
-    fireEvent.change(fields[0], { target: { value: '#112233' } });
-    fireEvent.change(fields[1], { target: { value: '#ffffff' } });
+    const fields = screen.getAllByPlaceholderText('#000000'); // main (the optional ones say "Auto")
+    typeColor(fields[0], '#112233');
+    typeColor(screen.getAllByPlaceholderText('Auto')[0], '#ffffff'); // the page-background box
     fireEvent.click(applyBtn());
     await waitFor(() => expect(onApply).toHaveBeenCalled());
     expect(onApply).toHaveBeenCalledWith({ primaryColor: '#112233', accentColor: '#112233', bgColor: '#ffffff' });
@@ -89,19 +90,18 @@ describe('BrandKitCard', () => {
   it('refuses to apply an invalid colour and never calls the API', async () => {
     await mount();
     open();
-    fireEvent.change(screen.getAllByPlaceholderText('#000000')[0], { target: { value: 'red' } });
-    const apply = applyBtn();
-    expect(apply.disabled).toBe(true);
-    fireEvent.click(apply);
+    typeColor(screen.getAllByPlaceholderText('#000000')[0], 'red');
+    // the colour box says so itself, and the bad value never reaches the kit
+    expect(screen.getByText(/Use a colour like/)).toBeTruthy();
     expect(api.apiSaveBrandKit).not.toHaveBeenCalled();
   });
 
   it('warns when the main colour is too close to the page background, and reassures when it stands out', async () => {
     await mount();
     open();
-    fireEvent.change(screen.getAllByPlaceholderText('#000000')[0], { target: { value: '#faf9f4' } });
+    typeColor(screen.getAllByPlaceholderText('#000000')[0], '#faf9f4');
     expect(screen.getByText(/too close to the page background/i)).toBeTruthy();
-    fireEvent.change(screen.getAllByPlaceholderText('#000000')[0], { target: { value: '#e20303' } });
+    typeColor(screen.getAllByPlaceholderText('#000000')[0], '#e20303');
     expect(screen.getByText(/Buttons stand out well/i)).toBeTruthy();
   });
 

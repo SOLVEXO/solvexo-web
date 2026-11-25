@@ -1,6 +1,6 @@
 ﻿import { useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { ImageUpload, Toggle, Select } from '@/components/comman/ui';
+import { ImageUpload, Toggle, Select, ColorField as ColorPickerField } from '@/components/comman/ui';
 import type { StorefrontHeader, StorefrontFooter, LogoLink } from '@/api/services/storeTheme';
 import { LinkTargetFields, type LinkTarget } from '../builder/LinkTargetFields';
 import { ChromeItemsEditor } from './ChromeItemsEditor';
@@ -55,19 +55,7 @@ export function Group({ title, children, defaultOpen = false }: { title: string;
 /** A colour choice. Empty = the theme's own colour, shown as "Auto" (never a made-up swatch that is not on the store). */
 export function ColorField({ label, value, fallback, onChange }: { label: string; value: string | null | undefined; fallback: string; onChange: (v: string | null) => void }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-[11.5px] text-charcoal">{label}</span>
-      <div className="flex items-center gap-2">
-        <label className="relative h-8 w-10 border border-bone rounded cursor-pointer overflow-hidden shrink-0"
-          style={value ? { background: value } : { background: 'repeating-linear-gradient(45deg,#fff 0 4px,#e9e5dc 4px 8px)' }}>
-          <input type="color" aria-label={label} value={value ?? fallback} onChange={e => onChange(e.target.value)}
-            className="absolute inset-0 opacity-0 cursor-pointer" />
-        </label>
-        {value
-          ? <button type="button" onClick={() => onChange(null)} className="text-[11px] text-slate bg-transparent border-0 cursor-pointer underline p-0">Reset to theme</button>
-          : <span className="text-[11px] text-slate">Auto (theme)</span>}
-      </div>
-    </div>
+    <ColorPickerField label={label} value={value ?? ''} allowEmpty emptyLabel="Auto (theme)" pickerStart={fallback} onValueChange={v => onChange(v || null)} />
   );
 }
 

@@ -13,10 +13,7 @@ import { useSellerAnalyticsWeekdayPerformance } from '@/hooks/seller/useSellerAn
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
 import { currencySymbol } from '@/utils/currency';
-import {
-  Button, Table, type TableColumn, Modal, Input, Select, Field, Badge,
-  ActionMenu, type ActionMenuItem, SearchInput,
-} from '@/components/comman/ui';
+import { Button, Table, type TableColumn, Modal, Input, Select, Field, Badge, ActionMenu, type ActionMenuItem, SearchInput, DateField } from '@/components/comman/ui';
 
 // ── Real, no-code seller discounts — the piece the Marketing page's manual
 // Coupon system doesn't cover (a buyer never types anything; it's resolved
@@ -322,10 +319,10 @@ function DiscountFormModal({
 
       <div className="grid grid-cols-2 gap-2">
         <Field label="Starts" hint="Optional">
-          <Input type="date" value={startsAt} onChange={e => setStartsAt(e.target.value)} />
+          <DateField value={startsAt} onChange={e => setStartsAt(e.target.value)} />
         </Field>
         <Field label="Ends" hint="Optional">
-          <Input type="date" value={endsAt} onChange={e => setEndsAt(e.target.value)} />
+          <DateField value={endsAt} onChange={e => setEndsAt(e.target.value)} />
         </Field>
       </div>
     </Modal>

@@ -37,6 +37,8 @@ export default defineConfig([
     files: ['src/**/*.tsx'],
     ignores: [
       'src/components/comman/ui/Dropdown.tsx',
+      'src/components/comman/ui/DateField.tsx',
+      'src/components/comman/ui/ColorField.tsx',
       'src/features/storefront/**',
       'src/features/storefront-themes/**',
       'src/features/themes-assets/**',
@@ -46,6 +48,12 @@ export default defineConfig([
       'no-restricted-syntax': ['error', {
         selector: "JSXOpeningElement[name.name='select']",
         message: "Do not use a raw <select>. Use <Select> from '@/components/comman/ui' (same <option> children and onChange(e)); it has search, icons, keyboard and a phone sheet.",
+      }, {
+        selector: "JSXOpeningElement[name.name=/^(input|Input)$/]:has(JSXAttribute[name.name='type'][value.value=/^(date|datetime-local|time|month)$/])",
+        message: "Do not use a raw date / time input. Use <DateField>, <DateTimeField>, <TimeField>, <MonthField> or <DateRangePicker> from '@/components/comman/ui' (same value and onChange(e) shape).",
+      }, {
+        selector: "JSXOpeningElement[name.name='input']:has(JSXAttribute[name.name='type'][value.value='color'])",
+        message: "Do not use a raw colour input. Use <ColorField> from '@/components/comman/ui' (hex box, shade area, brand colours, recent colours).",
       }],
     },
   },

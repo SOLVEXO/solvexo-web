@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Trash2, Pencil, ArrowLeft, Boxes } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { Button, Table, type TableColumn, Modal, Input, Field, EmptyState, Select } from '@/components/comman/ui';
+import { Button, Table, type TableColumn, Modal, Input, Field, EmptyState, Select, DateField, ColorField } from '@/components/comman/ui';
 import {
   apiGetMetaobjectDefinition, apiListMetaobjectEntries, apiCreateMetaobjectEntry,
   apiUpdateMetaobjectEntry, apiDeleteMetaobjectEntry,
@@ -39,13 +39,13 @@ function FieldValueInput({ type, value, onChange }: { type: MetafieldType; value
         </Select>
       );
     case 'date':
-      return <input type="date" className={inp} value={value} onChange={e => onChange(e.target.value)} />;
+      return <DateField value={value} onChange={e => onChange(e.target.value)} />;
     case 'url':
       return <input type="url" className={inp} placeholder="https://…" value={value} onChange={e => onChange(e.target.value)} />;
     case 'color':
       return (
         <div className="flex items-center gap-2">
-          <input type="color" value={value || '#000000'} onChange={e => onChange(e.target.value)} className="w-9 h-9 rounded border border-bone cursor-pointer p-0.5" />
+          <ColorField compact value={value || '#000000'} onChange={e => onChange(e.target.value)} />
           <input className={inp} value={value} onChange={e => onChange(e.target.value)} placeholder="#000000" />
         </div>
       );

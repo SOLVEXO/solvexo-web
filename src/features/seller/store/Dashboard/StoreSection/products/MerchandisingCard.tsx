@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Field, Input, Select, Toggle } from '@/components/comman/ui';
+import { Button, Card, Field, Input, Select, Toggle, DateField } from '@/components/comman/ui';
 import { EntityPickerField } from '@/features/seller/store/Dashboard/OnlineStore/builder/SchemaForm';
 import { useToast } from '@/contexts/ToastContext';
 import { apiListVariants, type ProductVariant } from '@/api/services/product';
@@ -105,7 +105,7 @@ export function MerchandisingCard({ storeId, productId, isPhysical }: { storeId:
                   </div>
                   {p.enabled && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <Field label={t('merch.expectedDate')}><Input type="date" value={p.expectedDate ? String(p.expectedDate).slice(0, 10) : ''} onChange={(e) => set({ expectedDate: e.target.value || null })} /></Field>
+                      <Field label={t('merch.expectedDate')}><DateField value={p.expectedDate ? String(p.expectedDate).slice(0, 10) : ''} onChange={(e) => set({ expectedDate: e.target.value || null })} /></Field>
                       <Field label={t('merch.limit')} hint={p.sold ? t('merch.sold', { count: p.sold }) : undefined}><Input type="number" min={1} step={1} value={p.limit ?? ''} onChange={(e) => set({ limit: e.target.value ? Math.floor(Number(e.target.value)) : null })} /></Field>
                       <Field label={t('merch.message')}><Input maxLength={200} value={p.message ?? ''} onChange={(e) => set({ message: e.target.value || null })} /></Field>
                     </div>

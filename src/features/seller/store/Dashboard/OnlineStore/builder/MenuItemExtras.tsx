@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { Field, ImageUpload, Select } from '@/components/comman/ui';
+import { Field, ImageUpload, Select, DateTimeField, ColorField } from '@/components/comman/ui';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none focus:border-brand-orange';
@@ -34,8 +34,7 @@ export function NavBadgeField({ value, onChange }: {
       <div className="flex items-center gap-2">
         <input className={inp} value={value.badge ?? ''} maxLength={12} placeholder="e.g. New, Sale" aria-label="Badge text"
           onChange={e => onChange({ badge: e.target.value.replace(/[<>]/g, ''), badgeColor: value.badgeColor })} />
-        <input type="color" aria-label="Badge colour" value={color || '#111111'} onChange={e => onChange({ badge: value.badge, badgeColor: e.target.value })}
-          className="h-9 w-11 shrink-0 cursor-pointer rounded-md border border-bone bg-white p-0.5" />
+        <ColorField compact aria-label="Badge colour" value={color || '#111111'} onChange={e => onChange({ badge: value.badge, badgeColor: e.target.value })} />
         {color && <button type="button" onClick={() => onChange({ badge: value.badge, badgeColor: '' })} className="text-[11px] text-slate bg-transparent border-none cursor-pointer underline shrink-0">Theme colour</button>}
       </div>
       <p className="text-[11px] text-slate mt-1">A small tag shown next to the name. Empty = none.</p>
@@ -63,8 +62,8 @@ export function NavRulesField({ value, onChange }: { value: NavExtrasValue; onCh
             </Select>
           </Field>
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Show from"><input type="datetime-local" className={inp} value={isoToLocalInput(value.showFrom)} onChange={e => onChange({ showFrom: localToIso(e.target.value) })} /></Field>
-            <Field label="Hide after"><input type="datetime-local" className={inp} value={isoToLocalInput(value.showUntil)} onChange={e => onChange({ showUntil: localToIso(e.target.value) })} /></Field>
+            <Field label="Show from"><DateTimeField value={isoToLocalInput(value.showFrom)} onChange={e => onChange({ showFrom: localToIso(e.target.value) })} /></Field>
+            <Field label="Hide after"><DateTimeField value={isoToLocalInput(value.showUntil)} onChange={e => onChange({ showUntil: localToIso(e.target.value) })} /></Field>
           </div>
           <Field label="Only in these countries">
             <input className={inp} value={value.showCountries ?? ''} maxLength={200} placeholder="PK, AE, GB" onChange={e => onChange({ showCountries: e.target.value })} />

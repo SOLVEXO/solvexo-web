@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Archive, Megaphone, Plus, Trash2 } from 'lucide-react';
-import { Button, CopyIconButton, EmptyState, Input, MetricCard, Modal, Select, Textarea } from '@/components/comman/ui';
+import { Button, CopyIconButton, EmptyState, Input, MetricCard, Modal, Select, Textarea, DateField } from '@/components/comman/ui';
 import {
   CAMPAIGN_CHANNELS, CHANNEL_LABELS, apiAddSpend, apiGetCampaign, apiListCampaigns, apiRemoveSpend, apiSaveCampaign, formatPKR,
   type CampaignChannel, type CampaignDetail, type CampaignInput, type CampaignList,
@@ -145,8 +145,8 @@ function CampaignFormModal({ campaign, initialCode, onClose, onSaved }: { campai
           {LANDING_PAGES.map(p => <option key={p.path} value={p.path}>{p.label}</option>)}<option value="custom">Another page…</option>
         </Select>
         {!presets ? <Input label="Page path" value={f.landingPath} onChange={e => setF(p => ({ ...p, landingPath: e.target.value }))} placeholder="/solutions/fashion" /> : <Input label="Budget (PKR)" inputMode="numeric" value={f.budgetPKR} onChange={e => setF(p => ({ ...p, budgetPKR: e.target.value }))} />}
-        <Input label="Starts" type="date" value={f.startDate} onChange={e => setF(p => ({ ...p, startDate: e.target.value }))} />
-        <Input label="Ends" type="date" value={f.endDate} onChange={e => setF(p => ({ ...p, endDate: e.target.value }))} />
+        <DateField label="Starts" value={f.startDate} onChange={e => setF(p => ({ ...p, startDate: e.target.value }))} />
+        <DateField label="Ends" value={f.endDate} onChange={e => setF(p => ({ ...p, endDate: e.target.value }))} />
         {!presets && <Input label="Budget (PKR)" inputMode="numeric" value={f.budgetPKR} onChange={e => setF(p => ({ ...p, budgetPKR: e.target.value }))} />}
         <div className="sm:col-span-2"><Textarea label="Notes" rows={2} value={f.notes} onChange={e => setF(p => ({ ...p, notes: e.target.value }))} /></div>
       </div>
@@ -207,7 +207,7 @@ function CampaignModal({ id, onClose, onChanged, onEdit }: { id: string; onClose
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wide text-slate mb-1.5">Spend</p>
           <div className="flex flex-wrap items-end gap-2 mb-2">
-            <div className="w-36"><Input aria-label="Spend date" type="date" value={spend.date} onChange={e => setSpend(s => ({ ...s, date: e.target.value }))} /></div>
+            <div className="w-36"><DateField aria-label="Spend date" value={spend.date} onChange={e => setSpend(s => ({ ...s, date: e.target.value }))} /></div>
             <div className="w-32"><Input aria-label="Amount (PKR)" inputMode="numeric" placeholder="PKR" value={spend.amount} onChange={e => setSpend(s => ({ ...s, amount: e.target.value }))} /></div>
             <div className="flex-1 min-w-[140px]"><Input aria-label="Spend note" placeholder="What for (optional)" value={spend.note} onChange={e => setSpend(s => ({ ...s, note: e.target.value }))} /></div>
             <Button size="sm" loading={busy} disabled={!(Number(spend.amount.replace(/,/g, '')) > 0) || !spend.date}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { AlertTriangle, Check, CheckCircle2, Circle, ExternalLink, Plus, Trash2, Upload, XCircle } from 'lucide-react';
-import { Badge, Button, CopyIconButton, Input, Modal, Select, Textarea } from '@/components/comman/ui';
+import { Badge, Button, CopyIconButton, Input, Modal, Select, Textarea, DateField } from '@/components/comman/ui';
 import {
   DOC_TYPES, MODEL_LABELS, STAGE_COLORS, STAGE_LABELS, TIER_LABELS, apiApprovePartner, apiDocumentUrl, apiInvitePartner, apiPartnerOnboarding,
   apiRecordAgreement, apiRejectPartner, apiReopenPartner, apiReviewDocument, apiSaveStaff, apiSavePartnerProfile, apiSetDemoStores, apiTickChecklist,
@@ -158,7 +158,7 @@ function AgreementForm({ d, busy, onSave }: { d: PartnerOnboarding; busy: boolea
   return (
     <Section title="Record the signed agreement">
       <div className="grid sm:grid-cols-3 gap-3">
-        <Input label="Date signed" type="date" value={f.signedAt} max={new Date().toISOString().slice(0, 10)} onChange={e => setF({ ...f, signedAt: e.target.value })} />
+        <DateField label="Date signed" value={f.signedAt} max={new Date().toISOString().slice(0, 10)} onChange={e => setF({ ...f, signedAt: e.target.value })} />
         <Input label="Agreement version" placeholder="From programme settings" value={f.version} onChange={e => setF({ ...f, version: e.target.value })} />
         <Input label="Solvexo entity that signed" placeholder="From programme settings" value={f.entity} onChange={e => setF({ ...f, entity: e.target.value })} />
       </div>
@@ -237,8 +237,8 @@ function ProfileSection({ d, busy, onSave }: { d: PartnerOnboarding; busy: boole
       </label>
       {f.exclusive && (
         <div className="grid sm:grid-cols-2 gap-3 mt-2">
-          <Input label="Exclusive from" type="date" value={f.exclusiveFrom} onChange={e => setF({ ...f, exclusiveFrom: e.target.value })} />
-          <Input label="Exclusive until" type="date" value={f.exclusiveUntil} onChange={e => setF({ ...f, exclusiveUntil: e.target.value })} />
+          <DateField label="Exclusive from" value={f.exclusiveFrom} onChange={e => setF({ ...f, exclusiveFrom: e.target.value })} />
+          <DateField label="Exclusive until" value={f.exclusiveUntil} onChange={e => setF({ ...f, exclusiveUntil: e.target.value })} />
         </div>
       )}
       <div className="mt-3"><Textarea label="House accounts (one per line: store name or email Solvexo handles directly)" rows={2} value={f.houseAccounts} onChange={e => setF({ ...f, houseAccounts: e.target.value })} /></div>

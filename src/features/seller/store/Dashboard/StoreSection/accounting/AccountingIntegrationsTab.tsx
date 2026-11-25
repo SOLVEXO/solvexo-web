@@ -5,7 +5,7 @@ import { errorMessage } from '@/api/errorMessage';
 import type { StaffPermission } from '@/api/services/staff';
 import { can } from '@/hooks/auth/useCan';
 import { useToast } from '@/contexts/ToastContext';
-import { Badge, Button, Card, Input, Select, Table } from '@/components/comman/ui';
+import { Badge, Button, Card, Input, Select, Table, DateField } from '@/components/comman/ui';
 import { Modal } from '@/components/comman/ui/Modal';
 import type { TableColumn } from '@/components/comman/ui/Table';
 import { ErrorLine } from '../wholesale/ErrorLine';
@@ -67,8 +67,8 @@ function TallyCard({ storeId }: { storeId: string }) {
           <p className="m-0 mt-1 text-[13px] text-slate">Download a file your accountant imports in TallyPrime (Gateway of Tally → Import → Vouchers). Ledgers are created under Tally's groups; importing the same file again does not duplicate vouchers. Set "Code in your accounting app" on an account to use your Tally ledger name.</p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
-          <div className="w-40"><Input label="From" type="date" value={f.from} onChange={e => setF({ ...f, from: e.target.value })} /></div>
-          <div className="w-40"><Input label="To" type="date" value={f.to} onChange={e => setF({ ...f, to: e.target.value })} /></div>
+          <div className="w-40"><DateField label="From" value={f.from} onChange={e => setF({ ...f, from: e.target.value })} /></div>
+          <div className="w-40"><DateField label="To" value={f.to} onChange={e => setF({ ...f, to: e.target.value })} /></div>
           <div className="w-52"><Select label="Vouchers" value={f.mode} onChange={e => setF({ ...f, mode: e.target.value })}><option value="summary">One per day (recommended)</option><option value="detail">One per transaction</option></Select></div>
           <div className="w-52"><Input label="Tally company (optional)" value={f.company} onChange={e => setF({ ...f, company: e.target.value })} /></div>
           <Button loading={busy} disabled={!f.from || !f.to} onClick={() => void download()}><Download size={14} /> Download for Tally</Button>

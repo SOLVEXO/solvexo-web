@@ -10,7 +10,7 @@ import {
 } from '@/api/services/activityLog';
 import { timeAgo } from '@/utils/timeAgo';
 import { ChevronLeft, ChevronRight, Activity as ActivityIcon, Download, X } from 'lucide-react';
-import { EmptyState, ActivityLogDetailModal, Select } from '@/components/comman/ui';
+import { EmptyState, ActivityLogDetailModal, Select, DateField } from '@/components/comman/ui';
 
 // The only `targetType`s a seller actually has a real page for — everything
 // else stays plain text in the detail modal rather than a broken/fake link.
@@ -202,8 +202,8 @@ export function ActivityLogTab() {
             </Select>
             {dateRange === 'custom' && (
               <div className="flex flex-col gap-2 mt-2">
-                <label className="text-[11px] text-slate">From<input type="date" value={customFrom} max={customTo || undefined} onChange={e => { setCustomFrom(e.target.value); setPage(1); }} className="mt-0.5 w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal" /></label>
-                <label className="text-[11px] text-slate">To<input type="date" value={customTo} min={customFrom || undefined} onChange={e => { setCustomTo(e.target.value); setPage(1); }} className="mt-0.5 w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal" /></label>
+                <label className="text-[11px] text-slate">From<DateField value={customFrom} max={customTo || undefined} onChange={e => { setCustomFrom(e.target.value); setPage(1); }} /></label>
+                <label className="text-[11px] text-slate">To<DateField value={customTo} min={customFrom || undefined} onChange={e => { setCustomTo(e.target.value); setPage(1); }} /></label>
               </div>
             )}
             <label className="flex items-center gap-2 mt-3 text-[12.5px] text-charcoal cursor-pointer"><input type="checkbox" checked={securityOnly} onChange={e => { setSecurityOnly(e.target.checked); setPage(1); }} /> Security alerts only</label>

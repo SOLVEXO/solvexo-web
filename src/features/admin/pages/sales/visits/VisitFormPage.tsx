@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { AlertTriangle, ArrowLeft, Camera, CloudUpload, Loader2, MapPin, WifiOff, X } from 'lucide-react';
-import { Button } from '@/components/comman/ui';
+import { Button, DateField } from '@/components/comman/ui';
 import { TokenStorage } from '@/api/services/auth';
 import { apiCheckVisit, apiSaveVisit, apiVisitAreas, type VisitMatch } from '@/api/services/salesVisits';
 import { VISIT_OPTIONS, optionLabel, type VisitOptionGroup } from './visitOptions';
@@ -317,7 +317,7 @@ export function VisitFormPage() {
                       className={clsx('rounded-full border px-3 py-1.5 text-[13px] pointer-coarse:min-h-9', f.when === w.key ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold' : 'border-bone bg-cream text-charcoal')}>{w.en}</button>
                   ))}
                 </div>
-                {f.when === 'pick' && <input type="date" aria-label="Pick the next-step date" className={inputCls} value={f.pickDate} min={new Date().toISOString().slice(0, 10)} onChange={e => set('pickDate', e.target.value)} />}
+                {f.when === 'pick' && <DateField aria-label="Pick the next-step date" value={f.pickDate} min={new Date().toISOString().slice(0, 10)} onChange={e => set('pickDate', e.target.value)} />}
                 {nextDate && <p className="text-[11.5px] text-slate">Becomes a follow-up task on {nextDate.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}.</p>}
               </>
             )}</Field>

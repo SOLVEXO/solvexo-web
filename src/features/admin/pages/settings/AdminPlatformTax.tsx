@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle2, Landmark, Percent, Plus, Trash2, Users } from 'lucide-react';
-import { Button, Input, Select } from '@/components/comman/ui';
+import { Button, Input, Select, DateField } from '@/components/comman/ui';
 import { SettingsCard, SettingsSaveBar } from '@/components/comman/settings';
 import { useToast } from '@/contexts/ToastContext';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
@@ -208,7 +208,7 @@ export function AdminPlatformTax() {
                   </div>
                   <Input aria-label={`Rate ${i + 1} label`} value={r.label} maxLength={40} onChange={e => patchRow(r.key, { label: e.target.value })} />
                   <Input aria-label={`Rate ${i + 1} percentage`} inputMode="decimal" value={r.ratePercent} placeholder="0" onChange={e => patchRow(r.key, { ratePercent: e.target.value })} />
-                  <Input aria-label={`Rate ${i + 1} start date`} type="date" value={r.effectiveFrom} onChange={e => patchRow(r.key, { effectiveFrom: e.target.value })} />
+                  <DateField aria-label={`Rate ${i + 1} start date`} value={r.effectiveFrom} onChange={e => patchRow(r.key, { effectiveFrom: e.target.value })} />
                   <Select aria-label={`Rate ${i + 1} status`} value={r.status} onChange={e => patchRow(r.key, { status: e.target.value as RateRow['status'] })}>
                     <option value="draft">Draft (not charged)</option>
                     <option value="confirmed">Confirmed</option>

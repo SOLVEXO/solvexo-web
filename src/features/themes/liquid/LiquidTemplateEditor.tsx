@@ -23,7 +23,7 @@ import {
   type LiquidJsonTemplate,
   type LiquidTemplateSection,
 } from './liquidTemplateEditor.utils';
-import { Select } from '@/components/comman/ui';
+import { Select, ColorField } from '@/components/comman/ui';
 
 type ThemeSettingSchema = {
   id?: string;
@@ -474,7 +474,7 @@ function SettingsEditor({
           {label}
           <span className="flex gap-2">
             <input type="text" value={colorValue} onChange={(event) => onChange(id, event.target.value)} placeholder="Color, CSS value, or gradient" className="min-w-0 flex-1 rounded border border-bone bg-white px-2 py-1.5 text-[11px]" />
-            {type === 'color' && <input type="color" aria-label={`${label} color picker`} value={isHexColor ? colorValue : '#000000'} onChange={(event) => onChange(id, event.target.value)} />}
+            {type === 'color' && <ColorField compact aria-label={`${label} color picker`} value={isHexColor ? colorValue : '#000000'} onChange={(event) => onChange(id, event.target.value)} />}
           </span>
         </label>;
       }

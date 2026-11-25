@@ -5,7 +5,7 @@ import {
   ArrowLeft, CalendarClock, Mail, MessageCircle, NotebookPen, Pencil, Phone, Plus, Store, Trash2, Users, ArrowRightLeft, Bot,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Button, Input, Modal, Select, Textarea } from '@/components/comman/ui';
+import { Button, Input, Modal, Select, Textarea, DateTimeField } from '@/components/comman/ui';
 import { can } from '@/hooks/auth/useCan';
 import { TokenStorage } from '@/api/services/auth';
 import {
@@ -325,7 +325,7 @@ function Tasks({ leadId, tasks, act, reload }: { leadId: string; tasks: LeadDeta
       <div className="flex flex-col gap-2 mb-3">
         <Input aria-label="Follow-up" placeholder="e.g. Call back about pricing" value={title} onChange={e => setTitle(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void add(); }} />
         <div className="flex gap-2">
-          <Input aria-label="Due" type="datetime-local" value={due} onChange={e => setDue(e.target.value)} />
+          <DateTimeField aria-label="Due" value={due} onChange={e => setDue(e.target.value)} />
           <Button size="sm" aria-label="Add follow-up" disabled={!title.trim()} loading={busy} onClick={add}><Plus size={14} /></Button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Input } from '@/components/comman/ui';
+import { Input, ColorField } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
 import { apiUpdateStore } from '@/api/services/store';
@@ -28,9 +28,8 @@ export default function CheckoutBrandingCard({ storeId, initial, canManage }: { 
     <section aria-label="Checkout branding" className="flex flex-col gap-4 max-w-[640px]">
       <p className="text-[12.5px] text-slate m-0">Shown at the top and bottom of the checkout page in every theme. Leave everything empty to keep your theme as it is.</p>
       <Input label="Logo (https image address)" value={logoUrl} maxLength={500} disabled={!canManage} onChange={(e) => setLogoUrl(e.target.value)} />
-      <div className="flex items-end gap-3">
-        <Input label="Accent colour (#rrggbb)" value={accent} maxLength={7} disabled={!canManage} onChange={(e) => setAccent(e.target.value)} />
-        <input type="color" aria-label="Pick accent colour" disabled={!canManage} className="h-10 w-12 cursor-pointer rounded border border-border-soft" value={/^#[0-9a-fA-F]{6}$/.test(accent) ? accent : '#000000'} onChange={(e) => setAccent(e.target.value)} />
+      <div className="max-w-[280px]">
+        <ColorField label="Accent colour" disabled={!canManage} value={accent} allowEmpty emptyLabel="Theme default" onValueChange={setAccent} />
       </div>
       <p className="text-[12px] text-slate m-0 -mt-2">The accent colours links, checkboxes and focus rings on the checkout. Buttons keep the theme's own colour.</p>
       <fieldset className="flex flex-col gap-2 border-0 p-0 m-0">

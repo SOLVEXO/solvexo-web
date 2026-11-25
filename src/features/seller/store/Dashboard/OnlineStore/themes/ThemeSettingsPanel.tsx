@@ -17,7 +17,7 @@ import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUn
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useState } from 'react';
-import { ImageUpload, Select } from '@/components/comman/ui';
+import { ImageUpload, Select, ColorField as ColorPickerField } from '@/components/comman/ui';
 import { getThemeManifest, readThemeSetting, themeSettingPatch, type ThemeManifest, type ThemeSettingsFieldDef } from '@/features/storefront-themes/themeManifest';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 import { BrandKitCard } from './BrandKitCard';
@@ -51,11 +51,7 @@ function Field({ heading, children }: { heading: string; children: React.ReactNo
 function ColorField({ heading, value, onChange }: { heading: string; value: string; onChange: (v: string) => void }) {
   return (
     <Field heading={heading}>
-      <div className="flex items-center gap-2">
-        <input type="color" value={/^#[0-9a-f]{6}$/i.test(value) ? value : '#000000'} onChange={e => onChange(e.target.value)}
-          className="w-10 h-9 rounded-lg border border-bone cursor-pointer shrink-0 p-0.5 bg-white" />
-        <input className={inp} value={value} onChange={e => onChange(e.target.value)} placeholder="#000000" />
-      </div>
+      <ColorPickerField value={value} onValueChange={onChange} aria-label={heading} />
     </Field>
   );
 }

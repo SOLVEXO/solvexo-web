@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Building2, FileText, Droplets, Receipt, Palette } from 'lucide-react';
-import { Button, Input, Textarea, Toggle, Select } from '@/components/comman/ui';
+import { Button, Input, Textarea, Toggle, Select, ColorField } from '@/components/comman/ui';
 import { SettingsCard, SettingsRow, SettingsSaveBar } from '@/components/comman/settings';
 import { useToast } from '@/contexts/ToastContext';
 import { apiGetOrderDocuments, saveOrderDocuments } from '@/api/services/orderDocuments';
@@ -135,8 +135,7 @@ export function OrderDocumentsSettings({ storeId, canManage }: { storeId: string
               <label className="flex flex-col gap-1">
                 <span className="text-[12px] font-medium text-charcoal">Accent colour</span>
                 <span className="flex items-center gap-2">
-                  <input type="color" aria-label="Accent colour" className="h-9 w-12 rounded-[10px] border border-bone bg-white p-0.5 cursor-pointer"
-                    value={draft.accentColor ?? '#111111'} onChange={e => set('accentColor', e.target.value)} />
+                  <ColorField compact aria-label="Accent colour" value={draft.accentColor ?? '#111111'} onChange={e => set('accentColor', e.target.value)} />
                   <span className="text-[12px] text-slate">{draft.accentColor ?? 'Black (default)'}</span>
                   {draft.accentColor && <button type="button" className="text-[12px] text-brand-orange bg-transparent border-0 cursor-pointer" onClick={() => set('accentColor', null)}>Reset</button>}
                 </span>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AtSign, Palette, Bell } from 'lucide-react';
 import { clsx } from 'clsx';
-import { Button, Input, TagInput, Toggle } from '@/components/comman/ui';
+import { Button, Input, TagInput, Toggle, ColorField } from '@/components/comman/ui';
 import { SettingsCard, SettingsRow, SettingsSaveBar } from '@/components/comman/settings';
 import type { StoreNotificationSettings, UpdateStoreNotificationSettingsPayload } from '@/api/services/storeNotifications';
 import { errMsg } from './useCustomerEmailSettings';
@@ -123,7 +123,7 @@ export function LookAndSender({ settings, onSave }: Props) {
           </div>
 
           <div className="mt-4">
-            <label htmlFor="email-colour" className="block text-[12px] font-medium text-charcoal mb-1.5">Email colour</label>
+            <label htmlFor="email-colour-hex" className="block text-[12px] font-medium text-charcoal mb-1.5">Email colour</label>
             <div className="flex flex-wrap items-center gap-2">
               {SWATCHES.map(c => (
                 <button
@@ -136,22 +136,17 @@ export function LookAndSender({ settings, onSave }: Props) {
                   style={{ background: c }}
                 />
               ))}
-              <input
-                type="color"
-                aria-label="Pick a custom email colour"
-                value={effectiveAccent}
-                onChange={e => { setAccent(e.target.value); setErrors(x => ({ ...x, accent: undefined })); }}
-                className="h-7 w-7 rounded-full border border-bone bg-white p-0 cursor-pointer overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:border-0"
-              />
-              <input
-                id="email-colour"
-                value={accent}
-                maxLength={7}
-                placeholder={DEFAULT_ACCENT}
-                onChange={e => { setAccent(e.target.value); if (errors.accent) setErrors(x => ({ ...x, accent: undefined })); }}
-                aria-invalid={!!errors.accent}
-                className={clsx('w-[104px] py-1.5 px-2.5 rounded-[10px] border bg-white text-[13px] font-mono text-charcoal outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15', errors.accent ? 'border-error' : 'border-bone')}
-              />
+              <div className="w-[152px]">
+                <ColorField
+                  id="email-colour"
+                  aria-label="Pick a custom email colour"
+                  value={accent}
+                  allowEmpty
+                  emptyLabel="Default"
+                  pickerStart={DEFAULT_ACCENT}
+                  onValueChange={v => { setAccent(v); if (errors.accent) setErrors(x => ({ ...x, accent: undefined })); }}
+                />
+              </div>
             </div>
             {errors.accent && <p role="alert" className="text-[11.5px] text-error mt-1.5">{errors.accent}</p>}
           </div>

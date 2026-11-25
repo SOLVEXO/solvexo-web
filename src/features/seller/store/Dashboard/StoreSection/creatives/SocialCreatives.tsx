@@ -4,7 +4,7 @@ import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLa
 import { getStoreLiveUrl } from '@/utils/storefrontUrl';
 import { useToast } from '@/contexts/ToastContext';
 import { buildCaption, drawCreative, FORMATS, safeColor, type CreativeFormat } from './creativeCanvas';
-import { Select } from '@/components/comman/ui';
+import { Select, ColorField } from '@/components/comman/ui';
 
 /** Loads an image for the canvas. CORS-enabled so the PNG export is not blocked; null when it cannot be used. */
 function loadImage(src: string | null | undefined): Promise<HTMLImageElement | null> {
@@ -111,7 +111,7 @@ export default function SocialCreatives() {
           </label>
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium" htmlFor="sc-color">Colour</label>
-            <input id="sc-color" type="color" value={accent} onChange={(e) => setAccent(e.target.value)} className="h-9 w-14 rounded border" />
+            <ColorField compact id="sc-color" value={accent} onChange={(e) => setAccent(e.target.value)} />
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={useLogo} onChange={(e) => setUseLogo(e.target.checked)} /> Use my logo</label>
           </div>
           <div className="flex flex-wrap gap-2">

@@ -4,10 +4,7 @@ import QRCode from 'qrcode';
 import { Plus, Tag, Pencil, Power, PowerOff, Trash2, ChevronLeft, ChevronRight, Link2, QrCode } from 'lucide-react';
 import { SegmentSelect } from '@/features/seller/store/Dashboard/StoreSection/customer/SegmentSelect';
 import { BulkImportButton } from '@/components/comman/bulk-import/BulkImportButton';
-import {
-  Button, Table, type TableColumn, Modal, Input, Select, Field, Badge,
-  ActionMenu, type ActionMenuItem, SearchInput,
-} from '@/components/comman/ui';
+import { Button, Table, type TableColumn, Modal, Input, Select, Field, Badge, ActionMenu, type ActionMenuItem, SearchInput, DateField } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 import {
   apiGetCoupons, apiCreateCoupon, apiUpdateCoupon, apiDeleteCoupon,
@@ -189,10 +186,10 @@ function CouponFormModal({ storeId, storeCurrency, initial, onClose, onSaved }: 
 
       <div className="grid grid-cols-2 gap-2">
         <Field label="Start date" hint="Leave blank to start immediately">
-          <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+          <DateField value={startDate} onChange={e => setStartDate(e.target.value)} />
         </Field>
         <Field label="End date" hint="Leave blank for no end">
-          <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+          <DateField value={endDate} onChange={e => setEndDate(e.target.value)} />
         </Field>
       </div>
     </Modal>

@@ -6,7 +6,7 @@ import type { StaffPermission } from '@/api/services/staff';
 import { can } from '@/hooks/auth/useCan';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { Badge, Button, Card, EmptyState, Input, Select, Table, TabBar } from '@/components/comman/ui';
+import { Badge, Button, Card, EmptyState, Input, Select, Table, TabBar, DateField } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui/Table';
 import { ErrorLine } from '../wholesale/ErrorLine';
 import { useApi } from '../wholesale/wholesaleUtils';
@@ -66,7 +66,7 @@ function Setup({ storeId, currency, onDone }: { storeId: string; currency: strin
         </ul>
         {manage ? (
           <div className="flex flex-wrap items-end gap-3">
-            <div className="w-48"><Input label="Books start on" type="date" value={goLive} onChange={e => setGoLive(e.target.value)} /></div>
+            <div className="w-48"><DateField label="Books start on" value={goLive} onChange={e => setGoLive(e.target.value)} /></div>
             <Button loading={busy} disabled={!goLive} onClick={() => void start()}>Turn on accounting</Button>
           </div>
         ) : <p className="m-0 text-[13px] text-slate">Ask the store owner to turn accounting on.</p>}
@@ -186,8 +186,8 @@ function Journal({ storeId, exponent, currency, accounts, tick, refresh, openEnt
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-40"><Input label="From" type="date" value={f.from} onChange={e => setFilter({ from: e.target.value })} /></div>
-        <div className="w-40"><Input label="To" type="date" value={f.to} onChange={e => setFilter({ to: e.target.value })} /></div>
+        <div className="w-40"><DateField label="From" value={f.from} onChange={e => setFilter({ from: e.target.value })} /></div>
+        <div className="w-40"><DateField label="To" value={f.to} onChange={e => setFilter({ to: e.target.value })} /></div>
         <div className="w-44"><Select label="Source" value={f.sourceType} onChange={e => setFilter({ sourceType: e.target.value })}>
           <option value="">All</option>
           {Object.entries(SOURCE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -222,7 +222,7 @@ function TrialBalance({ storeId, exponent, currency, tick, openLedger }: Ctx) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-44"><Input label="As of" type="date" value={asOf} onChange={e => setAsOf(e.target.value)} /></div>
+        <div className="w-44"><DateField label="As of" value={asOf} onChange={e => setAsOf(e.target.value)} /></div>
         {r.data && (r.data.totals.balanced ? <Badge color="green">Debits equal credits</Badge> : <Badge color="red">Out of balance</Badge>)}
         <div className="ml-auto"><ExcelDownload storeId={storeId} kind="trial-balance" query={{ asOf }} fileName={`trial-balance-${asOf}.xlsx`} /></div>
       </div>
