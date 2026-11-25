@@ -59,7 +59,9 @@ describe('WhatsAppTab', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Connect WhatsApp' }));
     fireEvent.change(screen.getByLabelText('Phone number ID'), { target: { value: '1234567890' } });
     fireEvent.change(screen.getByLabelText('Permanent access token'), { target: { value: 'EAAG-token' } });
+    // Optional: when left empty the server finds it from the token; only digits are kept.
+    fireEvent.change(screen.getByLabelText('WhatsApp Business Account ID (optional)'), { target: { value: ' 1475065457931364 ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
-    await waitFor(() => expect(api.apiWaConnect).toHaveBeenCalledWith(expect.objectContaining({ phoneNumberId: '1234567890', accessToken: 'EAAG-token', templateLang: 'en' })));
+    await waitFor(() => expect(api.apiWaConnect).toHaveBeenCalledWith(expect.objectContaining({ phoneNumberId: '1234567890', accessToken: 'EAAG-token', templateLang: 'en', wabaId: '1475065457931364' })));
   });
 });
