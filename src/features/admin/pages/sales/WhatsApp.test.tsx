@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 const api = vi.hoisted(() => ({
   apiWaConnection: vi.fn(), apiWaConnect: vi.fn(), apiWaDisconnect: vi.fn(), apiWaConversations: vi.fn(), apiWaConversation: vi.fn(),
@@ -69,6 +70,26 @@ describe('WhatsAppTab', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Send' })).not.toBeInTheDocument());
   });
 
+  it('a rep allowed templates only gets no reply box, and picks a reason before a template', async () => {
+    const tplPay = { key: 'pay:en', label: 'Payment due', name: 'pay', lang: 'en', usesName: false, body: 'Your invoice is due.', reason: 'payment_reminder' };
+    const c = convo({ windowOpen: true, canWriteText: false, templates: [{ ...tplEn, reason: 'follow_up' }, tplPay] });
+    api.apiWaConnection.mockResolvedValue({ data: conn });
+    api.apiWaConversations.mockResolvedValue({ data: [row] });
+    api.apiWaConversation.mockResolvedValue({ data: c });
+    api.apiWaSendTemplate.mockResolvedValue({ data: c });
+    render(<MemoryRouter initialEntries={['/admin/sales?tab=whatsapp&c=c1']}><WhatsAppTab isManager={false} /></MemoryRouter>);
+    expect(await screen.findByText('You can send approved templates only.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Reply')).not.toBeInTheDocument();
+    expect(screen.queryByText('Use draft')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Choose a template' }));
+    expect(screen.getByRole('radio', { name: /Follow-up \(English\)/ })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /Payment due/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Payment reminder' }));
+    expect(screen.getByText('Your invoice is due.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(api.apiWaSendTemplate).toHaveBeenCalledWith('c1', 'pay:en'));
+  });
+
   it('a manager lists the templates; Meta’s answer is shown when one is refused', async () => {
     api.apiWaConnection.mockResolvedValue({ data: conn });
     api.apiWaConversations.mockResolvedValue({ data: [] });
@@ -85,10 +106,11 @@ describe('WhatsAppTab', () => {
     fireEvent.change(screen.getByLabelText('Template 2 label'), { target: { value: 'Follow-up (Urdu)' } });
     fireEvent.change(screen.getByLabelText('Template 2 name'), { target: { value: 'sales_follow_up' } });
     fireEvent.change(screen.getByLabelText('Template 2 language'), { target: { value: 'ur' } });
+    chooseValue(dropdown('Template 2 reason'), 'payment_reminder');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(api.apiWaSaveTemplates).toHaveBeenLastCalledWith([
-      { label: 'Follow-up (English)', name: 'sales_follow_up', lang: 'en' },
-      { label: 'Follow-up (Urdu)', name: 'sales_follow_up', lang: 'ur' },
+      { label: 'Follow-up (English)', name: 'sales_follow_up', lang: 'en', reason: 'follow_up' },
+      { label: 'Follow-up (Urdu)', name: 'sales_follow_up', lang: 'ur', reason: 'payment_reminder' },
     ]));
     await waitFor(() => expect(screen.queryByText('WhatsApp templates')).not.toBeInTheDocument());
   });

@@ -9,6 +9,7 @@ const api = vi.hoisted(() => ({
   apiUpdateTask: vi.fn(), apiListTemplates: vi.fn(), apiSaveTemplate: vi.fn(), apiDeleteTemplate: vi.fn(),
   apiGetLead: vi.fn(), apiUpdateLead: vi.fn(), apiDeleteLead: vi.fn(), apiLogActivity: vi.fn(), apiSendLeadEmail: vi.fn(),
   apiCreateTask: vi.fn(), apiDeleteTask: vi.fn(),
+  apiMyMessaging: vi.fn(async (): Promise<unknown> => ({ data: { whatsapp: 'full', email: 'full', waTemplateKeys: null, emailTemplateIds: null } })),
 }));
 vi.mock('@/api/services/salesOps', async (orig) => ({ ...(await orig<typeof import('@/api/services/salesOps')>()), ...api }));
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
@@ -49,7 +50,7 @@ const renderAt = (path: string) => render(
   </MemoryRouter>,
 );
 
-afterEach(() => { cleanup(); vi.clearAllMocks(); perm.manager = true; try { localStorage.clear(); } catch { /* jsdom */ } });
+afterEach(() => { cleanup(); vi.clearAllMocks(); api.apiMyMessaging.mockResolvedValue({ data: { whatsapp: 'full', email: 'full', waTemplateKeys: null, emailTemplateIds: null } }); perm.manager = true; try { localStorage.clear(); } catch { /* jsdom */ } });
 
 describe('Sales Ops pipeline', () => {
   it('shows leads on the board and asks for a reason before moving one to Lost', async () => {
@@ -115,7 +116,38 @@ describe('Sales lead page', () => {
     expect(screen.getByLabelText('Subject')).toHaveValue('Your store, Sara Boutique');
     expect(screen.getByLabelText('Message')).toHaveValue('Hi Sara Malik, Bilal here.');
     fireEvent.click(screen.getByRole('button', { name: 'Send email' }));
-    await waitFor(() => expect(api.apiSendLeadEmail).toHaveBeenCalledWith('l1', 'Your store, Sara Boutique', 'Hi Sara Malik, Bilal here.'));
+    await waitFor(() => expect(api.apiSendLeadEmail).toHaveBeenCalledWith('l1', 'Your store, Sara Boutique', 'Hi Sara Malik, Bilal here.', 't1'));
+  });
+
+  it('a rep allowed email templates only picks a template by reason and cannot change its text; with email off, no email at all', async () => {
+    perm.manager = false;
+    api.apiMyMessaging.mockResolvedValue({ data: { whatsapp: 'off', email: 'templates', waTemplateKeys: null, emailTemplateIds: null } });
+    api.apiSalesOwners.mockResolvedValue({ data: [] });
+    api.apiGetLead.mockResolvedValue(detail());
+    api.apiListTemplates.mockResolvedValue({ data: [
+      { _id: 't1', name: 'First follow-up', subject: 'Your store, {{businessName}}', body: 'Hi {{name}}', reason: 'follow_up' },
+      { _id: 't2', name: 'Invoice due', subject: 'Payment due', body: 'Hi {{name}}, a reminder', reason: 'payment_reminder' },
+    ] });
+    api.apiSendLeadEmail.mockResolvedValue(detail());
+    renderAt('/admin/sales/leads/l1');
+    // WhatsApp is off for this rep: no "Chat in Sales Ops".
+    await screen.findByText('Open WhatsApp');
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Chat in Sales Ops/ })).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole('tab', { name: /Email/ }));
+    expect(await screen.findByText(/You can send approved templates only/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send email' })).toBeDisabled();
+    chooseValue(dropdown('Template'), 't2');
+    expect(screen.getByLabelText('Subject')).toHaveValue('Payment due');
+    expect(screen.getByLabelText('Message')).toHaveAttribute('readonly');
+    fireEvent.click(screen.getByRole('button', { name: 'Send email' }));
+    await waitFor(() => expect(api.apiSendLeadEmail).toHaveBeenCalledWith('l1', 'Payment due', 'Hi Sara Malik, a reminder', 't2'));
+
+    cleanup();
+    api.apiMyMessaging.mockResolvedValue({ data: { whatsapp: 'full', email: 'off', waTemplateKeys: null, emailTemplateIds: null } });
+    renderAt('/admin/sales/leads/l1');
+    fireEvent.click(await screen.findByRole('tab', { name: /Email/ }));
+    expect(await screen.findByText('You are not allowed to send emails to clients. Ask a manager.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Send email' })).not.toBeInTheDocument();
   });
 
   it('offers WhatsApp only for a real number, not for text like "Not Found" in the phone box', async () => {

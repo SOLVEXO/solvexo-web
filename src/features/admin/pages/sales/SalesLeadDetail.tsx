@@ -12,6 +12,7 @@ import {
   LEAD_STAGES, LOST_REASON_LABELS, SOURCE_LABELS, STAGE_LABELS, apiChangeStage, apiCreateTask, apiDeleteLead, apiDeleteTask,
   apiGetLead, apiLeadChats, apiResolveAiDraft, apiWaOpenForLead, apiListTemplates, apiLogActivity, apiSalesOwners, apiSendLeadEmail, apiUpdateLead, apiUpdateTask, fillTemplate, formatPKR,
   type ChatTranscript, type LeadDetail, type LeadStage, type LogType, type SalesActivity, type SalesOwner, type SalesTemplate,
+  FULL_MESSAGING, MESSAGE_REASONS, MESSAGE_REASON_LABELS, apiMyMessaging, type MessagingLevel, type MessagingRules,
 } from '@/api/services/salesOps';
 import { ConsentBadge, LeadFormModal, LostReasonModal, StageBadge } from './parts';
 import { Transcript } from './AgentTab';
@@ -43,6 +44,9 @@ export function SalesLeadDetail() {
   const [editing, setEditing] = useState(false);
   const [losing, setLosing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // What this person may send to clients (a rep's limits are set by a manager in Team; the server enforces them).
+  const [rules, setRules] = useState<MessagingRules>(FULL_MESSAGING);
+  useEffect(() => { apiMyMessaging().then(r => setRules(r.data)).catch(() => undefined); }, []);
 
   const load = useCallback(() => apiGetLead(id).then(r => setD(r.data)).catch(e => setError(errMsg(e, 'Could not load this lead.'))), [id]);
   useEffect(() => { void load(); }, [load]);
@@ -116,7 +120,7 @@ export function SalesLeadDetail() {
             {lead.phone && hasNumber && <a className="flex items-center gap-2 text-charcoal hover:text-brand-orange mb-2" href={`tel:${lead.phone}`}><Phone size={14} className="text-slate shrink-0" />{lead.phone}</a>}
             {lead.phone && !hasNumber && <p className="flex items-center gap-2 text-slate mb-2"><Phone size={14} className="shrink-0" />No phone number (“{lead.phone}”)</p>}
             {wa && <a className="flex items-center gap-2 text-charcoal hover:text-brand-orange" href={wa} target="_blank" rel="noreferrer"><MessageCircle size={14} className="text-slate shrink-0" />Open WhatsApp</a>}
-            {wa && (
+            {wa && rules.whatsapp !== 'off' && (
               <button className="flex items-center gap-2 mt-2 text-[12.5px] font-medium text-brand-orange bg-transparent border-0 p-0 cursor-pointer hover:underline"
                 onClick={async () => { try { const r = await apiWaOpenForLead(lead._id); navigate(`/admin/sales?tab=whatsapp&c=${r.data.conversationId}`); } catch (e) { toast.error(errMsg(e, 'Could not open the WhatsApp chat.')); } }}>
                 <MessageCircle size={14} className="shrink-0" />Chat in Sales Ops (Solvexo number)
@@ -147,7 +151,7 @@ export function SalesLeadDetail() {
         {/* What happened */}
         <main className="flex flex-col gap-4 min-w-0">
           {lead.aiDraft && <AiDraftCard leadId={lead._id} draft={lead.aiDraft} wa={wa} act={act} />}
-          <Composer leadId={lead._id} leadName={lead.name} businessName={lead.businessName} hasEmail={!!lead.email} act={act} />
+          <Composer leadId={lead._id} leadName={lead.name} businessName={lead.businessName} hasEmail={!!lead.email} emailLevel={rules.email} act={act} />
           <Timeline items={d.activities} />
           <LeadChats leadId={lead._id} />
         </main>
@@ -191,7 +195,9 @@ function MarketingConsentCard({ lead, onEdit }: { lead: LeadDetail['lead']; onEd
 type Act = (fn: () => Promise<{ data: LeadDetail }>, ok: string, fail: string) => Promise<boolean>;
 
 /** Log a touch in one click, or send an email from a template. */
-function Composer({ leadId, leadName, businessName, hasEmail, act }: { leadId: string; leadName: string; businessName: string | null; hasEmail: boolean; act: Act }) {
+function Composer({ leadId, leadName, businessName, hasEmail, emailLevel, act }: { leadId: string; leadName: string; businessName: string | null; hasEmail: boolean; emailLevel: MessagingLevel; act: Act }) {
+  const templatesOnly = emailLevel === 'templates';
+  const [templateId, setTemplateId] = useState('');
   const [mode, setMode] = useState<LogType | 'email'>('call');
   const [body, setBody] = useState('');
   const [outcome, setOutcome] = useState('');
@@ -215,12 +221,12 @@ function Composer({ leadId, leadName, businessName, hasEmail, act }: { leadId: s
   const submit = async () => {
     setBusy(true);
     const ok = mode === 'email'
-      ? await act(() => apiSendLeadEmail(leadId, subject, body), 'Email sent.', 'Could not send the email.')
+      ? await act(() => apiSendLeadEmail(leadId, subject, body, templateId || null), 'Email sent.', 'Could not send the email.')
       : await act(() => apiLogActivity(leadId, mode, body.trim() || outcome, outcome || undefined), 'Logged.', 'Could not log it.');
-    if (ok) { setBody(''); setSubject(''); setOutcome(''); }
+    if (ok) { setBody(''); setSubject(''); setOutcome(''); setTemplateId(''); }
     setBusy(false);
   };
-  const canSubmit = mode === 'email' ? hasEmail && subject.trim() && body.trim() : !!(body.trim() || outcome);
+  const canSubmit = mode === 'email' ? hasEmail && emailLevel !== 'off' && subject.trim() && body.trim() && (!templatesOnly || !!templateId) : !!(body.trim() || outcome);
 
   return (
     <section className="rounded-xl border border-bone bg-white">
@@ -234,15 +240,23 @@ function Composer({ leadId, leadName, businessName, hasEmail, act }: { leadId: s
       </div>
       <div className="p-4 flex flex-col gap-3">
         {mode === 'email' ? (
-          !hasEmail ? <p className="text-[13px] text-slate">Add an email address to this lead to send email.</p> : (
+          emailLevel === 'off' ? <p className="text-[13px] text-slate">You are not allowed to send emails to clients. Ask a manager.</p>
+          : !hasEmail ? <p className="text-[13px] text-slate">Add an email address to this lead to send email.</p> : (
             <>
-              {templates.length > 0 && (
-                <Select aria-label="Template" value="" onChange={e => { const t = templates.find(x => x._id === e.target.value); if (t) { setSubject(fillTemplate(t.subject, vars)); setBody(fillTemplate(t.body, vars)); } }}>
-                  <option value="">Start from a template…</option>{templates.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+              {templatesOnly && <p className="text-[12px] text-slate">You can send approved templates only: pick a reason and a template. The text can’t be changed.</p>}
+              {templates.length > 0 ? (
+                <Select aria-label="Template" value={templateId} onChange={e => { const t = templates.find(x => x._id === e.target.value); setTemplateId(t?._id ?? ''); if (t) { setSubject(fillTemplate(t.subject, vars)); setBody(fillTemplate(t.body, vars)); } }}>
+                  <option value="">{templatesOnly ? 'Choose a template…' : 'Start from a template…'}</option>
+                  {/* Grouped by reason, so a rep picks why they are writing, then the template. */}
+                  {MESSAGE_REASONS.filter(r => templates.some(t => (t.reason ?? 'other') === r)).map(r => (
+                    <optgroup key={r} label={MESSAGE_REASON_LABELS[r]}>
+                      {templates.filter(t => (t.reason ?? 'other') === r).map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                    </optgroup>
+                  ))}
                 </Select>
-              )}
-              <Input aria-label="Subject" placeholder="Subject" value={subject} onChange={e => setSubject(e.target.value)} />
-              <Textarea aria-label="Message" rows={7} placeholder="Write your message" value={body} onChange={e => setBody(e.target.value)} />
+              ) : templatesOnly && <p className="text-[13px] text-slate">No email templates are available to you yet. Ask a manager.</p>}
+              <Input aria-label="Subject" placeholder="Subject" value={subject} readOnly={templatesOnly} onChange={e => setSubject(e.target.value)} />
+              <Textarea aria-label="Message" rows={7} placeholder="Write your message" value={body} readOnly={templatesOnly} onChange={e => setBody(e.target.value)} />
               <p className="text-[11px] text-slate">Sent from Solvexo with your email as the reply-to address, and saved to this timeline.</p>
             </>
           )
@@ -262,7 +276,7 @@ function Composer({ leadId, leadName, businessName, hasEmail, act }: { leadId: s
             <Textarea aria-label="Details" rows={3} placeholder={mode === 'note' ? 'Write a note' : 'What was said? (optional — or just tap an outcome above to log it)'} value={body} onChange={e => setBody(e.target.value)} />
           </>
         )}
-        {(mode === 'email' ? hasEmail : true) && (
+        {(mode === 'email' ? hasEmail && emailLevel !== 'off' : true) && (
           <div className="flex justify-end"><Button size="sm" disabled={!canSubmit} loading={busy} onClick={submit}>{mode === 'email' ? 'Send email' : 'Save'}</Button></div>
         )}
       </div>

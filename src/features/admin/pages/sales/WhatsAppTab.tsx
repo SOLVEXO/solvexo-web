@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Check, CheckCheck, Clock, FileText, MessageCircle, Plus, RefreshCw, Send, Settings2, Sparkles, Trash2, TriangleAlert, X } from 'lucide-react';
-import { Badge, Button, CopyIconButton, EmptyState, Input, Modal, RadioButton, Textarea } from '@/components/comman/ui';
+import { Badge, Button, CopyIconButton, EmptyState, Input, Modal, RadioButton, Select, Textarea } from '@/components/comman/ui';
 import {
   apiWaConnect, apiWaConnection, apiWaConversation, apiWaConversations, apiWaDisconnect, apiWaDiscardDraft, apiWaRedraft, apiWaSaveTemplates, apiWaSend, apiWaSendTemplate,
-  type WaConnection, type WaTemplate, type WaConversation, type WaConversationRow, type WaMessage,
+  MESSAGE_REASONS, MESSAGE_REASON_LABELS, type MessageReason, type WaConnection, type WaTemplate, type WaConversation, type WaConversationRow, type WaMessage,
 } from '@/api/services/salesOps';
 import { StageBadge } from './parts';
 import { errMsg, relDay, useStableToast } from './sales.utils';
@@ -153,7 +153,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
         ))}
       </div>
 
-      {c.aiDraft && c.windowOpen && (
+      {c.aiDraft && c.windowOpen && c.canWriteText !== false && (
         <div className="mx-3 mt-2 rounded-lg border border-brand-orange/40 bg-brand-pale-orange/30 p-2.5">
           <p className="text-[11px] font-bold uppercase tracking-wide text-brand-deep-orange flex items-center gap-1"><Sparkles size={11} /> AI draft</p>
           <p dir="auto" className="text-[13px] text-charcoal whitespace-pre-line mt-1">{c.aiDraft.text}</p>
@@ -165,7 +165,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
         </div>
       )}
 
-      {c.windowOpen ? (
+      {c.windowOpen && c.canWriteText !== false ? (
         <form className="flex items-end gap-2 p-3 border-t border-bone mt-2" onSubmit={e => { e.preventDefault(); if (text.trim()) void run('send', () => apiWaSend(c._id, text.trim(), fromDraft), ''); }}>
           <Textarea aria-label="Reply" rows={2} dir="auto" placeholder="Write a reply…" value={text} maxLength={4000}
             onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (text.trim()) void run('send', () => apiWaSend(c._id, text.trim(), fromDraft), ''); } }} />
@@ -173,10 +173,12 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
         </form>
       ) : (
         <div className="p-3 border-t border-bone mt-2 text-[12.5px] text-charcoal flex flex-wrap items-center justify-between gap-2">
-          <p className="flex items-center gap-1.5"><Clock size={14} className="text-slate" /> More than 24 hours since they last wrote. WhatsApp only allows your approved template now.</p>
+          {c.windowOpen
+            ? <p>You can send approved templates only.</p>
+            : <p className="flex items-center gap-1.5"><Clock size={14} className="text-slate" /> More than 24 hours since they last wrote. WhatsApp only allows your approved template now.</p>}
           {(c.templates ?? []).length === 1 ? <Button size="sm" loading={busy === 'template'} onClick={() => void run('template', () => apiWaSendTemplate(c._id, c.templates[0].key), 'Template sent.')}>Send template “{c.templates[0].label}”</Button>
             : (c.templates ?? []).length > 1 ? <Button size="sm" onClick={() => setPicking(true)}>Choose a template</Button>
-            : <span className="text-slate">Ask a manager to add an approved template in WhatsApp → Templates.</span>}
+            : <span className="text-slate">No approved templates are available to you. Ask a manager.</span>}
         </div>
       )}
       {picking && <TemplatePicker templates={c.templates} name={(c.lead?.name ?? c.profileName ?? '').trim().split(/\s+/)[0] || 'there'} busy={busy === 'template'}
@@ -230,41 +232,44 @@ function ConnectionModal({ conn, onClose, onSaved }: { conn: WaConnection; onClo
 /** The approved Meta templates reps can pick from. Solvexo checks each one with Meta when saved. */
 function TemplatesModal({ templates, onClose, onSaved }: { templates: WaTemplate[]; onClose: () => void; onSaved: (c: WaConnection) => void }) {
   const toast = useStableToast();
-  const [rows, setRows] = useState(() => (templates.length ? templates : [{ label: '', name: '', lang: 'en', body: null }]).map(t => ({ label: t.label, name: t.name, lang: t.lang, body: t.body })));
+  const [rows, setRows] = useState(() => (templates.length ? templates : [{ label: '', name: '', lang: 'en', body: null, reason: 'follow_up' as MessageReason }]).map(t => ({ label: t.label, name: t.name, lang: t.lang, body: t.body, reason: (t.reason ?? 'follow_up') as MessageReason })));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const set = (i: number, patch: Partial<(typeof rows)[number]>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch, body: null } : r)));
   const save = async () => {
     setBusy(true); setError('');
     try {
-      const list = rows.filter(r => r.name.trim()).map(r => ({ label: r.label.trim(), name: r.name.trim(), lang: r.lang.trim() }));
+      const list = rows.filter(r => r.name.trim()).map(r => ({ label: r.label.trim(), name: r.name.trim(), lang: r.lang.trim(), reason: r.reason }));
       const res = await apiWaSaveTemplates(list);
       toast.success(list.length ? 'Templates saved.' : 'Templates removed.'); onSaved(res.data);
     } catch (e) { setError(errMsg(e, 'Could not save the templates.')); }
     setBusy(false);
   };
   return (
-    <Modal title="WhatsApp templates" onClose={onClose} width={680}
+    <Modal title="WhatsApp templates" onClose={onClose} width={780}
       footer={<div className="flex justify-end gap-2 w-full"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={save}>Save</Button></div>}>
       <div className="flex flex-col gap-3 text-[13px]">
         <p className="text-[12.5px] text-slate">After 24 hours without a message from the person, WhatsApp only allows an approved template. Create them in WhatsApp Manager → Message templates, then list them here. Solvexo checks each one with Meta and shows reps its text. A template can use {'{{1}}'} for the person’s first name, and nothing else.</p>
         {rows.length > 0 && (
-          <div aria-hidden className="grid grid-cols-[1fr_1fr_88px_auto] gap-2 px-2.5 -mb-1.5 text-[12px] font-medium text-charcoal">
-            <span>Shown to reps as</span><span>Template name in Meta</span><span>Language</span><span className="w-[13px]" />
+          <div aria-hidden className="grid grid-cols-[1fr_1fr_72px_140px_auto] gap-2 px-2.5 -mb-1.5 text-[12px] font-medium text-charcoal">
+            <span>Shown to reps as</span><span>Template name in Meta</span><span>Language</span><span>Reason</span><span className="w-[13px]" />
           </div>
         )}
         {rows.map((r, i) => (
           <div key={i} className="rounded-lg border border-bone p-2.5">
-            <div className="grid grid-cols-[1fr_1fr_88px_auto] items-center gap-2">
+            <div className="grid grid-cols-[1fr_1fr_72px_140px_auto] items-center gap-2">
               <Input aria-label={`Template ${i + 1} label`} placeholder="e.g. Follow-up (English)" value={r.label} onChange={e => set(i, { label: e.target.value })} />
               <Input aria-label={`Template ${i + 1} name`} placeholder="sales_follow_up" value={r.name} onChange={e => set(i, { name: e.target.value.trim() })} />
               <Input aria-label={`Template ${i + 1} language`} placeholder="en" value={r.lang} onChange={e => set(i, { lang: e.target.value.trim() })} />
+              <Select aria-label={`Template ${i + 1} reason`} value={r.reason} onChange={e => setRows(rows.map((x, j) => (j === i ? { ...x, reason: e.target.value as MessageReason } : x)))}>
+                {MESSAGE_REASONS.map(m => <option key={m} value={m}>{MESSAGE_REASON_LABELS[m]}</option>)}
+              </Select>
               <button aria-label={`Remove template ${i + 1}`} onClick={() => setRows(rows.filter((_, j) => j !== i))} className="self-center bg-transparent border-0 text-slate hover:text-error cursor-pointer"><Trash2 size={13} /></button>
             </div>
             {r.body && <p dir="auto" className="mt-1.5 text-[12px] text-slate whitespace-pre-line">{r.body}</p>}
           </div>
         ))}
-        {rows.length < 20 && <Button size="xs" variant="ghost" onClick={() => setRows([...rows, { label: '', name: '', lang: 'en', body: null }])}><Plus size={12} /> Add a template</Button>}
+        {rows.length < 20 && <Button size="xs" variant="ghost" onClick={() => setRows([...rows, { label: '', name: '', lang: 'en', body: null, reason: 'follow_up' }])}><Plus size={12} /> Add a template</Button>}
         <p className="text-[11.5px] text-slate">Language is the code Meta shows for that version: en, en_US, en_GB or ur. The first template is the one used when there is only one choice.</p>
         {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
       </div>
@@ -274,13 +279,27 @@ function TemplatesModal({ templates, onClose, onSaved }: { templates: WaTemplate
 
 /** Pick which approved template restarts this chat; each shows the text the person will receive. */
 function TemplatePicker({ templates, name, busy, onClose, onSend }: { templates: WaTemplate[]; name: string; busy: boolean; onClose: () => void; onSend: (key: string) => void }) {
-  const [key, setKey] = useState(templates[0]?.key ?? '');
+  const reasons = MESSAGE_REASONS.filter(r => templates.some(t => (t.reason ?? 'follow_up') === r));
+  const [reason, setReason] = useState<MessageReason>(reasons[0] ?? 'follow_up');
+  const shown = templates.filter(t => (t.reason ?? 'follow_up') === reason);
+  const [key, setKey] = useState(shown[0]?.key ?? '');
   const chosen = templates.find(t => t.key === key);
+  const pickReason = (r: MessageReason) => { setReason(r); setKey(templates.find(t => (t.reason ?? 'follow_up') === r)?.key ?? ''); };
   return (
     <Modal title="Send a template" onClose={onClose} width={560}
       footer={<div className="flex justify-end gap-2 w-full"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} disabled={!key} onClick={() => onSend(key)}><Send size={14} /> Send</Button></div>}>
+      {reasons.length > 1 && (
+        <div className="flex flex-wrap gap-1.5 mb-3" role="group" aria-label="Reason">
+          {reasons.map(r => (
+            <button key={r} type="button" aria-pressed={reason === r} onClick={() => pickReason(r)}
+              className={clsx('px-2.5 py-1 rounded-full text-[12px] border cursor-pointer', reason === r ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-charcoal border-bone hover:border-brand-orange/50')}>
+              {MESSAGE_REASON_LABELS[r]}
+            </button>
+          ))}
+        </div>
+      )}
       <RadioButton name="wa-template" layout="col" value={key} onChange={setKey}
-        options={templates.map(t => ({ value: t.key, label: `${t.label} · ${t.lang}` }))} />
+        options={shown.map(t => ({ value: t.key, label: `${t.label} · ${t.lang}` }))} />
       {/* The chosen template's text, as the person will get it ({{1}} = their first name). */}
       {chosen && (
         <div className="mt-3 rounded-lg bg-[#d9fdd3] px-3 py-2 text-[13px]">

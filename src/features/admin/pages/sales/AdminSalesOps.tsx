@@ -3,12 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { CalendarClock, Columns3, Download, FileUp, List, MailQuestion, Plus, Target, Trash2, UserRoundSearch } from 'lucide-react';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
-import { Button, EmptyState, Input, MetricCard, Modal, SearchInput, Select, TabBar, Textarea } from '@/components/comman/ui';
+import { Badge, Button, EmptyState, Input, MetricCard, Modal, SearchInput, Select, TabBar, Textarea } from '@/components/comman/ui';
 import { can } from '@/hooks/auth/useCan';
 import {
   CONSENT_LABELS, LEAD_SOURCES, LEAD_STAGES, SOURCE_LABELS, STAGE_LABELS, apiAskMarketingConsent, apiChangeStage, apiCreateLead, apiExportBrevoCsv, apiSyncStalled,
   apiDeleteTemplate, apiListLeads, apiListTasks, apiListTemplates, apiSalesOwners, apiSaveTemplate, apiUpdateTask, formatPKR,
   type ConsentStatus, type LeadList, type LeadQuery, type LeadSource, type LeadStage, type SalesLead, type SalesOwner, type SalesTask, type SalesTemplate,
+  MESSAGE_REASONS, MESSAGE_REASON_LABELS, reasonLabel, type MessageReason,
 } from '@/api/services/salesOps';
 import { ConsentBadge, LeadFormModal, LostReasonModal, StageBadge } from './parts';
 import { ImportLeadsModal } from './ImportLeadsModal';
@@ -430,7 +431,7 @@ function TemplatesTab({ isManager }: { isManager: boolean }) {
       {!rows ? <div className="h-32 rounded-xl bg-cream animate-pulse" /> : rows.map(t => (
         <div key={t._id} className="rounded-xl border border-bone bg-white p-4">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0"><p className="text-[13px] font-semibold text-charcoal">{t.name}</p><p className="text-[12px] text-slate">Subject: {t.subject}</p></div>
+            <div className="min-w-0"><p className="text-[13px] font-semibold text-charcoal flex items-center gap-2">{t.name}<Badge size="sm" color="gray">{reasonLabel(t.reason)}</Badge></p><p className="text-[12px] text-slate">Subject: {t.subject}</p></div>
             {isManager && (
               <div className="flex gap-1 shrink-0">
                 <Button size="xs" variant="ghost" onClick={() => setEditing(t)}>Edit</Button>
@@ -451,8 +452,8 @@ function TemplatesTab({ isManager }: { isManager: boolean }) {
   );
 }
 
-function TemplateModal({ template, onClose, onSave }: { template: SalesTemplate | null; onClose: () => void; onSave: (v: { name: string; subject: string; body: string }) => Promise<void> }) {
-  const [v, setV] = useState({ name: template?.name ?? '', subject: template?.subject ?? '', body: template?.body ?? '' });
+function TemplateModal({ template, onClose, onSave }: { template: SalesTemplate | null; onClose: () => void; onSave: (v: { name: string; subject: string; body: string; reason: MessageReason }) => Promise<void> }) {
+  const [v, setV] = useState({ name: template?.name ?? '', subject: template?.subject ?? '', body: template?.body ?? '', reason: (template?.reason ?? 'follow_up') as MessageReason });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const ok = v.name.trim() && v.subject.trim() && v.body.trim();
@@ -461,6 +462,9 @@ function TemplateModal({ template, onClose, onSave }: { template: SalesTemplate 
       footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button disabled={!ok} loading={busy} onClick={async () => { setBusy(true); setError(''); try { await onSave(v); } catch (e) { setError(errMsg(e, 'Could not save.')); setBusy(false); } }}>Save</Button></div>}>
       <div className="flex flex-col gap-3">
         <Input label="Name" value={v.name} onChange={e => setV({ ...v, name: e.target.value })} />
+        <Select label="Reason" value={v.reason} onChange={e => setV({ ...v, reason: e.target.value as MessageReason })}>
+          {MESSAGE_REASONS.map(r => <option key={r} value={r}>{MESSAGE_REASON_LABELS[r]}</option>)}
+        </Select>
         <Input label="Subject" value={v.subject} onChange={e => setV({ ...v, subject: e.target.value })} />
         <Textarea label="Message" rows={9} value={v.body} onChange={e => setV({ ...v, body: e.target.value })} />
         {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
