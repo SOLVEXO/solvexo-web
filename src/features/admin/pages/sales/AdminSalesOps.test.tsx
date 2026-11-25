@@ -118,6 +118,20 @@ describe('Sales lead page', () => {
     await waitFor(() => expect(api.apiSendLeadEmail).toHaveBeenCalledWith('l1', 'Your store, Sara Boutique', 'Hi Sara Malik, Bilal here.'));
   });
 
+  it('offers WhatsApp only for a real number, not for text like "Not Found" in the phone box', async () => {
+    api.apiSalesOwners.mockResolvedValue({ data: [] });
+    api.apiGetLead.mockResolvedValue(detail({ phone: 'Not Found' }));
+    renderAt('/admin/sales/leads/l1');
+    expect(await screen.findByText('No phone number (“Not Found”)')).toBeInTheDocument();
+    expect(screen.queryByText('Open WhatsApp')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Chat in Sales Ops/ })).not.toBeInTheDocument();
+    cleanup();
+    api.apiGetLead.mockResolvedValue(detail());
+    renderAt('/admin/sales/leads/l1');
+    expect(await screen.findByText('Open WhatsApp')).toHaveAttribute('href', 'https://wa.me/923001112223');
+    expect(screen.getByRole('button', { name: /Chat in Sales Ops/ })).toBeInTheDocument();
+  });
+
   it('adds a follow-up and moves stage from the stepper', async () => {
     api.apiSalesOwners.mockResolvedValue({ data: [] });
     api.apiGetLead.mockResolvedValue(detail());

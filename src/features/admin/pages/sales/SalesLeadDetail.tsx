@@ -63,7 +63,10 @@ export function SalesLeadDetail() {
     if (stage === 'lost') { setLosing(true); return; }
     void act(() => apiChangeStage(lead._id, stage), `Moved to ${STAGE_LABELS[stage]}.`, 'Could not change the stage.');
   };
-  const wa = lead.phone ? `https://wa.me/${lead.phone.replace(/\D/g, '').replace(/^0/, '92')}` : null;
+  // A real number has at least 7 digits (the server's rule); text like "Not Found" typed in the phone box is not one.
+  const phoneDigits = (lead.phone ?? '').replace(/\D/g, '');
+  const hasNumber = phoneDigits.length >= 7;
+  const wa = hasNumber ? `https://wa.me/${phoneDigits.replace(/^0/, '92')}` : null;
 
   return (
     <>
@@ -110,7 +113,8 @@ export function SalesLeadDetail() {
           <section className="rounded-xl border border-bone bg-white p-4 text-[13px]">
             <p className="text-[11px] font-bold uppercase tracking-wide text-slate mb-3">Contact</p>
             {lead.email && <a className="flex items-center gap-2 text-charcoal hover:text-brand-orange mb-2 break-all" href={`mailto:${lead.email}`}><Mail size={14} className="text-slate shrink-0" />{lead.email}</a>}
-            {lead.phone && <a className="flex items-center gap-2 text-charcoal hover:text-brand-orange mb-2" href={`tel:${lead.phone}`}><Phone size={14} className="text-slate shrink-0" />{lead.phone}</a>}
+            {lead.phone && hasNumber && <a className="flex items-center gap-2 text-charcoal hover:text-brand-orange mb-2" href={`tel:${lead.phone}`}><Phone size={14} className="text-slate shrink-0" />{lead.phone}</a>}
+            {lead.phone && !hasNumber && <p className="flex items-center gap-2 text-slate mb-2"><Phone size={14} className="shrink-0" />No phone number (“{lead.phone}”)</p>}
             {wa && <a className="flex items-center gap-2 text-charcoal hover:text-brand-orange" href={wa} target="_blank" rel="noreferrer"><MessageCircle size={14} className="text-slate shrink-0" />Open WhatsApp</a>}
             {wa && (
               <button className="flex items-center gap-2 mt-2 text-[12.5px] font-medium text-brand-orange bg-transparent border-0 p-0 cursor-pointer hover:underline"

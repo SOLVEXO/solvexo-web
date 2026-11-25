@@ -330,8 +330,11 @@ export const apiChatSend = (token: string, message: string) =>
 export interface WaConnection {
   connected: boolean; phoneNumberId: string | null; wabaId: string | null; displayNumber: string | null; verifiedName: string | null;
   tokenHint: string | null; templateName: string | null; templateLang: string; templateUsesName: boolean;
+  templates: WaTemplate[];
   connectedAt: string | null; lastEventAt: string | null; webhookUrl: string; aiDrafts: boolean;
 }
+/** An approved Meta template reps can pick to restart a chat after 24 hours. `key` is `name:lang`. */
+export interface WaTemplate { key: string; label: string; name: string; lang: string; usesName?: boolean; body: string | null }
 export interface WaConversationRow {
   _id: string; waId: string; name: string; businessName: string | null; leadId: string | null; stage: LeadStage | null;
   unread: number; lastMessageAt: string | null; lastMessageText: string | null; windowOpen: boolean; hasDraft: boolean;
@@ -341,7 +344,7 @@ export interface WaConversation {
   _id: string; waId: string; profileName: string | null;
   lead: { _id: string; name: string; businessName: string | null; stage: LeadStage; city: string | null } | null;
   windowOpen: boolean; windowClosesAt: string | null; aiDraft: { text: string; createdAt: string } | null;
-  template: { name: string; lang: string } | null; messages: WaMessage[];
+  template: { name: string; lang: string } | null; templates: WaTemplate[]; messages: WaMessage[];
 }
 
 export const apiWaConnection = () => client.get<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/connection`);
@@ -352,7 +355,9 @@ export const apiWaConversations = (params: { leadId?: string; unread?: boolean }
   client.get<never, ApiResponse<WaConversationRow[]>>(`${BASE}/whatsapp/conversations`, { params: { ...(params.leadId ? { leadId: params.leadId } : {}), ...(params.unread ? { unread: 'true' } : {}) } });
 export const apiWaConversation = (id: string) => client.get<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}`);
 export const apiWaSend = (id: string, text: string, fromAiDraft: boolean) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/send`, { text, fromAiDraft });
-export const apiWaSendTemplate = (id: string) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/template`);
+export const apiWaSendTemplate = (id: string, key?: string) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/template`, key ? { key } : {});
+export const apiWaSaveTemplates = (templates: { label: string; name: string; lang: string }[]) =>
+  client.put<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/templates`, { templates });
 export const apiWaRedraft = (id: string) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/draft`);
 export const apiWaDiscardDraft = (id: string) => client.delete<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/draft`);
 export const apiWaOpenForLead = (leadId: string) => client.post<never, ApiResponse<{ conversationId: string }>>(`${BASE}/leads/${leadId}/whatsapp`);
