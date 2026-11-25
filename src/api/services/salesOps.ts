@@ -358,7 +358,17 @@ export interface WaTemplate { key: string; label: string; name: string; lang: st
 export interface WaConversationRow {
   _id: string; waId: string; name: string; businessName: string | null; leadId: string | null; stage: LeadStage | null;
   unread: number; lastMessageAt: string | null; lastMessageText: string | null; windowOpen: boolean; hasDraft: boolean;
+  city?: string | null; ownerId?: string | null; ownerName?: string | null;
+  /** Who wrote last, and (for our own last message) how far it got: sent · delivered · read · failed. */
+  lastDirection?: 'in' | 'out' | null; lastStatus?: string | null;
+  /** When the 24-hour reply window closes (null once closed). */
+  windowClosesAt?: string | null; done?: boolean; snoozedUntil?: string | null;
 }
+/** Inbox views: all · needs a reply · unread · closing within 4 hours · past 24 hours (template only) · marked done. */
+export const WA_VIEWS = ['all', 'needs_reply', 'unread', 'closing', 'expired', 'done'] as const;
+export type WaView = (typeof WA_VIEWS)[number];
+export interface WaCounts { all: number; needsReply: number; unread: number; unreadMessages: number; closing: number; expired: number; done: number }
+export interface WaQuickReply { id: string; title: string; text: string }
 export interface WaMessage { _id: string; direction: 'in' | 'out'; type: string; text: string; status: string; error: string | null; at: string; fromAiDraft: boolean }
 export interface WaConversation {
   _id: string; waId: string; profileName: string | null;
@@ -373,8 +383,29 @@ export const apiWaConnection = () => client.get<never, ApiResponse<WaConnection>
 export const apiWaConnect = (body: { phoneNumberId: string; accessToken?: string; templateName?: string | null; templateLang?: string; templateUsesName?: boolean; wabaId?: string | null }) =>
   client.put<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/connection`, body);
 export const apiWaDisconnect = () => client.delete<never, ApiResponse<WaConnection>>(`${BASE}/whatsapp/connection`);
-export const apiWaConversations = (params: { leadId?: string; unread?: boolean } = {}) =>
-  client.get<never, ApiResponse<WaConversationRow[]>>(`${BASE}/whatsapp/conversations`, { params: { ...(params.leadId ? { leadId: params.leadId } : {}), ...(params.unread ? { unread: 'true' } : {}) } });
+/** The inbox list; `counts` covers every chat this person can see (before the view and search are applied). */
+export const apiWaConversations = (params: { leadId?: string; unread?: boolean; view?: WaView; q?: string; ownerId?: string } = {}) =>
+  client.get<never, ApiResponse<WaConversationRow[]> & { counts: WaCounts }>(`${BASE}/whatsapp/conversations`, {
+    params: {
+      ...(params.leadId ? { leadId: params.leadId } : {}), ...(params.unread ? { unread: 'true' } : {}),
+      ...(params.view && params.view !== 'all' ? { view: params.view } : {}), ...(params.q?.trim() ? { q: params.q.trim() } : {}),
+      ...(params.ownerId ? { ownerId: params.ownerId } : {}),
+    },
+  });
+/** Mark a chat done (or reopen it), or snooze it until a time (null wakes it). */
+export const apiWaSetStatus = (id: string, body: { done?: boolean; snoozeUntil?: string | null }) =>
+  client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/status`, body);
+/** Managers: hand the chat (its lead) to another rep, or to nobody. */
+export const apiWaAssign = (id: string, adminId: string | null) =>
+  client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/assign`, { adminId });
+/** Start a chat with a lead or a new number by sending an approved template. */
+export const apiWaStart = (body: { leadId?: string; phone?: string; name?: string; templateKey: string }) =>
+  client.post<never, ApiResponse<{ conversationId: string }>>(`${BASE}/whatsapp/start`, body);
+/** The approved templates the signed-in person may send (any sales user). */
+export const apiWaMyTemplates = () => client.get<never, ApiResponse<WaTemplate[]>>(`${BASE}/whatsapp/my-templates`);
+export const apiWaQuickReplies = () => client.get<never, ApiResponse<WaQuickReply[]>>(`${BASE}/whatsapp/quick-replies`);
+export const apiWaSaveQuickReplies = (replies: { id?: string; title: string; text: string }[]) =>
+  client.put<never, ApiResponse<WaQuickReply[]>>(`${BASE}/whatsapp/quick-replies`, { replies });
 export const apiWaConversation = (id: string) => client.get<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}`);
 export const apiWaSend = (id: string, text: string, fromAiDraft: boolean) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/send`, { text, fromAiDraft });
 export const apiWaSendTemplate = (id: string, key?: string) => client.post<never, ApiResponse<WaConversation>>(`${BASE}/whatsapp/conversations/${id}/template`, key ? { key } : {});

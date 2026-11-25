@@ -1,39 +1,92 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Check, CheckCheck, Clock, FileText, MessageCircle, Plus, RefreshCw, Send, Settings2, Sparkles, Trash2, TriangleAlert, X } from 'lucide-react';
-import { Badge, Button, CopyIconButton, EmptyState, Input, Modal, RadioButton, Select, Textarea } from '@/components/comman/ui';
+import { CircleCheck, CircleX, FileText, MessageCircle, MessageSquarePlus, MessageSquareText, Settings2, Sparkles } from 'lucide-react';
+import { Avatar, Badge, Button, EmptyState, MetricCard, Modal, SearchInput, Select, TabBar, Toggle } from '@/components/comman/ui';
 import {
-  apiWaConnect, apiWaConnection, apiWaConversation, apiWaConversations, apiWaDisconnect, apiWaDiscardDraft, apiWaRedraft, apiWaSaveTemplates, apiWaSend, apiWaSendTemplate,
-  MESSAGE_REASONS, MESSAGE_REASON_LABELS, type MessageReason, type WaConnection, type WaTemplate, type WaConversation, type WaConversationRow, type WaMessage,
+  apiMyMessaging, apiSalesOwners, apiWaAssign, apiWaConnection, apiWaConversations, apiWaMyTemplates, apiWaQuickReplies,
+  type MessagingLevel, type SalesOwner, type WaConnection, type WaConversation, type WaConversationRow, type WaCounts,
+  type WaQuickReply, type WaTemplate, type WaView,
 } from '@/api/services/salesOps';
 import { StageBadge } from './parts';
-import { errMsg, relDay, useStableToast } from './sales.utils';
+import { errMsg, useStableToast } from './sales.utils';
+import { isClosing, playChime, readPref, rowTime, shortLeft, useNow, writePref } from './whatsapp.utils';
+import { StatusTick, Thread } from './WhatsAppThread';
+import { LeadPanel } from './WhatsAppLeadPanel';
+import { ConnectionModal, NewChatModal, QuickRepliesModal, TemplatesModal } from './WhatsAppModals';
 
-const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-
-function StatusTick({ m }: { m: WaMessage }) {
-  if (m.direction === 'in') return null;
-  if (m.status === 'failed') return <span className="text-error" title={m.error ?? 'Not delivered'}><TriangleAlert size={12} /></span>;
-  if (m.status === 'read') return <CheckCheck size={13} className="text-info" aria-label="Read" />;
-  if (m.status === 'delivered') return <CheckCheck size={13} className="text-slate" aria-label="Delivered" />;
-  return <Check size={13} className="text-slate" aria-label="Sent" />;
-}
+const ZERO: WaCounts = { all: 0, needsReply: 0, unread: 0, unreadMessages: 0, closing: 0, expired: 0, done: 0 };
+const VIEWS: { id: WaView; label: string; count: keyof WaCounts; empty: string }[] = [
+  { id: 'all', label: 'All', count: 'all', empty: 'No chats yet.' },
+  { id: 'needs_reply', label: 'Needs reply', count: 'needsReply', empty: 'Nothing is waiting for a reply.' },
+  { id: 'unread', label: 'Unread', count: 'unread', empty: 'No unread messages.' },
+  { id: 'closing', label: 'Closing soon', count: 'closing', empty: 'No chat closes in the next 4 hours.' },
+  { id: 'expired', label: 'Template only', count: 'expired', empty: 'No chat is past its 24 hours.' },
+  { id: 'done', label: 'Done', count: 'done', empty: 'Nothing is marked done yet.' },
+];
+const PANEL_PREF = 'sales.whatsapp.leadPanel';
+const MUTE_PREF = 'sales.whatsapp.muted';
 
 /** Super Admin → Sales Ops → WhatsApp: Solvexo's own number. The AI drafts, a person sends. */
-export function WhatsAppTab({ isManager }: { isManager: boolean }) {
+export function WhatsAppTab({ isManager, onUnread }: { isManager: boolean; onUnread?: (messages: number) => void }) {
   const toast = useStableToast();
+  const now = useNow();
   const [params, setParams] = useSearchParams();
   const [conn, setConn] = useState<WaConnection | null>(null);
   const [rows, setRows] = useState<WaConversationRow[] | null>(null);
-  const [onlyUnread, setOnlyUnread] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [counts, setCounts] = useState<WaCounts>(ZERO);
+  const [view, setView] = useState<WaView>('all');
+  const [q, setQ] = useState('');
+  const [search, setSearch] = useState('');
+  const [ownerId, setOwnerId] = useState('');
+  const [owners, setOwners] = useState<SalesOwner[]>([]);
+  const [quickReplies, setQuickReplies] = useState<WaQuickReply[]>([]);
+  const [waLevel, setWaLevel] = useState<MessagingLevel>('full');
+  const [repTemplates, setRepTemplates] = useState<WaTemplate[]>([]);
+  const [openLead, setOpenLead] = useState<{ chat: string; leadId: string | null } | null>(null);
+  const [leadVersion, setLeadVersion] = useState(0);
+  const [panelOpen, setPanelOpen] = useState(() => readPref(PANEL_PREF) !== 'closed');
+  const [leadSheet, setLeadSheet] = useState(false);
+  const [muted, setMuted] = useState(() => readPref(MUTE_PREF) === '1');
+  const [modal, setModal] = useState<'settings' | 'templates' | 'quick' | 'new' | null>(null);
   const selected = params.get('c');
 
-  const loadList = useCallback(() => apiWaConversations({ unread: onlyUnread }).then(r => setRows(r.data)).catch(e => { setRows([]); toast.error(errMsg(e, 'Could not load WhatsApp chats.')); }), [onlyUnread, toast]);
-  useEffect(() => { void loadList(); const t = setInterval(() => void loadList(), 20_000); return () => clearInterval(t); }, [loadList]);
-  useEffect(() => { if (isManager) apiWaConnection().then(r => setConn(r.data)).catch(() => undefined); }, [isManager]);
+  // Typing in the search box: ask the server once the person pauses.
+  useEffect(() => { const t = setTimeout(() => setSearch(q.trim()), 300); return () => clearTimeout(t); }, [q]);
+
+  // Alerts: a short chime when new messages arrive — only after the person has used the page (browsers block sound before that).
+  const interacted = useRef(false);
+  const lastUnread = useRef<number | null>(null);
+  const mutedRef = useRef(muted);
+  const unreadRef = useRef(onUnread);
+  useEffect(() => { mutedRef.current = muted; unreadRef.current = onUnread; });
+  useEffect(() => {
+    const mark = () => { interacted.current = true; };
+    window.addEventListener('pointerdown', mark);
+    window.addEventListener('keydown', mark);
+    return () => { window.removeEventListener('pointerdown', mark); window.removeEventListener('keydown', mark); };
+  }, []);
+
+  const loadList = useCallback(() => apiWaConversations({ view, q: search, ownerId: ownerId || undefined }).then(r => {
+    setRows(r.data);
+    const next = r.counts ?? ZERO;
+    setCounts(next);
+    const before = lastUnread.current;
+    if (before !== null && next.unreadMessages > before && interacted.current && !mutedRef.current) playChime();
+    lastUnread.current = next.unreadMessages;
+    unreadRef.current?.(next.unreadMessages);
+  }).catch(e => { setRows(r => r ?? []); toast.error(errMsg(e, 'Could not load WhatsApp chats.')); }), [view, search, ownerId, toast]);
+  useEffect(() => { void loadList(); const t = setInterval(() => void loadList(), 10_000); return () => clearInterval(t); }, [loadList]);
+
+  useEffect(() => {
+    apiWaQuickReplies().then(r => setQuickReplies(r.data)).catch(() => undefined);
+    apiMyMessaging().then(r => setWaLevel(r.data.whatsapp)).catch(() => undefined);
+    // What this person may start a chat with (a rep cannot read the connection's full list).
+    apiWaMyTemplates().then(r => setRepTemplates(r.data)).catch(() => undefined);
+    if (!isManager) return;
+    apiWaConnection().then(r => setConn(r.data)).catch(() => undefined);
+    apiSalesOwners().then(r => setOwners(r.data)).catch(() => setOwners([]));
+  }, [isManager]);
 
   // Opened from a notification or a lead page: ?lead=<leadId> picks that lead's chat.
   const leadParam = params.get('lead');
@@ -47,266 +100,185 @@ export function WhatsAppTab({ isManager }: { isManager: boolean }) {
   }, [leadParam, params, setParams]);
 
   const select = (id: string | null) => { const next = new URLSearchParams(params); if (id) next.set('c', id); else next.delete('c'); setParams(next, { replace: true }); };
+  const row = rows?.find(r => r._id === selected);
+  const leadId = openLead?.chat === selected ? openLead.leadId : row?.leadId ?? null;
+  const showPanel = !!selected && !!leadId && panelOpen;
+  const togglePanel = () => { setPanelOpen(o => { writePref(PANEL_PREF, o ? 'closed' : 'open'); return !o; }); };
+  const onLoaded = useCallback((c: WaConversation) => {
+    setOpenLead({ chat: c._id, leadId: c.lead?._id ?? null });
+  }, []);
+  const assign = async (adminId: string | null) => {
+    if (!selected) return false;
+    try {
+      await apiWaAssign(selected, adminId);
+      toast.success(adminId ? `Chat given to ${owners.find(o => o._id === adminId)?.name ?? 'them'}.` : 'Chat unassigned.');
+      setLeadVersion(v => v + 1); void loadList(); return true;
+    } catch (e) { toast.error(errMsg(e, 'Could not assign the chat.')); return false; }
+  };
+  const newChatTemplates = repTemplates.length ? repTemplates : isManager ? conn?.templates ?? [] : [];
+  const noChats = !!rows && counts.all === 0 && view === 'all' && !search && !ownerId;
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Header strip: the number's state, today's counters, and actions. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[12.5px]">
+          {isManager && conn && conn.connected && (
+            <p className={clsx('flex items-center gap-1.5', conn.lastEventAt ? 'text-success' : 'text-warning')}>
+              {conn.lastEventAt ? <CircleCheck size={14} /> : <CircleX size={14} />}
+              Connected · {conn.verifiedName ?? 'Solvexo'} · {conn.displayNumber}{!conn.lastEventAt && <span> · no messages from Meta yet</span>}
+            </p>
+          )}
+          <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Today">
+            {([['needs_reply', 'Needs reply', counts.needsReply], ['unread', 'Unread', counts.unread], ['closing', 'Closing soon', counts.closing]] as const).map(([v, label, n]) => (
+              <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}
+                className={clsx('px-2.5 py-1 rounded-full text-[12px] border cursor-pointer', view === v ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-charcoal border-bone hover:border-brand-orange/50')}>
+                {label} <strong>{n}</strong>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="flex items-center gap-1.5 text-[12px] text-slate mr-1"><Toggle size="sm" ariaLabel="Sound for new messages" checked={!muted} onChange={on => { setMuted(!on); writePref(MUTE_PREF, on ? '0' : '1'); }} /> Sound</span>
+          {waLevel !== 'off' && <Button size="sm" onClick={() => setModal('new')}><MessageSquarePlus size={14} /> New chat</Button>}
+          {isManager && conn && <Button size="sm" variant="ghost" onClick={() => setModal('templates')}><FileText size={14} /> Templates</Button>}
+          {isManager && <Button size="sm" variant="ghost" aria-label="Edit quick replies" onClick={() => setModal('quick')}><MessageSquareText size={14} /> Quick replies</Button>}
+          {isManager && <Button size="sm" variant="ghost" onClick={() => setModal('settings')}><Settings2 size={14} /> Settings</Button>}
+        </div>
+      </div>
       {isManager && conn && !conn.connected && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/40 bg-warning-bg/50 p-3 text-[12.5px]">
           <p><strong>Solvexo’s WhatsApp number isn’t connected yet.</strong> Connect it to receive messages here and reply with AI drafts.</p>
-          <Button size="sm" onClick={() => setSettingsOpen(true)}>Connect WhatsApp</Button>
+          <Button size="sm" onClick={() => setModal('settings')}>Connect WhatsApp</Button>
         </div>
       )}
-      <div className="flex items-center justify-between gap-2">
-        <label className="flex items-center gap-2 text-[12.5px] text-slate cursor-pointer"><input type="checkbox" className="accent-brand-orange" checked={onlyUnread} onChange={e => setOnlyUnread(e.target.checked)} /> Unread only</label>
-        <div className="flex items-center gap-2">
-          {conn?.connected && <span className="text-[12px] text-slate">{conn.verifiedName ?? 'Solvexo'} · {conn.displayNumber}</span>}
-          {isManager && conn?.connected && <Button size="sm" variant="ghost" onClick={() => setTemplatesOpen(true)}><FileText size={14} /> Templates</Button>}
-          {isManager && <Button size="sm" variant="ghost" onClick={() => setSettingsOpen(true)}><Settings2 size={14} /> Settings</Button>}
-        </div>
-      </div>
 
-      <div className="grid md:grid-cols-[320px_1fr] rounded-xl border border-bone bg-white overflow-hidden min-h-[520px]">
-        <aside className={clsx('border-r border-bone flex flex-col', selected && 'hidden md:flex')}>
+      <div className={clsx('grid rounded-xl border border-bone bg-white overflow-hidden min-h-[560px]', showPanel ? 'md:grid-cols-[320px_1fr] lg:grid-cols-[320px_1fr_300px]' : 'md:grid-cols-[320px_1fr]')}>
+        {/* A — the chats */}
+        <aside className={clsx('border-r border-bone flex flex-col min-w-0', selected && 'hidden md:flex')}>
+          <div className="p-3 flex flex-col gap-2 border-b border-bone">
+            <SearchInput aria-label="Search chats" placeholder="Name, business or phone" value={q} onChange={setQ} />
+            {isManager && (
+              <Select aria-label="Whose chats" value={ownerId} onChange={e => setOwnerId(e.target.value)}>
+                <option value="">Everyone</option>{owners.map(o => <option key={o._id} value={o._id}>{o.name}</option>)}
+              </Select>
+            )}
+          </div>
+          <div role="group" aria-label="Chat views">
+            <TabBar dense active={view} onChange={id => setView(id as WaView)} tabs={VIEWS.map(v => ({ id: v.id, label: v.label, count: counts[v.count] }))} />
+          </div>
           {!rows ? <div className="m-3 h-24 rounded-lg bg-cream animate-pulse" /> : rows.length === 0 ? (
-            <div className="p-6"><EmptyState icon={<MessageCircle size={26} />} title="No chats yet" description="When someone messages Solvexo’s WhatsApp number, the chat appears here with a reply drafted by the AI assistant." /></div>
+            <p className="p-6 text-center text-[12.5px] text-slate">{search ? `No chats match “${search}”.` : VIEWS.find(v => v.id === view)?.empty}</p>
           ) : (
             <ul className="overflow-y-auto divide-y divide-bone" aria-label="WhatsApp chats">
-              {rows.map(c => (
-                <li key={c._id}>
-                  <button onClick={() => select(c._id)} aria-current={selected === c._id}
-                    className={clsx('w-full text-left px-3 py-2.5 flex flex-col gap-0.5 border-0 cursor-pointer', selected === c._id ? 'bg-brand-pale-orange/50' : 'bg-white hover:bg-cream')}>
-                    <span className="flex items-center gap-2">
-                      <span className={clsx('flex-1 min-w-0 truncate text-[13px]', c.unread ? 'font-bold text-carbon' : 'font-medium text-charcoal')}>{c.name}</span>
-                      <span className="text-[11px] text-slate shrink-0">{c.lastMessageAt ? relDay(c.lastMessageAt) : ''}</span>
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <span dir="auto" className="flex-1 min-w-0 truncate text-[12px] text-slate">{c.lastMessageText ?? ''}</span>
-                      {c.hasDraft && <Sparkles size={12} className="text-brand-orange shrink-0" aria-label="AI draft ready" />}
-                      {c.unread > 0 && <span className="min-w-5 h-5 px-1.5 rounded-full bg-success text-white text-[11px] font-bold flex items-center justify-center">{c.unread}</span>}
-                    </span>
-                  </button>
-                </li>
-              ))}
+              {rows.map(c => <ChatRow key={c._id} c={c} now={now} active={selected === c._id} showOwner={isManager} onOpen={() => select(c._id)} />)}
             </ul>
           )}
         </aside>
+
+        {/* B — the conversation */}
         <section className={clsx('flex flex-col min-w-0', !selected && 'hidden md:flex')}>
-          {selected ? <Thread key={selected} id={selected} onBack={() => select(null)} onChanged={() => void loadList()} /> : (
-            <div className="flex-1 flex items-center justify-center text-[13px] text-slate p-6 text-center">Choose a chat. The AI assistant drafts a reply to each new message; you read it, edit it if needed, and send.</div>
-          )}
+          {selected ? (
+            <Thread key={selected} id={selected} row={row} isManager={isManager} owners={owners} quickReplies={quickReplies} leadPanelOpen={panelOpen}
+              onBack={() => select(null)} onChanged={() => void loadList()} onAssign={assign} onToggleLeadPanel={togglePanel} onShowLead={() => setLeadSheet(true)} onLoaded={onLoaded} />
+          ) : noChats ? (
+            isManager && conn ? <SetupChecklist conn={conn} /> : (
+              <EmptyState icon={<MessageCircle size={26} />} title="No chats yet" description="When someone messages Solvexo’s WhatsApp number, the chat appears here with a reply drafted by the AI assistant." />
+            )
+          ) : <Today counts={counts} />}
         </section>
+
+        {/* C — the lead */}
+        {showPanel && leadId && (
+          <aside className="hidden lg:flex flex-col border-l border-bone overflow-y-auto min-w-0" aria-label="Lead details">
+            <LeadPanel key={leadId} leadId={leadId} isManager={isManager} owners={owners} version={leadVersion} onAssign={assign} onChanged={() => void loadList()} />
+          </aside>
+        )}
       </div>
 
-      {templatesOpen && conn && <TemplatesModal templates={conn.templates ?? []} onClose={() => setTemplatesOpen(false)} onSaved={c => { setConn(c); setTemplatesOpen(false); }} />}
-      {settingsOpen && conn && <ConnectionModal conn={conn} onClose={() => setSettingsOpen(false)} onSaved={c => { setConn(c); setSettingsOpen(false); }} />}
+      {leadSheet && leadId && (
+        <Modal title="Lead" onClose={() => setLeadSheet(false)} width={420}>
+          <div className="-mx-5 -my-4"><LeadPanel leadId={leadId} isManager={isManager} owners={owners} version={leadVersion} onAssign={assign} onChanged={() => void loadList()} /></div>
+        </Modal>
+      )}
+      {modal === 'templates' && conn && <TemplatesModal templates={conn.templates ?? []} onClose={() => setModal(null)} onSaved={c => { setConn(c); setModal(null); }} />}
+      {modal === 'settings' && conn && <ConnectionModal conn={conn} onClose={() => setModal(null)} onSaved={c => { setConn(c); setModal(null); }} />}
+      {modal === 'quick' && <QuickRepliesModal replies={quickReplies} onClose={() => setModal(null)} onSaved={r => { setQuickReplies(r); setModal(null); }} />}
+      {modal === 'new' && <NewChatModal templates={newChatTemplates} onClose={() => setModal(null)} onStarted={id => { setModal(null); toast.success('Template sent. The chat is open.'); select(id); void loadList(); }} />}
     </div>
   );
 }
 
-function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onChanged: () => void }) {
-  const toast = useStableToast();
-  const [c, setC] = useState<WaConversation | null>(null);
-  const [text, setText] = useState('');
-  const [fromDraft, setFromDraft] = useState(false);
-  const [busy, setBusy] = useState<'send' | 'template' | 'redraft' | null>(null);
-  const [picking, setPicking] = useState(false);
-  const listRef = useRef<HTMLDivElement>(null);
-
-  // The parent re-creates onChanged on every render; keep the latest in a ref so loading doesn't re-run because of it.
-  const changedRef = useRef(onChanged);
-  useEffect(() => { changedRef.current = onChanged; });
-  const load = useCallback(() => apiWaConversation(id).then(r => { setC(r.data); changedRef.current(); }).catch(e => toast.error(errMsg(e, 'Could not open the chat.'))), [id, toast]);
-  useEffect(() => { void load(); const t = setInterval(() => void apiWaConversation(id).then(r => setC(r.data)).catch(() => undefined), 15_000); return () => clearInterval(t); }, [id, load]);
-  useEffect(() => { const el = listRef.current; if (el) el.scrollTop = el.scrollHeight; }, [c?.messages.length]);
-
-  if (!c) return <div className="m-4 h-40 rounded-lg bg-cream animate-pulse" />;
-  const run = async (kind: 'send' | 'template' | 'redraft', fn: () => Promise<{ data: WaConversation }>, ok: string) => {
-    setBusy(kind);
-    let done = false;
-    try { setC((await fn()).data); changedRef.current(); if (ok) toast.success(ok); if (kind === 'send') { setText(''); setFromDraft(false); } done = true; }
-    catch (e) { toast.error(errMsg(e, 'Could not send.')); }
-    setBusy(null);
-    return done;
-  };
-
+function ChatRow({ c, now, active, showOwner, onOpen }: { c: WaConversationRow; now: number; active: boolean; showOwner: boolean; onOpen: () => void }) {
+  const snoozed = !!c.snoozedUntil && new Date(c.snoozedUntil).getTime() > now;
+  const open = c.windowOpen && (!c.windowClosesAt || new Date(c.windowClosesAt).getTime() > now);
   return (
-    <>
-      <header className="flex items-center gap-3 px-4 py-2.5 border-b border-bone">
-        <button onClick={onBack} className="md:hidden bg-transparent border-0 text-slate cursor-pointer" aria-label="Back to chats"><X size={18} /></button>
-        <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-semibold text-charcoal truncate">{c.lead?.name ?? c.profileName ?? `+${c.waId}`}</p>
-          <p className="text-[11.5px] text-slate">+{c.waId}{c.lead?.businessName ? ` · ${c.lead.businessName}` : ''}{c.lead?.city ? ` · ${c.lead.city}` : ''}</p>
-        </div>
-        {c.lead && <><StageBadge stage={c.lead.stage} /><Link to={`/admin/sales/leads/${c.lead._id}`} className="text-[12px] font-medium text-brand-orange hover:underline">Open lead</Link></>}
-      </header>
+    <li>
+      <button onClick={onOpen} aria-current={active ? 'true' : undefined}
+        className={clsx('w-full text-left px-3 py-2.5 flex gap-2.5 border-0 cursor-pointer', active ? 'bg-brand-pale-orange/50' : 'bg-white hover:bg-cream')}>
+        <Avatar name={c.name} size={36} />
+        <span className="flex-1 min-w-0 flex flex-col gap-0.5">
+          <span className="flex items-center gap-2">
+            <span className={clsx('flex-1 min-w-0 truncate text-[13px]', c.unread ? 'font-bold text-carbon' : 'font-medium text-charcoal')}>{c.name}</span>
+            <span className="text-[11px] text-slate shrink-0">{rowTime(c.lastMessageAt, new Date(now))}</span>
+          </span>
+          {(c.businessName || c.city) && <span className="truncate text-[11.5px] text-slate">{[c.businessName, c.city].filter(Boolean).join(' · ')}</span>}
+          <span className="flex items-center gap-1.5">
+            {c.lastDirection === 'out' && <StatusTick status={c.lastStatus} />}
+            <span dir="auto" className={clsx('flex-1 min-w-0 truncate text-[12px]', c.unread ? 'text-charcoal' : 'text-slate')}>{c.lastDirection === 'out' ? 'You: ' : ''}{c.lastMessageText ?? ''}</span>
+            {c.unread > 0 && <span className="min-w-5 h-5 px-1.5 rounded-full bg-success text-white text-[11px] font-bold flex items-center justify-center" aria-label={`${c.unread} unread`}>{c.unread}</span>}
+          </span>
+          <span className="flex flex-wrap items-center gap-1 mt-0.5">
+            {c.stage && <StageBadge stage={c.stage} />}
+            {open && c.windowClosesAt ? <Badge size="sm" color={isClosing(c.windowClosesAt, now) ? 'yellow' : 'green'}>{shortLeft(c.windowClosesAt, now)}</Badge>
+              : !open && <Badge size="sm" color="gray">Template only</Badge>}
+            {c.hasDraft && <Sparkles size={12} className="text-brand-orange shrink-0" aria-label="AI draft ready" />}
+            {snoozed && <Badge size="sm" color="blue">Snoozed</Badge>}
+            {showOwner && c.ownerName && <span className="text-[11px] text-slate truncate">{c.ownerName}</span>}
+          </span>
+        </span>
+      </button>
+    </li>
+  );
+}
 
-      <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2 bg-[#efeae2]/60" aria-live="polite">
-        {c.messages.map(m => (
-          <div key={m._id} className={clsx('max-w-[78%] rounded-lg px-3 py-1.5 text-[13px] shadow-sm', m.direction === 'in' ? 'self-start bg-white' : 'self-end bg-[#d9fdd3]')}>
-            <p dir="auto" className="whitespace-pre-line break-words text-charcoal">{m.text}</p>
-            <p className="flex items-center justify-end gap-1 text-[10.5px] text-slate mt-0.5">
-              {m.fromAiDraft && <span title="Sent from the AI draft"><Sparkles size={10} className="text-brand-orange" /></span>}
-              {time(m.at)} <StatusTick m={m} />
-            </p>
-            {m.status === 'failed' && m.error && <p className="text-[11px] text-error">{m.error}</p>}
-          </div>
+/** No chat open: today's numbers and three tips. */
+function Today({ counts }: { counts: WaCounts }) {
+  return (
+    <div className="flex-1 flex flex-col justify-center gap-5 p-6">
+      <div className="flex flex-wrap gap-3">
+        <MetricCard label="Need a reply" value={counts.needsReply} />
+        <MetricCard label="Unread" value={counts.unread} />
+        <MetricCard label="Closing soon" value={counts.closing} />
+      </div>
+      <ul className="flex flex-col gap-2 text-[12.5px] text-slate list-disc ml-5">
+        <li>Reply inside 24 hours of their last message; after that WhatsApp only allows an approved template.</li>
+        <li>The AI drafts a reply to each new message. Read it, edit it if needed, then send.</li>
+        <li>Mark a chat done when nothing is left to say, or snooze it to come back later.</li>
+      </ul>
+    </div>
+  );
+}
+
+/** No chats at all yet: what still needs setting up. */
+function SetupChecklist({ conn }: { conn: WaConnection }) {
+  const items: [boolean, string][] = [
+    [conn.connected, 'Solvexo’s WhatsApp number is connected'],
+    [(conn.templates ?? []).length > 0, 'Approved templates are added'],
+    [!!conn.lastEventAt, 'Publish the Meta app so real messages arrive'],
+  ];
+  return (
+    <div className="flex-1 flex flex-col justify-center gap-3 p-6 max-w-[440px] mx-auto">
+      <p className="text-[15px] font-semibold text-carbon">Get WhatsApp ready</p>
+      <ul className="flex flex-col gap-2 text-[13px]" aria-label="Setup">
+        {items.map(([ok, label]) => (
+          <li key={label} className="flex items-center gap-2">
+            {ok ? <CircleCheck size={16} className="text-success shrink-0" aria-label="Done" /> : <CircleX size={16} className="text-slate shrink-0" aria-label="Not yet" />}
+            <span className={ok ? 'text-charcoal' : 'text-slate'}>{label}</span>
+          </li>
         ))}
-      </div>
-
-      {c.aiDraft && c.windowOpen && c.canWriteText !== false && (
-        <div className="mx-3 mt-2 rounded-lg border border-brand-orange/40 bg-brand-pale-orange/30 p-2.5">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-brand-deep-orange flex items-center gap-1"><Sparkles size={11} /> AI draft</p>
-          <p dir="auto" className="text-[13px] text-charcoal whitespace-pre-line mt-1">{c.aiDraft.text}</p>
-          <div className="flex flex-wrap gap-2 mt-2">
-            <Button size="xs" onClick={() => { setText(c.aiDraft!.text); setFromDraft(true); }}>Use draft</Button>
-            <Button size="xs" variant="ghost" loading={busy === 'redraft'} onClick={() => void run('redraft', () => apiWaRedraft(c._id), '')}><RefreshCw size={12} /> Rewrite</Button>
-            <Button size="xs" variant="ghost" onClick={() => void run('redraft', () => apiWaDiscardDraft(c._id), '')}>Discard</Button>
-          </div>
-        </div>
-      )}
-
-      {c.windowOpen && c.canWriteText !== false ? (
-        <form className="flex items-end gap-2 p-3 border-t border-bone mt-2" onSubmit={e => { e.preventDefault(); if (text.trim()) void run('send', () => apiWaSend(c._id, text.trim(), fromDraft), ''); }}>
-          <Textarea aria-label="Reply" rows={2} dir="auto" placeholder="Write a reply…" value={text} maxLength={4000}
-            onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (text.trim()) void run('send', () => apiWaSend(c._id, text.trim(), fromDraft), ''); } }} />
-          <Button type="submit" aria-label="Send reply" loading={busy === 'send'} disabled={!text.trim()}><Send size={15} /></Button>
-        </form>
-      ) : (
-        <div className="p-3 border-t border-bone mt-2 text-[12.5px] text-charcoal flex flex-wrap items-center justify-between gap-2">
-          {c.windowOpen
-            ? <p className="flex items-center gap-1.5"><FileText size={14} className="text-slate" /> You can send approved templates only.</p>
-            : <p className="flex items-center gap-1.5"><Clock size={14} className="text-slate" /> More than 24 hours since they last wrote. WhatsApp only allows your approved template now.</p>}
-          {(c.templates ?? []).length === 1 ? <Button size="sm" loading={busy === 'template'} onClick={() => void run('template', () => apiWaSendTemplate(c._id, c.templates[0].key), 'Template sent.')}>Send template “{c.templates[0].label}”</Button>
-            : (c.templates ?? []).length > 1 ? <Button size="sm" onClick={() => setPicking(true)}>Choose a template</Button>
-            : <span className="text-slate">No approved templates are available to you. Ask a manager.</span>}
-        </div>
-      )}
-      {picking && <TemplatePicker templates={c.templates} name={(c.lead?.name ?? c.profileName ?? '').trim().split(/\s+/)[0] || 'there'} busy={busy === 'template'}
-        onClose={() => setPicking(false)} onSend={key => void run('template', () => apiWaSendTemplate(c._id, key), 'Template sent.').then(done => { if (done) setPicking(false); })} />}
-      {c.windowOpen && c.windowClosesAt && <p className="px-3 pb-2 text-[11px] text-slate">You can reply freely until {new Date(c.windowClosesAt).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}.</p>}
-    </>
-  );
-}
-
-function ConnectionModal({ conn, onClose, onSaved }: { conn: WaConnection; onClose: () => void; onSaved: (c: WaConnection) => void }) {
-  const toast = useStableToast();
-  const [f, setF] = useState({ phoneNumberId: conn.phoneNumberId ?? '', accessToken: '', wabaId: conn.wabaId ?? '' });
-  const [busy, setBusy] = useState<'save' | 'disconnect' | null>(null);
-  const [error, setError] = useState('');
-  const save = async () => {
-    setBusy('save'); setError('');
-    try {
-      const r = await apiWaConnect({ phoneNumberId: f.phoneNumberId.trim(), ...(f.accessToken.trim() ? { accessToken: f.accessToken.trim() } : {}), wabaId: f.wabaId.trim() || null });
-      toast.success(`Connected ${r.data.displayNumber ?? ''}.`); onSaved(r.data);
-    } catch (e) { setError(errMsg(e, 'Could not connect.')); }
-    setBusy(null);
-  };
-  return (
-    <Modal title="Solvexo’s WhatsApp number" onClose={onClose} width={620}
-      footer={<div className="flex justify-between gap-2 w-full">
-        {conn.connected ? <Button variant="ghost" loading={busy === 'disconnect'} onClick={async () => { setBusy('disconnect'); try { onSaved((await apiWaDisconnect()).data); toast.success('Disconnected.'); } catch (e) { setError(errMsg(e, 'Could not disconnect.')); } setBusy(null); }}>Disconnect</Button> : <span />}
-        <div className="flex gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy === 'save'} disabled={!f.phoneNumberId.trim() || (!conn.connected && !f.accessToken.trim())} onClick={save}>{conn.connected ? 'Save' : 'Connect'}</Button></div>
-      </div>}>
-      <div className="flex flex-col gap-3 text-[13px]">
-        {conn.connected && (
-          <p className="flex items-center gap-2"><Badge color="green" size="sm">Connected</Badge>{conn.verifiedName} · {conn.displayNumber}{conn.lastEventAt ? <span className="text-slate text-[12px]">· last message from Meta {relDay(conn.lastEventAt)}</span> : <span className="text-warning text-[12px]">· no messages from Meta yet</span>}</p>
-        )}
-        <ol className="list-decimal ml-5 text-[12.5px] text-slate flex flex-col gap-1">
-          <li>In Meta Business Suite, add Solvexo’s number to the same WhatsApp app the store integrations use, and create a System User with a <strong>permanent token</strong> (whatsapp_business_messaging and whatsapp_business_management).</li>
-          <li>Copy the number’s <strong>Phone number ID</strong> and the token below. Solvexo checks them with Meta and subscribes the app to the number’s messages.</li>
-          <li>The app’s webhook should already point to this address (it is shared with store WhatsApp):</li>
-        </ol>
-        <div className="flex items-center gap-2 rounded-lg border border-bone bg-cream/60 px-3 py-2"><code className="flex-1 break-all text-[12px]">{conn.webhookUrl}</code><CopyIconButton value={conn.webhookUrl} title="Copy webhook URL" size={14} /></div>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <Input label="Phone number ID" inputMode="numeric" value={f.phoneNumberId} onChange={e => setF({ ...f, phoneNumberId: e.target.value.replace(/\D/g, '') })} />
-          <Input label="WhatsApp Business Account ID (optional)" inputMode="numeric" placeholder="Found automatically if empty" value={f.wabaId} onChange={e => setF({ ...f, wabaId: e.target.value.replace(/\D/g, '') })} />
-          <div className="sm:col-span-2"><Input label={conn.connected ? `Access token (saved: ${conn.tokenHint ?? '—'})` : 'Permanent access token'} type="password" autoComplete="off" placeholder={conn.connected ? 'Leave empty to keep it' : 'EAAG…'} value={f.accessToken} onChange={e => setF({ ...f, accessToken: e.target.value })} /></div>
-        </div>
-        <p className="text-[11.5px] text-slate">Replies are always sent by a person; the AI only drafts them. Turn drafts on or off in the AI agent tab. Approved templates (to restart a chat after 24 hours) are set under Templates.</p>
-        {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
-      </div>
-    </Modal>
-  );
-}
-
-/** The approved Meta templates reps can pick from. Solvexo checks each one with Meta when saved. */
-function TemplatesModal({ templates, onClose, onSaved }: { templates: WaTemplate[]; onClose: () => void; onSaved: (c: WaConnection) => void }) {
-  const toast = useStableToast();
-  const [rows, setRows] = useState(() => (templates.length ? templates : [{ label: '', name: '', lang: 'en', body: null, reason: 'follow_up' as MessageReason }]).map(t => ({ label: t.label, name: t.name, lang: t.lang, body: t.body, reason: (t.reason ?? 'follow_up') as MessageReason })));
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const set = (i: number, patch: Partial<(typeof rows)[number]>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch, body: null } : r)));
-  const save = async () => {
-    setBusy(true); setError('');
-    try {
-      const list = rows.filter(r => r.name.trim()).map(r => ({ label: r.label.trim(), name: r.name.trim(), lang: r.lang.trim(), reason: r.reason }));
-      const res = await apiWaSaveTemplates(list);
-      toast.success(list.length ? 'Templates saved.' : 'Templates removed.'); onSaved(res.data);
-    } catch (e) { setError(errMsg(e, 'Could not save the templates.')); }
-    setBusy(false);
-  };
-  return (
-    <Modal title="WhatsApp templates" onClose={onClose} width={780}
-      footer={<div className="flex justify-end gap-2 w-full"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={save}>Save</Button></div>}>
-      <div className="flex flex-col gap-3 text-[13px]">
-        <p className="text-[12.5px] text-slate">After 24 hours without a message from the person, WhatsApp only allows an approved template. Create them in WhatsApp Manager → Message templates, then list them here. Solvexo checks each one with Meta and shows reps its text. A template can use {'{{1}}'} for the person’s first name, and nothing else.</p>
-        {rows.length > 0 && (
-          <div aria-hidden className="grid grid-cols-[1fr_1fr_72px_140px_auto] gap-2 px-2.5 -mb-1.5 text-[12px] font-medium text-charcoal">
-            <span>Shown to reps as</span><span>Template name in Meta</span><span>Language</span><span>Reason</span><span className="w-[13px]" />
-          </div>
-        )}
-        {rows.map((r, i) => (
-          <div key={i} className="rounded-lg border border-bone p-2.5">
-            <div className="grid grid-cols-[1fr_1fr_72px_140px_auto] items-center gap-2">
-              <Input aria-label={`Template ${i + 1} label`} placeholder="e.g. Follow-up (English)" value={r.label} onChange={e => set(i, { label: e.target.value })} />
-              <Input aria-label={`Template ${i + 1} name`} placeholder="sales_follow_up" value={r.name} onChange={e => set(i, { name: e.target.value.trim() })} />
-              <Input aria-label={`Template ${i + 1} language`} placeholder="en" value={r.lang} onChange={e => set(i, { lang: e.target.value.trim() })} />
-              <Select aria-label={`Template ${i + 1} reason`} value={r.reason} onChange={e => setRows(rows.map((x, j) => (j === i ? { ...x, reason: e.target.value as MessageReason } : x)))}>
-                {MESSAGE_REASONS.map(m => <option key={m} value={m}>{MESSAGE_REASON_LABELS[m]}</option>)}
-              </Select>
-              <button aria-label={`Remove template ${i + 1}`} onClick={() => setRows(rows.filter((_, j) => j !== i))} className="self-center bg-transparent border-0 text-slate hover:text-error cursor-pointer"><Trash2 size={13} /></button>
-            </div>
-            {r.body && <p dir="auto" className="mt-1.5 text-[12px] text-slate whitespace-pre-line">{r.body}</p>}
-          </div>
-        ))}
-        {rows.length < 20 && <Button size="xs" variant="ghost" onClick={() => setRows([...rows, { label: '', name: '', lang: 'en', body: null, reason: 'follow_up' }])}><Plus size={12} /> Add a template</Button>}
-        <p className="text-[11.5px] text-slate">Language is the code Meta shows for that version: en, en_US, en_GB or ur. The first template is the one used when there is only one choice.</p>
-        {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
-      </div>
-    </Modal>
-  );
-}
-
-/** Pick which approved template restarts this chat; each shows the text the person will receive. */
-function TemplatePicker({ templates, name, busy, onClose, onSend }: { templates: WaTemplate[]; name: string; busy: boolean; onClose: () => void; onSend: (key: string) => void }) {
-  const reasons = MESSAGE_REASONS.filter(r => templates.some(t => (t.reason ?? 'follow_up') === r));
-  const [reason, setReason] = useState<MessageReason>(reasons[0] ?? 'follow_up');
-  const shown = templates.filter(t => (t.reason ?? 'follow_up') === reason);
-  const [key, setKey] = useState(shown[0]?.key ?? '');
-  const chosen = templates.find(t => t.key === key);
-  const pickReason = (r: MessageReason) => { setReason(r); setKey(templates.find(t => (t.reason ?? 'follow_up') === r)?.key ?? ''); };
-  return (
-    <Modal title="Send a template" onClose={onClose} width={560}
-      footer={<div className="flex justify-end gap-2 w-full"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} disabled={!key} onClick={() => onSend(key)}><Send size={14} /> Send</Button></div>}>
-      {reasons.length > 1 && (
-        <div className="flex flex-wrap gap-1.5 mb-3" role="group" aria-label="Reason">
-          {reasons.map(r => (
-            <button key={r} type="button" aria-pressed={reason === r} onClick={() => pickReason(r)}
-              className={clsx('px-2.5 py-1 rounded-full text-[12px] border cursor-pointer', reason === r ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-charcoal border-bone hover:border-brand-orange/50')}>
-              {MESSAGE_REASON_LABELS[r]}
-            </button>
-          ))}
-        </div>
-      )}
-      <RadioButton name="wa-template" layout="col" value={key} onChange={setKey}
-        options={shown.map(t => ({ value: t.key, label: `${t.label} · ${t.lang}` }))} />
-      {/* The chosen template's text, as the person will get it ({{1}} = their first name). */}
-      {chosen && (
-        <div className="mt-3 rounded-lg bg-[#d9fdd3] px-3 py-2 text-[13px]">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate mb-1">They will get</p>
-          <p dir="auto" className="whitespace-pre-line break-words text-charcoal">{chosen.body ? chosen.body.replace(/\{\{\s*1\s*\}\}/g, name) : `Template ${chosen.name} (its text is shown in WhatsApp Manager)`}</p>
-        </div>
-      )}
-    </Modal>
+      </ul>
+      <p className="text-[12px] text-slate">Connect the number and add templates under Settings and Templates above. Chats appear here as soon as someone writes.</p>
+    </div>
   );
 }

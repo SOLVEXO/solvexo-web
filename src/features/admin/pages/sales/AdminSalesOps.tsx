@@ -31,13 +31,15 @@ export function AdminSalesOps() {
   const isManager = can('sales.manage');
   const [owners, setOwners] = useState<SalesOwner[]>([]);
   useEffect(() => { if (isManager) apiSalesOwners().then(r => setOwners(r.data)).catch(() => setOwners([])); }, [isManager]);
+  // Unread WhatsApp messages, as last seen by the WhatsApp tab (it polls while open).
+  const [waUnread, setWaUnread] = useState(0);
 
   return (
     <>
       <AdminPageHeader title="Sales Ops" subtitle={isManager ? 'Every lead, follow-up and deal across the sales team.' : 'Your leads, follow-ups and deals.'} icon={<Target size={18} />} />
       <div className="px-4 sm:px-7 pt-2">
         <TabBar
-          tabs={[{ id: 'pipeline', label: 'Pipeline' }, { id: 'visits', label: 'Visits' }, { id: 'tasks', label: 'Follow-ups' }, { id: 'whatsapp', label: 'WhatsApp' }, { id: 'brevo', label: 'Brevo' }, ...(isManager ? [{ id: 'campaigns', label: 'Campaigns' }] : []), { id: 'team', label: 'Team' }, ...(isManager ? [{ id: 'partners', label: 'Partners' }, { id: 'agent', label: 'AI agent' }] : []), { id: 'templates', label: 'Email templates' }]}
+          tabs={[{ id: 'pipeline', label: 'Pipeline' }, { id: 'visits', label: 'Visits' }, { id: 'tasks', label: 'Follow-ups' }, { id: 'whatsapp', label: 'WhatsApp', ...(waUnread ? { count: waUnread } : {}) }, { id: 'brevo', label: 'Brevo' }, ...(isManager ? [{ id: 'campaigns', label: 'Campaigns' }] : []), { id: 'team', label: 'Team' }, ...(isManager ? [{ id: 'partners', label: 'Partners' }, { id: 'agent', label: 'AI agent' }] : []), { id: 'templates', label: 'Email templates' }]}
           active={tab}
           onChange={id => setParams(id === 'pipeline' ? {} : { tab: id }, { replace: true })}
         />
@@ -50,7 +52,7 @@ export function AdminSalesOps() {
         {tab === 'team' && <TeamTab isManager={isManager} owners={owners} />}
         {tab === 'partners' && isManager && <PartnersTab />}
         {tab === 'agent' && isManager && <AgentTab />}
-        {tab === 'whatsapp' && <WhatsAppTab isManager={isManager} />}
+        {tab === 'whatsapp' && <WhatsAppTab isManager={isManager} onUnread={setWaUnread} />}
         {tab === 'brevo' && <BrevoTab isManager={isManager} />}
         {tab === 'templates' && <TemplatesTab isManager={isManager} />}
       </div>
