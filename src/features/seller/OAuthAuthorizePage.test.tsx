@@ -41,6 +41,8 @@ describe('OAuth authorize (store picker)', () => {
     getStores.mockResolvedValue({ data: [store('s1'), store('s2', { planStatus: 'development' }), store('s3', { isDelete: true })] });
     renderAt();
     expect(await screen.findByText('Which store do you want to connect?')).toBeTruthy();
+    // The heading shows while the stores load: wait for the list itself before checking it.
+    expect(await screen.findByText('Store s2')).toBeTruthy();
     expect(screen.queryByText('Store s3')).toBeNull();
     expect(screen.getByText('Development store')).toBeTruthy();
     fireEvent.click(screen.getByText('Store s2'));
