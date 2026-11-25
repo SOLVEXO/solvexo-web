@@ -453,7 +453,7 @@ function TemplatesTab({ isManager }: { isManager: boolean }) {
 }
 
 function TemplateModal({ template, onClose, onSave }: { template: SalesTemplate | null; onClose: () => void; onSave: (v: { name: string; subject: string; body: string; reason: MessageReason }) => Promise<void> }) {
-  const [v, setV] = useState({ name: template?.name ?? '', subject: template?.subject ?? '', body: template?.body ?? '', reason: (template?.reason ?? 'follow_up') as MessageReason });
+  const [v, setV] = useState({ name: template?.name ?? '', subject: template?.subject ?? '', body: template?.body ?? '', reason: (template ? template.reason ?? 'other' : 'follow_up') as MessageReason });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const ok = v.name.trim() && v.subject.trim() && v.body.trim();

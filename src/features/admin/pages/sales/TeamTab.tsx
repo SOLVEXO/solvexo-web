@@ -267,7 +267,7 @@ function MessagingModal({ owner, rules, wa, email, onClose, onSave }: {
       footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={async () => { setBusy(true); setError(''); try { await onSave(v); } catch (e) { setError(errMsg(e, 'Could not save.')); setBusy(false); } }}>Save</Button></div>}>
       <div className="flex flex-col gap-5">
         <p className="text-[12.5px] text-slate">Applies to {owner.name}’s own clients. With “Approved templates only”, they pick a reason and a template and cannot change the text. If {owner.name} is a manager, these limits do not apply.</p>
-        {channel('whatsapp', 'waTemplateKeys', 'WhatsApp', wa.map(t => ({ id: t.key, label: t.label, reason: t.reason })))}
+        {channel('whatsapp', 'waTemplateKeys', 'WhatsApp', wa.map(t => ({ id: t.key, label: t.label, reason: t.reason ?? 'follow_up' })))}
         {channel('email', 'emailTemplateIds', 'Email', email.map(t => ({ id: t._id, label: t.name, reason: t.reason })))}
         {error && <p role="alert" className="text-[12px] text-error">{error}</p>}
       </div>

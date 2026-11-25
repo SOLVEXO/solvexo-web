@@ -174,7 +174,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
       ) : (
         <div className="p-3 border-t border-bone mt-2 text-[12.5px] text-charcoal flex flex-wrap items-center justify-between gap-2">
           {c.windowOpen
-            ? <p>You can send approved templates only.</p>
+            ? <p className="flex items-center gap-1.5"><FileText size={14} className="text-slate" /> You can send approved templates only.</p>
             : <p className="flex items-center gap-1.5"><Clock size={14} className="text-slate" /> More than 24 hours since they last wrote. WhatsApp only allows your approved template now.</p>}
           {(c.templates ?? []).length === 1 ? <Button size="sm" loading={busy === 'template'} onClick={() => void run('template', () => apiWaSendTemplate(c._id, c.templates[0].key), 'Template sent.')}>Send template “{c.templates[0].label}”</Button>
             : (c.templates ?? []).length > 1 ? <Button size="sm" onClick={() => setPicking(true)}>Choose a template</Button>
