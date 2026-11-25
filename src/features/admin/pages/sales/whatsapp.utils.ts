@@ -72,7 +72,7 @@ export function playChime() {
     if (!Ctx) return;
     audio ??= new Ctx();
     const ctx = audio;
-    if (ctx.state === 'suspended') void ctx.resume();
+    if (ctx.state === 'suspended') ctx.resume().catch(() => undefined);
     [880, 1320].forEach((freq, i) => {
       const t = ctx.currentTime + i * 0.12;
       const osc = ctx.createOscillator();

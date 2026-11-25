@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
@@ -55,6 +55,13 @@ export function Thread({ id, row, isManager, owners, quickReplies, leadPanelOpen
   const [local, setLocal] = useState<Local | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLTextAreaElement>(null);
+  // The reply box grows with what is typed (wrapped lines included), up to about six lines, then scrolls.
+  useLayoutEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 168)}px`;
+  }, [text]);
 
   // The parent re-creates these on every render; keep the latest in refs so loading doesn't re-run because of them.
   const changedRef = useRef(onChanged);
@@ -188,8 +195,10 @@ export function Thread({ id, row, isManager, owners, quickReplies, leadPanelOpen
           <form className="flex items-end gap-2" onSubmit={e => { e.preventDefault(); send(); }}>
             <div className="flex-1">
               <Textarea ref={boxRef} aria-label="Reply" dir="auto" placeholder="Write a reply…" value={text} maxLength={4000}
-                rows={Math.min(6, Math.max(2, text.split('\n').length))}
-                onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} />
+                rows={2}
+                onChange={e => setText(e.target.value)}
+                // Enter sends, Shift+Enter is a new line; never while a keyboard (Urdu, Arabic…) is still composing a word.
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }} />
             </div>
             <Button type="submit" aria-label="Send reply" loading={busy === 'send'} disabled={!text.trim()}><Send size={15} /></Button>
           </form>

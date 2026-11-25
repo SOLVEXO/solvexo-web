@@ -67,16 +67,40 @@ export function WhatsAppTab({ isManager, onUnread }: { isManager: boolean; onUnr
     return () => { window.removeEventListener('pointerdown', mark); window.removeEventListener('keydown', mark); };
   }, []);
 
-  const loadList = useCallback(() => apiWaConversations({ view, q: search, ownerId: ownerId || undefined }).then(r => {
-    setRows(r.data);
-    const next = r.counts ?? ZERO;
-    setCounts(next);
-    const before = lastUnread.current;
-    if (before !== null && next.unreadMessages > before && interacted.current && !mutedRef.current) playChime();
-    lastUnread.current = next.unreadMessages;
-    unreadRef.current?.(next.unreadMessages);
-  }).catch(e => { setRows(r => r ?? []); toast.error(errMsg(e, 'Could not load WhatsApp chats.')); }), [view, search, ownerId, toast]);
-  useEffect(() => { void loadList(); const t = setInterval(() => void loadList(), 10_000); return () => clearInterval(t); }, [loadList]);
+  // Only the newest request may change the list (switching tabs or typing fast must not show an older answer),
+  // and a failing refresh says so once, not every 10 seconds.
+  const seq = useRef(0);
+  const failed = useRef(false);
+  // A different owner filter is a different set of chats: start the chime count again.
+  useEffect(() => { lastUnread.current = null; }, [ownerId]);
+  const loadList = useCallback(() => {
+    const mine = ++seq.current;
+    return apiWaConversations({ view, q: search, ownerId: ownerId || undefined }).then(r => {
+      if (mine !== seq.current) return;
+      failed.current = false;
+      setRows(r.data);
+      const next = r.counts ?? ZERO;
+      setCounts(next);
+      const before = lastUnread.current;
+      if (before !== null && next.unreadMessages > before && interacted.current && !mutedRef.current) playChime();
+      lastUnread.current = next.unreadMessages;
+      // The tab's count is everything this person can see, so not while a manager filters by owner.
+      if (!ownerId) unreadRef.current?.(next.unreadMessages);
+    }).catch(e => {
+      if (mine !== seq.current) return;
+      setRows(r => r ?? []);
+      if (!failed.current) toast.error(errMsg(e, 'Could not load WhatsApp chats.'));
+      failed.current = true;
+    });
+  }, [view, search, ownerId, toast]);
+  useEffect(() => {
+    void loadList();
+    // No refreshing while the browser tab is hidden; catch up as soon as it is shown again.
+    const t = setInterval(() => { if (document.visibilityState !== 'hidden') void loadList(); }, 10_000);
+    const onShow = () => { if (document.visibilityState === 'visible') void loadList(); };
+    document.addEventListener('visibilitychange', onShow);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', onShow); };
+  }, [loadList]);
 
   useEffect(() => {
     apiWaQuickReplies().then(r => setQuickReplies(r.data)).catch(() => undefined);
@@ -198,7 +222,7 @@ export function WhatsAppTab({ isManager, onUnread }: { isManager: boolean; onUnr
 
       {leadSheet && leadId && (
         <Modal title="Lead" onClose={() => setLeadSheet(false)} width={420}>
-          <div className="-mx-5 -my-4"><LeadPanel leadId={leadId} isManager={isManager} owners={owners} version={leadVersion} onAssign={assign} onChanged={() => void loadList()} /></div>
+          <div><LeadPanel leadId={leadId} isManager={isManager} owners={owners} version={leadVersion} onAssign={assign} onChanged={() => void loadList()} /></div>
         </Modal>
       )}
       {modal === 'templates' && conn && <TemplatesModal templates={conn.templates ?? []} onClose={() => setModal(null)} onSaved={c => { setConn(c); setModal(null); }} />}

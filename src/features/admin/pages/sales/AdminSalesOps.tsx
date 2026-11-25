@@ -7,7 +7,7 @@ import { Badge, Button, EmptyState, Input, MetricCard, Modal, SearchInput, Selec
 import { can } from '@/hooks/auth/useCan';
 import {
   CONSENT_LABELS, LEAD_SOURCES, LEAD_STAGES, SOURCE_LABELS, STAGE_LABELS, apiAskMarketingConsent, apiChangeStage, apiCreateLead, apiExportBrevoCsv, apiSyncStalled,
-  apiDeleteTemplate, apiListLeads, apiListTasks, apiListTemplates, apiSalesOwners, apiSaveTemplate, apiUpdateTask, formatPKR,
+  apiDeleteTemplate, apiListLeads, apiWaConversations, apiListTasks, apiListTemplates, apiSalesOwners, apiSaveTemplate, apiUpdateTask, formatPKR,
   type ConsentStatus, type LeadList, type LeadQuery, type LeadSource, type LeadStage, type SalesLead, type SalesOwner, type SalesTask, type SalesTemplate,
   MESSAGE_REASONS, MESSAGE_REASON_LABELS, reasonLabel, type MessageReason,
 } from '@/api/services/salesOps';
@@ -31,8 +31,22 @@ export function AdminSalesOps() {
   const isManager = can('sales.manage');
   const [owners, setOwners] = useState<SalesOwner[]>([]);
   useEffect(() => { if (isManager) apiSalesOwners().then(r => setOwners(r.data)).catch(() => setOwners([])); }, [isManager]);
-  // Unread WhatsApp messages, as last seen by the WhatsApp tab (it polls while open).
+  // Unread WhatsApp messages for the tab's count. The WhatsApp tab reports it while open; on every other tab
+  // it is checked here every 30 seconds (not while the browser tab is hidden), quietly: a failure keeps the last count.
   const [waUnread, setWaUnread] = useState(0);
+  const onWhatsApp = tab === 'whatsapp';
+  useEffect(() => {
+    if (onWhatsApp) return;
+    let live = true;
+    const check = () => {
+      if (document.visibilityState === 'hidden') return;
+      apiWaConversations({}).then(r => { if (live) setWaUnread(r.counts?.unreadMessages ?? 0); }).catch(() => undefined);
+    };
+    check();
+    const t = setInterval(check, 30_000);
+    document.addEventListener('visibilitychange', check);
+    return () => { live = false; clearInterval(t); document.removeEventListener('visibilitychange', check); };
+  }, [onWhatsApp]);
 
   return (
     <>

@@ -69,7 +69,7 @@ export function TemplatesModal({ templates, onClose, onSaved }: { templates: WaT
   };
   return (
     <Modal title="WhatsApp templates" onClose={onClose} width={780}
-      footer={<div className="flex justify-end gap-2 w-full"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={save}>Save</Button></div>}>
+      footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={save}>Save</Button></div>}>
       <div className="flex flex-col gap-3 text-[13px]">
         <p className="text-[12.5px] text-slate">After 24 hours without a message from the person, WhatsApp only allows an approved template. Create them in WhatsApp Manager → Message templates, then list them here. Solvexo checks each one with Meta and shows reps its text. A template can use {'{{1}}'} for the person’s first name, and nothing else.</p>
         {rows.length > 0 && (
@@ -140,7 +140,7 @@ export function TemplatePicker({ templates, name, busy, onClose, onSend }: { tem
   const [key, setKey] = useState(() => firstKey(templates));
   return (
     <Modal title="Send a template" onClose={onClose} width={560}
-      footer={<div className="flex justify-end gap-2 w-full"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} disabled={!key} onClick={() => onSend(key)}><Send size={14} /> Send</Button></div>}>
+      footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} disabled={!key} onClick={() => onSend(key)}><Send size={14} /> Send</Button></div>}>
       {templates.length ? <TemplateChoice templates={templates} name={name} value={key} onChange={setKey} />
         : <p className="text-[13px] text-slate">No approved templates are available to you. Ask a manager.</p>}
     </Modal>
@@ -179,7 +179,7 @@ export function NewChatModal({ templates, onClose, onStarted }: { templates: WaT
 
   return (
     <Modal title="New WhatsApp chat" onClose={onClose} width={560}
-      footer={<div className="flex justify-end gap-2 w-full"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} disabled={!ready} onClick={send}><Send size={14} /> Send</Button></div>}>
+      footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} disabled={!ready} onClick={send}><Send size={14} /> Send</Button></div>}>
       <div className="flex flex-col gap-3 text-[13px]">
         <RadioButton name="wa-new-chat" layout="row" value={who} onChange={v => { setWho(v as 'lead' | 'number'); setError(''); }}
           options={[{ value: 'lead', label: 'A lead' }, { value: 'number', label: 'A new number' }]} />
@@ -240,7 +240,7 @@ export function QuickRepliesModal({ replies, onClose, onSaved }: { replies: WaQu
   };
   return (
     <Modal title="Quick replies" onClose={onClose} width={620}
-      footer={<div className="flex justify-end gap-2 w-full"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={save}>Save</Button></div>}>
+      footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={save}>Save</Button></div>}>
       <div className="flex flex-col gap-3 text-[13px]">
         <p className="text-[12.5px] text-slate">Short answers your team sends often. Reps pick one under the reply box; it is added to what they are writing, and they can edit it before sending.</p>
         {rows.map((r, i) => (
