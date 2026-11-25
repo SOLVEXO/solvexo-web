@@ -16,14 +16,11 @@ import {
 } from '@/api/services/salesOps';
 import { ConsentBadge, LeadFormModal, LostReasonModal, StageBadge } from './parts';
 import { Transcript } from './AgentTab';
-import { brevoLine, consentSentence, errMsg, isOverdue, relDay, useStableToast } from './sales.utils';
+import { ACTIVITY_LABEL, brevoLine, consentSentence, errMsg, isOverdue, relDay, toLocalInput, tomorrowAt10, useStableToast } from './sales.utils';
 
 const ACTIVITY_ICON: Record<string, LucideIcon> = {
   note: NotebookPen, call: Phone, whatsapp: MessageCircle, meeting: Users, email: Mail,
   stage_change: ArrowRightLeft, owner_change: ArrowRightLeft, system: Bot, visit: Store,
-};
-const ACTIVITY_LABEL: Record<string, string> = {
-  note: 'Note', call: 'Call', whatsapp: 'WhatsApp', meeting: 'Meeting', email: 'Email sent', visit: 'Field visit', stage_change: 'Stage', owner_change: 'Owner', system: 'Update',
 };
 const LOG_OUTCOMES: Record<Exclude<LogType, 'note'>, string[]> = {
   call: ['Talked', 'No answer', 'Busy', 'Call back later', 'Wrong number'],
@@ -317,9 +314,6 @@ function Timeline({ items }: { items: SalesActivity[] }) {
     </section>
   );
 }
-
-const tomorrowAt10 = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); return d; };
-const toLocalInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 
 function Tasks({ leadId, tasks, act, reload }: { leadId: string; tasks: LeadDetail['tasks']; act: Act; reload: () => Promise<unknown> }) {
   const toast = useStableToast();

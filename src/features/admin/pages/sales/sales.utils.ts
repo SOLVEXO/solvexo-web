@@ -35,6 +35,14 @@ export function relDay(iso: string | null | undefined, now = new Date()): string
   if (Math.abs(diff) <= 14) return diff > 0 ? `in ${diff} days` : `${-diff} days ago`;
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
 }
+/** How each kind of lead activity is named in timelines. */
+export const ACTIVITY_LABEL: Record<string, string> = {
+  note: 'Note', call: 'Call', whatsapp: 'WhatsApp', meeting: 'Meeting', email: 'Email sent', visit: 'Field visit', stage_change: 'Stage', owner_change: 'Owner', system: 'Update',
+};
+
+/** Default follow-up time, and the "YYYY-MM-DDTHH:mm" shape the date-time field takes. */
+export const tomorrowAt10 = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); return d; };
+export const toLocalInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 export const isOverdue = (iso: string | null | undefined, now = new Date()) => !!iso && new Date(iso).getTime() < now.getTime();
 
 

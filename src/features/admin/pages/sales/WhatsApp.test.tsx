@@ -1,12 +1,15 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 const api = vi.hoisted(() => ({
-  apiWaConnection: vi.fn(), apiWaConnect: vi.fn(), apiWaDisconnect: vi.fn(), apiWaConversations: vi.fn(), apiWaConversation: vi.fn(),
+  apiWaConnection: vi.fn(), apiWaMyTemplates: vi.fn(async (): Promise<unknown> => ({ data: [] })), apiWaConnect: vi.fn(), apiWaDisconnect: vi.fn(), apiWaConversations: vi.fn(), apiWaConversation: vi.fn(),
   apiWaSend: vi.fn(), apiWaSendTemplate: vi.fn(), apiWaSaveTemplates: vi.fn(), apiWaRedraft: vi.fn(), apiWaDiscardDraft: vi.fn(),
+  apiWaSetStatus: vi.fn(), apiWaAssign: vi.fn(), apiWaStart: vi.fn(), apiWaQuickReplies: vi.fn(), apiWaSaveQuickReplies: vi.fn(),
+  apiSalesOwners: vi.fn(), apiMyMessaging: vi.fn(), apiGetLead: vi.fn(), apiChangeStage: vi.fn(), apiUpdateLead: vi.fn(),
+  apiCreateTask: vi.fn(), apiLogActivity: vi.fn(), apiListLeads: vi.fn(),
 }));
 vi.mock('@/api/services/salesOps', async (orig) => ({ ...(await orig<typeof import('@/api/services/salesOps')>()), ...api }));
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
@@ -25,6 +28,26 @@ const convo = (over: Record<string, unknown> = {}) => ({
   windowOpen: true, windowClosesAt: new Date(Date.now() + 20 * 3600_000).toISOString(), aiDraft: { text: 'Ji, COD available hai!', createdAt: '' },
   template: { name: 'sales_follow_up', lang: 'en' }, templates: [tplEn],
   messages: [{ _id: 'm1', direction: 'in', type: 'text', text: 'COD hai?', status: 'received', error: null, at: new Date().toISOString(), fromAiDraft: false }], ...over,
+});
+const counts = { all: 1, needsReply: 1, unread: 1, unreadMessages: 2, closing: 0, expired: 0, done: 0 };
+const owners = [{ _id: 'a1', name: 'Ali', email: 'ali@x.pk' }, { _id: 'a2', name: 'Hina', email: 'hina@x.pk' }];
+const leadDetail = (over: Record<string, unknown> = {}) => ({
+  lead: { _id: 'l1', name: 'Sara Malik', businessName: 'Sara Boutique', email: 'sara@x.pk', phone: '03001112223', city: 'Lahore', stage: 'new', ownerAdminId: 'a1', ownerName: 'Ali', dealValuePKR: 60000, lastActivityAt: null, ...over },
+  activities: [{ _id: 'act1', leadId: 'l1', type: 'note', subject: null, body: 'Asked about COD', outcome: null, adminId: 'a1', adminName: 'Ali', createdAt: new Date().toISOString() }],
+  tasks: [], merchant: null,
+});
+beforeAll(() => {
+  // jsdom has no matchMedia; the shared menu asks it whether to open as a phone sheet.
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false }),
+  });
+});
+beforeEach(() => {
+  api.apiWaQuickReplies.mockResolvedValue({ data: [] });
+  api.apiSalesOwners.mockResolvedValue({ data: owners });
+  api.apiMyMessaging.mockResolvedValue({ data: { whatsapp: 'full', email: 'full', waTemplateKeys: null, emailTemplateIds: null } });
+  api.apiGetLead.mockResolvedValue({ data: leadDetail() });
 });
 const renderAt = (url = '/admin/sales?tab=whatsapp') => render(<MemoryRouter initialEntries={[url]}><WhatsAppTab isManager /></MemoryRouter>);
 
@@ -127,5 +150,128 @@ describe('WhatsAppTab', () => {
     fireEvent.change(screen.getByLabelText('WhatsApp Business Account ID (optional)'), { target: { value: ' 1475065457931364 ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     await waitFor(() => expect(api.apiWaConnect).toHaveBeenCalledWith(expect.objectContaining({ phoneNumberId: '1234567890', accessToken: 'EAAG-token', wabaId: '1475065457931364' })));
+  });
+
+  it('counters and view tabs ask the server for that view; the search box sends q', async () => {
+    api.apiWaConnection.mockResolvedValue({ data: conn });
+    api.apiWaConversations.mockResolvedValue({ data: [row], counts });
+    const onUnread = vi.fn();
+    render(<MemoryRouter initialEntries={['/admin/sales?tab=whatsapp']}><WhatsAppTab isManager onUnread={onUnread} /></MemoryRouter>);
+    await screen.findByText('Sara Malik');
+    expect(api.apiWaConversations).toHaveBeenCalledWith(expect.objectContaining({ view: 'all' }));
+    await waitFor(() => expect(onUnread).toHaveBeenCalledWith(2));
+    fireEvent.click(within(screen.getByRole('group', { name: 'Today' })).getByRole('button', { name: /Needs reply/ }));
+    await waitFor(() => expect(api.apiWaConversations).toHaveBeenLastCalledWith(expect.objectContaining({ view: 'needs_reply' })));
+    fireEvent.click(within(screen.getByRole('group', { name: 'Chat views' })).getByRole('button', { name: /Template only/ }));
+    await waitFor(() => expect(api.apiWaConversations).toHaveBeenLastCalledWith(expect.objectContaining({ view: 'expired' })));
+    fireEvent.change(screen.getByLabelText('Search chats'), { target: { value: 'boutique' } });
+    await waitFor(() => expect(api.apiWaConversations).toHaveBeenLastCalledWith(expect.objectContaining({ view: 'expired', q: 'boutique' })));
+  });
+
+  it('a row shows "You:" with the delivery tick, and how long the reply window has left', async () => {
+    const closes = new Date(Date.now() + (18 * 60 + 10) * 60_000).toISOString();
+    api.apiWaConnection.mockResolvedValue({ data: conn });
+    api.apiWaConversations.mockResolvedValue({
+      data: [
+        { ...row, unread: 0, lastDirection: 'out', lastStatus: 'read', lastMessageText: 'See you at 3', windowClosesAt: closes },
+        { ...row, _id: 'c2', name: 'Bilal Khan', unread: 0, hasDraft: false, windowOpen: false, windowClosesAt: null, lastDirection: 'in', snoozedUntil: new Date(Date.now() + 3600_000).toISOString() },
+      ], counts,
+    });
+    renderAt();
+    const list = await screen.findByRole('list', { name: 'WhatsApp chats' });
+    const [first, second] = within(list).getAllByRole('listitem');
+    expect(within(first).getByText(/You: See you at 3/)).toBeInTheDocument();
+    expect(within(first).getByLabelText('Read')).toBeInTheDocument();
+    expect(within(first).getByText('18h left')).toBeInTheDocument();
+    expect(within(first).getByLabelText('AI draft ready')).toBeInTheDocument();
+    expect(within(second).getByText('Template only')).toBeInTheDocument();
+    expect(within(second).getByText('Snoozed')).toBeInTheDocument();
+    expect(within(second).queryByText(/You:/)).not.toBeInTheDocument();
+  });
+
+  it('marks a chat done, reopens it, and snoozes it through the status endpoint', async () => {
+    api.apiWaConnection.mockResolvedValue({ data: conn });
+    api.apiWaConversations.mockResolvedValue({ data: [row], counts });
+    api.apiWaConversation.mockResolvedValue({ data: convo() });
+    api.apiWaSetStatus.mockResolvedValue({ data: convo() });
+    renderAt('/admin/sales?tab=whatsapp&c=c1');
+    fireEvent.click(await screen.findByRole('button', { name: /Mark done/ }));
+    await waitFor(() => expect(api.apiWaSetStatus).toHaveBeenCalledWith('c1', { done: true }));
+    fireEvent.click(await screen.findByRole('button', { name: /Reopen/ }));
+    await waitFor(() => expect(api.apiWaSetStatus).toHaveBeenLastCalledWith('c1', { done: false }));
+    fireEvent.click(screen.getByRole('button', { name: 'Snooze' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'For 1 hour' }));
+    await waitFor(() => expect(api.apiWaSetStatus).toHaveBeenLastCalledWith('c1', { snoozeUntil: expect.any(String) }));
+    const until = new Date(api.apiWaSetStatus.mock.lastCall![1].snoozeUntil).getTime();
+    expect(Math.abs(until - (Date.now() + 3600_000))).toBeLessThan(60_000);
+  });
+
+  it('a manager hands the chat to another rep', async () => {
+    api.apiWaConnection.mockResolvedValue({ data: conn });
+    api.apiWaConversations.mockResolvedValue({ data: [{ ...row, ownerId: 'a1', ownerName: 'Ali' }], counts });
+    api.apiWaConversation.mockResolvedValue({ data: convo() });
+    api.apiWaAssign.mockResolvedValue({ data: convo() });
+    renderAt('/admin/sales?tab=whatsapp&c=c1');
+    await screen.findByRole('button', { name: /Mark done/ });
+    await waitFor(() => expect(api.apiSalesOwners).toHaveBeenCalled());
+    chooseValue(dropdown('Assign to'), 'a2');
+    await waitFor(() => expect(api.apiWaAssign).toHaveBeenCalledWith('c1', 'a2'));
+    expect(toast.success).toHaveBeenCalledWith('Chat given to Hina.');
+  });
+
+  it('starts a chat with a typed number and a template, then opens it', async () => {
+    api.apiWaConnection.mockResolvedValue({ data: { ...conn, templates: [tplEn, tplUr] } });
+    api.apiWaConversations.mockResolvedValue({ data: [row], counts });
+    api.apiWaStart.mockResolvedValue({ data: { conversationId: 'c9' } });
+    api.apiWaConversation.mockResolvedValue({ data: convo({ _id: 'c9', lead: null, profileName: 'Usman' }) });
+    renderAt();
+    await screen.findByText('Sara Malik');
+    await waitFor(() => expect(api.apiWaConnection).toHaveBeenCalled());
+    fireEvent.click(await screen.findByRole('button', { name: /New chat/ }));
+    fireEvent.click(screen.getByRole('radio', { name: 'A new number' }));
+    fireEvent.change(screen.getByLabelText('WhatsApp number'), { target: { value: '0300 7654321' } });
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Usman Ali' } });
+    expect(screen.getByText('Hi Usman, following up from Solvexo.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: /Follow-up \(Urdu\)/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(api.apiWaStart).toHaveBeenCalledWith({ phone: '0300 7654321', name: 'Usman Ali', templateKey: 'sales_follow_up:ur' }));
+    await waitFor(() => expect(api.apiWaConversation).toHaveBeenCalledWith('c9'));
+  });
+
+  it('a rep starts a chat with the templates they may send, before opening any chat', async () => {
+    api.apiWaConversations.mockResolvedValue({ data: [], counts: { ...counts, all: 0 } });
+    api.apiWaMyTemplates.mockResolvedValueOnce({ data: [tplUr] });
+    render(<MemoryRouter initialEntries={['/admin/sales?tab=whatsapp']}><WhatsAppTab isManager={false} /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole('button', { name: /New chat/ }));
+    expect(await screen.findByRole('radio', { name: /Follow-up \(Urdu\)/ })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /Follow-up \(English\)/ })).not.toBeInTheDocument();
+    expect(api.apiWaConnection).not.toHaveBeenCalled();
+  });
+
+  it('a quick reply is added to the end of the reply box', async () => {
+    api.apiWaQuickReplies.mockResolvedValue({ data: [{ id: 'q1', title: 'Prices', text: 'Plans start at PKR 2,000 a month.' }] });
+    api.apiWaConnection.mockResolvedValue({ data: conn });
+    api.apiWaConversations.mockResolvedValue({ data: [row], counts });
+    api.apiWaConversation.mockResolvedValue({ data: convo() });
+    renderAt('/admin/sales?tab=whatsapp&c=c1');
+    const box = await screen.findByLabelText('Reply');
+    fireEvent.change(box, { target: { value: 'Assalam o Alaikum!' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Quick replies' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Prices' }));
+    expect(box).toHaveValue('Assalam o Alaikum!\nPlans start at PKR 2,000 a month.');
+  });
+
+  it('the lead panel changes the stage, and Lost asks why', async () => {
+    api.apiWaConnection.mockResolvedValue({ data: conn });
+    api.apiWaConversations.mockResolvedValue({ data: [row], counts });
+    api.apiWaConversation.mockResolvedValue({ data: convo() });
+    api.apiChangeStage.mockResolvedValue({ data: leadDetail({ stage: 'demo' }) });
+    renderAt('/admin/sales?tab=whatsapp&c=c1');
+    const panel = await screen.findByRole('complementary', { name: 'Lead details' });
+    expect(await within(panel).findByText('Asked about COD')).toBeInTheDocument();
+    chooseValue(dropdown('Stage', panel), 'demo');
+    await waitFor(() => expect(api.apiChangeStage).toHaveBeenCalledWith('l1', 'demo'));
+    chooseValue(dropdown('Stage', panel), 'lost');
+    expect(await screen.findByText('Why was Sara Malik lost?')).toBeInTheDocument();
   });
 });
