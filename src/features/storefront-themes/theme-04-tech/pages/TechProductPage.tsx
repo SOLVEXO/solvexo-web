@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased } from '../../textCase';
 import { useNavigate, useParams } from 'react-router-dom';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
-import { Minus, Plus, ShoppingCart, ZoomIn } from 'lucide-react';
+import { Minus, Play, Plus, ShoppingCart, ZoomIn } from 'lucide-react';
+import { parseProductVideo } from '@/utils/productVideo';
 import { ts } from '@/utils/tStatic';
 import type { ProductVariant } from '@/api/services/marketplace';
 
@@ -126,6 +127,8 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
   }, [detail?.product._id, variants]);
 
   const images = useMemo(() => variantGallery(variant, variants, detail?.product.images), [variant, variants, detail?.product.images]);
+  const video = useMemo(() => parseProductVideo(variant?.videoUrl || detail?.product.videoUrl), [variant?.videoUrl, detail?.product.videoUrl]);
+  const [videoOn, setVideoOn] = useState(false);
   const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, images.length - 1)) : 0;
   const setImageIndex = (i: number) => setGallery({ vid: variant?._id ?? '', i });
 
@@ -310,18 +313,26 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
                   <PhotoStack images={images} columns={layout.media.layout === 'grid' ? 2 : 1} aspect={layout.media.aspect ?? '1 / 1'} radius={0} background={t.colors.bg} alt={product.name}
                     imgAttrs={(src, i) => imgProps(src, [480, 768, 1024], i === 0 ? '(min-width: 1024px) 50vw, 100vw' : '(min-width: 1024px) 25vw, 50vw')} onZoom={layout.media.zoom ? i => { setImageIndex(i); setZoom(true); } : undefined} />
                 ) : images.length === 0 ? <div style={{ aspectRatio: layout.media.aspect === 'auto' ? undefined : (layout.media.aspect ?? '1 / 1'), background: t.colors.bg }} /> : (
-                  <div className={galleryLeft ? 'lg:flex lg:flex-row-reverse lg:items-start lg:gap-3' : ''}>
-                    <button type="button" onClick={layout.media.zoom ? () => setZoom(true) : undefined} aria-label={layout.media.zoom ? ts('product.zoomImage', 'Zoom image') : product.name} className={`group relative block w-full overflow-hidden border-0 p-4 ${layout.media.zoom ? 'cursor-zoom-in' : 'cursor-default'}`} style={{ aspectRatio: layout.media.aspect === 'auto' ? undefined : (layout.media.aspect ?? '1 / 1'), background: t.colors.bg }}>
+                  <div className={galleryLeft ? 'lg:flex lg:flex-row-reverse lg:items-stretch lg:gap-3' : ''}>
+                    {videoOn && video && <TechVideoBox video={video} poster={images[0]} aspect={layout.media.aspect === 'auto' ? undefined : (layout.media.aspect ?? '1 / 1')} />}
+                    <button type="button" onClick={layout.media.zoom ? () => setZoom(true) : undefined} aria-label={layout.media.zoom ? ts('product.zoomImage', 'Zoom image') : product.name} className={`group relative ${videoOn && video ? 'hidden' : 'block'} w-full overflow-hidden border-0 p-4 ${layout.media.zoom ? 'cursor-zoom-in' : 'cursor-default'}`} style={{ aspectRatio: layout.media.aspect === 'auto' ? undefined : (layout.media.aspect ?? '1 / 1'), background: t.colors.bg }}>
                       <img key={images[imageIndex]} {...imgProps(images[imageIndex], [480, 768, 1024], '(min-width: 1024px) 50vw, 100vw')} alt={product.name} className="size-full object-contain" fetchPriority="high" />
                       <span className="absolute bottom-3 end-3 grid size-9 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100" style={{ background: t.colors.bgAlt }}><ZoomIn size={16} /></span>
                     </button>
-                    {images.length > 1 && (
-                      <div className={`tx-hide-scroll mt-3 flex gap-2 overflow-x-auto ${galleryLeft ? 'lg:mt-0 lg:max-h-[560px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden' : ''}`}>
+                    {(images.length > 1 || !!video) && (
+                      <div className={galleryLeft ? 'mt-3 lg:relative lg:mt-0 lg:w-16 lg:shrink-0' : 'mt-3'}>
+                      <div className={`tx-hide-scroll flex gap-2 overflow-x-auto ${galleryLeft ? 'lg:absolute lg:inset-0 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden' : ''}`}>
                         {images.map((src, i) => (
-                          <button key={src + i} type="button" onClick={() => setImageIndex(i)} aria-label={ts('product.showImageN', 'Show image {{n}}', { n: i + 1 })} aria-current={i === imageIndex} className={thumb} style={{ background: t.colors.bg, border: `2px solid ${i === imageIndex ? t.colors.accent : 'transparent'}` }}>
+                          <button key={src + i} type="button" onClick={() => { setImageIndex(i); setVideoOn(false); }} aria-label={ts('product.showImageN', 'Show image {{n}}', { n: i + 1 })} aria-current={i === imageIndex} className={thumb} style={{ background: t.colors.bg, border: `2px solid ${i === imageIndex ? t.colors.accent : 'transparent'}` }}>
                             <img {...imgProps(src, [96, 160], '64px')} alt="" loading="lazy" className="size-full object-contain" />
                           </button>
                         ))}
+                        {video && (
+                          <button type="button" onClick={() => setVideoOn(true)} aria-label={ts('product.showVideo', 'Show video')} aria-current={videoOn} className={thumb} style={{ background: '#000', border: `2px solid ${videoOn ? t.colors.accent : 'transparent'}` }}>
+                            <span className="relative grid size-full place-items-center">{video.poster && <img src={video.poster} alt="" className="absolute inset-0 size-full object-cover opacity-70" />}<Play size={18} fill="#fff" color="#fff" className="relative" /></span>
+                          </button>
+                        )}
+                      </div>
                       </div>
                     )}
                   </div>
@@ -378,5 +389,23 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
       )}
       {zoom && <TechImageLightbox images={images} index={imageIndex} alt={product.name} onIndexChange={setImageIndex} onClose={() => setZoom(false)} />}
     </ProductPageContext.Provider>
+  );
+}
+
+/** The product / variant video: a file plays in the page, YouTube and Vimeo are embedded, any other https link opens in a new tab. */
+function TechVideoBox({ video, poster, aspect }: { video: NonNullable<ReturnType<typeof parseProductVideo>>; poster?: string; aspect?: string }) {
+  return (
+    <div className="relative w-full overflow-hidden" style={{ aspectRatio: aspect, background: '#000' }}>
+      {video.kind === 'file'
+        ? <video key={video.src} src={video.src} poster={video.poster ?? poster} controls playsInline preload="metadata" className="size-full object-contain" aria-label="Product video"><track kind="captions" /></video>
+        : video.kind === 'link'
+          ? (
+            <a href={video.src} target="_blank" rel="noopener noreferrer" aria-label="Product video" className="relative block size-full">
+              {poster && <img src={poster} alt="" className="size-full object-cover opacity-80" />}
+              <span className="absolute inset-0 grid place-items-center"><span className="grid size-16 place-items-center rounded-full" style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}><Play size={26} fill="currentColor" /></span></span>
+            </a>
+          )
+          : <iframe key={video.src} src={video.src} title="Product video" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen className="size-full border-0" />}
+    </div>
   );
 }

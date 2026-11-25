@@ -9,7 +9,14 @@ const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v'
 export interface ProductVideoValue { videoUrl: string; videoFirst: boolean }
 
 /** Optional product video, shown with the photos: upload a file or paste any https link. The seller decides whether it comes first (cover) in the gallery. */
-export function ProductVideoField({ value, onChange }: { value: ProductVideoValue; onChange: (v: ProductVideoValue) => void }) {
+export function ProductVideoField({ value, onChange, bare = false, title = 'Video', hint }: {
+  value: ProductVideoValue;
+  onChange: (v: ProductVideoValue) => void;
+  /** Inside a variant: no top border and no "make the video the cover" option (the video simply shows when that variant is chosen). */
+  bare?: boolean;
+  title?: string;
+  hint?: string;
+}) {
   const { upload, uploading, error: uploadError, clearError } = useUpload('public');
   const [link, setLink] = useState('');
   const [message, setMessage] = useState('');
@@ -39,10 +46,10 @@ export function ProductVideoField({ value, onChange }: { value: ProductVideoValu
   const kindLabel = parsed?.kind === 'youtube' ? 'YouTube video' : parsed?.kind === 'vimeo' ? 'Vimeo video' : parsed?.kind === 'file' ? 'Video file' : 'Video link';
 
   return (
-    <div className="mt-5 pt-4 border-t border-bone">
-      <p className="text-[13px] font-semibold text-charcoal">Video <span className="font-normal text-slate">(optional)</span></p>
+    <div className={bare ? '' : 'mt-5 pt-4 border-t border-bone'}>
+      <p className="text-[13px] font-semibold text-charcoal">{title} <span className="font-normal text-slate">(optional)</span></p>
       <p className="text-[12px] text-slate mb-3">
-        Upload a video (MP4, WebM or MOV, up to {MAX_VIDEO_MB} MB) or paste any https link. It is shown in the product gallery next to the photos.
+        {hint ?? `Upload a video (MP4, WebM or MOV, up to ${MAX_VIDEO_MB} MB) or paste any https link. It is shown in the product gallery next to the photos.`}
       </p>
 
       {parsed ? (
@@ -67,11 +74,13 @@ export function ProductVideoField({ value, onChange }: { value: ProductVideoValu
               <X size={12} /> Remove
             </button>
           </div>
-          <label className="flex items-center gap-2 text-[13px] text-charcoal cursor-pointer">
-            <input type="checkbox" checked={value.videoFirst} onChange={e => onChange({ ...value, videoFirst: e.target.checked })} />
-            Make the video the cover — it opens first in the gallery
-          </label>
-          {value.videoFirst && <p className="text-[11.5px] text-slate -mt-1">Shop pages and search results still use your first photo as the thumbnail.</p>}
+          {!bare && (
+            <label className="flex items-center gap-2 text-[13px] text-charcoal cursor-pointer">
+              <input type="checkbox" checked={value.videoFirst} onChange={e => onChange({ ...value, videoFirst: e.target.checked })} />
+              Make the video the cover — it opens first in the gallery
+            </label>
+          )}
+          {!bare && value.videoFirst && <p className="text-[11.5px] text-slate -mt-1">Shop pages and search results still use your first photo as the thumbnail.</p>}
         </div>
       ) : (
         <div className="flex flex-col gap-3">

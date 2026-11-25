@@ -10,6 +10,7 @@ import { useUpload } from '@/hooks/upload/useUpload';
 import { isNetworkError } from '@/api/client';
 import type { PrivateUploadData } from '@/api/upload';
 import { apiUploadMediaAsset, apiUploadMediaAssetFromUrl } from '@/api/services/mediaLibrary';
+import { compressImage } from './imageCompress';
 
 export type { PrivateUploadData };
 
@@ -19,42 +20,14 @@ export type { PrivateUploadData };
 /** Matches the backend image ceiling (upload-file-validation.ts). */
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
-/** Shrinks big photos in the browser before upload (phone photos are 3–8 MB;
- *  the storefront never shows more than ~2560px). Falls back to the original
- *  file on any problem, and never touches gif/svg/small files. */
-async function compressImage(file: File): Promise<File> {
-  try {
-    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 500 * 1024) return file;
-    const bitmap = await createImageBitmap(file);
-    const MAX = 2000;
-    const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));
-    const w = Math.round(bitmap.width * scale);
-    const h = Math.round(bitmap.height * scale);
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return file;
-    ctx.drawImage(bitmap, 0, 0, w, h);
-    bitmap.close?.();
-    // Keep PNG/WebP transparency; photos (jpeg) stay jpeg.
-    const type = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/webp';
-    const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, type, 0.8));
-    if (!blob || blob.size >= file.size) return file;
-    const ext = type === 'image/jpeg' ? 'jpg' : 'webp';
-    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.' + ext, { type });
-  } catch {
-    return file;
-  }
-}
-
 const MediaLibraryPickerModal = lazy(() =>
   import('@/features/seller/store/Dashboard/OnlineStore/builder/MediaLibraryPickerModal').then(m => ({ default: m.MediaLibraryPickerModal })),
 );
 
 // ── ImageUpload ───────────────────────────────────────────────────────────────
 
-function SortableImageTile({ id, url, isCover, draggable, onRemove }: {
-  id: string; url: string; isCover: boolean; draggable: boolean; onRemove: () => void;
+function SortableImageTile({ id, url, isCover, draggable, onRemove, tag }: {
+  id: string; url: string; isCover: boolean; draggable: boolean; onRemove: () => void; tag?: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !draggable });
   return (
@@ -71,6 +44,9 @@ function SortableImageTile({ id, url, isCover, draggable, onRemove }: {
       aria-label={draggable ? `Image ${Number(id) + 1}${isCover ? ' (cover)' : ''} — drag to reorder` : undefined}
     >
       <img loading="lazy" decoding="async" src={url} alt="" draggable={false} className="w-full h-full object-cover pointer-events-none" />
+      {tag && (
+        <span className="absolute top-1 left-1 max-w-[70%] truncate rounded bg-charcoal/80 px-1.5 py-[1px] text-[10px] font-semibold text-white pointer-events-none">{tag}</span>
+      )}
       {isCover && (
         <span className="absolute bottom-0 inset-x-0 bg-brand-orange text-white text-[10px] font-semibold text-center py-[2px] pointer-events-none">Cover</span>
       )}
@@ -101,10 +77,12 @@ interface ImageUploadProps {
   storeId?: string;
   /** Multi mode: mark the first image with a "Cover" badge (product images). Images can always be dragged to reorder. */
   showCover?: boolean;
+  /** Multi mode: a short label per photo URL (for example the colour it belongs to), shown on the tile. */
+  tags?: Record<string, string>;
 }
 
 export function ImageUpload({
-  value, onChange, maxFiles = 1, accept = 'image/png,image/jpeg,image/webp', className, storeId, showCover = false,
+  value, onChange, maxFiles = 1, accept = 'image/png,image/jpeg,image/webp', className, storeId, showCover = false, tags,
 }: ImageUploadProps) {
   const { upload, uploadUrl, uploading: plainUploading, error: plainError } = useUpload('public');
   const [libraryUploading, setLibraryUploading] = useState(false);
@@ -337,7 +315,7 @@ export function ImageUpload({
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={value.map((_, i) => String(i))} strategy={rectSortingStrategy}>
             {value.map((url, i) => (
-              <SortableImageTile key={i} id={String(i)} url={url} isCover={showCover && i === 0} draggable={value.length > 1} onRemove={() => remove(i)} />
+              <SortableImageTile key={i} id={String(i)} url={url} isCover={showCover && i === 0} draggable={value.length > 1} onRemove={() => remove(i)} tag={tags?.[url]} />
             ))}
           </SortableContext>
         </DndContext>

@@ -3,6 +3,9 @@ import { useEffect, useRef, type RefObject } from 'react';
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/** Open dialogs, oldest first: only the last one handles Escape and Tab. */
+const openTraps: symbol[] = [];
+
 function getFocusable(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
     .filter(el => el.offsetParent !== null);
@@ -29,6 +32,8 @@ export function useFocusTrap(
 
   useEffect(() => {
     if (!enabled) return;
+    const me = Symbol('focus-trap');
+    openTraps.push(me);
     const previouslyFocused = document.activeElement as HTMLElement | null;
     // Don't steal focus from an element that already auto-focused itself
     // (e.g. an input with `autoFocus`) inside the same dialog.
@@ -37,6 +42,7 @@ export function useFocusTrap(
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
+      if (openTraps[openTraps.length - 1] !== me) return;
       if (e.key === 'Escape') { onCloseRef.current(); return; }
       if (e.key !== 'Tab' || !containerRef.current) return;
 
@@ -57,6 +63,8 @@ export function useFocusTrap(
 
     document.addEventListener('keydown', onKeyDown);
     return () => {
+      const at = openTraps.indexOf(me);
+      if (at >= 0) openTraps.splice(at, 1);
       document.removeEventListener('keydown', onKeyDown);
       previouslyFocused?.focus?.();
     };

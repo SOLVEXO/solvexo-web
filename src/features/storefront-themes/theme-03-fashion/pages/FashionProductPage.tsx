@@ -336,7 +336,8 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
                     </div>
                   )}
                   {mediaCount > 1 && (
-                    <div className={`fx-hide-scroll flex gap-3 overflow-x-auto ${layout.media.layout === 'thumbs_bottom' ? '' : 'md:w-[84px] md:flex-col md:overflow-y-auto md:overflow-x-hidden'}`} style={{ maxHeight: 'min(640px, 70vh)' }}>
+                    <div className={layout.media.layout === 'thumbs_bottom' ? '' : 'md:relative md:w-[84px] md:shrink-0'}>
+                    <div className={`fx-hide-scroll flex gap-3 overflow-x-auto ${layout.media.layout === 'thumbs_bottom' ? '' : 'md:absolute md:inset-0 md:flex-col md:overflow-y-auto md:overflow-x-hidden'}`}>
                       {Array.from({ length: mediaCount }, (_, i) => {
                         const isVideo = i === videoAt;
                         const photo = video && i > videoAt ? i - 1 : i;
@@ -349,6 +350,7 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
                           </button>
                         );
                       })}
+                    </div>
                     </div>
                   )}
                 </div>

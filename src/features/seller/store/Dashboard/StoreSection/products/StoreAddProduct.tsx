@@ -24,6 +24,7 @@ import { filesPayload, type DigitalFileRow } from './digitalFiles';
 import { Modal } from '@/components/comman/ui/Modal';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantOptionsEditor, VariantTableEditor } from './VariantMatrixEditor';
+import { photoLabels, tagText } from './variantPhotos';
 import { MAX_VARIANT_COMBINATIONS, pruneSwatches, type OptionSwatch, type OptionType, type VariantRow } from './variantMatrix';
 
 type ProductType   = 'physical' | 'digital' | 'educational';
@@ -390,13 +391,14 @@ export default function StoreAddProduct() {
 
           {/* Product Images */}
           <Card title="Product Images">
-            <p className="text-[12px] text-slate mb-3">Upload up to 250 images (JPG, PNG or WebP, max 20 MB each) — select several at once. First image is the cover shown to buyers; drag images to reorder. Link photos to a colour or other option in the Variants section below.</p>
+            <p className="text-[12px] text-slate mb-3">Upload up to 250 images (JPG, PNG or WebP, max 20 MB each) — select several at once. First image is the cover shown to buyers; drag images to reorder. Photos for one colour? Upload them inside Variants: tap Add photos on that colour. Shared photos (box, size chart) stay here.</p>
             <ImageUpload
               value={cur.images}
               onChange={urls => pType === 'physical' ? sp('images', urls) : sd('images', urls)}
               maxFiles={250}
               showCover={!(cur.videoUrl && cur.videoFirst)}
               storeId={storeId}
+              tags={pType === 'physical' ? Object.fromEntries(Object.entries(photoLabels(phys.variantRows)).map(([u, l]) => [u, tagText(l)])) : undefined}
             />
             <ProductVideoField
               value={{ videoUrl: cur.videoUrl, videoFirst: cur.videoFirst }}
@@ -617,7 +619,7 @@ export default function StoreAddProduct() {
 
           {variantsModalOpen && (
             <Modal
-              mobileSheet title="Manage Variants" width={800} onClose={() => setVariantsModalOpen(false)}
+              mobileSheet title="Manage Variants" width={1180} onClose={() => setVariantsModalOpen(false)}
               footer={
                 <>
                   {variantStep > 1 && (
@@ -689,6 +691,8 @@ export default function StoreAddProduct() {
                       onRowsChange={v => sp('variantRows', v)}
                       currencySymbol={currencySymbol}
                       productImages={phys.images}
+                      onProductImagesChange={v => sp('images', v)}
+                      storeId={storeId}
                     />
                     {hasVariants && (
                       <>

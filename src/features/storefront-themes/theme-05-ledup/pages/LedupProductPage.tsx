@@ -7,7 +7,8 @@ import { variantGallery } from '../../core/product/variantGallery';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
-import { ShoppingBag, Minus, Plus } from 'lucide-react';
+import { ShoppingBag, Minus, Play, Plus } from 'lucide-react';
+import { parseProductVideo } from '@/utils/productVideo';
 import { ts } from '@/utils/tStatic';
 import type { ProductVariant } from '@/api/services/marketplace';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
@@ -113,6 +114,8 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
   }, [store.storeId, categoryId, productId]);
 
   const images = useMemo(() => variantGallery(variant, variants, detail?.product.images), [variant, variants, detail?.product.images]);
+  const video = useMemo(() => parseProductVideo(variant?.videoUrl || detail?.product.videoUrl), [variant?.videoUrl, detail?.product.videoUrl]);
+  const [videoOn, setVideoOn] = useState(false);
   const imageIndex = gallery.vid === (variant?._id ?? '') ? Math.min(gallery.i, Math.max(0, images.length - 1)) : 0;
 
   // Wholesale gate + price: hooks stay above the early return below.
@@ -178,19 +181,26 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
         <div className="mt-6 grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
           <div className="flex flex-col gap-4 lg:col-span-6">
             <div className="relative flex aspect-[5/5.9] w-full items-center justify-center rounded-3xl bg-white p-8 sm:p-12 lg:max-w-[508px]">
-              {mainImage
+              {videoOn && video ? <LedupVideoBox video={video} poster={images[0]} /> : mainImage
                 ? <img src={mainImage} alt={product.name} className="max-h-full max-w-full object-contain transition duration-300" />
                 : <div className="text-sm text-stone-300">{ts('ld.noImage', 'No image')}</div>}
             </div>
-            {images.length > 1 && (
+            {(images.length > 1 || !!video) && (
               <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:max-w-[508px] lg:justify-center">
                 {images.map((img, i) => (
                   <button key={img + i} type="button" aria-label={ts('product.showImage', 'Show image {{n}}', { n: i + 1 })} aria-current={imageIndex === i}
-                    onClick={() => setGallery({ vid: variant._id, i })}
+                    onClick={() => { setGallery({ vid: variant._id, i }); setVideoOn(false); }}
                     className={`relative h-[100px] w-[80px] shrink-0 rounded-xl border-0 bg-white p-2 shadow-md transition ${imageIndex === i ? 'ring-2 ring-[#9b8b80]' : 'opacity-80 hover:opacity-100'}`}>
                     <img src={img} alt="" className="h-full w-full object-contain" />
                   </button>
                 ))}
+                {video && (
+                  <button type="button" aria-label={ts('product.showVideo', 'Show video')} aria-current={videoOn} onClick={() => setVideoOn(true)}
+                    className={`relative grid h-[100px] w-[80px] shrink-0 place-items-center overflow-hidden rounded-xl border-0 bg-black p-0 shadow-md transition ${videoOn ? 'ring-2 ring-[#9b8b80]' : 'opacity-80 hover:opacity-100'}`}>
+                    {video.poster && <img src={video.poster} alt="" className="absolute inset-0 size-full object-cover opacity-70" />}
+                    <Play size={22} fill="#fff" color="#fff" className="relative" />
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -303,6 +313,24 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
           </div>
       </LedupBox>
         )}
+    </div>
+  );
+}
+
+/** The product / variant video: a file plays in the page, YouTube and Vimeo are embedded, any other https link opens in a new tab. */
+function LedupVideoBox({ video, poster, aspect }: { video: NonNullable<ReturnType<typeof parseProductVideo>>; poster?: string; aspect?: string }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden rounded-3xl" style={{ aspectRatio: aspect, background: '#000' }}>
+      {video.kind === 'file'
+        ? <video key={video.src} src={video.src} poster={video.poster ?? poster} controls playsInline preload="metadata" className="size-full object-contain" aria-label="Product video"><track kind="captions" /></video>
+        : video.kind === 'link'
+          ? (
+            <a href={video.src} target="_blank" rel="noopener noreferrer" aria-label="Product video" className="relative block size-full">
+              {poster && <img src={poster} alt="" className="size-full object-cover opacity-80" />}
+              <span className="absolute inset-0 grid place-items-center"><span className="grid size-16 place-items-center rounded-full" style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}><Play size={26} fill="currentColor" /></span></span>
+            </a>
+          )
+          : <iframe key={video.src} src={video.src} title="Product video" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen className="size-full border-0" />}
     </div>
   );
 }
