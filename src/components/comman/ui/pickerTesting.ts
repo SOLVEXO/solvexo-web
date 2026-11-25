@@ -54,6 +54,6 @@ export function chooseDateTime(trigger: HTMLElement, iso: string, confirmName: s
   const hour = h24 % 12 || 12;
   fireEvent.click(screen.getByLabelText(`${hour} o'clock`));
   fireEvent.click(screen.getByLabelText(`${minute} minutes`));
-  fireEvent.click(screen.getByRole('button', { name: h24 >= 12 ? 'PM' : 'AM' }));
+  fireEvent.click(screen.getByRole('button', { name: h24 >= 12 ? /^PM$/ : /^AM$/ }));
   fireEvent.click(screen.getByRole('button', { name: confirmName }));
 }
