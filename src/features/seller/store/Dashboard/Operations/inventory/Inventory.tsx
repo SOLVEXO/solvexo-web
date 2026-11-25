@@ -8,8 +8,7 @@ import {
   CheckCircle2, XCircle, Package, MapPin, ArrowLeftRight, Truck, SlidersHorizontal, ClipboardCheck, TrendingUp,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import {
-  Table,      type TableColumn,
+import { Table,      type TableColumn,
   Badge,
   EmptyState,
   Card,
@@ -18,8 +17,7 @@ import {
   MetricCard,
   Modal,
   Button,
-  Toggle,
-} from '@/components/comman/ui';
+  Toggle, Select } from '@/components/comman/ui';
 import {
   apiGetLowStockSummary,
   apiExportInventoryCsv,
@@ -743,17 +741,13 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
             <div className="px-5 pt-4 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-[14px] font-bold text-charcoal shrink-0">All Stock (per SKU)</p>
               <div className="flex items-center gap-2 sm:ml-auto">
-                <select
-                  value={statusFilter}
-                  onChange={e => { setStatusFilter(e.target.value as StockLineStatusFilter | ''); setPage(1); }}
-                  className="border border-bone rounded-[8px] px-2.5 py-2 text-[12.5px] bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/40 shrink-0"
-                >
+                <Select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as StockLineStatusFilter | ''); setPage(1); }} wrapperClassName="shrink-0">
                   <option value="">All Status</option>
                   <option value="in_stock">In Stock</option>
                   <option value="low_stock">Low Stock</option>
                   <option value="out_of_stock">Out of Stock</option>
                   <option value="unlimited">Unlimited</option>
-                </select>
+                </Select>
                 <SearchInput
                   value={search}
                   onChange={value => { setSearch(value); setPage(1); }}
@@ -827,13 +821,9 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
 
             <div>
               <label className="text-[12px] font-medium text-graphite mb-1 block">Reason</label>
-              <select
-                value={adjustReason}
-                onChange={e => setAdjustReason(e.target.value as StockAdjustmentReason)}
-                className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
-              >
+              <Select value={adjustReason} onChange={e => setAdjustReason(e.target.value as StockAdjustmentReason)} wrapperClassName="w-full">
                 {REASON_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
+              </Select>
               {isBucketOnlyReason && (
                 <p className="text-[11px] text-slate mt-1.5">
                   {adjustReason === 'damaged'
@@ -849,15 +839,11 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
                 {adjustBreakdownLoading ? (
                   <SkeletonBox height={38} rounded="8px" />
                 ) : (
-                  <select
-                    value={adjustLocationId}
-                    onChange={e => setAdjustLocationId(e.target.value)}
-                    className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
-                  >
+                  <Select value={adjustLocationId} onChange={e => setAdjustLocationId(e.target.value)} wrapperClassName="w-full">
                     {(adjustBreakdown?.locations ?? []).map(l => (
                       <option key={l.locationId} value={l.locationId}>{l.locationName} — {l.stock} units</option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               </div>
             )}
@@ -980,27 +966,19 @@ export function StoreInventory({ embedded = false }: { embedded?: boolean } = {}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[12px] font-medium text-graphite mb-1 block">From</label>
-                    <select
-                      value={transferFrom}
-                      onChange={e => setTransferFrom(e.target.value)}
-                      className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
-                    >
+                    <Select value={transferFrom} onChange={e => setTransferFrom(e.target.value)} wrapperClassName="w-full">
                       {transferBreakdown.locations.map(l => (
                         <option key={l.locationId} value={l.locationId}>{l.locationName} ({l.stock})</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                   <div>
                     <label className="text-[12px] font-medium text-graphite mb-1 block">To</label>
-                    <select
-                      value={transferTo}
-                      onChange={e => setTransferTo(e.target.value)}
-                      className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
-                    >
+                    <Select value={transferTo} onChange={e => setTransferTo(e.target.value)} wrapperClassName="w-full">
                       {transferBreakdown.locations.map(l => (
                         <option key={l.locationId} value={l.locationId}>{l.locationName} ({l.stock})</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
 

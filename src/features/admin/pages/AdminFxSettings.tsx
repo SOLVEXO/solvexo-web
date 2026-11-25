@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { RefreshCw, History, AlertTriangle, Globe2, Plus, Coins, TrendingUp, Zap } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button, Input, Toggle, StatusBadge, EmptyState, Table, AdminPageHeader, type TableColumn } from '@/components/comman/ui';
+import { Button, Input, Toggle, StatusBadge, EmptyState, Table, AdminPageHeader, type TableColumn, Select } from '@/components/comman/ui';
 import { SettingsCard, SettingsRow } from '@/components/comman/settings';
 import {
   apiGetPlatformConfig, apiUpdateFxConfig, apiGetAdminCurrencies, apiAddCurrency, apiEnableAllCurrencies,
@@ -17,7 +17,6 @@ function formatDate(iso: string) {
 
 /** Bare select styled to the settings input convention (the shared `Select`
  *  wraps a label we don't want inside an inline control row). */
-const FIELD_CLS = 'w-full px-3 py-2 rounded-[10px] border border-bone bg-white text-[13px] outline-none cursor-pointer focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15 disabled:opacity-50 disabled:cursor-not-allowed';
 
 // ── Current rate cards ────────────────────────────────────────────────────────
 function RateCard({ currency, rate, staleness }: {
@@ -108,12 +107,11 @@ function OverrideForm({ currencies, onDone }: { currencies: string[]; onDone: ()
       <div className="flex items-end gap-3 flex-wrap">
         <div className="w-[110px]">
           <label className="block text-[12px] font-medium text-charcoal mb-1">Currency</label>
-          <select value={currency} onChange={e => setCurrency(e.target.value)} disabled={selectable.length === 0}
-            aria-label="Currency to override" className={FIELD_CLS}>
+          <Select value={currency} onChange={e => setCurrency(e.target.value)} disabled={selectable.length === 0} aria-label="Currency to override">
             {selectable.length === 0
               ? <option value="PKR">PKR</option>
               : selectable.map(code => <option key={code} value={code}>{code}</option>)}
-          </select>
+          </Select>
         </div>
         <div className="w-[160px]">
           <Input label="Rate (per 1 USD)" type="number" min="1" value={rate} onChange={e => setRate(e.target.value)} placeholder="278" />

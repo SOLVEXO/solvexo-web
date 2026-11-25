@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Palette } from 'lucide-react';
 import { apiSendAbandonedCartTest, apiUpdateAbandonedCartSettings, type AbandonedCartSettings } from '@/api/services/abandonedCart';
-import { Button } from '@/components/comman/ui';
+import { Button, Select } from '@/components/comman/ui';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmailCampaignEditor } from './EmailCampaignEditor';
 import { ABANDONED_CART_MERGE_TAGS, abandonedCartStarterDesign } from './automationDesigns';
@@ -85,10 +85,10 @@ export function AbandonedCartExtras({ storeId, settings, onChange }: { storeId: 
     <>
       <div className="border-t border-bone pt-3.5">
         <label htmlFor="ac-audience" className="text-xs font-medium text-graphite mb-[5px] block">Send to</label>
-        <select id="ac-audience" value={settings.audience ?? 'subscribed'} onChange={e => onChange({ audience: e.target.value as 'subscribed' | 'all' })} className={INPUT_CLS}>
+        <Select id="ac-audience" value={settings.audience ?? 'subscribed'} onChange={e => onChange({ audience: e.target.value as 'subscribed' | 'all' })}>
           <option value="subscribed">Customers who accept marketing</option>
           <option value="all">All customers</option>
-        </select>
+        </Select>
         <p className="text-[11px] text-slate mt-1">Same choice as Shopify's “To:” field. With “All customers”, check the marketing rules that apply where your customers live. Anyone who unsubscribed is never emailed.</p>
       </div>
 

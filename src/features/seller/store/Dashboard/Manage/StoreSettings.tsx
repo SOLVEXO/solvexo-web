@@ -7,7 +7,7 @@ import { LANGUAGE_OPTIONS } from '@/utils/languages';
 import { COUNTRY_OPTIONS } from '@/utils/countries';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { isStaffSession } from '@/hooks/auth/useCan';
-import { ImageUpload, Toggle } from '@/components/comman/ui';
+import { ImageUpload, Toggle, Select } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { CustomerAccountsSection } from './CustomerAccountsSection';
 import { DomainsSection } from './DomainsSection';
@@ -247,18 +247,18 @@ export function StoreProfileTab() {
           </Field>
 
           <Field label="Store country">
-            <select value={country} onChange={e => setCountry(e.target.value)} disabled={isStaffSession()} className={inputCls} aria-label="Store country">
+            <Select value={country} onChange={e => setCountry(e.target.value)} disabled={isStaffSession()} aria-label="Store country">
               <option value="">Select your country</option>
               {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
-            </select>
+            </Select>
             <p className="text-[11px] text-slate mt-1">Decides which payment providers you can connect (for example Stripe or local gateways). Disconnect your payment providers in Integrations before changing it. Only the store owner can change it.</p>
           </Field>
 
           <Field label="Time zone">
-            <select value={timezone} onChange={e => setTimezone(e.target.value)} className={inputCls} aria-label="Store time zone">
+            <Select value={timezone} onChange={e => setTimezone(e.target.value)} aria-label="Store time zone">
               <option value="">Automatic (from your store country)</option>
               {TIME_ZONES.map(z => <option key={z} value={z}>{z.replace(/_/g, ' ')}</option>)}
-            </select>
+            </Select>
             <p className="text-[11px] text-slate mt-1">Analytics days, "Today" and report dates use this time zone.</p>
           </Field>
         </SettingsCard>
@@ -271,18 +271,18 @@ export function StoreProfileTab() {
           description="The language you write your catalog in, and how a price reads for your customers."
         >
           <Field label="Store language">
-            <select value={defaultLanguage} onChange={e => setDefaultLanguage(e.target.value)} className={inputCls} aria-label="Store language">
+            <Select value={defaultLanguage} onChange={e => setDefaultLanguage(e.target.value)} aria-label="Store language">
               {LANGUAGE_OPTIONS.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
-            </select>
+            </Select>
             <p className="text-[11px] text-slate mt-1">The language you write your products, pages and menus in. Customers see it with no language folder in the web address; other languages come from Translate &amp; adapt. Changing it does not translate your content.</p>
           </Field>
 
           <Field label="Price format on your storefront">
-            <select value={currencyDisplay} onChange={e => setCurrencyDisplay(e.target.value as CurrencyDisplay)} className={inputCls} aria-label="Price format">
+            <Select value={currencyDisplay} onChange={e => setCurrencyDisplay(e.target.value as CurrencyDisplay)} aria-label="Price format">
               <option value="symbol">Symbol only — {moneyPreview('symbol', store?.baseCurrency)}</option>
               <option value="code">Currency code only — {moneyPreview('code', store?.baseCurrency)}</option>
               <option value="symbol_code">Symbol and code — {moneyPreview('symbol_code', store?.baseCurrency)}</option>
-            </select>
+            </Select>
             <p className="text-[11px] text-slate mt-1">How prices read for your customers, in every currency they shop in.</p>
           </Field>
         </SettingsCard>
@@ -468,16 +468,11 @@ export function TaxesTab() {
                   onChange={e => setTaxRegions(rs => rs.map((x, j) => j === i ? { ...x, rate: Math.min(100, Math.max(0, Number(e.target.value) || 0)) } : x))}
                   className={`${inputCls} w-20`}
                 />
-                <select
-                  value={r.pricesIncludeTax == null ? '' : r.pricesIncludeTax ? 'in' : 'ex'}
-                  onChange={e => setTaxRegions(rs => rs.map((x, j) => j === i ? { ...x, pricesIncludeTax: e.target.value === '' ? null : e.target.value === 'in' } : x))}
-                  className={`${inputCls} w-28`}
-                  aria-label="Prices include tax in this region"
-                >
+                <Select value={r.pricesIncludeTax == null ? '' : r.pricesIncludeTax ? 'in' : 'ex'} onChange={e => setTaxRegions(rs => rs.map((x, j) => j === i ? { ...x, pricesIncludeTax: e.target.value === '' ? null : e.target.value === 'in' } : x))} aria-label="Prices include tax in this region">
                   <option value="">Store default</option>
                   <option value="in">Tax included</option>
                   <option value="ex">Tax added</option>
-                </select>
+                </Select>
                 <button
                   type="button"
                   onClick={() => setTaxRegions(rs => rs.filter((_, j) => j !== i))}

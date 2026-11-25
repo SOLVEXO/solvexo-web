@@ -5,7 +5,7 @@ import { Archive, Download, Inbox, Mail, Paperclip, Search, ShieldAlert, Trash2 
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState } from '@/components/comman/ui/EmptyState';
 import { Button } from '@/components/comman/ui/Button';
-import { SkeletonBox } from '@/components/comman/ui';
+import { SkeletonBox, Select } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { useToast } from '@/contexts/ToastContext';
 import {
@@ -145,17 +145,15 @@ export default function ContactMessages() {
               className="w-full rounded-lg border border-bone bg-white py-2 pl-9 pr-3 text-[13px] outline-none focus:border-brand-orange" />
           </div>
           {forms.length > 1 && (
-            <select aria-label="Filter by form" value={form} onChange={e => { setForm(e.target.value); setPage(1); }}
-              className="rounded-lg border border-bone bg-white px-3 py-2 text-[13px] text-charcoal outline-none focus:border-brand-orange">
+            <Select aria-label="Filter by form" value={form} onChange={e => { setForm(e.target.value); setPage(1); }}>
               <option value="">All forms</option>
               {forms.map(f => <option key={f.name || '__unnamed'} value={f.name || '__unnamed'}>{f.name || 'Unnamed form'} ({f.total})</option>)}
-            </select>
+            </Select>
           )}
-          <select aria-label="Filter by source" value={source} onChange={e => { setSource(e.target.value); setPage(1); }}
-            className="rounded-lg border border-bone bg-white px-3 py-2 text-[13px] text-charcoal outline-none focus:border-brand-orange">
+          <Select aria-label="Filter by source" value={source} onChange={e => { setSource(e.target.value); setPage(1); }}>
             <option value="">All sources</option>
             {['direct', 'search', 'social', 'email', 'paid', 'referral'].map(k => <option key={k} value={k}>{k[0].toUpperCase() + k.slice(1)}</option>)}
-          </select>
+          </Select>
           <Button size="sm" variant="outline" onClick={() => setShowReport(true)}>Form report</Button>
           <Button size="sm" variant="outline" onClick={() => void exportCsv()} loading={exporting}><Download size={13} className="mr-1" /> Export CSV</Button>
         </div>

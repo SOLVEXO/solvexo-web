@@ -10,7 +10,7 @@ import {
 } from '@/api/services/activityLog';
 import { timeAgo } from '@/utils/timeAgo';
 import { ChevronLeft, ChevronRight, Activity as ActivityIcon, Download, X } from 'lucide-react';
-import { EmptyState, ActivityLogDetailModal } from '@/components/comman/ui';
+import { EmptyState, ActivityLogDetailModal, Select } from '@/components/comman/ui';
 
 // The only `targetType`s a seller actually has a real page for — everything
 // else stays plain text in the detail modal rather than a broken/fake link.
@@ -193,17 +193,13 @@ export function ActivityLogTab() {
 
           <div className="px-4 py-[14px]">
             <p className="text-xs font-semibold text-graphite mb-2">Date Range</p>
-            <select
-              value={dateRange}
-              onChange={e => { setDateRange(e.target.value); setPage(1); }}
-              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
-            >
+            <Select value={dateRange} onChange={e => { setDateRange(e.target.value); setPage(1); }} wrapperClassName="w-full">
               <option value="last7">Last 7 days</option>
               <option value="last30">Last 30 days</option>
               <option value="last90">Last 90 days</option>
               <option value="all">All time</option>
               <option value="custom">Custom range…</option>
-            </select>
+            </Select>
             {dateRange === 'custom' && (
               <div className="flex flex-col gap-2 mt-2">
                 <label className="text-[11px] text-slate">From<input type="date" value={customFrom} max={customTo || undefined} onChange={e => { setCustomFrom(e.target.value); setPage(1); }} className="mt-0.5 w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal" /></label>

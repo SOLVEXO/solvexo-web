@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Users, Plus, Check, X, ShieldCheck, KeyRound, Trash2 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { EmptyState, Badge, Modal, Toggle } from '@/components/comman/ui';
+import { EmptyState, Badge, Modal, Toggle, Select } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import client from '@/api/client';
 import { ENDPOINTS } from '@/api/endpoints';
@@ -354,11 +354,10 @@ function StaffList({ storeId, staff, roles, loading, roleName, onChanged }: {
             </div>
             <div>
               <label htmlFor="staff-form-role" className="text-[12px] font-medium text-graphite mb-1 block">Role</label>
-              <select id="staff-form-role" value={form.roleId} onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))}
-                className="w-full border border-bone rounded-[8px] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white">
+              <Select id="staff-form-role" value={form.roleId} onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))} wrapperClassName="w-full">
                 <option value="">— Select a Role —</option>
                 {roles.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
-              </select>
+              </Select>
               <p className="text-[11px] text-slate mt-1">Manage what each Role can do from the Roles tab.</p>
             </div>
             <div>

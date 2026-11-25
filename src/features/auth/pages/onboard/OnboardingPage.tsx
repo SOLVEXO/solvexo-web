@@ -14,7 +14,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
-import { PasteImageUrl } from '@/components/comman/ui';
+import { PasteImageUrl, Select } from '@/components/comman/ui';
 import { apiGetEnabledCurrencies, apiGetSellerProfiles, apiSuggestLocation, apiUpdateStore, type SellerType, type ProductType, type StoreData, type SupportedCurrency } from '@/api/services/store';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { completePlanChange } from '@/utils/planChangeFlow';
@@ -344,12 +344,10 @@ function Step1StoreInfo({ form, setForm, onNext }: {
 
         <div className="mb-6">
           <label htmlFor="onboard-country" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.countryLabel} <span className="text-brand-orange">*</span></label>
-          <select id="onboard-country" value={form.country ?? ''}
-            onChange={e => { setCountryTouched(true); setCurrencyTouched(false); setForm({ ...form, country: e.target.value }); }}
-            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+          <Select id="onboard-country" value={form.country ?? ''} onChange={e => { setCountryTouched(true); setCurrencyTouched(false); setForm({ ...form, country: e.target.value }); }} wrapperClassName="w-full">
             <option value="">{t.countryPlaceholder}</option>
             {countryOptions.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
-          </select>
+          </Select>
           <p className="text-[11px] text-slate mt-[5px]">
             {t.countryHelp}
           </p>
@@ -363,12 +361,10 @@ function Step1StoreInfo({ form, setForm, onNext }: {
             <label htmlFor="onboard-currency" className="block text-[12px] font-medium text-charcoal mb-[6px]">{t.currencyLabel} <span className="text-brand-orange">*</span></label>
             {(
               <>
-                <select id="onboard-currency" value={currencyTouched ? form.baseCurrency : ''}
-                  onChange={e => { setCurrencyTouched(true); setForm({ ...form, baseCurrency: e.target.value }); }}
-                  className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+                <Select id="onboard-currency" value={currencyTouched ? form.baseCurrency : ''} onChange={e => { setCurrencyTouched(true); setForm({ ...form, baseCurrency: e.target.value }); }} wrapperClassName="w-full">
                   <option value="">{t.currencyPick}</option>
                   {currencyOptions.map(code => <option key={code} value={code}>{code}</option>)}
-                </select>
+                </Select>
                 <p className="text-[11px] text-slate mt-[5px]">{t.currencyUnavailable} {t.currencyHelp}</p>
               </>
             )}

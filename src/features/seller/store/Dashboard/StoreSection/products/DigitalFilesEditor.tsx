@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
-import { FileUpload, type PrivateUploadData } from '@/components/comman/ui';
+import { FileUpload, type PrivateUploadData, Select } from '@/components/comman/ui';
 import { rowFromUpload, type DigitalFileRow } from './digitalFiles';
 
 const inp = 'w-full h-9 px-3 rounded-lg border border-bone text-[13px] bg-white text-carbon outline-none focus:ring-2 focus:ring-brand-orange/30';
@@ -66,12 +66,12 @@ export function DigitalDeliveryFields({
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <label className="flex flex-col gap-1 text-[12px]">
         Download limit
-        <select value={downloadLimit} onChange={(e) => onLimit(e.target.value)} className={inp}>
+        <Select value={downloadLimit} onChange={(e) => onLimit(e.target.value)}>
           <option value="unlimited">Unlimited</option>
           <option value="1">1 download</option>
           <option value="3">3 downloads</option>
           <option value="5">5 downloads</option>
-        </select>
+        </Select>
       </label>
       <div className="flex flex-col gap-1 text-[12px]">
         <label className="flex items-center gap-2">

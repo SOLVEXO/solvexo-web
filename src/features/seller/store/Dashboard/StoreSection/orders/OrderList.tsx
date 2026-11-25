@@ -559,37 +559,24 @@ export function StoreOrderList() {
                 <button type="button" onClick={() => setFiltersOpen(true)} className="sm:hidden shrink-0 px-3 py-2 rounded-lg border border-bone bg-white text-[13px] text-charcoal cursor-pointer">
                   Filters{(statusF ? 1 : 0) + (typeF ? 1 : 0) > 0 ? ` (${(statusF ? 1 : 0) + (typeF ? 1 : 0)})` : ''}
                 </button>
-                <select
-                  aria-label="Order views"
-                  value={preorderOnly ? 'preorders' : view}
-                  onChange={e => { const id = e.target.value; if (id === 'preorders') { setView(''); setPreorderOnly(true); } else { setPreorderOnly(false); setView(id); } }}
-                  className="text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
-                >
+                <Select aria-label="Order views" value={preorderOnly ? 'preorders' : view} onChange={e => { const id = e.target.value; if (id === 'preorders') { setView(''); setPreorderOnly(true); } else { setPreorderOnly(false); setView(id); } }} wrapperClassName="shrink-0">
                   {([['', 'All'], ['unfulfilled', 'Unfulfilled'], ['unpaid', 'Unpaid'], ['open', 'Open'], ['preorders', 'Pre-orders'], ['cod_awaiting', 'COD awaiting confirmation']] as const).map(([id, label]) => (
                     <option key={id || 'all'} value={id}>{label}</option>
                   ))}
-                </select>
-                <select
-                  value={statusF || 'All Status'}
-                  onChange={e => setStatusF(e.target.value === 'All Status' ? '' : e.target.value)}
-                  className="max-sm:hidden text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
-                >
+                </Select>
+                <Select value={statusF || 'All Status'} onChange={e => setStatusF(e.target.value === 'All Status' ? '' : e.target.value)} wrapperClassName="max-sm:hidden shrink-0">
                   {['All Status', 'pending', 'processing', 'shipped', 'completed', 'cancelled'].map(o => (
                     <option key={o} value={o}>{o === 'All Status' ? 'All Status' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
                   ))}
-                </select>
+                </Select>
                 <label className="flex items-center gap-1.5 text-[13px] text-charcoal cursor-pointer shrink-0">
                   <input type="checkbox" className="accent-brand-orange" checked={localOnly} onChange={e => setLocalOnly(e.target.checked)} /> Local delivery
                 </label>
-                <select
-                  value={typeF || 'All Types'}
-                  onChange={e => setTypeF(e.target.value === 'All Types' ? '' : e.target.value)}
-                  className="max-sm:hidden text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
-                >
+                <Select value={typeF || 'All Types'} onChange={e => setTypeF(e.target.value === 'All Types' ? '' : e.target.value)} wrapperClassName="max-sm:hidden shrink-0">
                   {['All Types', 'digital', 'physical'].map(o => (
                     <option key={o} value={o}>{o === 'All Types' ? 'All Types' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
                   ))}
-                </select>
+                </Select>
                 {(canPrint || canFulfill || canBookCourier) && orders.length > 0 && (
                   <label className="flex items-center gap-1.5 text-[13px] text-charcoal cursor-pointer shrink-0 whitespace-nowrap">
                     <input type="checkbox" className="accent-brand-orange cursor-pointer" checked={allSelected} onChange={toggleAll} disabled={bulkBusy !== null} />
@@ -655,14 +642,14 @@ export function StoreOrderList() {
         >
           <div className="flex flex-col gap-3">
             <label className="text-[13px] text-slate">Status
-              <select value={statusF} onChange={e => setStatusF(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-lg border border-bone bg-white text-charcoal">
+              <Select value={statusF} onChange={e => setStatusF(e.target.value)} wrapperClassName="mt-1 w-full">
                 {['', 'pending', 'processing', 'shipped', 'completed', 'cancelled'].map(o => <option key={o} value={o}>{o ? o.charAt(0).toUpperCase() + o.slice(1) : 'All Status'}</option>)}
-              </select>
+              </Select>
             </label>
             <label className="text-[13px] text-slate">Type
-              <select value={typeF} onChange={e => setTypeF(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-lg border border-bone bg-white text-charcoal">
+              <Select value={typeF} onChange={e => setTypeF(e.target.value)} wrapperClassName="mt-1 w-full">
                 {['', 'digital', 'physical'].map(o => <option key={o} value={o}>{o ? o.charAt(0).toUpperCase() + o.slice(1) : 'All Types'}</option>)}
-              </select>
+              </Select>
             </label>
           </div>
         </Modal>

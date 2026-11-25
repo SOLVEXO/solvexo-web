@@ -1,5 +1,6 @@
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { chooseValue, dropdown } from '@/components/comman/ui/dropdownTesting';
 
 const generate = vi.fn();
 const accept = vi.fn();
@@ -75,7 +76,7 @@ describe('AiSeoTab', () => {
 
   it('Store type needs no picker and uses the store id', async () => {
     render(<AiSeoTab storeId="s1" />);
-    fireEvent.change(screen.getByLabelText('Entity Type'), { target: { value: 'store' } });
+    chooseValue(dropdown('Entity Type'), 'store');
     expect(screen.queryByRole('button', { name: /Choose product/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Generate/ }));
     await screen.findByText('Great title');

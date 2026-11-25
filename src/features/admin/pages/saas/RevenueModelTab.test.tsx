@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { RevenueModel, RevenueStream } from '@/api/services/analytics/saasMetrics';
 
@@ -83,7 +84,7 @@ describe('RevenueModelTab', () => {
     api.apiGetRevenueModel.mockResolvedValueOnce({ success: true, data: fixture }).mockRejectedValueOnce(new Error('boom'));
     renderTab();
     await screen.findByText('$1,500');
-    fireEvent.change(screen.getByLabelText('Months shown'), { target: { value: '24' } });
+    chooseValue(dropdown('Months shown'), '24');
     await waitFor(() => expect(api.apiGetRevenueModel).toHaveBeenLastCalledWith(24));
     expect(api.apiGetRevenueModel).toHaveBeenCalledWith(12);
   });

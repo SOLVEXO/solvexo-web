@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { apiListCollections } from '@/api/services/collections';
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
 import type { TaxOverride } from '@/api/services/store';
+import { Select } from '@/components/comman/ui';
 
 const inputCls = 'w-full px-3 py-[9px] rounded-lg text-[13px] border border-bone bg-bone text-charcoal outline-none box-border';
 
@@ -75,14 +76,14 @@ export function TaxOverridesEditor({ storeId, value, onChange }: { storeId: stri
             ))}
           </div>
           <div className="flex gap-2">
-            <select className={inputCls} value="" aria-label="Add collection" onChange={e => e.target.value && patch(i, { collectionIds: [...new Set([...o.collectionIds, e.target.value])] })}>
+            <Select value="" aria-label="Add collection" onChange={e => e.target.value && patch(i, { collectionIds: [...new Set([...o.collectionIds, e.target.value])] })}>
               <option value="">+ Add collection…</option>
               {collections.filter(c => !o.collectionIds.includes(c.id)).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <select className={inputCls} value="" aria-label="Add category" onChange={e => e.target.value && patch(i, { categoryIds: [...new Set([...o.categoryIds, e.target.value])] })}>
+            </Select>
+            <Select value="" aria-label="Add category" onChange={e => e.target.value && patch(i, { categoryIds: [...new Set([...o.categoryIds, e.target.value])] })}>
               <option value="">+ Add category…</option>
               {categories.filter(c => !o.categoryIds.includes(c.id)).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            </Select>
           </div>
           {o.collectionIds.length + o.categoryIds.length === 0 && <p className="text-[11px] text-red-600">Pick at least one collection or category.</p>}
         </div>

@@ -1,3 +1,4 @@
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -95,9 +96,9 @@ describe('AccountingHub', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Journal' }));
     fireEvent.click(await screen.findByRole('button', { name: 'New journal entry' }));
     const dialog = screen.getByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText('Line 1 account'), { target: { value: 'cash' } });
+    chooseValue(dropdown('Line 1 account', dialog), 'cash');
     fireEvent.change(within(dialog).getByLabelText('Line 1 debit'), { target: { value: '100' } });
-    fireEvent.change(within(dialog).getByLabelText('Line 2 account'), { target: { value: 'capital' } });
+    chooseValue(dropdown('Line 2 account', dialog), 'capital');
     fireEvent.change(within(dialog).getByLabelText('Line 2 credit'), { target: { value: '90' } });
     const postBtn = within(dialog).getByRole('button', { name: 'Post entry' }) as HTMLButtonElement;
     expect(postBtn.disabled).toBe(true);

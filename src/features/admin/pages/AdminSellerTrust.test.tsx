@@ -15,6 +15,7 @@ const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(
 vi.mock('@/contexts/ToastContext', () => ({ useToast: () => toast }));
 
 import { AdminSellerTrust } from './AdminSellerTrust';
+import { chooseValue, optionsOf } from '@/components/comman/ui/dropdownTesting';
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -52,15 +53,15 @@ describe('AdminSellerTrust', () => {
     setup();
     await screen.findAllByText('GlowSkin Store');
     const picker = screen.getByLabelText('stores per page');
-    expect([...(picker as HTMLSelectElement).options].map(o => o.value)).toEqual(['25', '50', '100']);
-    fireEvent.change(picker, { target: { value: '100' } });
+    expect(optionsOf(picker).map(o => o.value)).toEqual(['25', '50', '100']);
+    chooseValue(picker, '100');
     await waitFor(() => expect(api.apiListSellerTrustStores).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, limit: 100 })));
   });
 
   it('filters, switches to the review queue (oldest submission first) and opens a store', async () => {
     setup();
     await screen.findAllByText('GlowSkin Store');
-    fireEvent.change(screen.getByDisplayValue('NTN: any'), { target: { value: 'no' } });
+    chooseValue(screen.getByRole('combobox', { name: 'NTN: any' }), 'no');
     await waitFor(() => expect(api.apiListSellerTrustStores).toHaveBeenLastCalledWith(expect.objectContaining({ ntn: 'no' })));
     fireEvent.click(screen.getByRole('button', { name: /Review queue/ }));
     await waitFor(() => expect(api.apiListSellerTrustStores).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'pending', sort: 'submitted' })));
@@ -155,7 +156,7 @@ describe('AdminSellerTrust', () => {
     api.apiTrustRemind.mockResolvedValue({ success: true, data: { sent: 1, skipped: 1 } });
     setup();
     await screen.findAllByText('GlowSkin Store');
-    fireEvent.change(screen.getByDisplayValue('Risk: any'), { target: { value: 'high' } });
+    chooseValue(screen.getByRole('combobox', { name: 'Risk: any' }), 'high');
     await waitFor(() => expect(api.apiListSellerTrustStores).toHaveBeenLastCalledWith(expect.objectContaining({ risk: 'high' })));
     fireEvent.click(screen.getByRole('button', { name: 'Remind all matching' }));
     const confirm = screen.getByRole('alertdialog', { name: 'Confirm reminders' });

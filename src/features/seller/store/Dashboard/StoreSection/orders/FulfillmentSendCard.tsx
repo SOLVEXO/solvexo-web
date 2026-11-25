@@ -3,6 +3,7 @@ import { Warehouse } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
 import { apiListFulfillmentServices, apiSendOrderToFulfillment, type FulfillmentServiceRow } from '@/api/services/fulfillmentServices';
+import { Select } from '@/components/comman/ui';
 
 /** Order detail: hand this order to a connected fulfilment service (3PL). Hidden when none is connected. */
 export default function FulfillmentSendCard({ storeId, orderId }: { storeId: string; orderId: string }) {
@@ -30,9 +31,9 @@ export default function FulfillmentSendCard({ storeId, orderId }: { storeId: str
       <div className="flex items-center gap-2 text-[13.5px] font-semibold text-charcoal"><Warehouse size={15} aria-hidden /> Fulfilment service</div>
       <p className="text-[12.5px] text-slate m-0">Send the unshipped items to your warehouse. Tracking comes back automatically.</p>
       <div className="flex flex-wrap items-center gap-2">
-        <select aria-label="Fulfilment service" className="h-9 rounded-lg border border-border-soft px-2 text-[13px]" value={choice} onChange={(e) => setChoice(e.target.value)}>
+        <Select aria-label="Fulfilment service" value={choice} onChange={(e) => setChoice(e.target.value)}>
           {services.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
-        </select>
+        </Select>
         <Button size="sm" onClick={send} loading={busy} disabled={!choice || sent}>{sent ? 'Sent' : 'Send order'}</Button>
       </div>
     </div>

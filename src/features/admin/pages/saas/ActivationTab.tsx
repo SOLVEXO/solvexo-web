@@ -5,6 +5,7 @@ import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkelet
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { apiGetActivationFunnel, type ActivationFunnel, type FunnelStep } from '@/api/services/analytics/saasMetrics';
 import { Card, Empty } from './parts';
+import { Select } from '@/components/comman/ui';
 
 const RANGE_OPTIONS = [3, 6, 12];
 const STUCK_PREVIEW = 10;
@@ -59,10 +60,9 @@ export function ActivationTab() {
         <p className="text-[12.5px] text-slate">Merchants who signed up {data ? `since ${new Date(data.from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}</p>
         <div>
           <label htmlFor="activation-range" className="sr-only">Sign-up period</label>
-          <select id="activation-range" value={months} onChange={e => setMonths(Number(e.target.value))}
-            className="h-8 rounded-lg border border-bone bg-white px-2.5 text-[12.5px] text-charcoal">
+          <Select id="activation-range" value={months} onChange={e => setMonths(Number(e.target.value))}>
             {RANGE_OPTIONS.map(n => <option key={n} value={n}>Signed up in the last {n} months</option>)}
-          </select>
+          </Select>
         </div>
       </div>
 

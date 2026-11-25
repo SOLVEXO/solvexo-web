@@ -2,9 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Trash2, Pencil, ArrowLeft, Boxes } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import {
-  Button, Table, type TableColumn, Modal, Input, Field, EmptyState,
-} from '@/components/comman/ui';
+import { Button, Table, type TableColumn, Modal, Input, Field, EmptyState, Select } from '@/components/comman/ui';
 import {
   apiGetMetaobjectDefinition, apiListMetaobjectEntries, apiCreateMetaobjectEntry,
   apiUpdateMetaobjectEntry, apiDeleteMetaobjectEntry,
@@ -34,11 +32,11 @@ function FieldValueInput({ type, value, onChange }: { type: MetafieldType; value
       // own "is required" check even though the dropdown plainly showed an
       // answer already picked.
       return (
-        <select className={inp} value={value} onChange={e => onChange(e.target.value)}>
+        <Select value={value} onChange={e => onChange(e.target.value)}>
           {!value && <option value="">— Select —</option>}
           <option value="true">True</option>
           <option value="false">False</option>
-        </select>
+        </Select>
       );
     case 'date':
       return <input type="date" className={inp} value={value} onChange={e => onChange(e.target.value)} />;

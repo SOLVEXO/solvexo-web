@@ -10,6 +10,8 @@ export { Badge, StatusBadge }                from './Badge';
 export { Card }                              from './Card';
 
 export { Input, Textarea, Select }           from './Input';
+export { MultiSelect, parseOptions }          from './Dropdown';
+export type { DropdownOption, SelectProps, MultiSelectProps } from './Dropdown';
 export { PhoneInput }                        from './PhoneInput';
 
 export { Avatar }                            from './Avatar';

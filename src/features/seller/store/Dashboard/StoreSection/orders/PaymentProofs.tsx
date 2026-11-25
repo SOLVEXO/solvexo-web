@@ -3,7 +3,7 @@ import { Landmark, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { useSellerManualPayments, useApproveManualPayment, useRejectManualPayment } from '@/hooks/store/useSellerManualPayments';
 import type { SellerManualPaymentProof, ManualPaymentProofStatus } from '@/api/services/manualPayment';
-import { Button, Modal, StatusBadge, Textarea, Table, type TableColumn } from '@/components/comman/ui';
+import { Button, Modal, StatusBadge, Textarea, Table, type TableColumn, Select } from '@/components/comman/ui';
 
 const STATUS_LABEL: Record<ManualPaymentProofStatus, string> = {
   pending: 'Pending', approved: 'Approved', rejected: 'Rejected',
@@ -191,11 +191,10 @@ export function StorePaymentProofs() {
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="px-4 sm:px-5 py-[12px] sm:py-[14px] border-b border-bone overflow-x-auto scrollbar-hide overscroll-x-contain">
             <div className="flex items-center gap-2.5 min-w-max">
-              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as ManualPaymentProofStatus | '')}
-                className="shrink-0 px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+              <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value as ManualPaymentProofStatus | '')} wrapperClassName="shrink-0">
                 <option value="">All Statuses</option>
                 {(['pending', 'approved', 'rejected'] as const).map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-              </select>
+              </Select>
             </div>
           </div>
 

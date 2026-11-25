@@ -1,3 +1,4 @@
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -39,9 +40,10 @@ describe('Statements tab', () => {
     expect(await screen.findByText('4010 · Sales: POS')).toBeTruthy();
     expect(screen.getByText('Gross profit')).toBeTruthy();
     expect(screen.getAllByText(fmt(40000, 2)).length).toBeGreaterThan(0);
-    fireEvent.change(screen.getByLabelText('Columns'), { target: { value: 'channel' } });
+    chooseValue(dropdown('Columns'), 'channel');
     await vi.waitFor(() => expect(get.mock.calls.some(c => String(c[0]).includes('groupBy=channel'))).toBe(true));
-    fireEvent.change(await screen.findByLabelText('Branch'), { target: { value: 'loc1' } });
+    await screen.findByLabelText('Branch');
+    chooseValue(dropdown('Branch'), 'loc1');
     await vi.waitFor(() => expect(get.mock.calls.some(c => String(c[0]).includes('locationId=loc1'))).toBe(true));
   });
 
@@ -107,8 +109,8 @@ describe('Settlements tab', () => {
     await vi.waitFor(() => expect((within(dialog).getByRole('button', { name: 'Import' }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Import' }));
     expect(await within(dialog).findByText('Which column is which?')).toBeTruthy();
-    fireEvent.change(within(dialog).getByLabelText('Transaction reference or order number'), { target: { value: '0' } });
-    fireEvent.change(within(dialog).getByLabelText('Gross amount'), { target: { value: '1' } });
+    chooseValue(dropdown('Transaction reference or order number', dialog), '0');
+    chooseValue(dropdown('Gross amount', dialog), '1');
     post.mockResolvedValue({ settlement: { _id: 'st2' }, skippedRows: 0 });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Import' }));
     await vi.waitFor(() => expect(post).toHaveBeenLastCalledWith('/api/accounting/s1/settlements', expect.objectContaining({ columns: { reference: 0, gross: 1 } }), { toast: false }));

@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
 import { Plus, Eye, EyeOff, Copy } from 'lucide-react';
-import { ImageUpload } from '@/components/comman/ui';
+import { ImageUpload, Select } from '@/components/comman/ui';
 import type { StorefrontHeader, StorefrontFooter, LogoLink } from '@/api/services/storeTheme';
 import { LinkTargetFields, type LinkTarget } from '../builder/LinkTargetFields';
 import type { Block } from '@/api/services/storefrontTypes';
@@ -16,7 +16,6 @@ import type { HeaderFooterDraftState } from './useHeaderFooterDraft';
 import type { FooterOptionKey, HeaderOptionKey, ThemeManifest } from '@/features/storefront-themes/themeManifest';
 
 const ADMIN_ACCENT = '#D97757';
-const SELECT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const FOOTER_BLOCK_OPTIONS: { type: string; label: string; hint: string; defaults: Record<string, unknown> }[] = [
   { type: 'footer_column', label: 'Link column', hint: 'A heading with a list of links', defaults: { heading: 'Quick links', links: [] } },
   { type: 'footer_brand', label: 'Brand', hint: 'Logo, tagline, about text and social icons', defaults: { text: '', showTagline: true, showSocial: true } },
@@ -120,10 +119,10 @@ export function HeaderEditor({ hf, storeId, onError, supports, choices }: { hf: 
       <Group title="Menu" defaultOpen>
         <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">Menu to show</span>
-          <select className={SELECT} value={headerDraft.menuId ?? ''} onChange={e => setHeader({ ...headerDraft, menuId: e.target.value || null })}>
+          <Select value={headerDraft.menuId ?? ''} onChange={e => setHeader({ ...headerDraft, menuId: e.target.value || null })}>
             <option value="">Links below</option>
             {menus.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
-          </select>
+          </Select>
         </label>
         {headerDraft.menuId ? (
           <p className="text-[11px] text-slate">Edit this menu's links under Online Store → Menus. The links below are kept in case you switch back.</p>
@@ -163,11 +162,10 @@ export function HeaderEditor({ hf, storeId, onError, supports, choices }: { hf: 
       </Group>
       <HeaderSettingsPanel header={headerDraft} onChange={setHeader} supports={supports} choices={choices} logoSlot={(
         <>
-          <select className={SELECT} value={headerDraft.logoSource ?? 'store'} aria-label="Logo image"
-            onChange={e => setHeader({ ...headerDraft, logoSource: e.target.value as StorefrontHeader['logoSource'] })}>
+          <Select value={headerDraft.logoSource ?? 'store'} aria-label="Logo image" onChange={e => setHeader({ ...headerDraft, logoSource: e.target.value as StorefrontHeader['logoSource'] })}>
             <option value="store">Use store logo</option>
             <option value="custom">Use a different logo for this theme</option>
-          </select>
+          </Select>
           {headerDraft.logoSource === 'custom' && (
             <ImageUpload value={headerDraft.customLogoUrl ? [headerDraft.customLogoUrl] : []} onChange={urls => setHeader({ ...headerDraft, customLogoUrl: urls[0] ?? null })} maxFiles={1} storeId={storeId} />
           )}
@@ -216,11 +214,10 @@ export function FooterEditor({ hf, storeId, onError, supports }: { hf: HeaderFoo
         <p className="text-[11px] text-slate">Social links appear in the Brand block (or the bottom bar if there is none); payment icons and copyright sit in the bottom bar.</p>
       </Group>
       <Group title="Menu column">
-        <select className={SELECT} value={footerDraft.menuId ?? ''} aria-label="Footer menu"
-          onChange={e => setFooter({ ...footerDraft, menuId: e.target.value || null })}>
+        <Select value={footerDraft.menuId ?? ''} aria-label="Footer menu" onChange={e => setFooter({ ...footerDraft, menuId: e.target.value || null })}>
           <option value="">None — use my Link column blocks</option>
           {menus.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
-        </select>
+        </Select>
         <p className="text-[11px] text-slate">A menu from Online Store → Menus replaces your Link column blocks, in the place of the first one.</p>
       </Group>
       <Group title="Footer sections">

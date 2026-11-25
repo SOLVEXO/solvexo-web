@@ -17,6 +17,7 @@ vi.mock('@/components/comman/ui/AdminPageHeader', () => ({
 }));
 
 import { AdminSaasMetrics } from './AdminSaasMetrics';
+import { chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 const month = (m: string, o: Partial<SaasMonth>): SaasMonth => ({
   month: m, source: 'reconstructed', mrr: 0, arr: 0, payingStores: 0, arpu: 0, startMrr: 0, endMrr: 0, startStores: 0, endStores: 0,
@@ -82,7 +83,7 @@ describe('AdminSaasMetrics', () => {
     fireEvent.click(within(screen.getByRole('group', { name: 'Retention measure' })).getByRole('button', { name: 'Revenue' }));
     expect(screen.getByText('110%')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('Months shown'), { target: { value: '24' } });
+    chooseValue(screen.getByLabelText('Months shown'), '24');
     await waitFor(() => expect(api.apiGetSaasMetrics).toHaveBeenLastCalledWith(24));
     fireEvent.click(await screen.findByRole('button', { name: /CSV/ }));
     await waitFor(() => expect(api.apiExportSaasMetrics).toHaveBeenCalledWith(24));

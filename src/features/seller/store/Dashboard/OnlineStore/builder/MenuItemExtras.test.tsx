@@ -3,6 +3,7 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { useState } from 'react';
 import { BlockFields } from './BlockFields';
 import { MegaExtrasField, NavBadgeField, NavRulesField, type NavExtrasValue } from './MenuItemExtras';
+import { chooseValue, dropdown } from '@/components/comman/ui/dropdownTesting';
 
 vi.mock('@/components/comman/ui', async importOriginal => {
   const actual = await importOriginal<typeof import('@/components/comman/ui')>();
@@ -52,7 +53,7 @@ describe('NavRulesField', () => {
     const spy = vi.fn();
     render(<Harness initial={{} as NavExtrasValue} spy={spy}>{(v, set) => <NavRulesField value={v} onChange={set} />}</Harness>);
     fireEvent.click(screen.getByText(/Show only to certain visitors/));
-    fireEvent.change(screen.getByDisplayValue('Everyone'), { target: { value: 'customers' } });
+    chooseValue(dropdown('Everyone'), 'customers');
     expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ showTo: 'customers' }));
     fireEvent.change(screen.getByPlaceholderText('PK, AE, GB'), { target: { value: 'PK, AE' } });
     fireEvent.change(screen.getByPlaceholderText('en, ur'), { target: { value: 'en' } });
@@ -78,7 +79,7 @@ describe('MegaExtrasField', () => {
 
   it('columns: automatic or 2 to 6', () => {
     const spy = mount();
-    fireEvent.change(screen.getByDisplayValue('Automatic (your theme setting)'), { target: { value: '4' } });
+    chooseValue(dropdown('Automatic (your theme setting)'), '4');
     expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ megaColumns: 4 }));
   });
 

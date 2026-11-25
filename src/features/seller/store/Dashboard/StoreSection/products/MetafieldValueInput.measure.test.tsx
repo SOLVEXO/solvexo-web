@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dropdown, optionsOf, chooseValue, shownText } from '@/components/comman/ui/dropdownTesting';
 
 vi.mock('@/api/services/metafields', () => ({ apiGetMetafieldValues: vi.fn(), apiSetMetafieldValues: vi.fn() }));
 
@@ -20,8 +21,8 @@ describe('measurement input (number + unit)', () => {
     const seen: string[] = [];
     render(<ValueInput entry={entry('dimension')} value="12.5 mm" onChange={v => seen.push(v)} />);
     expect((screen.getByLabelText('Width amount') as HTMLInputElement).value).toBe('12.5');
-    expect((screen.getByLabelText('Width unit') as HTMLSelectElement).value).toBe('mm');
-    fireEvent.change(screen.getByLabelText('Width unit'), { target: { value: 'cm' } });
+    expect(shownText(dropdown('Width unit'))).toBe('mm');
+    chooseValue(dropdown('Width unit'), 'cm');
     expect(seen).toEqual(['12.5 cm']);
   });
 
@@ -34,9 +35,9 @@ describe('measurement input (number + unit)', () => {
 
   it('each type offers its own units', () => {
     const { unmount } = render(<ValueInput entry={entry('weight')} value="" onChange={() => undefined} />);
-    expect([...(screen.getByLabelText('Width unit') as HTMLSelectElement).options].map(o => o.value)).toEqual(['g', 'kg', 'oz', 'lb']);
+    expect(optionsOf(dropdown('Width unit')).map(o => o.value)).toEqual(['g', 'kg', 'oz', 'lb']);
     unmount();
     render(<ValueInput entry={entry('volume')} value="" onChange={() => undefined} />);
-    expect([...(screen.getByLabelText('Width unit') as HTMLSelectElement).options].map(o => o.value)).toContain('fl oz');
+    expect(optionsOf(dropdown('Width unit')).map(o => o.value)).toContain('fl oz');
   });
 });

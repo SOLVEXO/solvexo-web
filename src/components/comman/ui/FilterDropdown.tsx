@@ -1,5 +1,4 @@
-import { ChevronDown } from 'lucide-react';
-import { clsx } from 'clsx';
+import { Select } from './Dropdown';
 
 interface FilterOption {
   value: string;
@@ -12,22 +11,19 @@ interface FilterDropdownProps {
   onChange:     (v: string) => void;
   placeholder?: string;
   className?:   string;
+  ariaLabel?:   string;
 }
 
-export function FilterDropdown({ options, value, onChange, placeholder, className }: FilterDropdownProps) {
+/** Compact dropdown for filter bars: the same dropdown as everywhere else, in its toolbar size. */
+export function FilterDropdown({ options, value, onChange, placeholder, className, ariaLabel }: FilterDropdownProps) {
   return (
-    <div className={clsx('relative inline-flex items-center', className)}>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="w-full min-w-0 appearance-none bg-white border border-bone rounded-lg text-[13px] pointer-coarse:text-[16px] pointer-coarse:min-h-11 text-carbon pl-3 pr-7 py-[7px] outline-none cursor-pointer hover:bg-cream transition-colors"
-      >
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.map(o => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-      <ChevronDown size={13} className="absolute right-2 pointer-events-none text-slate" />
-    </div>
+    <Select
+      variant="filter"
+      wrapperClassName={className}
+      aria-label={ariaLabel ?? placeholder}
+      value={value}
+      onValueChange={onChange}
+      options={placeholder ? [{ value: '', label: placeholder }, ...options] : options}
+    />
   );
 }

@@ -2,7 +2,7 @@ import { PageJump } from '@/components/comman/ui/Pagination';
 import { useEffect, useState } from 'react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Modal } from '@/components/comman/ui/Modal';
-import { EmptyState, SkeletonBox, Table, TabBar, type TableColumn, type Tab } from '@/components/comman/ui';
+import { EmptyState, SkeletonBox, Table, TabBar, type TableColumn, type Tab, Select } from '@/components/comman/ui';
 import { Star, Trophy, Gift, Users, Settings, Award, Gem, Trash2, Plus, Ticket } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -371,11 +371,10 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
             </div>
             <div>
               <label className="text-xs font-medium text-graphite mb-[5px] block">Type</label>
-              <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as RewardType }))}
-                className={`${INPUT_CLS} cursor-pointer`}>
+              <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as RewardType }))}>
                 <option value="fixed_discount">Fixed Discount</option>
                 <option value="free_product">Free Product</option>
-              </select>
+              </Select>
             </div>
             {form.type === 'fixed_discount' ? (
               <div>
@@ -707,12 +706,11 @@ function AwardPointsModal({ storeId, member, onClose }: { storeId: string; membe
         </div>
         <div>
           <label className="text-xs font-medium text-graphite mb-[5px] block">Reason</label>
-          <select value={type} onChange={e => setType(e.target.value as 'referral' | 'birthday' | 'adjustment')}
-            className={`${INPUT_CLS} cursor-pointer`}>
+          <Select value={type} onChange={e => setType(e.target.value as 'referral' | 'birthday' | 'adjustment')}>
             <option value="birthday">Birthday bonus</option>
             <option value="referral">Referral bonus</option>
             <option value="adjustment">Manual adjustment</option>
-          </select>
+          </Select>
         </div>
         <div>
           <label className="text-xs font-medium text-graphite mb-[5px] block">Description</label>

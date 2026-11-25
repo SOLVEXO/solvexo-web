@@ -1,7 +1,7 @@
 import { PageJump } from '@/components/comman/ui/Pagination';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, Link2, RefreshCw, ShieldCheck, Trash2, LogOut, Users, History, ClipboardCheck } from 'lucide-react';
-import { Button, Modal, Toggle } from '@/components/comman/ui';
+import { Button, Modal, Toggle, Select } from '@/components/comman/ui';
 import { SettingsCard, SettingsRow, SettingsChoice } from '@/components/comman/settings';
 import { useToast } from '@/contexts/ToastContext';
 import {
@@ -207,9 +207,9 @@ function AdminFormModal({ roles, admin, onClose, onSave }: { roles: AdminRole[];
         <div><label htmlFor="at-email" className="text-[13px] font-medium text-charcoal mb-1 block">Email</label>
           <input id="at-email" type="email" className={INPUT} value={f.email} disabled={!!admin} onChange={e => setF({ ...f, email: e.target.value })} /></div>
         <div><label htmlFor="at-role" className="text-[13px] font-medium text-charcoal mb-1 block">Role</label>
-          <select id="at-role" className={INPUT} value={f.roleId} onChange={e => setF({ ...f, roleId: e.target.value })}>
+          <Select id="at-role" value={f.roleId} onChange={e => setF({ ...f, roleId: e.target.value })}>
             {roles.map(r => <option key={r._id} value={r._id}>{r.name}{r.readOnly ? ' (read-only)' : ''}</option>)}
-          </select></div>
+          </Select></div>
         <div><label htmlFor="at-exp" className="text-[13px] font-medium text-charcoal mb-1 block">Access ends on (optional — temporary access)</label>
           <input id="at-exp" type="date" className={INPUT} value={f.accessExpiresAt ?? ''} onChange={e => setF({ ...f, accessExpiresAt: e.target.value || null })} /></div>
         {admin && (
@@ -353,9 +353,9 @@ function ApprovalsPane() {
         icon={<ClipboardCheck size={14} />}
         description="Big actions (payouts, commission, plans) by team admins wait here for a Super Admin."
         actions={(
-          <select aria-label="Filter approvals" className="border border-bone rounded-[10px] bg-white px-3 py-1.5 text-[13px] outline-none cursor-pointer focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15" value={status} onChange={e => setStatus(e.target.value as 'pending' | 'all')}>
+          <Select aria-label="Filter approvals" value={status} onChange={e => setStatus(e.target.value as 'pending' | 'all')}>
             <option value="pending">Pending</option><option value="all">All</option>
-          </select>
+          </Select>
         )}
       >
         <LoadState loading={list.loading} error={list.error} onRetry={list.reload} />

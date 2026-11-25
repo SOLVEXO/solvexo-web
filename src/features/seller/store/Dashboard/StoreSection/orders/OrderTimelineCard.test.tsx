@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest'; // adds the toBeInTheDocument/toHaveValue... matcher types
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { dropdown, optionsOf, chooseValue, shownText } from '@/components/comman/ui/dropdownTesting';
 
 const api = vi.hoisted(() => ({ apiResendOrderEmail: vi.fn(), apiAddOrderComment: vi.fn() }));
 vi.mock('@/api/services/orders', () => api);
@@ -33,7 +34,7 @@ describe('OrderTimelineCard — email entries and Resend', () => {
 
   it('offers shipping confirmation for a normal order and "Ready for pickup" for a pickup order', () => {
     const { rerender } = render(<OrderTimelineCard {...baseProps} canResend isPickup={false} />);
-    const options = () => Array.from(screen.getByLabelText('Customer email to resend').querySelectorAll('option')).map(o => o.textContent);
+    const options = () => optionsOf(dropdown('Customer email to resend')).map(o => o.label);
     expect(options()).toEqual(['Resend an email to the customer…', 'Order confirmation', 'Shipping confirmation', 'Delivered', 'Order canceled', 'Refund']);
     rerender(<OrderTimelineCard {...baseProps} canResend isPickup />);
     expect(options()).toEqual(['Resend an email to the customer…', 'Order confirmation', 'Ready for pickup', 'Picked up', 'Order canceled', 'Refund']);
@@ -45,20 +46,20 @@ describe('OrderTimelineCard — email entries and Resend', () => {
     render(<OrderTimelineCard {...baseProps} canResend onResent={onResent} />);
     const send = screen.getByRole('button', { name: 'Send' });
     expect(send).toBeDisabled();
-    fireEvent.change(screen.getByLabelText('Customer email to resend'), { target: { value: 'order_shipped' } });
+    chooseValue(dropdown('Customer email to resend'), 'order_shipped');
     expect(send).toBeEnabled();
     fireEvent.click(send);
     expect(await screen.findByText('Email sent to the customer.')).toBeInTheDocument();
     expect(api.apiResendOrderEmail).toHaveBeenCalledWith('store-1', 'order-1', 'order_shipped');
     expect(onResent).toHaveBeenCalledTimes(1);
-    expect(screen.getByLabelText('Customer email to resend')).toHaveValue('');
+    expect(shownText(dropdown('Customer email to resend'))).toBe('Resend an email to the customer…');
   });
 
   it('shows the server\'s reason when the resend is refused, and does not reload', async () => {
     api.apiResendOrderEmail.mockRejectedValue(new Error('This order has not shipped yet.'));
     const onResent = vi.fn();
     render(<OrderTimelineCard {...baseProps} canResend onResent={onResent} />);
-    fireEvent.change(screen.getByLabelText('Customer email to resend'), { target: { value: 'order_shipped' } });
+    chooseValue(dropdown('Customer email to resend'), 'order_shipped');
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('This order has not shipped yet.');
     await waitFor(() => expect(onResent).not.toHaveBeenCalled());

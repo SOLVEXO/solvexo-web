@@ -6,7 +6,7 @@ import { apiAddContactToPipeline } from '@/api/services/salesOps';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminContact } from '@/hooks/admin/useAdminContact';
 import { apiUpdateContactStatus, apiDeleteContactSubmission, apiReplyContactSubmission, type ContactSubmission, type ContactSubmissionStatus } from '@/api/services/contact';
-import { Button, Modal, StatusBadge, ActionMenu, Table, AdminPageHeader, Textarea, type TableColumn } from '@/components/comman/ui';
+import { Button, Modal, StatusBadge, ActionMenu, Table, AdminPageHeader, Textarea, type TableColumn, Select } from '@/components/comman/ui';
 import { SupportTierBadge } from '@/components/comman/SupportTierBadge';
 
 const STATUS_LABEL: Record<ContactSubmissionStatus, string> = {
@@ -190,24 +190,21 @@ export function AdminContactMessages({ tabs }: { tabs?: ReactNode } = {}) {
         )}
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] flex-wrap">
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+            <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="">All Statuses</option>
               {(['new', 'read', 'resolved'] as const).map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-            </select>
-            <select aria-label="Filter by support tier" value={tierFilter} onChange={e => setTierFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+            </Select>
+            <Select aria-label="Filter by support tier" value={tierFilter} onChange={e => setTierFilter(e.target.value)}>
               <option value="">All tiers</option>
               <option value="dedicated">Dedicated manager</option>
               <option value="priority">Priority</option>
               <option value="standard">Standard</option>
-            </select>
-            <select aria-label="Filter by source" value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+            </Select>
+            <Select aria-label="Filter by source" value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}>
               <option value="">All sources</option>
               <option value="seller">Store help requests</option>
               <option value="public">Public contact form</option>
-            </select>
+            </Select>
           </div>
 
           {error ? (

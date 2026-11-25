@@ -8,7 +8,7 @@ import { invalidateStoreSectionDefs, useStoreSectionDefs } from '@/features/stor
 import { useParams } from 'react-router-dom';
 import { SaveToLibraryDialog, SavedSectionBody } from './SavedSectionParts';
 import { copySectionToClipboard, readSectionClipboard, pasteBlockedReason, cleanSectionCopy } from './sectionClipboard';
-import { ActionMenu } from '@/components/comman/ui';
+import { ActionMenu, Select } from '@/components/comman/ui';
 import type { Section, Block, SectionType } from '@/api/services/storefrontTypes';
 import { SECTION_META_BY_TYPE } from './sectionRegistry';
 import { resolveSectionMeta } from './themeSectionMeta';
@@ -306,14 +306,10 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
 
           <div className="flex flex-col gap-1.5">
             <label className="text-[10.5px] font-bold uppercase tracking-wide text-slate px-1">Color Scheme</label>
-            <select
-              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none"
-              value={section.colorSchemeId ?? ''}
-              onChange={e => onChange({ ...section, colorSchemeId: e.target.value || null })}
-            >
+            <Select value={section.colorSchemeId ?? ''} onChange={e => onChange({ ...section, colorSchemeId: e.target.value || null })} wrapperClassName="w-full">
               <option value="">Theme default</option>
               {colorSchemes.map(cs => <option key={cs.id} value={cs.id}>{cs.name}</option>)}
-            </select>
+            </Select>
           </div>
 
           {meta && (meta.allowedBlockTypes.length > 0 || appBlockOptions.length > 0) && (

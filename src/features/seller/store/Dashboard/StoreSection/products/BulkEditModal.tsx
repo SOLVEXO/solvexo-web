@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, AlertTriangle } from 'lucide-react';
-import { Button, Modal, SkeletonBox } from '@/components/comman/ui';
+import { Button, Modal, SkeletonBox, Select } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { apiGetMyProductById } from '@/api/services/product';
 import {
@@ -333,10 +333,10 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                           <input type="checkbox" checked={val(k('taxable')) !== 'no'} onChange={e => setCell(k('taxable'), e.target.checked ? 'yes' : 'no')} aria-label="Charge tax on this product" />
                         </td>
                         <td className="px-2 py-1.5">
-                          <select className={cls(k('image'))} value={val(k('image'))} onChange={e => setCell(k('image'), e.target.value)} aria-label="Variant image" title={v.imageCount > 1 ? 'Several photos are linked to this variant. Change them from the product page.' : undefined} disabled={p.digital || p.images.length === 0 || v.imageCount > 1}>
+                          <Select value={val(k('image'))} onChange={e => setCell(k('image'), e.target.value)} aria-label="Variant image" title={v.imageCount > 1 ? 'Several photos are linked to this variant. Change them from the product page.' : undefined} disabled={p.digital || p.images.length === 0 || v.imageCount > 1}>
                             <option value="">{v.imageCount > 1 ? `${v.imageCount} photos linked` : 'None'}</option>
                             {p.images.map((src, i) => <option key={src + i} value={src}>Image {i + 1}</option>)}
-                          </select>
+                          </Select>
                         </td>
                       </>
                     );
@@ -350,13 +350,12 @@ export function BulkEditModal({ storeId, productIds, currencyLabel, canEditPrice
                           {err && <p className="text-[11px] text-error mt-1" role="alert">{err}</p>}
                         </td>
                         <td className="px-2 py-1.5">
-                          <select className={cls(statusKey)} value={val(statusKey)} disabled={!!p.loadError}
-                            onChange={e => setCell(statusKey, e.target.value)} aria-label="Status">
+                          <Select value={val(statusKey)} disabled={!!p.loadError} onChange={e => setCell(statusKey, e.target.value)} aria-label="Status">
                             <option value="active">Active</option>
                             <option value="draft">Draft</option>
                             <option value="inactive">Archived</option>
                             {p.status === 'scheduled' && <option value="scheduled" disabled>Scheduled</option>}
-                          </select>
+                          </Select>
                         </td>
                         <td className="px-2 py-1.5">
                           <input className={cls(tagsKey)} value={val(tagsKey)} disabled={!!p.loadError} placeholder="tag, tag"

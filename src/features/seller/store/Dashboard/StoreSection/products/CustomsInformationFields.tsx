@@ -1,4 +1,5 @@
 import { COUNTRY_OPTIONS } from '../../../../../../utils/countries';
+import { Select } from '@/components/comman/ui';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none';
 
@@ -29,10 +30,10 @@ export function CustomsInformationFields({ countryOfOrigin, hsCode, customsDescr
       <div className="grid grid-cols-1 gap-3">
         <label className="block">
           <span className="block text-[11px] text-slate mb-1">Country/region of origin</span>
-          <select value={countryOfOrigin} onChange={e => onChange('countryOfOrigin', e.target.value)} className={inp}>
+          <Select value={countryOfOrigin} onChange={e => onChange('countryOfOrigin', e.target.value)}>
             <option value="">Select a country/region</option>
             {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block">
           <span className="block text-[11px] text-slate mb-1">HS (harmonized system) code</span>

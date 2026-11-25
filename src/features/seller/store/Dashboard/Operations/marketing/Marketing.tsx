@@ -5,7 +5,7 @@ import { Navigate, useParams } from 'react-router-dom';
 import { FEATURES } from '@/constants/features';
 import { Mail, ShoppingCart, Handshake, Trash2, Plus, Target, Zap, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { EmptyState, SkeletonBox, Modal, Button, PlanFeatureLock } from '@/components/comman/ui';
+import { EmptyState, SkeletonBox, Modal, Button, PlanFeatureLock, Select } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import {
@@ -147,11 +147,10 @@ function AffiliateFormModal({ storeId, onClose, onSaved }: { storeId: string; on
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[12px] font-medium text-charcoal mb-1.5">Type</label>
-              <select value={form.commissionType} onChange={e => setForm(f => ({ ...f, commissionType: e.target.value as CommissionType }))}
-                className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+              <Select value={form.commissionType} onChange={e => setForm(f => ({ ...f, commissionType: e.target.value as CommissionType }))} wrapperClassName="w-full">
                 <option value="percentage">Percentage</option>
                 <option value="fixed">Fixed amount</option>
-              </select>
+              </Select>
             </div>
             <div>
               <label className="block text-[12px] font-medium text-charcoal mb-1.5">{form.commissionType === 'percentage' ? 'Rate (%)' : 'Amount ($)'}</label>
@@ -823,11 +822,10 @@ export function StoreMarketing() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-xs font-medium text-graphite mb-[5px] block">Commission type</label>
-                    <select value={affiliateProgram.commissionType} onChange={e => setAffiliateProgram(p => p && ({ ...p, commissionType: e.target.value as CommissionType }))}
-                      className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+                    <Select value={affiliateProgram.commissionType} onChange={e => setAffiliateProgram(p => p && ({ ...p, commissionType: e.target.value as CommissionType }))} wrapperClassName="w-full">
                       <option value="percentage">Percentage</option>
                       <option value="fixed">Fixed amount</option>
-                    </select>
+                    </Select>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-graphite mb-[5px] block">{affiliateProgram.commissionType === 'percentage' ? 'Default rate (%)' : 'Default amount ($)'}</label>

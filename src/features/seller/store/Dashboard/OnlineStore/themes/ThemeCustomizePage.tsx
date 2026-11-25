@@ -4,7 +4,7 @@ import { Loader2, RotateCcw, Undo2, Redo2, History, Monitor, Tablet, Smartphone,
 import { Link, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { SkeletonBox } from '@/components/comman/ui';
+import { SkeletonBox, Select } from '@/components/comman/ui';
 import { EditorTopBar, PreviewButton } from '../builder/EditorTopBar';
 import { describeEditorError } from '../builder/editorErrors';
 import { ScopePicker, ResourcePicker } from '../builder/ScopePicker';
@@ -1061,14 +1061,10 @@ export function ThemeCustomizePage() {
 
               {config?.allowAltTemplates && (
                 <>
-                  <select
-                    value={templateKey}
-                    onChange={e => changeTemplateKey(e.target.value)}
-                    className="shrink-0 text-[12.5px] font-semibold border border-bone rounded-lg px-2.5 py-[7px] bg-white text-charcoal cursor-pointer"
-                  >
+                  <Select value={templateKey} onChange={e => changeTemplateKey(e.target.value)} wrapperClassName="shrink-0">
                     {templateList.length === 0 && <option value="default">Default</option>}
                     {templateList.map(tpl => <option key={tpl.templateKey} value={tpl.templateKey}>{tpl.name}</option>)}
-                  </select>
+                  </Select>
                   <button onClick={handleCreateTemplate} disabled={creatingTemplate} title="New Template" className="shrink-0 p-2 rounded-lg border border-bone bg-white text-charcoal disabled:opacity-60 cursor-pointer">
                     {creatingTemplate ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
                   </button>

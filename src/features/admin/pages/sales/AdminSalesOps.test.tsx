@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 const api = vi.hoisted(() => ({
@@ -60,10 +61,10 @@ describe('Sales Ops pipeline', () => {
     expect(await within(col).findByText('Sara Malik')).toBeInTheDocument();
     expect(within(col).getByText('PKR 60,000')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('Move Sara Malik'), { target: { value: 'lost' } });
+    chooseValue(dropdown('Move Sara Malik'), 'lost');
     expect(await screen.findByText('Why was Sara Malik lost?')).toBeInTheDocument();
     expect(api.apiChangeStage).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'price' } });
+    chooseValue(dropdown('Reason'), 'price');
     fireEvent.click(screen.getByRole('button', { name: 'Mark as lost' }));
     await waitFor(() => expect(api.apiChangeStage).toHaveBeenCalledWith('l1', 'lost', 'price', ''));
   });
@@ -109,7 +110,8 @@ describe('Sales lead page', () => {
     expect(toast.success).toHaveBeenCalledWith('Call logged.');
 
     fireEvent.click(screen.getByRole('tab', { name: /Email/ }));
-    fireEvent.change(await screen.findByLabelText('Template'), { target: { value: 't1' } });
+    await screen.findByLabelText('Template');
+    chooseValue(dropdown('Template'), 't1');
     expect(screen.getByLabelText('Subject')).toHaveValue('Your store, Sara Boutique');
     expect(screen.getByLabelText('Message')).toHaveValue('Hi Sara Malik, Bilal here.');
     fireEvent.click(screen.getByRole('button', { name: 'Send email' }));

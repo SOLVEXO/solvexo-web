@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ListChecks, Plus } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
-import { SkeletonBox, EmptyState, Badge, Input } from '@/components/comman/ui';
+import { SkeletonBox, EmptyState, Badge, Input, Select } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
@@ -163,9 +163,9 @@ export default function CheckoutRulesHub({ embedded = false }: { embedded?: bool
             <Input label="Rule name" value={form.name} maxLength={80} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1 text-[13px] text-charcoal">What it does
-                <select className="h-10 rounded-lg border border-border-soft px-2" value={form.type} disabled={editing !== 'new'} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as RuleType, conditions: [] }))}>
+                <Select value={form.type} disabled={editing !== 'new'} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as RuleType, conditions: [] }))}>
                   {(Object.keys(TYPE_LABEL) as RuleType[]).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
-                </select>
+                </Select>
               </label>
               <Input label="Priority (lower runs first)" type="number" value={form.priority} onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))} />
             </div>
@@ -175,14 +175,14 @@ export default function CheckoutRulesHub({ embedded = false }: { embedded?: bool
                 const k = kindOf(c.field);
                 return (
                   <div key={i} className="flex flex-wrap items-center gap-2">
-                    <select aria-label="Condition field" className="h-9 rounded-lg border border-border-soft px-2 text-[13px]" value={c.field} onChange={(e) => { const nk = kindOf(e.target.value); setCond(i, { field: e.target.value, op: OPS_BY_KIND[nk][0].op, value: nk === 'boolean' ? 'true' : '' }); }}>
+                    <Select aria-label="Condition field" value={c.field} onChange={(e) => { const nk = kindOf(e.target.value); setCond(i, { field: e.target.value, op: OPS_BY_KIND[nk][0].op, value: nk === 'boolean' ? 'true' : '' }); }}>
                       {usableFields.map((x) => <option key={x.field} value={x.field}>{FIELD_LABEL[x.field] ?? x.field}</option>)}
-                    </select>
-                    <select aria-label="Condition operator" className="h-9 rounded-lg border border-border-soft px-2 text-[13px]" value={c.op} onChange={(e) => setCond(i, { op: e.target.value })}>
+                    </Select>
+                    <Select aria-label="Condition operator" value={c.op} onChange={(e) => setCond(i, { op: e.target.value })}>
                       {OPS_BY_KIND[k].map((o) => <option key={o.op} value={o.op}>{o.label}</option>)}
-                    </select>
+                    </Select>
                     {k === 'boolean'
-                      ? <select aria-label="Condition value" className="h-9 rounded-lg border border-border-soft px-2 text-[13px]" value={c.value} onChange={(e) => setCond(i, { value: e.target.value })}><option value="true">yes</option><option value="false">no</option></select>
+                      ? <Select aria-label="Condition value" value={c.value} onChange={(e) => setCond(i, { value: e.target.value })}><option value="true">yes</option><option value="false">no</option></Select>
                       : <input aria-label="Condition value" className="h-9 min-w-0 flex-1 rounded-lg border border-border-soft px-2 text-[13px]" type={k === 'number' ? 'number' : 'text'} placeholder={c.op === 'in' || c.op === 'not_in' || c.op === 'contains_any' ? 'value, value, ...' : 'value'} value={c.value} onChange={(e) => setCond(i, { value: e.target.value })} />}
                     <Button size="sm" variant="outline" onClick={() => setForm((f) => ({ ...f, conditions: f.conditions.filter((_, x) => x !== i) }))}>Remove</Button>
                   </div>
@@ -193,7 +193,7 @@ export default function CheckoutRulesHub({ embedded = false }: { embedded?: bool
             {form.type === 'discount' && (
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap gap-3">
-                  <select aria-label="Discount kind" className="h-10 rounded-lg border border-border-soft px-2" value={form.kind} onChange={(e) => setForm((f) => ({ ...f, kind: e.target.value as 'percent' | 'fixed' }))}><option value="percent">Percent off</option><option value="fixed">Amount off</option></select>
+                  <Select aria-label="Discount kind" value={form.kind} onChange={(e) => setForm((f) => ({ ...f, kind: e.target.value as 'percent' | 'fixed' }))}><option value="percent">Percent off</option><option value="fixed">Amount off</option></Select>
                   <Input label="Value" type="number" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} />
                   <Input label="Label shown to customers" value={form.label} maxLength={60} onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))} />
                 </div>
@@ -204,15 +204,15 @@ export default function CheckoutRulesHub({ embedded = false }: { embedded?: bool
             )}
             {form.type === 'payment' && (
               <div className="flex flex-col gap-2">
-                <select aria-label="Payment mode" className="h-10 w-fit rounded-lg border border-border-soft px-2" value={form.payMode} onChange={(e) => setForm((f) => ({ ...f, payMode: e.target.value as 'hide' | 'show_only' }))}><option value="hide">Hide these methods</option><option value="show_only">Show only these methods</option></select>
+                <Select aria-label="Payment mode" value={form.payMode} onChange={(e) => setForm((f) => ({ ...f, payMode: e.target.value as 'hide' | 'show_only' }))} wrapperClassName="w-fit"><option value="hide">Hide these methods</option><option value="show_only">Show only these methods</option></Select>
                 <div className="flex flex-wrap gap-3">{METHODS.map(([k, l]) => <label key={k} className="flex items-center gap-1.5 text-[13px]"><input type="checkbox" className="accent-brand-orange" checked={form.methods.includes(k)} onChange={() => setForm((f) => ({ ...f, methods: toggle(f.methods, k) }))} /> {l}</label>)}</div>
                 <p className="text-[12px] text-slate m-0">A seller gateway (for example safepay) can be typed by its key too: add it in the test tool list.</p>
               </div>
             )}
             {form.type === 'shipping' && (
               <div className="flex flex-col gap-2">
-                <select aria-label="Delivery mode" className="h-10 w-fit rounded-lg border border-border-soft px-2" value={form.shipMode} onChange={(e) => setForm((f) => ({ ...f, shipMode: e.target.value as Form['shipMode'] }))}><option value="hide">Hide</option><option value="rename">Rename</option><option value="reorder">Move to top</option></select>
-                {form.shipMode !== 'rename' && <select aria-label="Delivery type" className="h-10 w-fit rounded-lg border border-border-soft px-2" value={form.zoneType} onChange={(e) => setForm((f) => ({ ...f, zoneType: e.target.value }))}><option value="">Chosen options only</option><option value="shipping">All shipping</option><option value="local_delivery">All local delivery</option><option value="pickup">All pickup</option></select>}
+                <Select aria-label="Delivery mode" value={form.shipMode} onChange={(e) => setForm((f) => ({ ...f, shipMode: e.target.value as Form['shipMode'] }))} wrapperClassName="w-fit"><option value="hide">Hide</option><option value="rename">Rename</option><option value="reorder">Move to top</option></Select>
+                {form.shipMode !== 'rename' && <Select aria-label="Delivery type" value={form.zoneType} onChange={(e) => setForm((f) => ({ ...f, zoneType: e.target.value }))} wrapperClassName="w-fit"><option value="">Chosen options only</option><option value="shipping">All shipping</option><option value="local_delivery">All local delivery</option><option value="pickup">All pickup</option></Select>}
                 <div className="flex flex-wrap gap-3">{zones.map((z) => <label key={z._id} className="flex items-center gap-1.5 text-[13px]"><input type="checkbox" className="accent-brand-orange" checked={form.zoneIds.includes(z._id)} onChange={() => setForm((f) => ({ ...f, zoneIds: toggle(f.zoneIds, z._id) }))} /> {z.name || z.zoneType}</label>)}</div>
                 {form.shipMode === 'rename' && <Input label="New name" value={form.newName} maxLength={60} onChange={(e) => setForm((f) => ({ ...f, newName: e.target.value }))} />}
               </div>

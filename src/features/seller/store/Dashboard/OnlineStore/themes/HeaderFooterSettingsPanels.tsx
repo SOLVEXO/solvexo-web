@@ -1,6 +1,6 @@
 ﻿import { useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { ImageUpload, Toggle } from '@/components/comman/ui';
+import { ImageUpload, Toggle, Select } from '@/components/comman/ui';
 import type { StorefrontHeader, StorefrontFooter, LogoLink } from '@/api/services/storeTheme';
 import { LinkTargetFields, type LinkTarget } from '../builder/LinkTargetFields';
 import { ChromeItemsEditor } from './ChromeItemsEditor';
@@ -126,23 +126,23 @@ function IconLook({ header, sets, set }: { header: StorefrontHeader; sets: Heade
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">Icon size</span>
-          <select className={SELECT} value={eff.iconSize} onChange={e => set({ iconSize: e.target.value as StorefrontHeader['iconSize'] })}>
+          <Select value={eff.iconSize} onChange={e => set({ iconSize: e.target.value as StorefrontHeader['iconSize'] })}>
             <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
-          </select>
+          </Select>
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">Line weight</span>
-          <select className={SELECT} value={eff.iconStroke} onChange={e => set({ iconStroke: e.target.value as StorefrontHeader['iconStroke'] })}>
+          <Select value={eff.iconStroke} onChange={e => set({ iconStroke: e.target.value as StorefrontHeader['iconStroke'] })}>
             <option value="thin">Thin</option><option value="regular">Regular</option><option value="bold">Bold</option>
-          </select>
+          </Select>
         </label>
       </div>
       <label className="flex flex-col gap-1">
         <span className="text-[11.5px] text-charcoal">Text with the icons</span>
-        <select className={SELECT} value={eff.iconLabels} onChange={e => set({ iconLabels: e.target.value as StorefrontHeader['iconLabels'] })}>
+        <Select value={eff.iconLabels} onChange={e => set({ iconLabels: e.target.value as StorefrontHeader['iconLabels'] })}>
           <option value="none">Icons only</option>
           <option value="below">Icon with a small label below</option>
-        </select>
+        </Select>
       </label>
       <SwitchRow label="Tooltip on hover" hint="A small name bubble when a shopper points at an icon. Not shown on touch screens or when labels are on." checked={header.iconTooltips !== false} onChange={v => set({ iconTooltips: v })} />
       {header.iconTooltips !== false && eff.iconLabels === 'none' && (
@@ -151,15 +151,15 @@ function IconLook({ header, sets, set }: { header: StorefrontHeader; sets: Heade
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
               <span className="text-[11.5px] text-charcoal">Colour</span>
-              <select className={SELECT} value={eff.iconTipStyle} onChange={e => set({ iconTipStyle: e.target.value as StorefrontHeader['iconTipStyle'] })}>
+              <Select value={eff.iconTipStyle} onChange={e => set({ iconTipStyle: e.target.value as StorefrontHeader['iconTipStyle'] })}>
                 <option value="theme">Theme default</option><option value="dark">Dark</option><option value="light">Light</option><option value="brand">Brand colour</option>
-              </select>
+              </Select>
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-[11.5px] text-charcoal">Shows</span>
-              <select className={SELECT} value={eff.iconTipPosition} onChange={e => set({ iconTipPosition: e.target.value as StorefrontHeader['iconTipPosition'] })}>
+              <Select value={eff.iconTipPosition} onChange={e => set({ iconTipPosition: e.target.value as StorefrontHeader['iconTipPosition'] })}>
                 <option value="below">Below the icon</option><option value="above">Above the icon</option>
-              </select>
+              </Select>
             </label>
           </div>
           {([['iconTipSearch', 'Search', 'Search'], ['iconTipAccount', 'Account', 'Sign in'], ['iconTipWishlist', 'Wishlist', 'Wishlist'], ['iconTipCart', 'Cart', 'Cart']] as const).map(([key, label, hint]) => (
@@ -206,40 +206,39 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
         {can('logoPosition') && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Logo position</span>
-            <select className={SELECT} value={eff.logoPosition} onChange={e => setLayout({ logoPosition: e.target.value as 'left' | 'center' | 'right' })}>
+            <Select value={eff.logoPosition} onChange={e => setLayout({ logoPosition: e.target.value as 'left' | 'center' | 'right' })}>
               <option value="left">Left</option>
               <option value="center">Center</option>
               <option value="right">Right</option>
-            </select>
+            </Select>
           </label>
         )}
         {can('menuPosition') && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Menu position</span>
-            <select className={SELECT} value={eff.menuPosition} onChange={e => setLayout({ menuPosition: e.target.value as 'beside' | 'below' })}>
+            <Select value={eff.menuPosition} onChange={e => setLayout({ menuPosition: e.target.value as 'beside' | 'below' })}>
               <option value="beside">Same row as the logo</option>
               <option value="below">Own row below the logo</option>
-            </select>
+            </Select>
           </label>
         )}
         {can('menuAlignment') && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Menu alignment</span>
-            <select className={SELECT} value={eff.navAlignment} onChange={e => setLayout({ navAlignment: e.target.value as 'left' | 'center' | 'right' })}>
+            <Select value={eff.navAlignment} onChange={e => setLayout({ navAlignment: e.target.value as 'left' | 'center' | 'right' })}>
               <option value="left">Left</option>
               <option value="center">Center</option>
               <option value="right">Right</option>
-            </select>
+            </Select>
           </label>
         )}
         {can('sticky') && <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">While scrolling</span>
-          <select className={SELECT} value={header.stickyMode ?? (header.sticky ? 'always' : 'off')}
-            onChange={e => { const stickyMode = e.target.value as 'off' | 'always' | 'scroll-up'; set({ stickyMode, sticky: stickyMode !== 'off' }); }}>
+          <Select value={header.stickyMode ?? (header.sticky ? 'always' : 'off')} onChange={e => { const stickyMode = e.target.value as 'off' | 'always' | 'scroll-up'; set({ stickyMode, sticky: stickyMode !== 'off' }); }}>
             <option value="off">Scrolls away with the page</option>
             <option value="always">Always stays at the top</option>
             <option value="scroll-up">Hides on scroll down, shows on scroll up</option>
-          </select>
+          </Select>
         </label>}
         {can('transparent') && <><SwitchRow label="See-through on the home page" hint="Sits over your first section (e.g. the banner) until shoppers scroll."
           checked={header.transparentOnHome === true} onChange={v => set({ transparentOnHome: v })} />
@@ -251,29 +250,29 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
       {can('menuStyle') && <Group title="Menu style">
         <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">Text size</span>
-          <select className={SELECT} value={header.navFontSize ?? 'md'} onChange={e => set({ navFontSize: e.target.value as StorefrontHeader['navFontSize'] })}>
+          <Select value={header.navFontSize ?? 'md'} onChange={e => set({ navFontSize: e.target.value as StorefrontHeader['navFontSize'] })}>
             <option value="sm">Small</option>
             <option value="md">Medium</option>
             <option value="lg">Large</option>
-          </select>
+          </Select>
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">When shoppers point at a link</span>
-          <select className={SELECT} value={header.navHoverStyle ?? 'none'} onChange={e => set({ navHoverStyle: e.target.value as StorefrontHeader['navHoverStyle'] })}>
+          <Select value={header.navHoverStyle ?? 'none'} onChange={e => set({ navHoverStyle: e.target.value as StorefrontHeader['navHoverStyle'] })}>
             <option value="none">No effect</option>
             <option value="underline">Slide-in underline</option>
             <option value="pill">Soft highlight</option>
-          </select>
+          </Select>
         </label>
       </Group>}
 
       {can('menuOverflow') && <Group title="Menu overflow">
         <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">When the menu has more links than fit</span>
-          <select className={SELECT} value={header.menuOverflow ?? 'scroll'} onChange={e => set({ menuOverflow: e.target.value as 'scroll' | 'wrap' })}>
+          <Select value={header.menuOverflow ?? 'scroll'} onChange={e => set({ menuOverflow: e.target.value as 'scroll' | 'wrap' })}>
             <option value="scroll">One line with scroll arrows</option>
             <option value="wrap">Wrap onto more lines</option>
-          </select>
+          </Select>
         </label>
       </Group>}
 
@@ -301,9 +300,9 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
             </div>
             <label className="flex flex-col gap-1">
               <span className="text-[11.5px] text-charcoal">Strip height and text size</span>
-              <select className={SELECT} value={header.topBarSize ?? 'md'} onChange={e => set({ topBarSize: e.target.value as 'sm' | 'md' | 'lg' })}>
+              <Select value={header.topBarSize ?? 'md'} onChange={e => set({ topBarSize: e.target.value as 'sm' | 'md' | 'lg' })}>
                 <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
-              </select>
+              </Select>
             </label>
             <div className="grid grid-cols-2 gap-3">
               <SizeField label="Exact text size (px)" value={header.topBarFontSize} min={8} max={48} onChange={v => set({ topBarFontSize: v })} hint="Empty = from the choice above" />
@@ -325,11 +324,11 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
         </div>
         <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">Height</span>
-          <select className={SELECT} value={header.paddingY ?? 'normal'} onChange={e => set({ paddingY: e.target.value as StorefrontHeader['paddingY'] })}>
+          <Select value={header.paddingY ?? 'normal'} onChange={e => set({ paddingY: e.target.value as StorefrontHeader['paddingY'] })}>
             <option value="compact">Compact</option>
             <option value="normal">Normal</option>
             <option value="spacious">Spacious</option>
-          </select>
+          </Select>
         </label>
         <SwitchRow label="Show a line under the header" checked={header.showDivider !== false} onChange={v => set({ showDivider: v })} />
       </Group>}
@@ -339,19 +338,18 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
         {header.showSearch !== false && can('searchBar') && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Search look</span>
-            <select className={SELECT} value={header.searchStyle ?? 'icon'} onChange={e => set({ searchStyle: e.target.value as StorefrontHeader['searchStyle'] })}>
+            <Select value={header.searchStyle ?? 'icon'} onChange={e => set({ searchStyle: e.target.value as StorefrontHeader['searchStyle'] })}>
               <option value="icon">Icon only</option>
               <option value="bar">Search box (“Search products…”)</option>
-            </select>
+            </Select>
           </label>
         )}
         {header.showSearch !== false && can('searchBar') && can('searchPosition') && header.searchStyle === 'bar' && searchChoices.length > 1 && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Search box position</span>
-            <select className={SELECT} value={searchChoices.some(c => c.value === header.searchPosition) ? header.searchPosition : searchChoices[0].value}
-              onChange={e => set({ searchPosition: e.target.value })}>
+            <Select value={searchChoices.some(c => c.value === header.searchPosition) ? header.searchPosition : searchChoices[0].value} onChange={e => set({ searchPosition: e.target.value })}>
               {searchChoices.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
+            </Select>
             {searchChoices.find(c => c.value === header.searchPosition)?.hint && <span className="text-[10.5px] text-slate">{searchChoices.find(c => c.value === header.searchPosition)?.hint}</span>}
           </label>
         )}
@@ -367,27 +365,27 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Background</span>
-            <select className={SELECT} value={eff.dropdownBg} onChange={e => set({ dropdownBg: e.target.value as StorefrontHeader['dropdownBg'] })}>
+            <Select value={eff.dropdownBg} onChange={e => set({ dropdownBg: e.target.value as StorefrontHeader['dropdownBg'] })}>
               <option value="theme">Theme default</option><option value="light">Light</option><option value="dark">Dark</option><option value="brand">Brand colour</option>
-            </select>
+            </Select>
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Corners</span>
-            <select className={SELECT} value={eff.dropdownRadius} onChange={e => set({ dropdownRadius: e.target.value as StorefrontHeader['dropdownRadius'] })}>
+            <Select value={eff.dropdownRadius} onChange={e => set({ dropdownRadius: e.target.value as StorefrontHeader['dropdownRadius'] })}>
               <option value="theme">Theme default</option><option value="square">Square</option><option value="soft">Soft</option><option value="round">Round</option>
-            </select>
+            </Select>
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Shadow</span>
-            <select className={SELECT} value={eff.dropdownShadow} onChange={e => set({ dropdownShadow: e.target.value as StorefrontHeader['dropdownShadow'] })}>
+            <Select value={eff.dropdownShadow} onChange={e => set({ dropdownShadow: e.target.value as StorefrontHeader['dropdownShadow'] })}>
               <option value="theme">Theme default</option><option value="none">None</option><option value="soft">Soft</option><option value="strong">Strong</option>
-            </select>
+            </Select>
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">When pointing at a link</span>
-            <select className={SELECT} value={eff.dropdownHover} onChange={e => set({ dropdownHover: e.target.value as StorefrontHeader['dropdownHover'] })}>
+            <Select value={eff.dropdownHover} onChange={e => set({ dropdownHover: e.target.value as StorefrontHeader['dropdownHover'] })}>
               <option value="theme">Theme default</option><option value="tint">Soft highlight</option><option value="underline">Underline</option><option value="none">Nothing</option>
-            </select>
+            </Select>
           </label>
         </div>
       </Group>}
@@ -422,39 +420,39 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
         {can('shape') && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Footer shape</span>
-            <select className={SELECT} value={footer.footerShape ?? ''} onChange={e => set({ footerShape: (e.target.value || null) as StorefrontFooter['footerShape'] })}>
+            <Select value={footer.footerShape ?? ''} onChange={e => set({ footerShape: (e.target.value || null) as StorefrontFooter['footerShape'] })}>
               <option value="">Theme default (rounded panel)</option>
               <option value="panel">Rounded panel</option>
               <option value="full">Full width, edge to edge</option>
-            </select>
+            </Select>
             <span className="text-[10.5px] text-slate">Full width fills the whole screen with the footer colour, with no rounded corners.</span>
           </label>
         )}
         {can('layout') && (
-          <select className={SELECT} value={footer.footerStyle ?? 'columns'} aria-label="Footer layout" onChange={e => set({ footerStyle: e.target.value as StorefrontFooter['footerStyle'] })}>
+          <Select value={footer.footerStyle ?? 'columns'} aria-label="Footer layout" onChange={e => set({ footerStyle: e.target.value as StorefrontFooter['footerStyle'] })}>
             <option value="columns">Columns</option>
             <option value="minimal">Compact (wider columns, less space)</option>
-          </select>
+          </Select>
         )}
         {(can('spacing') || can('alignment')) && (
           <div className="grid grid-cols-2 gap-3">
             {can('spacing') && (
               <label className="flex flex-col gap-1">
                 <span className="text-[11.5px] text-charcoal">Spacing</span>
-                <select className={SELECT} value={footer.paddingY ?? 'normal'} onChange={e => set({ paddingY: e.target.value as StorefrontFooter['paddingY'] })}>
+                <Select value={footer.paddingY ?? 'normal'} onChange={e => set({ paddingY: e.target.value as StorefrontFooter['paddingY'] })}>
                   <option value="compact">Compact</option>
                   <option value="normal">Normal</option>
                   <option value="spacious">Spacious</option>
-                </select>
+                </Select>
               </label>
             )}
             {can('alignment') && (
               <label className="flex flex-col gap-1">
                 <span className="text-[11.5px] text-charcoal">Alignment</span>
-                <select className={SELECT} value={footer.align ?? 'left'} onChange={e => set({ align: e.target.value as StorefrontFooter['align'] })}>
+                <Select value={footer.align ?? 'left'} onChange={e => set({ align: e.target.value as StorefrontFooter['align'] })}>
                   <option value="left">Left</option>
                   <option value="center">Centred</option>
-                </select>
+                </Select>
               </label>
             )}
           </div>
@@ -498,23 +496,23 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
         {can('socialStyle') && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Social icon style</span>
-            <select className={SELECT} value={footer.socialStyle ?? ''} onChange={e => set({ socialStyle: (e.target.value || null) as StorefrontFooter['socialStyle'] })}>
+            <Select value={footer.socialStyle ?? ''} onChange={e => set({ socialStyle: (e.target.value || null) as StorefrontFooter['socialStyle'] })}>
               <option value="">Theme default</option>
               <option value="plain">Plain icons</option>
               <option value="circle">Round buttons</option>
               <option value="square">Square buttons</option>
-            </select>
+            </Select>
           </label>
         )}
         {can('socialColour') && (
           <>
             <label className="flex flex-col gap-1">
               <span className="text-[11.5px] text-charcoal">Social icon colour</span>
-              <select className={SELECT} value={footer.socialColor ?? ''} onChange={e => set({ socialColor: (e.target.value || null) as StorefrontFooter['socialColor'] })}>
+              <Select value={footer.socialColor ?? ''} onChange={e => set({ socialColor: (e.target.value || null) as StorefrontFooter['socialColor'] })}>
                 <option value="">Theme default</option>
                 <option value="brand">Each platform's own colour</option>
                 <option value="custom">One colour I choose</option>
-              </select>
+              </Select>
               {footer.socialColor === 'brand' && <span className="text-[10.5px] text-slate">Facebook blue, Instagram pink, WhatsApp green, YouTube red and so on. X and TikTok are black, so they keep your footer text colour to stay visible.</span>}
             </label>
             {footer.socialColor === 'custom' && (
@@ -551,10 +549,10 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
         {can('bottomLayout') && (
           <label className="flex flex-col gap-1">
             <span className="text-[11.5px] text-charcoal">Bottom bar layout</span>
-            <select className={SELECT} value={footer.bottomLayout ?? 'classic'} onChange={e => set({ bottomLayout: e.target.value as StorefrontFooter['bottomLayout'] })}>
+            <Select value={footer.bottomLayout ?? 'classic'} onChange={e => set({ bottomLayout: e.target.value as StorefrontFooter['bottomLayout'] })}>
               <option value="classic">Copyright and links in one row</option>
               <option value="stacked">Currency / language left, payment icons right, copyright centred below</option>
-            </select>
+            </Select>
           </label>
         )}
         <p className="text-[10.5px] text-slate">Copyright and payment icons are blocks — add or edit them in Footer blocks.</p>
@@ -563,11 +561,11 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
 
       {can('wordmark') && (
       <Group title="Big logo at the bottom">
-        <select className={SELECT} value={wordmark} aria-label="Big footer logo" onChange={e => set({ wordmarkSource: e.target.value as StorefrontFooter['wordmarkSource'] })}>
+        <Select value={wordmark} aria-label="Big footer logo" onChange={e => set({ wordmarkSource: e.target.value as StorefrontFooter['wordmarkSource'] })}>
           <option value="none">Don't show</option>
           <option value="store">Use store logo</option>
           <option value="custom">Upload a logo or signature image</option>
-        </select>
+        </Select>
         {wordmark === 'custom' && (
           <ImageUpload value={footer.wordmarkUrl ? [footer.wordmarkUrl] : []} onChange={urls => set({ wordmarkUrl: urls[0] ?? null })} maxFiles={1} storeId={storeId} />
         )}
@@ -579,11 +577,11 @@ export function FooterSettingsPanel({ footer, onChange, storeId, pageOptions, su
 
       {can('logo') && (
       <Group title="Logo (Brand block)">
-        <select className={SELECT} value={source} aria-label="Footer logo" onChange={e => set({ logoSource: e.target.value as StorefrontFooter['logoSource'] })}>
+        <Select value={source} aria-label="Footer logo" onChange={e => set({ logoSource: e.target.value as StorefrontFooter['logoSource'] })}>
           <option value="none">Store name only</option>
           <option value="store">Use store logo</option>
           <option value="custom">Upload a footer logo</option>
-        </select>
+        </Select>
         {source === 'custom' && (
           <ImageUpload value={footer.logoUrl ? [footer.logoUrl] : []} onChange={urls => set({ logoUrl: urls[0] ?? null })} maxFiles={1} storeId={storeId} />
         )}

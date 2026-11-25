@@ -4,7 +4,7 @@ import { AlertCircle, Download, RefreshCw } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { downloadTextFile } from '@/utils/csvFile';
 import { useStoreWorkspace, StorePageHeader, hasNavPermission } from '@/components/layouts/StoreLayout';
-import { Table, Pagination, Button, ActionMenu, type ActionMenuItem, type TableColumn } from '@/components/comman/ui';
+import { Table, Pagination, Button, ActionMenu, type ActionMenuItem, type TableColumn, Select } from '@/components/comman/ui';
 import { apiGetSellerReturns, type SellerReturnItem } from '@/api/services/orders';
 import { apiGetSellerOrderDetail } from '@/api/services/product';
 import type { SellerOrderDetailItem } from '@/api/services/product';
@@ -261,14 +261,9 @@ export function StoreReturnList() {
                 />
               </div>
 
-              <select
-                aria-label="Filter by return status"
-                value={status}
-                onChange={e => { setStatus(e.target.value); setPage(1); }}
-                className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0 whitespace-nowrap transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
-              >
+              <Select aria-label="Filter by return status" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} wrapperClassName="shrink-0">
                 {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              </Select>
 
               <Button size="sm" variant="outline" onClick={() => void exportCsv()} loading={exporting} className="ml-auto shrink-0"><Download size={13} className="mr-1" /> Export CSV</Button>
 

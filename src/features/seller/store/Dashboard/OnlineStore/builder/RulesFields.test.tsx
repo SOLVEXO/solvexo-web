@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { useState } from 'react';
 import { RulesPreviewField, ValueListField } from './RulesFields';
 import { SectionFields } from './SectionFields';
+import { dropdown, optionsOf, shownText } from '@/components/comman/ui/dropdownTesting';
 
 const getProducts = vi.fn();
 vi.mock('@/api/services/store', async importOriginal => {
@@ -130,7 +131,8 @@ describe('Featured products form', () => {
 
   it('choosing the new source in the list is possible', () => {
     mount({ source: 'newArrivals' });
-    const select = screen.getByDisplayValue('New Arrivals') as HTMLSelectElement;
-    expect(Array.from(select.options).map(o => o.value)).toContain('rules');
+    const select = dropdown('New Arrivals');
+    expect(shownText(select)).toBe('New Arrivals');
+    expect(optionsOf(select).map(o => o.value)).toContain('rules');
   });
 });

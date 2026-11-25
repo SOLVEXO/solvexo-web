@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 import { MemoryRouter } from 'react-router-dom';
 
 const api = vi.hoisted(() => ({ apiImportLeads: vi.fn(), apiDemoRequest: vi.fn() }));
@@ -35,7 +36,7 @@ describe('ImportLeadsModal', () => {
     fireEvent.change(screen.getByLabelText('CSV file'), { target: { files: [file] } });
     expect(await screen.findByText('expo-list.csv')).toBeInTheDocument();
     expect(screen.getByLabelText('Where is this list from?')).toHaveValue('expo-list');
-    fireEvent.change(screen.getByLabelText('Give the leads to'), { target: { value: 'a2' } });
+    chooseValue(dropdown('Give the leads to'), 'a2');
     fireEvent.click(screen.getByRole('button', { name: 'Check 2 rows' }));
     await waitFor(() => expect(api.apiImportLeads).toHaveBeenCalledWith({
       rows: [{ name: 'Sara', phone: '0300 1112223', businessName: 'Sara Boutique' }, { name: 'Old', phone: '0321 0000000' }],

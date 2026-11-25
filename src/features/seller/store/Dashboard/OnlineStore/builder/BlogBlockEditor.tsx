@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import { Plus, Trash2, Copy, ChevronUp, ChevronDown, Type, Heading as HeadingIcon, Image as ImageIcon, Quote, List, Minus } from 'lucide-react';
 import type { Block } from '@/api/services/storefrontTypes';
-import { Field } from '@/components/comman/ui';
+import { Field, Select } from '@/components/comman/ui';
 import { BlockFields } from './BlockFields';
 import { SortableList } from './Sortable';
 
@@ -86,14 +86,9 @@ export function BlogBlockEditor({ content, onChange, onRequestRemove, storeId }:
               <div className="flex items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                   <Icon size={14} className="text-slate" />
-                  <select
-                    aria-label="Block type"
-                    className="text-[12px] font-semibold border border-bone rounded-md px-2 py-1 bg-white text-charcoal"
-                    value={block.type}
-                    onChange={e => update(i, { type: e.target.value, settings: e.target.value === 'list' ? { items: [], style: 'bullet' } : {} })}
-                  >
+                  <Select aria-label="Block type" value={block.type} onChange={e => update(i, { type: e.target.value, settings: e.target.value === 'list' ? { items: [], style: 'bullet' } : {} })}>
                     {BLOCK_TYPES.map(t => <option key={t.type} value={t.type}>{t.label}</option>)}
-                  </select>
+                  </Select>
                   <span className="text-[11px] text-slate">#{i + 1}</span>
                 </div>
                 <div className="flex items-center">

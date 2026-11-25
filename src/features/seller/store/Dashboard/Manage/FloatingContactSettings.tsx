@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { ChromeItemsEditor } from '@/features/seller/store/Dashboard/OnlineStore/themes/ChromeItemsEditor';
-import { Button } from '@/components/comman/ui';
+import { Button, Select } from '@/components/comman/ui';
 import { Toggle } from '@/components/comman/ui/Toggle';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
@@ -30,9 +30,9 @@ function Pick<T extends string>({ label, value, options, onChange }: { label: st
   return (
     <Field label={label}>
       {id => (
-        <select id={id} className={INPUT} value={value} onChange={e => onChange(e.target.value as T)}>
+        <Select id={id} value={value} onChange={e => onChange(e.target.value as T)}>
           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        </Select>
       )}
     </Field>
   );

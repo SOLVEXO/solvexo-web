@@ -9,6 +9,7 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { Input, Textarea } from '@/components/comman/ui/Input';
 import { Toggle } from '@/components/comman/ui/Toggle';
 import { Table, type TableColumn } from '@/components/comman/ui/Table';
+import { Select } from '@/components/comman/ui';
 
 // ── Form modal ────────────────────────────────────────────────────────────────
 function FaqFormModal({ faq, onClose, onSaved }: { faq: Faq | null; onClose: () => void; onSaved: () => void }) {
@@ -166,11 +167,10 @@ export function AdminFaqs({ tabs }: { tabs?: ReactNode } = {}) {
         )}
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] flex-wrap">
-            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+            <Select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
               <option value="">All Categories</option>
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            </Select>
           </div>
 
           {error ? (

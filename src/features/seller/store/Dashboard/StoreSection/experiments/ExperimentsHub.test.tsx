@@ -1,3 +1,4 @@
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -75,8 +76,9 @@ describe('ExperimentsHub', () => {
     await screen.findByText('Hero heading');
     fireEvent.click(screen.getByRole('button', { name: /new experiment/i }));
     fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'Heading test' } });
-    fireEvent.change(await screen.findByDisplayValue('Choose a page'), { target: { value: 'p1' } });
-    fireEvent.change(screen.getByDisplayValue('Choose a section'), { target: { value: SEC } });
+    await screen.findByText('Choose a page');
+    chooseValue(dropdown('Choose a page'), 'p1');
+    chooseValue(dropdown('Choose a section'), SEC);
     const names = screen.getAllByLabelText('Setting name').map((i) => (i as HTMLInputElement).value);
     expect(names).toEqual(['heading', 'showTimer', 'columns']); // html (markup) is never offered
     fireEvent.change(screen.getAllByLabelText('Setting value')[0], { target: { value: 'Big sale' } });

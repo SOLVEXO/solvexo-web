@@ -274,16 +274,12 @@ export function AdminStoreAppRequests() {
 
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] flex-wrap">
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value as StoreAppPlatformStatus | '')}
-              className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
-            >
+            <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value as StoreAppPlatformStatus | '')}>
               <option value="">All statuses</option>
               {STORE_APP_PLATFORM_STATUSES.filter(s => s !== 'not_requested').map(s => (
                 <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
               ))}
-            </select>
+            </Select>
           </div>
 
           {error ? (

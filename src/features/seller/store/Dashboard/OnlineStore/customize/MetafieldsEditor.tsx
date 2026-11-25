@@ -6,6 +6,7 @@ import {
 } from '@/api/services/metafields';
 
 import { MEASURE_UNITS, isMeasureType, joinMeasure, splitMeasure } from '@/features/seller/store/Dashboard/StoreSection/products/metafieldUnits';
+import { Select } from '@/components/comman/ui';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const ta  = `${inp} resize-y min-h-[70px]`;
@@ -25,11 +26,11 @@ export function ValueInput({ entry, value, onChange }: { entry: MetafieldValueEn
       // own "is required" check even though the dropdown plainly showed an
       // answer already picked.
       return (
-        <select className={inp} value={value} onChange={e => onChange(e.target.value)}>
+        <Select value={value} onChange={e => onChange(e.target.value)}>
           {!value && <option value="">— Select —</option>}
           <option value="true">True</option>
           <option value="false">False</option>
-        </select>
+        </Select>
       );
     case 'date':
       return <input type="date" className={inp} value={value} onChange={e => onChange(e.target.value)} />;
@@ -50,9 +51,9 @@ export function ValueInput({ entry, value, onChange }: { entry: MetafieldValueEn
       return (
         <div className="flex items-center gap-2">
           <input type="number" step="any" className={`${inp} min-w-0 flex-1`} value={amount} aria-label={`${entry.name} amount`} onChange={e => onChange(joinMeasure(e.target.value, unit))} />
-          <select className={`${inp.replace('w-full ', '')} w-[96px] shrink-0`} value={unit} aria-label={`${entry.name} unit`} onChange={e => onChange(joinMeasure(amount, e.target.value))}>
+          <Select value={unit} aria-label={`${entry.name} unit`} onChange={e => onChange(joinMeasure(amount, e.target.value))}>
             {MEASURE_UNITS[entry.type].map(u => <option key={u} value={u}>{u}</option>)}
-          </select>
+          </Select>
         </div>
       );
     }

@@ -5,6 +5,7 @@ import { useToast } from '@/contexts/ToastContext';
 import type { DashboardLayoutApi } from './useDashboardLayout';
 import type { DashboardPreset, DashboardWidgetDef } from './dashboardTypes';
 import { WidgetLibraryDrawer } from './WidgetLibraryDrawer';
+import { Select } from '@/components/comman/ui';
 
 const btn = 'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-bone bg-white text-[12.5px] font-semibold text-carbon hover:bg-fog cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-orange';
 
@@ -46,15 +47,10 @@ export function CustomizeToolbar({ layout, defs, presets }: { layout: DashboardL
           <label className="inline-flex items-center gap-1.5 text-[12px] text-slate">
             <LayoutTemplate size={14} />
             <span className="sr-only">Layout preset</span>
-            <select
-              aria-label="Layout preset"
-              value={layout.preset ?? ''}
-              onChange={(e) => { const p = presets.find(x => x.id === e.target.value); if (p) choosePreset(p); }}
-              className="h-8 rounded-lg border border-bone bg-white text-[12.5px] font-semibold text-carbon px-2 cursor-pointer"
-            >
+            <Select aria-label="Layout preset" value={layout.preset ?? ''} onChange={(e) => { const p = presets.find(x => x.id === e.target.value); if (p) choosePreset(p); }}>
               <option value="" disabled>Presets…</option>
               {presets.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </select>
+            </Select>
           </label>
           <button type="button" className={btn} onClick={() => setLibrary(true)}><Plus size={14} /> Add widget</button>
           <button type="button" className={btn} onClick={() => setConfirmReset(true)} disabled={layout.saving}><RotateCcw size={14} /> Reset</button>

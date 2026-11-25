@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FlaskConical, Plus } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
-import { SkeletonBox, EmptyState, Badge, Input } from '@/components/comman/ui';
+import { SkeletonBox, EmptyState, Badge, Input, Select } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { useToast } from '@/contexts/ToastContext';
@@ -139,22 +139,22 @@ export default function ExperimentsHub() {
           <div className="flex flex-col gap-3">
             <Input label="Name" value={form.name} maxLength={80} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             <label className="flex flex-col gap-1 text-[13px] text-charcoal">What do you want to test?
-              <select className="h-10 rounded-lg border border-border-soft px-2" value={form.kind} disabled={editing !== 'new'} onChange={(e) => setForm((f) => ({ ...f, kind: e.target.value as ExperimentKind, rows: [], sectionId: '' }))}>
+              <Select value={form.kind} disabled={editing !== 'new'} onChange={(e) => setForm((f) => ({ ...f, kind: e.target.value as ExperimentKind, rows: [], sectionId: '' }))}>
                 <option value="section">A section on a page (text, numbers, switches)</option>
                 <option value="theme_settings">A theme setting (custom.*)</option>
-              </select>
+              </Select>
             </label>
             {form.kind === 'section' && (
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1 text-[13px] text-charcoal">Page
-                  <select className="h-10 rounded-lg border border-border-soft px-2" value={form.pageId} onChange={(e) => setForm((f) => ({ ...f, pageId: e.target.value, sectionId: '', rows: [] }))}>
+                  <Select value={form.pageId} onChange={(e) => setForm((f) => ({ ...f, pageId: e.target.value, sectionId: '', rows: [] }))}>
                     <option value="">Choose a page</option>{pages.map((p) => <option key={p._id} value={p._id}>{p.title}</option>)}
-                  </select>
+                  </Select>
                 </label>
                 <label className="flex flex-col gap-1 text-[13px] text-charcoal">Section
-                  <select className="h-10 rounded-lg border border-border-soft px-2" value={form.sectionId} onChange={(e) => pickSection(e.target.value)} disabled={!form.pageId && !form.sectionId}>
+                  <Select value={form.sectionId} onChange={(e) => pickSection(e.target.value)} disabled={!form.pageId && !form.sectionId}>
                     <option value="">Choose a section</option>{sectionsOfPage.map((s) => <option key={String(s._id)} value={String(s._id)}>{s.type}{typeof s.settings?.heading === 'string' && s.settings.heading ? ` · ${s.settings.heading}` : ''}</option>)}
-                  </select>
+                  </Select>
                 </label>
               </div>
             )}
@@ -165,7 +165,7 @@ export default function ExperimentsHub() {
                   <input type="checkbox" aria-label={`Change ${r.key || 'setting'}`} className="accent-brand-orange" checked={r.on} onChange={(e) => setRow(i, { on: e.target.checked })} />
                   <input aria-label="Setting name" className="h-9 w-40 rounded-lg border border-border-soft px-2 text-[13px]" value={r.key} placeholder={form.kind === 'theme_settings' ? 'custom.toastStyle' : 'heading'} onChange={(e) => setRow(i, { key: e.target.value })} />
                   {r.type === 'bool'
-                    ? <select aria-label="Setting value" className="h-9 rounded-lg border border-border-soft px-2 text-[13px]" value={r.value} onChange={(e) => setRow(i, { value: e.target.value })}><option value="true">yes</option><option value="false">no</option></select>
+                    ? <Select aria-label="Setting value" value={r.value} onChange={(e) => setRow(i, { value: e.target.value })}><option value="true">yes</option><option value="false">no</option></Select>
                     : <input aria-label="Setting value" type={r.type === 'number' ? 'number' : 'text'} className="h-9 min-w-0 flex-1 rounded-lg border border-border-soft px-2 text-[13px]" value={r.value} onChange={(e) => setRow(i, { value: e.target.value, on: true })} />}
                 </div>
               ))}

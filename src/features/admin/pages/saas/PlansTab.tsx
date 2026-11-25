@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bar, BarChart as RechartsBar, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ArrowRight, ChevronRight, Info } from 'lucide-react';
-import { MetricCard } from '@/components/comman/ui';
+import { MetricCard, Select } from '@/components/comman/ui';
 import { CHART_GRID, CHART_TICK } from '@/components/comman/charts/chartTheme';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
@@ -53,10 +53,9 @@ export function PlansTab() {
     <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
       <div className="flex items-center justify-end">
         <label htmlFor="plans-range" className="sr-only">Months shown</label>
-        <select id="plans-range" value={months} onChange={e => setMonths(Number(e.target.value))}
-          className="h-8 rounded-lg border border-bone bg-white px-2.5 text-[12.5px] text-charcoal">
+        <Select id="plans-range" value={months} onChange={e => setMonths(Number(e.target.value))}>
           {RANGE_OPTIONS.map(n => <option key={n} value={n}>Last {n} months</option>)}
-        </select>
+        </Select>
       </div>
 
       {error && !data && <AnalyticsErrorState message={error} onRetry={load} />}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, CheckCircle2, Clock, Eye, Globe2, MousePointerClick, Radio, Settings2, UserPlus, Users } from 'lucide-react';
-import { Button, MetricCard, Toggle } from '@/components/comman/ui';
+import { Button, MetricCard, Toggle, Select } from '@/components/comman/ui';
 import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 import { AreaChart } from '@/components/comman/charts';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
@@ -267,11 +267,11 @@ function Overview({ range }: { range: SiteRange }) {
           loading={r.loading}
           emptyValueLabel="No visits recorded in this period yet"
           action={(
-            <select aria-label="Chart metric" value={metric} onChange={e => setMetric(e.target.value as typeof metric)} className="px-2.5 py-1.5 rounded-[8px] border border-bone bg-white text-[12px] cursor-pointer">
+            <Select aria-label="Chart metric" value={metric} onChange={e => setMetric(e.target.value as typeof metric)}>
               <option value="users">Visitors</option>
               <option value="sessions">Sessions</option>
               <option value="pageViews">Page views</option>
-            </select>
+            </Select>
           )}
         />
       )}

@@ -1,3 +1,4 @@
+import { dropdown, chooseValue, optionsOf } from '@/components/comman/ui/dropdownTesting';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -53,8 +54,8 @@ describe('CheckoutRulesHub', () => {
     fireEvent.click(screen.getByRole('button', { name: /new rule/i }));
     fireEvent.change(await screen.findByLabelText('Rule name'), { target: { value: 'Max 5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add condition' }));
-    fireEvent.change(screen.getByLabelText('Condition field'), { target: { value: 'maxLineQuantity' } });
-    fireEvent.change(screen.getByLabelText('Condition operator'), { target: { value: 'gt' } });
+    chooseValue(dropdown('Condition field'), 'maxLineQuantity');
+    chooseValue(dropdown('Condition operator'), 'gt');
     fireEvent.change(screen.getByLabelText('Condition value'), { target: { value: '5' } });
     fireEvent.change(screen.getByLabelText(/Message the customer sees/), { target: { value: 'At most 5 of one item.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -67,9 +68,10 @@ describe('CheckoutRulesHub', () => {
     render(<CheckoutRulesHub />);
     await screen.findByText('No COD big orders');
     fireEvent.click(screen.getByRole('button', { name: /new rule/i }));
-    fireEvent.change(await screen.findByLabelText('What it does'), { target: { value: 'discount' } });
+    const what = await screen.findByLabelText('What it does');
+    chooseValue(what, 'discount');
     fireEvent.click(screen.getByRole('button', { name: 'Add condition' }));
-    const options = Array.from((screen.getByLabelText('Condition field') as HTMLSelectElement).options).map((o) => o.value);
+    const options = optionsOf(dropdown('Condition field')).map((o) => o.value);
     expect(options).toContain('subtotal');
     expect(options).not.toContain('country');
   });

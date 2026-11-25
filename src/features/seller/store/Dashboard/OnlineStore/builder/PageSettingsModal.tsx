@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Button, Field, Toggle } from '@/components/comman/ui';
+import { Modal, Button, Field, Toggle, Select } from '@/components/comman/ui';
 import { apiUpdateStorePage, type StorePageData, type StorePagePolicyType } from '@/api/services/storePages';
 import { MetafieldsEditor } from '../customize/MetafieldsEditor';
 
@@ -160,9 +160,9 @@ export function PageSettingsModal({ page, storeId, onClose, onSaved }: {
         {!isHome && (
           <div className="border-t border-bone pt-3">
             <Field label="Policy type" hint="Tags this as a standard legal page — Solvexo links it automatically from your storefront's footer and, for Privacy/Terms, from checkout. At most one page per store per type.">
-              <select className={inp} value={policyType} onChange={e => setPolicyType(e.target.value as StorePagePolicyType | '')}>
+              <Select value={policyType} onChange={e => setPolicyType(e.target.value as StorePagePolicyType | '')}>
                 {POLICY_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              </Select>
             </Field>
           </div>
         )}

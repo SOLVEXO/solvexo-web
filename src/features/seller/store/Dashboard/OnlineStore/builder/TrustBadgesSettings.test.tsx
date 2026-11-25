@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { BlockFields } from './BlockFields';
 import { BLOCK_SCHEMAS } from './sectionRegistry';
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 afterEach(cleanup);
 const mount = (type: string, settings: Record<string, unknown>) => {
@@ -16,7 +17,7 @@ describe('Main Product > Trust badges block settings', () => {
     const onChange = mount('product_trust_badges', { items });
     fireEvent.change(screen.getByLabelText('Badge title'), { target: { value: 'Free delivery' } });
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ items: [expect.objectContaining({ title: 'Free delivery', icon: 'truck' })] }));
-    fireEvent.change(screen.getByLabelText('Badge icon'), { target: { value: 'gift' } });
+    chooseValue(dropdown('Badge icon'), 'gift');
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ items: [expect.objectContaining({ icon: 'gift' })] }));
     fireEvent.click(screen.getByText('+ Add badge'));
     expect((onChange.mock.calls.at(-1)?.[0] as { items: unknown[] }).items).toHaveLength(2);

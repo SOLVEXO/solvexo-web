@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
+import { dropdown, optionsOf, chooseValue } from '@/components/comman/ui/dropdownTesting';
 import { BlockFields } from './BlockFields';
 
 afterEach(cleanup);
@@ -12,8 +13,7 @@ const mount = (settings: Record<string, unknown>, onChange = vi.fn()) => {
 describe('Main Product > Variant picker block settings', () => {
   it('offers buttons, dropdown, colour swatches and picture tiles', () => {
     mount({});
-    const select = screen.getByDisplayValue('Buttons (pills)') as HTMLSelectElement;
-    expect(Array.from(select.options).map(o => o.value)).toEqual(['pills', 'dropdown', 'swatches', 'images']);
+    expect(optionsOf(dropdown('Buttons (pills)')).map(o => o.value)).toEqual(['pills', 'dropdown', 'swatches', 'images']);
   });
 
   it('swatch shape and size appear only for swatches / picture tiles', () => {
@@ -30,7 +30,7 @@ describe('Main Product > Variant picker block settings', () => {
 
   it('choosing a style writes it', () => {
     const onChange = mount({});
-    fireEvent.change(screen.getByDisplayValue('Buttons (pills)'), { target: { value: 'swatches' } });
+    chooseValue(dropdown('Buttons (pills)'), 'swatches');
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ pickerStyle: 'swatches' }));
   });
 

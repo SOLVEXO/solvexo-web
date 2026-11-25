@@ -1,6 +1,6 @@
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, Columns3, Copy, FileText, Heading, Image as ImageIcon, Minus, MousePointerClick, Plus, Repeat, Rows3, Trash2, Type, Video, MoveVertical } from 'lucide-react';
-import { ActionMenu, Button } from '@/components/comman/ui';
+import { ActionMenu, Button, Select } from '@/components/comman/ui';
 import type { LayoutNode, LayoutNodeType, StoreSectionDefInput } from '@/api/services/storeSectionDefs';
 import { StoreSectionView, type StoreSectionColors } from '@/features/storefront-themes/storeSections/StoreSectionView';
 import {
@@ -31,7 +31,7 @@ function Row({ label, children, hint }: { label: string; children: ReactNode; hi
   );
 }
 function Sel({ label, value, options, onChange }: { label: string; value: string | undefined; options: [string, string][]; onChange: (v: string) => void }) {
-  return <Row label={label}><select className={inp} value={value ?? options[0][0]} onChange={e => onChange(e.target.value)}>{options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Row>;
+  return <Row label={label}><Select value={value ?? options[0][0]} onChange={e => onChange(e.target.value)}>{options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></Row>;
 }
 function Num({ label, value, min, max, onChange, hint }: { label: string; value: number | undefined; min: number; max: number; onChange: (v: number) => void; hint?: string }) {
   return (

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { Field, ImageUpload } from '@/components/comman/ui';
+import { Field, ImageUpload, Select } from '@/components/comman/ui';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none focus:border-brand-orange';
@@ -56,11 +56,11 @@ export function NavRulesField({ value, onChange }: { value: NavExtrasValue; onCh
       {open && (
         <div className="flex flex-col gap-2 rounded-lg border border-bone bg-cream/40 p-3">
           <Field label="Show to">
-            <select className={inp} value={value.showTo || 'all'} onChange={e => onChange({ showTo: e.target.value })}>
+            <Select value={value.showTo || 'all'} onChange={e => onChange({ showTo: e.target.value })}>
               <option value="all">Everyone</option>
               <option value="guests">Visitors who are not signed in</option>
               <option value="customers">Signed-in customers</option>
-            </select>
+            </Select>
           </Field>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Show from"><input type="datetime-local" className={inp} value={isoToLocalInput(value.showFrom)} onChange={e => onChange({ showFrom: localToIso(e.target.value) })} /></Field>
@@ -96,10 +96,10 @@ export function MegaExtrasField({ value, onChange, storeId, pageOptions }: {
     <div className="flex flex-col gap-3 rounded-lg border border-bone bg-cream/40 p-3">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Mega menu layout</p>
       <Field label="Columns">
-        <select className={inp} value={String(value.megaColumns || 0)} onChange={e => onChange({ megaColumns: Number(e.target.value), megaPromos: value.megaPromos })}>
+        <Select value={String(value.megaColumns || 0)} onChange={e => onChange({ megaColumns: Number(e.target.value), megaPromos: value.megaPromos })}>
           <option value="0">Automatic (your theme setting)</option>
           {[2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} columns</option>)}
-        </select>
+        </Select>
       </Field>
 
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Promo cards <span className="font-normal normal-case">(up to 2, shown beside the columns on large screens)</span></p>

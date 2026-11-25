@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({ apiGetActivationFunnel: vi.fn() }));
 vi.mock('@/api/services/analytics/saasMetrics', () => api);
 
 import { ActivationTab } from './ActivationTab';
+import { chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 const fixture: ActivationFunnel = {
   from: '2026-05-01T00:00:00Z', months: 6,
@@ -61,7 +62,7 @@ describe('ActivationTab', () => {
     api.apiGetActivationFunnel.mockResolvedValue({ success: true, data: fixture });
     renderTab();
     await screen.findByText(/Biggest drop/);
-    fireEvent.change(screen.getByLabelText('Sign-up period'), { target: { value: '12' } });
+    chooseValue(screen.getByLabelText('Sign-up period'), '12');
     await waitFor(() => expect(api.apiGetActivationFunnel).toHaveBeenLastCalledWith(12));
   });
 });

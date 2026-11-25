@@ -6,7 +6,7 @@ import {
   apiAdminLockStore, apiAdminUnlockStore, apiAdminListInvoices, apiAdminRefundPlatformInvoice,
   type PlatformPlan, type SellerPlatformOverview, type PlatformPlanInvoice,
 } from '@/api/services/platformPlans';
-import { Table, StatusBadge, Badge, ActionMenu, Modal, Button, SkeletonBox } from '@/components/comman/ui';
+import { Table, StatusBadge, Badge, ActionMenu, Modal, Button, SkeletonBox, Select } from '@/components/comman/ui';
 import type { TableColumn, ActionMenuItem } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatCurrency, formatDate } from '@/components/comman/analytics/format';
@@ -284,20 +284,15 @@ export function BillingTab({ sellerId }: BillingTabProps) {
             {action.kind === 'assign-plan' && (
               <div>
                 <label htmlFor="billing-assign-plan" className="block text-[11.5px] font-medium text-charcoal mb-1.5">Plan</label>
-                <select
-                  id="billing-assign-plan"
-                  value={planId}
-                  onChange={(e) => setPlanId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white"
-                >
+                <Select id="billing-assign-plan" value={planId} onChange={(e) => setPlanId(e.target.value)} wrapperClassName="w-full">
                   <option value="">Select a plan…</option>
                   {plans.map((p) => <option key={p._id} value={p._id}>{p.name}{p.isFree ? ' (Free)' : ''}</option>)}
-                </select>
+                </Select>
                 <p className="mt-2 text-[11.5px] leading-[1.5] text-slate">This is a <strong>complimentary</strong> plan: no charge, never renewed, never locked for payment. The store sees "Provided by Solvexo support".</p>
                 <label htmlFor="billing-review" className="mt-3 block text-[11.5px] font-medium text-charcoal mb-1.5">Review date</label>
-                <select id="billing-review" value={reviewOpt} onChange={(e) => setReviewOpt(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white">
+                <Select id="billing-review" value={reviewOpt} onChange={(e) => setReviewOpt(e.target.value)} wrapperClassName="w-full">
                   {COMPLIMENTARY_REVIEW_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-                </select>
+                </Select>
                 <p className="mt-1 text-[11px] text-slate">Admins get a reminder a week before this date. Nothing is removed automatically.</p>
               </div>
             )}

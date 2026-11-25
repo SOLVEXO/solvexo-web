@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BookmarkPlus, Play, Trash2, ChevronDown } from 'lucide-react';
-import { Button, Input, Modal } from '@/components/comman/ui';
+import { Button, Input, Modal, Select } from '@/components/comman/ui';
 import {
   apiListSavedReports, apiCreateSavedReport, apiDeleteSavedReport, apiUpdateSavedReportSchedule,
   type SavedReport, type SavedReportSchedule, type SellerExportParams,
@@ -84,17 +84,11 @@ export function SavedReportsPanel({
               {reports.map(r => (
                 <div key={r._id} className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-bone last:border-b-0">
                   <span className="text-[12.5px] font-medium text-charcoal truncate flex-1">{r.name}</span>
-                  <select
-                    aria-label={`Email schedule for ${r.name}`}
-                    value={r.schedule ?? 'none'}
-                    onChange={e => handleSchedule(r._id, e.target.value as SavedReportSchedule)}
-                    className="text-[11px] border border-bone rounded px-1 py-0.5 bg-white text-slate"
-                    title="Email this report automatically"
-                  >
+                  <Select aria-label={`Email schedule for ${r.name}`} value={r.schedule ?? 'none'} onChange={e => handleSchedule(r._id, e.target.value as SavedReportSchedule)} title="Email this report automatically">
                     <option value="none">No email</option>
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
-                  </select>
+                  </Select>
                   <button
                     onClick={() => { onRun(r.config); setOpen(false); }}
                     className="p-1 text-brand-orange bg-transparent border-none cursor-pointer"
@@ -131,15 +125,11 @@ export function SavedReportsPanel({
           <Input placeholder="e.g. Monthly Revenue Snapshot" value={name} onChange={e => setName(e.target.value)} />
           <label className="block mt-3 text-[12px] text-slate">
             Email me this report
-            <select
-              value={schedule}
-              onChange={e => setSchedule(e.target.value as SavedReportSchedule)}
-              className="mt-1 block w-full text-[13px] border border-bone rounded-lg px-3 py-2 bg-white text-charcoal"
-            >
+            <Select value={schedule} onChange={e => setSchedule(e.target.value as SavedReportSchedule)} wrapperClassName="mt-1 block w-full">
               <option value="none">Don't email</option>
               <option value="weekly">Every Monday</option>
               <option value="monthly">1st of every month</option>
-            </select>
+            </Select>
           </label>
         </Modal>
       )}

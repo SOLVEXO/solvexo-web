@@ -261,9 +261,9 @@ function LeadCard({ lead, showOwner, onOpen, onMove }: { lead: SalesLead; showOw
           {lead.marketingConsent && lead.marketingConsent.status !== 'none' && <ConsentBadge status={lead.marketingConsent.status} />}
         </span>
         {/* Keyboard / touch alternative to dragging. */}
-        <select aria-label={`Move ${lead.name}`} value={lead.stage} onChange={e => onMove(e.target.value as LeadStage)} className="text-[11px] border border-bone rounded px-1 py-0.5 bg-white text-slate cursor-pointer">
+        <Select aria-label={`Move ${lead.name}`} value={lead.stage} onChange={e => onMove(e.target.value as LeadStage)}>
           {LEAD_STAGES.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
-        </select>
+        </Select>
       </div>
     </article>
   );

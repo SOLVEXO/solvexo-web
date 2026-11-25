@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
-import { ImageUpload } from '@/components/comman/ui';
+import { ImageUpload, Select } from '@/components/comman/ui';
 import { apiAddCategory, type CategoryNode } from '@/api/services/categories';
 
-const selCls = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none cursor-pointer disabled:opacity-60';
 
 interface Props {
   storeId:          string;
@@ -36,10 +35,10 @@ export function SubcategoryField({ storeId, tree, loading, categoryId, subCatego
             <Plus size={11} /> Add Category
           </button>
         </div>
-        <select value={categoryId} onChange={e => onCategoryChange(e.target.value)} disabled={loading} className={selCls}>
+        <Select value={categoryId} onChange={e => onCategoryChange(e.target.value)} disabled={loading}>
           <option value="">{loading ? 'Loading…' : 'No category'}</option>
           {tree.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-        </select>
+        </Select>
       </div>
       <div>
         <div className="flex items-center justify-between mb-1.5">
@@ -49,10 +48,10 @@ export function SubcategoryField({ storeId, tree, loading, categoryId, subCatego
             <Plus size={11} /> Add Subcategory
           </button>
         </div>
-        <select value={subCategoryId} onChange={e => onSubCategoryChange(e.target.value)} disabled={loading || !categoryId} className={selCls}>
+        <Select value={subCategoryId} onChange={e => onSubCategoryChange(e.target.value)} disabled={loading || !categoryId}>
           <option value="">{!categoryId ? 'Pick a category first' : 'No subcategory'}</option>
           {(selectedCategory?.children ?? []).map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-        </select>
+        </Select>
       </div>
 
       {addingCategory && (

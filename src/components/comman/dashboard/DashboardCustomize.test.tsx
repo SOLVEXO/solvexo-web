@@ -7,6 +7,7 @@ import { DashboardCanvas } from './DashboardCanvas';
 import { CustomizeButton, CustomizeToolbar } from './CustomizeToolbar';
 import { useDashboardLayout } from './useDashboardLayout';
 import type { DashboardPreset, DashboardWidgetDef, LayoutWidget } from './dashboardTypes';
+import { chooseValue, dropdown } from '@/components/comman/ui/dropdownTesting';
 
 vi.mock('@/api/services/dashboardLayout', async (orig) => ({
   ...(await orig<typeof import('@/api/services/dashboardLayout')>()),
@@ -82,9 +83,9 @@ describe('dashboard customize mode', () => {
   it('changes size and settings, and Save sends exactly the edited layout', async () => {
     wrap(<Harness />);
     fireEvent.click(await screen.findByRole('button', { name: 'Customize dashboard' }));
-    fireEvent.change(screen.getByLabelText('Size of Alpha'), { target: { value: 'medium' } });
+    chooseValue(dropdown('Size of Alpha'), 'medium');
     fireEvent.click(screen.getByLabelText('Settings for Gamma'));
-    fireEvent.change(screen.getByLabelText('Rows'), { target: { value: '3' } });
+    chooseValue(dropdown('5 rows'), '3');
     fireEvent.click(screen.getByLabelText('Hide Beta'));
     fireEvent.click(screen.getByText('Save layout'));
     await waitFor(() => expect(api.apiSaveDashboardLayout).toHaveBeenCalledTimes(1));
@@ -113,7 +114,7 @@ describe('dashboard customize mode', () => {
   it('a preset replaces the working copy only, and the locked widget stays', async () => {
     wrap(<Harness />);
     fireEvent.click(await screen.findByRole('button', { name: 'Customize dashboard' }));
-    fireEvent.change(screen.getByLabelText('Layout preset'), { target: { value: 'mini' } });
+    chooseValue(dropdown('Layout preset'), 'mini');
     expect(order()).toEqual(['crit', 'b']);
     expect(api.apiSaveDashboardLayout).not.toHaveBeenCalled();
   });

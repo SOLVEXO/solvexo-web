@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Field, ImageUpload, Toggle } from '@/components/comman/ui';
+import { Field, ImageUpload, Toggle, Select } from '@/components/comman/ui';
 import { useUpload } from '@/hooks/upload/useUpload';
 import { apiUploadMediaAsset } from '@/api/services/mediaLibrary';
 import { EntityPickerModal, type EntityPickerMode } from './EntityPickerModal';
@@ -186,10 +186,10 @@ function MetaobjectTypePickerField({ value, storeId, onChange }: { value: string
   if (defs.length === 0) return <div className={`${inp} text-slate`}>No content types yet — create one under "Content Types" in the sidebar first.</div>;
 
   return (
-    <select className={inp} value={value ?? ''} onChange={e => onChange(e.target.value)}>
+    <Select value={value ?? ''} onChange={e => onChange(e.target.value)}>
       <option value="" disabled>Choose a content type…</option>
       {defs.map(d => <option key={d._id} value={d.type}>{d.name}</option>)}
-    </select>
+    </Select>
   );
 }
 
@@ -236,10 +236,10 @@ function MetafieldKeyPickerField({ value, storeId, ownerResource, onChange }: { 
 
   return (
     <div className="flex flex-col gap-1.5">
-      <select className={inp} value={value ?? ''} onChange={e => onChange(e.target.value)}>
+      <Select value={value ?? ''} onChange={e => onChange(e.target.value)}>
         <option value="">— Use the plain value above —</option>
         {defs.map(d => <option key={d._id} value={d.key}>{d.name}</option>)}
-      </select>
+      </Select>
       {connected && (
         <p className="flex items-center gap-1 text-[11px] font-semibold text-success">
           🔗 Connected — resolves to this {ownerResource}'s real "{connected.name}" value
@@ -412,13 +412,9 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
 
     case 'select':
       return (
-        <select
-          className={inp}
-          value={String(value ?? field.options?.[0]?.value ?? '')}
-          onChange={e => set({ [field.key]: field.numeric ? Number(e.target.value) : e.target.value })}
-        >
+        <Select value={String(value ?? field.options?.[0]?.value ?? '')} onChange={e => set({ [field.key]: field.numeric ? Number(e.target.value) : e.target.value })}>
           {(field.options ?? []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        </Select>
       );
 
     case 'checkbox':

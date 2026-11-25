@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 const calls: { op: string; args: unknown }[] = [];
 let reorderFails = false;
@@ -90,7 +91,7 @@ describe('specs for a category', () => {
     render(<ProductSpecsEditor storeId="s1" productId="p1" categoryIds={['cl', 'sh']} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Add spec' }));
     fireEvent.change(screen.getByPlaceholderText(/Spec name/), { target: { value: 'Collar' } });
-    fireEvent.change(screen.getByLabelText('Spec type'), { target: { value: 'number_decimal' } });
+    chooseValue(dropdown('Spec type'), 'number_decimal');
     fireEvent.click(screen.getByLabelText('Only for products in this category'));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     await waitFor(() => expect(calls.find(c => c.op === 'create')).toBeTruthy());

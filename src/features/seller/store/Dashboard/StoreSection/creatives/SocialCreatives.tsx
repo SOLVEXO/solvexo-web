@@ -4,6 +4,7 @@ import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLa
 import { getStoreLiveUrl } from '@/utils/storefrontUrl';
 import { useToast } from '@/contexts/ToastContext';
 import { buildCaption, drawCreative, FORMATS, safeColor, type CreativeFormat } from './creativeCanvas';
+import { Select } from '@/components/comman/ui';
 
 /** Loads an image for the canvas. CORS-enabled so the PNG export is not blocked; null when it cannot be used. */
 function loadImage(src: string | null | undefined): Promise<HTMLImageElement | null> {
@@ -95,15 +96,15 @@ export default function SocialCreatives() {
             <div className="text-sm text-gray-500">No active products found.</div>
           ) : (
             <label className="block text-sm font-medium" htmlFor="sc-product">Product
-              <select id="sc-product" className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" value={productId} onChange={(e) => setProductId(e.target.value)}>
+              <Select id="sc-product" value={productId} onChange={(e) => setProductId(e.target.value)} wrapperClassName="mt-1 w-full">
                 {products.map((p) => <option key={p.productId} value={p.productId}>{p.name}</option>)}
-              </select>
+              </Select>
             </label>
           )}
           <label className="block text-sm font-medium" htmlFor="sc-format">Size
-            <select id="sc-format" className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" value={format} onChange={(e) => setFormat(e.target.value as CreativeFormat)}>
+            <Select id="sc-format" value={format} onChange={(e) => setFormat(e.target.value as CreativeFormat)} wrapperClassName="mt-1 w-full">
               {(Object.keys(FORMATS) as CreativeFormat[]).map((k) => <option key={k} value={k}>{FORMATS[k].label}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="block text-sm font-medium" htmlFor="sc-badge">Badge (optional)
             <input id="sc-badge" maxLength={24} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" value={badge} onChange={(e) => setBadge(e.target.value)} placeholder="e.g. 20% OFF" />

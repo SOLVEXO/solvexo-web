@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Search, CheckCircle2, XCircle, ClipboardCheck, Printer, FileText } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { Button, Modal } from '@/components/comman/ui';
+import { Button, Modal, Select } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { TokenStorage } from '@/api/services/auth';
 import { buildCountReportHtml, buildCountSheetHtml, openCountDocument, PAPER_LABEL, type PaperSize, type SheetOptions } from '@/utils/stockCountDocuments';
@@ -215,9 +215,9 @@ export default function StockCountSession() {
             <p className="text-[13px] text-slate mb-3">Totals, every difference between the system and the physical count, and the full list of lines.</p>
           )}
           <label className="flex flex-col gap-1 text-[12px] font-medium text-graphite">Paper
-            <select value={sheetOpts.paper} onChange={e => setSheetOpts(o => ({ ...o, paper: e.target.value as PaperSize }))} className="border border-bone rounded-lg px-3 py-2 text-[13px] bg-white">
+            <Select value={sheetOpts.paper} onChange={e => setSheetOpts(o => ({ ...o, paper: e.target.value as PaperSize }))}>
               {(Object.keys(PAPER_LABEL) as PaperSize[]).map(p => <option key={p} value={p}>{PAPER_LABEL[p]}</option>)}
-            </select>
+            </Select>
           </label>
         </Modal>
       )}

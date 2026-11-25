@@ -6,7 +6,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { Input, Textarea } from '@/components/comman/ui/Input';
-import { SkeletonBox, MetricCard, Card, Badge, AdminPageHeader, EmptyState } from '@/components/comman/ui';
+import { SkeletonBox, MetricCard, Card, Badge, AdminPageHeader, EmptyState, Select } from '@/components/comman/ui';
 import { Toggle } from '@/components/comman/ui/Toggle';
 import { ActionMenu } from '@/components/comman/ui/ActionMenu';
 import {
@@ -718,11 +718,10 @@ function SubscribersModal({ plan, allPlans, onClose }: { plan: PlatformPlan; all
             {actionTarget.action === 'assign' && (
               <div>
                 <label className="block text-[12px] font-medium text-charcoal mb-1.5">Plan to assign</label>
-                <select value={actionPlanId} onChange={e => setActionPlanId(e.target.value)}
-                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border">
+                <Select value={actionPlanId} onChange={e => setActionPlanId(e.target.value)} wrapperClassName="w-full">
                   <option value="">Choose a plan…</option>
                   {allPlans.filter(p => p.status === 'active').map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-                </select>
+                </Select>
                 <p className="text-[11px] text-slate mt-1">No charge is made — any live Stripe subscription for this store is cancelled first.</p>
               </div>
             )}

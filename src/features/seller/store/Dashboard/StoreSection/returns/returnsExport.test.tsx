@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 const downloads: { name: string; text: string }[] = [];
 const toastError = vi.fn();
@@ -89,7 +90,7 @@ describe('Returns page', () => {
   it('exports with the status filter chosen on the page', async () => {
     renderList();
     await screen.findAllByText('ORD-1');
-    fireEvent.change(screen.getByLabelText('Filter by return status'), { target: { value: 'refunded' } });
+    chooseValue(dropdown('Filter by return status'), 'refunded');
     await waitFor(() => expect(calls.some(c => c.status === 'refunded')).toBe(true));
     calls.length = 0;
     fireEvent.click(screen.getByRole('button', { name: /Export CSV/ }));

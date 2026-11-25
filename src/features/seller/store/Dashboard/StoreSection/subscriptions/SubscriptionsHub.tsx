@@ -157,7 +157,7 @@ export default function SubscriptionsHub() {
                   <label className="flex flex-col gap-1 text-[12px] text-slate">Every
                     <input aria-label="Interval count" type="number" min={1} max={12} className="h-9 w-20 rounded-lg border border-border-soft px-2 text-[13px]" value={o.count} onChange={(e) => setOpt(i, { count: e.target.value })} />
                   </label>
-                  <select aria-label="Interval unit" className="h-9 rounded-lg border border-border-soft px-2 text-[13px]" value={o.unit} onChange={(e) => setOpt(i, { unit: e.target.value as PlanUnit })}><option value="week">week(s)</option><option value="month">month(s)</option></select>
+                  <Select aria-label="Interval unit" value={o.unit} onChange={(e) => setOpt(i, { unit: e.target.value as PlanUnit })}><option value="week">week(s)</option><option value="month">month(s)</option></Select>
                   <label className="flex flex-col gap-1 text-[12px] text-slate">Discount %
                     <input aria-label="Discount percent" type="number" min={0} max={90} className="h-9 w-24 rounded-lg border border-border-soft px-2 text-[13px]" value={o.discountPercent} onChange={(e) => setOpt(i, { discountPercent: e.target.value })} />
                   </label>

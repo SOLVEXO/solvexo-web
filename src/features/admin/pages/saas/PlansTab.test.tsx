@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({ apiGetPlanInsights: vi.fn() }));
 vi.mock('@/api/services/analytics/saasMetrics', () => api);
 
 import { PlansTab } from './PlansTab';
+import { chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 const plan = (o: Partial<PlanInsightRow>): PlanInsightRow => ({
   planId: 'p', name: 'Plan', status: 'active', isFree: false, isPublic: true, isCustomPricing: false, monthlyPriceUSD: null, yearlyPriceUSD: null,
@@ -93,7 +94,7 @@ describe('PlansTab', () => {
     api.apiGetPlanInsights.mockResolvedValue({ success: true, data: fixture });
     renderTab();
     await screen.findByText('2 / 1');
-    fireEvent.change(screen.getByLabelText('Months shown'), { target: { value: '6' } });
+    chooseValue(screen.getByLabelText('Months shown'), '6');
     await waitFor(() => expect(api.apiGetPlanInsights).toHaveBeenLastCalledWith(6));
   });
 });

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Building2, FileText, Droplets, Receipt, Palette } from 'lucide-react';
-import { Button, Input, Textarea, Toggle } from '@/components/comman/ui';
+import { Button, Input, Textarea, Toggle, Select } from '@/components/comman/ui';
 import { SettingsCard, SettingsRow, SettingsSaveBar } from '@/components/comman/settings';
 import { useToast } from '@/contexts/ToastContext';
 import { apiGetOrderDocuments, saveOrderDocuments } from '@/api/services/orderDocuments';
@@ -9,7 +9,6 @@ import {
   type DocKind, type OrderDocumentSettings, type OrderDocumentStore,
 } from '@/utils/orderDocuments';
 
-const SELECT = 'w-full px-3 py-2 text-[13px] border border-bone rounded-[10px] text-charcoal bg-white outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15';
 
 const PAPER = [
   { value: 'a4', label: 'A4' }, { value: 'a5', label: 'A5 (half page)' },
@@ -30,9 +29,9 @@ function Pick({ label, value, options, onChange }: { label: string; value: strin
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[12px] font-medium text-charcoal">{label}</span>
-      <select className={SELECT} value={value} onChange={e => onChange(e.target.value)}>
+      <Select value={value} onChange={e => onChange(e.target.value)}>
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
+      </Select>
     </label>
   );
 }

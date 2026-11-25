@@ -79,11 +79,10 @@ export function ImportLeadsModal({ owners, canAssign, onClose, onImported }: {
                 {FIELDS.map(f => (
                   <label key={f.key} className="flex items-center gap-2">
                     <span className="w-32 shrink-0 text-[12px] text-charcoal">{f.label}{f.key === 'name' && ' *'}</span>
-                    <select aria-label={`Column for ${f.label}`} value={mapping[f.key] ?? ''} onChange={e => { setCheck(null); setMapping(m => ({ ...m, [f.key]: e.target.value === '' ? undefined : Number(e.target.value) })); }}
-                      className="flex-1 min-w-0 border border-bone rounded-md px-2 py-1.5 text-[12px] bg-white">
+                    <Select aria-label={`Column for ${f.label}`} value={mapping[f.key] ?? ''} onChange={e => { setCheck(null); setMapping(m => ({ ...m, [f.key]: e.target.value === '' ? undefined : Number(e.target.value) })); }} wrapperClassName="flex-1 min-w-0">
                       <option value="">Not in file</option>
                       {headers.map((h, i) => <option key={i} value={i}>{h || `Column ${i + 1}`}</option>)}
-                    </select>
+                    </Select>
                   </label>
                 ))}
               </div>

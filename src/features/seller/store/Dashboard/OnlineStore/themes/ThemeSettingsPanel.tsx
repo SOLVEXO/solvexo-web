@@ -17,7 +17,7 @@ import { useThemeEditorUnsavedChanges } from '@/components/layouts/ThemeEditorUn
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useState } from 'react';
-import { ImageUpload } from '@/components/comman/ui';
+import { ImageUpload, Select } from '@/components/comman/ui';
 import { getThemeManifest, readThemeSetting, themeSettingPatch, type ThemeManifest, type ThemeSettingsFieldDef } from '@/features/storefront-themes/themeManifest';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 import { BrandKitCard } from './BrandKitCard';
@@ -191,9 +191,9 @@ function ThemeSettingsField({ field, colors, onChange, storeId }: {
   return (
     <div className="flex flex-col gap-1.5">
       <Field heading={field.label}>
-        <select className={inp} value={value} onChange={e => onChange(themeSettingPatch(colors, field, e.target.value))}>
+        <Select value={value} onChange={e => onChange(themeSettingPatch(colors, field, e.target.value))}>
           {field.control.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        </Select>
       </Field>
       {field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}
     </div>

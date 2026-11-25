@@ -9,7 +9,7 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { Badge } from '@/components/comman/ui/Badge';
 import type { BadgeColor } from '@/types';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
-import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
+import { SkeletonBox, Table, type TableColumn, Select } from '@/components/comman/ui';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { useToast } from '@/contexts/ToastContext';
 import { StripeMoneySection } from './StripeMoneySection';
@@ -200,15 +200,14 @@ function RequestPayoutModal({
         )}
         <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Amount"
           className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
-        <select value={methodId} onChange={e => setMethodId(e.target.value)}
-          className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none bg-white">
+        <Select value={methodId} onChange={e => setMethodId(e.target.value)}>
           <option value="">Select payout method…</option>
           {eligibleMethods.map(m => (
             <option key={m._id} value={m._id}>
               {METHOD_LABEL[m.type]}{m.bankName ? ` — ${m.bankName}` : ''}{m.accountLast4 ? ` ••${m.accountLast4}` : ''}{m.isDefault ? ' (default)' : ''}
             </option>
           ))}
-        </select>
+        </Select>
         {selectedMethod && (
           <p className="text-[11px] text-slate leading-[1.4]">
             {selectedMethod.type === 'stripe_connect'
@@ -253,12 +252,11 @@ function ScheduleModal({ onClose, onSaved, storeId, schedule }: { onClose: () =>
     <Modal title={`Payout Schedule — ${schedule.currency}`} width={380} onClose={onClose}>
       <div className="flex flex-col gap-3">
         {error && <p className="text-[12px] text-error">{error}</p>}
-        <select value={frequency} onChange={e => setFrequency(e.target.value as typeof frequency)}
-          className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none bg-white">
+        <Select value={frequency} onChange={e => setFrequency(e.target.value as typeof frequency)}>
           {(['daily', 'weekly', 'biweekly', 'monthly', 'manual'] as const).map(f => (
             <option key={f} value={f}>{f[0].toUpperCase() + f.slice(1)}</option>
           ))}
-        </select>
+        </Select>
         <input type="number" value={minimumAmount} onChange={e => setMinimumAmount(e.target.value)} placeholder="Minimum payout amount"
           className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
         <label className="flex items-center gap-2 text-[12.5px] text-graphite cursor-pointer">
@@ -710,11 +708,10 @@ export function StoreFinance() {
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-bone flex-wrap gap-2.5">
               <p className="text-sm font-semibold text-carbon">Sales ledger — orders, refunds &amp; fees</p>
               <div className="flex items-center gap-2">
-                <select value={txType} onChange={e => { setTxType(e.target.value as TransactionType | ''); setTxPage(1); }}
-                  className="px-3 py-[7px] text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none">
+                <Select value={txType} onChange={e => { setTxType(e.target.value as TransactionType | ''); setTxPage(1); }}>
                   <option value="">All Types</option>
                   {Object.entries(TYPE_STYLE).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </select>
+                </Select>
                 <Button size="sm" variant="outline" icon={<Download size={12} />} loading={exporting} onClick={handleExport}>
                   Export CSV
                 </Button>

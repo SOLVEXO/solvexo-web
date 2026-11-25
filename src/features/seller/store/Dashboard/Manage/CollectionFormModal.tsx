@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
-import { ImageUpload } from '@/components/comman/ui';
+import { ImageUpload, Select } from '@/components/comman/ui';
 import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore/builder/EntityPickerModal';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { currencySymbol } from '@/utils/currency';
@@ -223,10 +223,9 @@ export function CollectionFormModal({ storeId, collection, onClose, onSaved }: {
 
           <div>
             <label htmlFor="collection-default-sort" className="text-[12px] font-medium text-charcoal block mb-1.5">Default sort on the storefront</label>
-            <select id="collection-default-sort" value={defaultSort} onChange={e => setDefaultSort(e.target.value as CollectionSort)}
-              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal">
+            <Select id="collection-default-sort" value={defaultSort} onChange={e => setDefaultSort(e.target.value as CollectionSort)} wrapperClassName="w-full">
               {COLLECTION_SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            </Select>
           </div>
 
           <div className="flex flex-col gap-2 border-t border-bone pt-3">

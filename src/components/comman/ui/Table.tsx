@@ -5,6 +5,7 @@ import { DialogShell, useDialogClose } from './DialogShell';
 import { Pagination } from './Pagination';
 import { SkeletonBox } from './SkeletonBox';
 import { EmptyState } from './EmptyState';
+import { Select } from './Dropdown';
 
 export interface TableColumn<T = Record<string, unknown>> {
   key:       string;
@@ -666,14 +667,9 @@ export function Table<T = Record<string, unknown>>({
             {pagination.perPageOptions && pagination.onPerPageChange && (
               <label className="flex items-center gap-1.5 text-[12px] text-slate whitespace-nowrap">
                 Show
-                <select
-                  value={perPage}
-                  onChange={e => pagination.onPerPageChange?.(Number(e.target.value))}
-                  aria-label={`${label} per page`}
-                  className="h-8 rounded-md border border-bone bg-white px-2 text-[12.5px] text-carbon cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-orange/30"
-                >
+                <Select value={perPage} onChange={e => pagination.onPerPageChange?.(Number(e.target.value))} aria-label={`${label} per page`}>
                   {pagination.perPageOptions.map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+                </Select>
                 per page
               </label>
             )}

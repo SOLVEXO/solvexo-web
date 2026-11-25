@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiListResourceTemplates, type ResourceTemplateType } from '@/api/services/collectionTemplate';
+import { Select } from '@/components/comman/ui';
 
 /**
  * A small, reusable "which alternate template does this resource use"
@@ -27,18 +28,13 @@ export function TemplateKeyPicker({ storeId, resourceType, value, onChange, labe
   return (
     <div>
       <label className="text-[12px] font-medium text-charcoal block mb-1.5">{label ?? 'Template'}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={loading}
-        className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50 disabled:opacity-60"
-      >
+      <Select value={value} onChange={(e) => onChange(e.target.value)} disabled={loading} wrapperClassName="w-full">
         {loading && <option value={value}>Loading…</option>}
         {!loading && templates.length === 0 && <option value="default">Default</option>}
         {templates.map((t) => (
           <option key={t.templateKey} value={t.templateKey}>{t.name}{t.isDefault ? ' (Default)' : ''}</option>
         ))}
-      </select>
+      </Select>
       <p className="text-[10.5px] text-slate mt-1">
         Templates are authored on the <span className="font-medium">Customize</span> page's {resourceType === 'product' ? 'Product' : 'Collection'} Template tab.
       </p>

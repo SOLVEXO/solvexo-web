@@ -5,7 +5,7 @@ import { SpecCategoryPicker } from './SpecCategoryPicker';
 import { suggestSpecs, type SpecSuggestion } from './specSuggestions';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ArrowDown, ArrowUp, Check, GripVertical, Loader2, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
-import { ActionMenu, Button, Modal } from '@/components/comman/ui';
+import { ActionMenu, Button, Modal, Select } from '@/components/comman/ui';
 import { can } from '@/hooks/auth/useCan';
 import { ValueInput } from '@/features/seller/store/Dashboard/OnlineStore/customize/MetafieldsEditor';
 import {
@@ -286,9 +286,9 @@ export function ProductSpecsEditor({ storeId, productId, onValuesChange, categor
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-1.5 text-[12px] text-slate">Type
-                <select aria-label="Spec type" className="rounded-lg border border-bone bg-white px-2 py-1.5 text-[12px] text-charcoal" value={newType} onChange={e => setNewType(e.target.value as MetafieldType)}>
+                <Select aria-label="Spec type" value={newType} onChange={e => setNewType(e.target.value as MetafieldType)}>
                   {SPEC_TYPES.map(t => <option key={t} value={t}>{METAFIELD_TYPE_LABELS[t]}</option>)}
-                </select>
+                </Select>
               </label>
               {here.length > 0 && (
                 <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-slate">

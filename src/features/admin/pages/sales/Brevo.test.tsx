@@ -19,6 +19,7 @@ import { BrevoTab } from './BrevoTab';
 import { LeadFormModal } from './parts';
 import { AdminSalesOps } from './AdminSalesOps';
 import { SalesLeadDetail } from './SalesLeadDetail';
+import { chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); perm.manager = true; try { localStorage.clear(); } catch { /* jsdom */ } });
 
@@ -170,8 +171,8 @@ describe('Pipeline: consent filter, Brevo export, permission emails', () => {
     api.apiExportBrevoCsv.mockResolvedValue(undefined);
     renderList();
     expect(await screen.findByText('Agreed', { selector: 'td *' })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Marketing emails'), { target: { value: 'granted' } });
-    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'website_form' } });
+    chooseValue(screen.getByLabelText('Marketing emails'), 'granted');
+    chooseValue(screen.getByLabelText('Source'), 'website_form');
     await waitFor(() => expect(api.apiListLeads).toHaveBeenLastCalledWith(expect.objectContaining({ consent: 'granted', source: 'website_form' })));
     fireEvent.click(screen.getByRole('button', { name: /Export for Brevo/ }));
     await waitFor(() => expect(api.apiExportBrevoCsv).toHaveBeenCalledWith(expect.objectContaining({ consent: 'granted', source: 'website_form' })));

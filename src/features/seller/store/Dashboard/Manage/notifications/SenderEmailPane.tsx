@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Button, Input } from '@/components/comman/ui';
+import { Button, Input, Select } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { apiDisableStoreSmtp, apiGetStoreSmtp, apiSaveStoreSmtp, type StoreSmtpView } from '@/api/services/storeSmtp';
 
@@ -112,9 +112,9 @@ export function SenderEmailPane({ storeId }: { storeId: string }) {
               <Input label="SMTP host" value={form.host} onChange={set('host')} placeholder="smtp.gmail.com" autoComplete="off" />
               <div>
                 <label htmlFor="smtp-port" className="block text-[12px] font-medium text-charcoal mb-1.5">Port</label>
-                <select id="smtp-port" value={form.port} onChange={set('port')} className="w-full py-[9px] px-3 rounded-md border border-bone bg-white text-[16px] sm:text-[13px] text-charcoal">
+                <Select id="smtp-port" value={form.port} onChange={set('port')} wrapperClassName="w-full">
                   {PORTS.map(p => <option key={p} value={p}>{p}{p === 587 ? ' (recommended)' : p === 465 ? ' (SSL)' : ''}</option>)}
-                </select>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -8,6 +8,7 @@ import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { downloadBlob } from '@/utils/downloadBlob';
 import type { BillingTimelineData, BillingTimelineEvent, BillingTimelineParams } from '@/api/services/billingTimeline';
 import { KIND_FILTERS, buildStatementHtml, cardLabel, groupByMonth, money, periodRange, recentMonths, type PeriodKey } from '@/utils/billingTimeline';
+import { Select } from '@/components/comman/ui';
 
 interface Props {
   /** Loads the timeline for a filter (seller or admin endpoint). */
@@ -204,8 +205,7 @@ export function BillingTimeline({ load, exportCsv, refreshKey = 0, audience = 's
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor="billing-period">Period</label>
-          <select id="billing-period" value={period} onChange={e => setPeriod(e.target.value)}
-            className="rounded-[8px] border border-bone bg-white px-2.5 py-1.5 text-[12px] text-charcoal">
+          <Select id="billing-period" value={period} onChange={e => setPeriod(e.target.value)}>
             <option value="all">All time</option>
             <option value="this_month">This month</option>
             <option value="last_month">Last month</option>
@@ -213,7 +213,7 @@ export function BillingTimeline({ load, exportCsv, refreshKey = 0, audience = 's
             <optgroup label="Monthly statement">
               {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </optgroup>
-          </select>
+          </Select>
           <Button size="sm" variant="outline" onClick={doExport} loading={exporting} disabled={loading || !data?.events.length}>
             <Download size={13} aria-hidden /> Export CSV
           </Button>

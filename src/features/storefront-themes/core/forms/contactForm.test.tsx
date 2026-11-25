@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 import { applyMerchantThemeOverrides } from '../../theme-03-fashion/theme.config';
 import { ContactFormSection } from '../../theme-03-fashion/sections/shared/ContactFormSection';
 import { FormFieldsEditor } from '@/features/seller/store/Dashboard/OnlineStore/builder/FormFieldsEditor';
@@ -125,7 +126,7 @@ describe('contact form editor', () => {
     const set = vi.fn();
     const { rerender } = render(<FormFieldsEditor settings={{ fields: [{ id: 'a1', type: 'text', label: 'Name', required: true }] }} set={set} />);
     expect(screen.queryByRole('alert')).toBeNull();
-    fireEvent.change(screen.getByLabelText('Add a field'), { target: { value: 'dropdown' } });
+    chooseValue(dropdown('Add a field'), 'dropdown');
     const next = set.mock.calls[0][0].fields as ContactFormField[];
     expect(next).toHaveLength(2);
     expect(next[1].type).toBe('dropdown');
@@ -265,7 +266,7 @@ describe('phase 1: editor', () => {
       { id: 'o', type: 'text', label: 'Detail', showIf: { fieldId: 'q', op: 'filled' } },
     ];
     render(<FormFieldsEditor settings={{ fields }} set={set} />);
-    fireEvent.change(screen.getByLabelText('Add a field'), { target: { value: 'consent' } });
+    chooseValue(dropdown('Add a field'), 'consent');
     const added = (set.mock.calls.at(-1)![0].fields as ContactFormField[]).at(-1)!;
     expect(added.type).toBe('consent');
     expect(added.required).toBe(true);
@@ -374,7 +375,7 @@ describe('phase 2: editor', () => {
     ];
     render(<FormFieldsEditor settings={{ fields }} set={set} />);
     fireEvent.click(screen.getByText('Receipt'));
-    fireEvent.change(screen.getByLabelText('Accepted files'), { target: { value: 'images' } });
+    chooseValue(dropdown('Accepted files'), 'images');
     expect((set.mock.calls.at(-1)![0].fields as ContactFormField[])[1].fileKinds).toBe('images');
     fireEvent.change(screen.getByLabelText('Largest file (MB)'), { target: { value: '99' } });
     expect((set.mock.calls.at(-1)![0].fields as ContactFormField[])[1].maxSizeMb).toBe(10);

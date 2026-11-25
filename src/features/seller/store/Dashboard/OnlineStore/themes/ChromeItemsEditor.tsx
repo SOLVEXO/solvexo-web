@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from 'lucide-react';
-import { ImageUpload, Toggle } from '@/components/comman/ui';
+import { ImageUpload, Toggle, Select } from '@/components/comman/ui';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { ChromeIcon } from '@/features/storefront/chrome/ChromeIcon';
 import { ChromeQrCode } from '@/features/storefront/chrome/ChromeQrCode';
@@ -68,12 +68,12 @@ function QrDesigner({ qr, storeId, onChange }: { qr: ChromeQr; storeId: string; 
         <button type="button" onClick={() => onChange(null)} className="text-[11px] text-slate underline bg-transparent border-0 cursor-pointer p-0">Remove QR</button>
       </div>
       <Row label="What should it open?">
-        <select className={INPUT} value={kind} onChange={e => { setKind(e.target.value as QrKind); set({ data: '' }); }}>
+        <Select value={kind} onChange={e => { setKind(e.target.value as QrKind); set({ data: '' }); }}>
           <option value="link">A website / any link</option>
           <option value="whatsapp">A WhatsApp chat</option>
           <option value="phone">A phone call</option>
           <option value="email">An email</option>
-        </select>
+        </Select>
       </Row>
       <Row label={kind === 'whatsapp' ? 'WhatsApp number (with country code)' : kind === 'phone' ? 'Phone number' : kind === 'email' ? 'Email address' : 'Link or text'}>
         <input className={INPUT} value={raw} maxLength={600} onChange={e => write(e.target.value)}
@@ -87,14 +87,14 @@ function QrDesigner({ qr, storeId, onChange }: { qr: ChromeQr; storeId: string; 
       {qr.transparent === true && <p className="-mt-1 text-[10.5px] text-slate">Make sure the dots colour stands out on the popup background, or the QR will not scan.</p>}
       <div className="grid grid-cols-2 gap-3">
         <Row label="Dot shape">
-          <select className={INPUT} value={qr.dot} onChange={e => set({ dot: e.target.value as ChromeQr['dot'] })}>
+          <Select value={qr.dot} onChange={e => set({ dot: e.target.value as ChromeQr['dot'] })}>
             <option value="square">Square</option><option value="rounded">Rounded</option><option value="dots">Round dots</option>
-          </select>
+          </Select>
         </Row>
         <Row label="Corner shape">
-          <select className={INPUT} value={qr.eye} onChange={e => set({ eye: e.target.value as ChromeQr['eye'] })}>
+          <Select value={qr.eye} onChange={e => set({ eye: e.target.value as ChromeQr['eye'] })}>
             <option value="square">Square</option><option value="rounded">Rounded</option><option value="circle">Circle</option>
-          </select>
+          </Select>
         </Row>
       </div>
       <Row label="Caption under the QR" hint="Optional, e.g. Scan to chat with us">
@@ -152,10 +152,10 @@ function LinksEditor({ popup, onChange }: { popup: ChromePopup; onChange: (p: Pa
           <input className={INPUT} aria-label={`Link ${i + 1} address`} placeholder="https://, /pages/about, tel:, mailto:" value={l.url} maxLength={600} onChange={e => upd(i, { url: e.target.value })} />
           <div className="flex items-center gap-2">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded bg-bone text-charcoal"><ChromeIcon icon={l.icon || 'link'} size={14} /></span>
-            <select className={INPUT} aria-label={`Link ${i + 1} icon`} value={l.icon} onChange={e => upd(i, { icon: e.target.value })}>
+            <Select aria-label={`Link ${i + 1} icon`} value={l.icon} onChange={e => upd(i, { icon: e.target.value })}>
               <option value="">No icon</option>
               {CHROME_ICON_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
-            </select>
+            </Select>
             <label className="flex shrink-0 items-center gap-1 text-[12px] text-charcoal"><input type="checkbox" checked={l.bold === true} onChange={e => upd(i, { bold: e.target.checked })} /> Bold</label>
           </div>
         </div>
@@ -224,36 +224,36 @@ function PopupEditor({ popup, storeId, onChange }: { popup: ChromePopup; storeId
       <span className="text-[12.5px] font-semibold text-charcoal">Popup look</span>
       <p className="-mt-2 text-[10.5px] text-slate">Anything left empty follows your theme's own style.</p>
       <Row label="Where it opens">
-        <select className={INPUT} value={popup.placement ?? 'below'} onChange={e => set({ placement: e.target.value as ChromePopup['placement'] })}>
+        <Select value={popup.placement ?? 'below'} onChange={e => set({ placement: e.target.value as ChromePopup['placement'] })}>
           <option value="below">Right under the item (like a dropdown)</option>
           <option value="center">In the middle of the screen</option>
-        </select>
+        </Select>
       </Row>
       <Row label="Style">
-        <select className={INPUT} value={popup.style ?? 'classic'} onChange={e => set({ style: e.target.value as ChromePopup['style'] })}>
+        <Select value={popup.style ?? 'classic'} onChange={e => set({ style: e.target.value as ChromePopup['style'] })}>
           <option value="theme">Follow my theme (its own card / panel / glass look)</option>
           <option value="classic">Classic (flat, attached to the strip)</option>
-        </select>
+        </Select>
       </Row>
       <Row label="Width">
-        <select className={INPUT} value={popup.widthMode ?? 'auto'} onChange={e => set({ widthMode: e.target.value as ChromePopup['widthMode'] })}>
+        <Select value={popup.widthMode ?? 'auto'} onChange={e => set({ widthMode: e.target.value as ChromePopup['widthMode'] })}>
           <option value="auto">Automatic (theme)</option>
           <option value="custom">Custom width (px)</option>
           <option value="content">Same as the page content width</option>
           <option value="full">Full screen width (like a menu panel)</option>
-        </select>
+        </Select>
       </Row>
       <Row label="Content layout">
-        <select className={INPUT} value={popup.layout ?? 'side'} onChange={e => set({ layout: e.target.value as ChromePopup['layout'] })}>
+        <Select value={popup.layout ?? 'side'} onChange={e => set({ layout: e.target.value as ChromePopup['layout'] })}>
           <option value="side">Text on one side, QR / image on the other</option>
           <option value="stack">Everything in one column</option>
-        </select>
+        </Select>
       </Row>
       {(popup.layout ?? 'side') === 'side' && (
         <Row label="Image and QR position" hint="Beside the text, or above / below it">
-          <select className={INPUT} value={popup.mediaPlacement ?? 'side'} onChange={e => set({ mediaPlacement: e.target.value as ChromePopup['mediaPlacement'] })}>
+          <Select value={popup.mediaPlacement ?? 'side'} onChange={e => set({ mediaPlacement: e.target.value as ChromePopup['mediaPlacement'] })}>
             <option value="side">Beside the text</option><option value="above">Above the text</option><option value="below">Below the text</option>
-          </select>
+          </Select>
         </Row>
       )}
       <div className="grid grid-cols-2 gap-3">
@@ -265,9 +265,9 @@ function PopupEditor({ popup, storeId, onChange }: { popup: ChromePopup; storeId
         <NumField label="Heading size (px)" value={popup.titleSize ?? 0} empty={0} min={10} max={120} onChange={v => set({ titleSize: v })} />
         <NumField label="Text size (px)" value={popup.bodySize ?? 0} empty={0} min={9} max={48} onChange={v => set({ bodySize: v })} />
         <Row label="Text alignment">
-          <select className={INPUT} value={popup.align ?? 'left'} onChange={e => set({ align: e.target.value as ChromePopup['align'] })}>
+          <Select value={popup.align ?? 'left'} onChange={e => set({ align: e.target.value as ChromePopup['align'] })}>
             <option value="left">Left</option><option value="center">Centre</option>
-          </select>
+          </Select>
         </Row>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -321,18 +321,18 @@ export function ChromeItemsEditor({ items, onChange, showZone, itemName = 'item'
               <div className="flex flex-col gap-3 border-t border-bone p-3">
                 <div className="grid grid-cols-2 gap-3">
                   <Row label="Type">
-                    <select className={INPUT} value={it.kind} onChange={e => {
+                    <Select value={it.kind} onChange={e => {
                       const kind = e.target.value as ChromeItem['kind'];
                       update(it.id, { kind, popup: kind === 'popup' ? (it.popup ?? { ...DEFAULT_POPUP, title: it.label, body: '' }) : null });
                     }}>
                       <option value="text">Text only</option><option value="link">Link</option><option value="popup">Opens a popup</option>
-                    </select>
+                    </Select>
                   </Row>
                   {showZone && (
                     <Row label="Place">
-                      <select className={INPUT} value={it.zone} onChange={e => update(it.id, { zone: e.target.value as ChromeItem['zone'] })}>
+                      <Select value={it.zone} onChange={e => update(it.id, { zone: e.target.value as ChromeItem['zone'] })}>
                         <option value="left">Left</option><option value="center">Middle</option><option value="right">Right</option>
-                      </select>
+                      </Select>
                     </Row>
                   )}
                 </div>
@@ -358,9 +358,9 @@ export function ChromeItemsEditor({ items, onChange, showZone, itemName = 'item'
                   </div>
                 )}
                 <Row label="Show on">
-                  <select className={INPUT} value={it.device} onChange={e => update(it.id, { device: e.target.value as ChromeItem['device'] })}>
+                  <Select value={it.device} onChange={e => update(it.id, { device: e.target.value as ChromeItem['device'] })}>
                     <option value="all">Phones and computers</option><option value="desktop">Computers only</option><option value="mobile">Phones only</option>
-                  </select>
+                  </Select>
                 </Row>
               </div>
             )}

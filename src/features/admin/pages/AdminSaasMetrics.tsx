@@ -3,7 +3,7 @@ import {
   Bar, BarChart as RechartsBar, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { Coins, Download, Gauge, Info, Layers, Rocket } from 'lucide-react';
-import { Button, MetricCard, TabBar, type Tab } from '@/components/comman/ui';
+import { Button, MetricCard, TabBar, type Tab, Select } from '@/components/comman/ui';
 import { useKeepAliveTabs } from '@/hooks/useKeepAliveTabs';
 import { ActivationTab } from './saas/ActivationTab';
 import { RevenueModelTab } from './saas/RevenueModelTab';
@@ -95,10 +95,9 @@ function RevenueTab() {
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
         <div className="flex items-center justify-end gap-2 flex-wrap">
           <label htmlFor="saas-range" className="sr-only">Months shown</label>
-          <select id="saas-range" value={months} onChange={e => setMonths(Number(e.target.value))}
-            className="h-8 rounded-lg border border-bone bg-white px-2.5 text-[12.5px] text-charcoal">
+          <Select id="saas-range" value={months} onChange={e => setMonths(Number(e.target.value))}>
             {RANGE_OPTIONS.map(n => <option key={n} value={n}>Last {n} months</option>)}
-          </select>
+          </Select>
           <Button size="sm" variant="outline" onClick={exportCsv} loading={exporting} disabled={!data}><Download size={13} /> CSV</Button>
         </div>
         {error && !data && <AnalyticsErrorState message={error} onRetry={load} />}

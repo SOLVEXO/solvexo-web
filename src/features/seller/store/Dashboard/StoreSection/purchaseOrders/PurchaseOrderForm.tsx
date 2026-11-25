@@ -6,7 +6,7 @@ import { TokenStorage } from '@/api/services/auth';
 import { SupplierReturnModal, type ReturnLine } from '@/features/seller/store/Dashboard/Operations/inventory/SupplierReturnModal';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
-import { Modal } from '@/components/comman/ui';
+import { Modal, Select } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore/builder/EntityPickerModal';
 import { useToast } from '@/contexts/ToastContext';
@@ -391,10 +391,10 @@ export default function PurchaseOrderForm() {
             {locations.length >= 2 && (
               <div className="mt-3">
                 <label className="text-[12px] font-medium text-graphite mb-1 block">Destination location</label>
-                <select className={inp} value={locationId} onChange={e => setLocationId(e.target.value)} disabled={!isEditable}>
+                <Select value={locationId} onChange={e => setLocationId(e.target.value)} disabled={!isEditable}>
                   <option value="">No specific location (adds to total stock)</option>
                   {locations.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
-                </select>
+                </Select>
               </div>
             )}
 

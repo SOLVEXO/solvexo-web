@@ -18,6 +18,7 @@ import {
   type DraftOrder, type DraftOrderItem, type DraftOrderCustomer,
   type DraftOrderPaymentTerms,
 } from '@/api/services/draftOrders';
+import { Select } from '@/components/comman/ui';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white';
 
@@ -409,10 +410,10 @@ export default function DraftOrderForm() {
             <div className="bg-white rounded-xl border border-bone p-4">
               <p className="text-[13px] font-bold text-charcoal mb-1">Wholesale company (optional)</p>
               <p className="text-[12px] text-slate mb-3">Prices follow the company's catalog, tax follows its exemption, and the order is placed on its payment terms. The customer is the company's location admin.</p>
-              <select className={inp} value={companyId} onChange={e => setCompanyId(e.target.value)} aria-label="Wholesale company">
+              <Select value={companyId} onChange={e => setCompanyId(e.target.value)} aria-label="Wholesale company">
                 <option value="">No company (retail draft)</option>
                 {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-              </select>
+              </Select>
               {companyId && <input className={`${inp} mt-2`} placeholder="Purchase order number (optional)" maxLength={60} value={poNumber} onChange={e => setPoNumber(e.target.value)} />}
             </div>
           )}
@@ -493,13 +494,13 @@ export default function DraftOrderForm() {
 
           <div className="bg-white rounded-xl border border-bone p-4">
             <p className="text-[13px] font-bold text-charcoal mb-3">Payment Terms</p>
-            <select className={inp} value={paymentTerms} onChange={e => setPaymentTerms(e.target.value as DraftOrderPaymentTerms | '')} disabled={!isEditable}>
+            <Select value={paymentTerms} onChange={e => setPaymentTerms(e.target.value as DraftOrderPaymentTerms | '')} disabled={!isEditable}>
               <option value="">No payment terms</option>
               <option value="due_on_receipt">Due on receipt</option>
               <option value="net_15">Net 15</option>
               <option value="net_30">Net 30</option>
               <option value="net_60">Net 60</option>
-            </select>
+            </Select>
             {draft?.dueDate && paymentTerms && <p className="text-[11.5px] text-slate mt-2">Due {new Date(draft.dueDate).toLocaleDateString()}</p>}
           </div>
 
@@ -514,11 +515,11 @@ export default function DraftOrderForm() {
           <div className="flex justify-between text-[12.5px]"><span className="text-slate">Subtotal</span><span className="text-charcoal font-medium">{symbol}{' '}{subtotal.toFixed(2)}</span></div>
 
           <div className="flex items-center gap-2">
-            <select className={inp} value={discountType} onChange={e => setDiscountType(e.target.value as '' | 'percentage' | 'fixed')} disabled={!isEditable}>
+            <Select value={discountType} onChange={e => setDiscountType(e.target.value as '' | 'percentage' | 'fixed')} disabled={!isEditable}>
               <option value="">No discount</option>
               <option value="percentage">% discount</option>
               <option value="fixed">Fixed discount</option>
-            </select>
+            </Select>
             {discountType && (
               <input type="number" min={0} className="w-20 px-2 py-2 text-[13px] border border-bone rounded-lg" value={discountValue}
                 onChange={e => setDiscountValue(Math.max(0, Number(e.target.value)))} disabled={!isEditable} />

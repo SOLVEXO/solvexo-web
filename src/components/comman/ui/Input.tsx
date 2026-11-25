@@ -1,6 +1,6 @@
 import { forwardRef, useId, useLayoutEffect, useRef, useState, type CSSProperties, type InputHTMLAttributes, type TextareaHTMLAttributes, type ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
+import { CONTROL_BASE } from './controlStyles';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?:      string;
@@ -15,14 +15,7 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: string;
 }
 
-// 16px below `sm` on purpose: iOS Safari auto-zooms the whole page whenever a
-// focused input renders under 16px, which is the loudest "this is a website"
-// moment left in the dashboard. Desktop keeps the tighter 13px scale.
-const BASE =
-  'w-full py-[9px] px-3 rounded-md border border-bone bg-white text-[16px] sm:text-[13px] text-charcoal ' +
-  'pointer-coarse:min-h-11 outline-none transition-[border-color,box-shadow] duration-150 ' +
-  'placeholder:text-slate focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 ' +
-  'disabled:opacity-50 disabled:bg-cream';
+const BASE = CONTROL_BASE;
 
 /** Gap between the prefix text and what the user types; the prefix itself sits 12px from the field's start edge. */
 const ADDON_GAP = 8;
@@ -126,36 +119,4 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 );
 Textarea.displayName = 'Textarea';
 
-export const Select = forwardRef<
-  HTMLSelectElement,
-  React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string; error?: string }
->(({ label, error, className, children, id, ...props }, ref) => {
-  const generatedId = useId();
-  const selectId = id ?? generatedId;
-  return (
-    <div className="w-full">
-      {label && (
-        <label htmlFor={selectId} className="block text-[12px] font-medium text-charcoal mb-1.5">
-          {label}
-        </label>
-      )}
-      <div className="relative">
-        <select
-          ref={ref}
-          id={selectId}
-          aria-invalid={!!error}
-          className={clsx(BASE, 'appearance-none cursor-pointer pe-8', error && 'border-error!', className)}
-          {...props}
-        >
-          {children}
-        </select>
-        <ChevronDown
-          size={13}
-          className="absolute end-3 top-1/2 -translate-y-1/2 text-slate pointer-events-none"
-        />
-      </div>
-      {error && <p role="alert" className="mt-1 text-[11px] text-error">{error}</p>}
-    </div>
-  );
-});
-Select.displayName = 'Select';
+export { Select } from './Dropdown';

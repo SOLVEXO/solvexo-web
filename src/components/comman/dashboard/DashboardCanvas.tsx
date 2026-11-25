@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, Eye, EyeOff, GripVertical, Settings2, X } from 'luc
 import { clsx } from 'clsx';
 import type { DashboardLayoutApi } from './useDashboardLayout';
 import { SIZE_CLASS, SIZE_LABEL, type DashboardWidgetDef, type LayoutWidget } from './dashboardTypes';
+import { Select } from '@/components/comman/ui';
 
 interface Props {
   defs: DashboardWidgetDef[];
@@ -74,14 +75,9 @@ export function DashboardCanvas({ defs, layout, renderWidget }: Props) {
               <button type="button" className={iconBtn} aria-label={`Move ${def.title} earlier`} disabled={index === 0} onClick={() => layout.move(w.id, index - 1)}><ArrowUp size={14} /></button>
               <button type="button" className={iconBtn} aria-label={`Move ${def.title} later`} disabled={index === widgets.length - 1} onClick={() => layout.move(w.id, index + 1)}><ArrowDown size={14} /></button>
               {def.sizes.length > 1 && (
-                <select
-                  aria-label={`Size of ${def.title}`}
-                  value={w.size}
-                  onChange={(e) => layout.patch(w.id, { size: e.target.value as LayoutWidget['size'] })}
-                  className="h-7 max-w-[118px] rounded-md border border-bone bg-white text-[11px] text-graphite px-1 cursor-pointer"
-                >
+                <Select aria-label={`Size of ${def.title}`} value={w.size} onChange={(e) => layout.patch(w.id, { size: e.target.value as LayoutWidget['size'] })} wrapperClassName="max-w-[118px]">
                   {def.sizes.map(s => <option key={s} value={s}>{SIZE_LABEL[s]}</option>)}
-                </select>
+                </Select>
               )}
               {def.settings && def.settings.length > 0 && (
                 <button type="button" className={clsx(iconBtn, settingsFor === w.id && 'bg-fog text-carbon')} aria-label={`Settings for ${def.title}`} aria-expanded={settingsFor === w.id}
@@ -101,16 +97,12 @@ export function DashboardCanvas({ defs, layout, renderWidget }: Props) {
                 {def.settings.map(f => (
                   <label key={f.key} className="flex flex-col gap-1 text-[11px] font-semibold text-slate">
                     {f.label}
-                    <select
-                      value={String(w.settings[f.key] ?? def.defaultSettings?.[f.key] ?? '')}
-                      onChange={(e) => {
+                    <Select value={String(w.settings[f.key] ?? def.defaultSettings?.[f.key] ?? '')} onChange={(e) => {
                         const opt = f.options.find(o => String(o.value) === e.target.value);
                         if (opt) layout.setSetting(w.id, f.key, opt.value);
-                      }}
-                      className="h-8 rounded-md border border-bone bg-white text-[12px] font-normal text-carbon px-2 cursor-pointer"
-                    >
+                      }}>
                       {f.options.map(o => <option key={String(o.value)} value={String(o.value)}>{o.label}</option>)}
-                    </select>
+                    </Select>
                   </label>
                 ))}
               </div>

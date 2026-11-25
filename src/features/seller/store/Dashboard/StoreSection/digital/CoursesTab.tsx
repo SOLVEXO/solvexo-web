@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pagination } from '@/components/comman/ui';
+import { Pagination, Select } from '@/components/comman/ui';
 import client from '@/api/client';
 import { errorMessage } from '@/api/errorMessage';
 import { useKeyedLoad } from '@/components/comman/dashboard/useKeyedLoad';
@@ -30,14 +30,14 @@ function LessonEditor({ l, onChange, onRemove }: { l: Lesson; onChange: (l: Less
       <div className="flex flex-wrap gap-2 items-end">
         <label className="text-[12px] flex-1 min-w-40">Title<input className={`${inp} w-full`} value={l.title} maxLength={160} onChange={(e) => set({ title: e.target.value })} /></label>
         <label className="text-[12px]">Type
-          <select className={`${inp} block`} value={l.type} onChange={(e) => set({ type: e.target.value as Lesson['type'], quiz: e.target.value === 'quiz' ? { passScore: 70, questions: [{ q: '', options: ['', ''], correctIndex: 0 }] } : null })}>
+          <Select value={l.type} onChange={(e) => set({ type: e.target.value as Lesson['type'], quiz: e.target.value === 'quiz' ? { passScore: 70, questions: [{ q: '', options: ['', ''], correctIndex: 0 }] } : null })}>
             <option value="text">Text</option><option value="video">Video</option><option value="file">File</option><option value="quiz">Quiz</option>
-          </select>
+          </Select>
         </label>
         <label className="text-[12px]">Opens
-          <select className={`${inp} block`} value={l.dripMode} onChange={(e) => set({ dripMode: e.target.value as Lesson['dripMode'] })}>
+          <Select value={l.dripMode} onChange={(e) => set({ dripMode: e.target.value as Lesson['dripMode'] })}>
             <option value="none">Immediately</option><option value="days">N days after joining</option><option value="date">On a date</option>
-          </select>
+          </Select>
         </label>
         {l.dripMode === 'days' && <input aria-label="Days after joining" type="number" min={0} max={3650} className={`${inp} w-24`} value={l.unlockAfterDays ?? 0} onChange={(e) => set({ unlockAfterDays: Number(e.target.value) })} />}
         {l.dripMode === 'date' && <input aria-label="Unlock date" type="date" className={inp} value={dateInput(l.unlockAt)} onChange={(e) => set({ unlockAt: e.target.value })} />}
@@ -122,7 +122,7 @@ export function CoursesTab({ storeId }: { storeId: string }) {
       <div className="surface-panel rounded-xl p-3 grid md:grid-cols-2 gap-2">
         <label className="text-[12px]">Title<input className={`${inp} w-full`} maxLength={120} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
         <label className="text-[12px]">Status
-          <select className={`${inp} w-full`} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as CourseForm['status'] })}><option value="draft">Draft</option><option value="published">Published</option></select>
+          <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as CourseForm['status'] })}><option value="draft">Draft</option><option value="published">Published</option></Select>
         </label>
         <label className="text-[12px] md:col-span-2">Description<textarea className="w-full rounded-lg border border-bone p-2 text-[13px]" maxLength={2000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
         <label className="text-[12px] md:col-span-2">Sold by product ID (optional: buyers of this digital product get the course)<input className={`${inp} w-full`} value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })} /></label>

@@ -13,6 +13,7 @@ import { Reveal } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { useSiteText } from '@/i18n/site/useSiteText';
 import { FOOTER_TEXT } from './Footer.text';
+import { Select } from './Dropdown';
 
 interface FooterLink {
   label: string;
@@ -315,20 +316,14 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
           <label className="flex items-center gap-1.5 text-[12px] text-[#8b8985]">
             <span>{t.country}</span>
             {/* Country names are English (shared list): keep the select left-to-right so they don't clip under the arrow. */}
-            <select
-              dir="ltr"
-              aria-label={t.country}
-              value={(countryFromPathname(window.location.pathname) ?? '').toUpperCase()}
-              onChange={e => {
+            <Select dir="ltr" aria-label={t.country} value={(countryFromPathname(window.location.pathname) ?? '').toUpperCase()} onChange={e => {
                 if (!e.target.value) return;
                 // Full page load: the router basename is read once at boot.
                 window.location.assign(switchCountryPath(window.location.pathname, window.location.search, window.location.hash, e.target.value));
-              }}
-              className="bg-transparent text-[#c9c7c3] border border-white/15 rounded-md px-2 py-1 text-[12px] max-w-[160px] outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40"
-            >
+              }} wrapperClassName="max-w-[160px]">
               <option value="" className="text-black">{t.countryAuto}</option>
               {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code} className="text-black">{c.name}</option>)}
-            </select>
+            </Select>
           </label>
           <MagneticButton>
             <button

@@ -1,7 +1,7 @@
 import { useId, useState, type ReactNode } from 'react';
 import { SavedFormsPanel } from './SavedFormsPanel';
 import { ChevronDown, ChevronUp, Copy, Trash2 } from 'lucide-react';
-import { Toggle } from '@/components/comman/ui';
+import { Toggle, Select } from '@/components/comman/ui';
 import {
   CONDITION_OPS, CONTACT_FIELD_TYPES, FIELD_WIDTHS, FILE_KIND_OPTIONS, MAX_CHOICES, MAX_CONTACT_FIELDS, MAX_FILES, MAX_FILE_MB, conditionSources, contactFormProblem, hasChoices, isStaticField,
   labelLimit, newContactField, newFieldId, resolveContactFields,
@@ -83,17 +83,17 @@ function ConditionEditor({ field, sources, onChange }: { field: ContactFormField
         ? <p className="m-0 text-[11px] text-slate">Put this field below another field to make it depend on that answer.</p>
         : (
           <>
-            <select aria-label="Field this depends on" className={inp} value={cond.fieldId} onChange={e => onChange({ fieldId: e.target.value, op: cond.op, value: undefined })}>
+            <Select aria-label="Field this depends on" value={cond.fieldId} onChange={e => onChange({ fieldId: e.target.value, op: cond.op, value: undefined })}>
               {sources.map(s => <option key={s.id} value={s.id}>{s.label || 'Untitled field'}</option>)}
-            </select>
-            <select aria-label="Condition" className={inp} value={cond.op} onChange={e => onChange({ ...cond, op: e.target.value as NonNullable<typeof cond>['op'] })}>
+            </Select>
+            <Select aria-label="Condition" value={cond.op} onChange={e => onChange({ ...cond, op: e.target.value as NonNullable<typeof cond>['op'] })}>
               {CONDITION_OPS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            </Select>
             {op?.needsValue && (answers && cond.op !== 'contains' ? (
-              <select aria-label="Answer" id={`${uid}-ans`} className={inp} value={cond.value ?? ''} onChange={e => onChange({ ...cond, value: e.target.value })}>
+              <Select aria-label="Answer" id={`${uid}-ans`} value={cond.value ?? ''} onChange={e => onChange({ ...cond, value: e.target.value })}>
                 <option value="">Choose the answer…</option>
                 {answers.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
+              </Select>
             ) : (
               <input aria-label="Answer" id={`${uid}-ans`} className={inp} value={cond.value ?? ''} maxLength={200} placeholder="The answer" onChange={e => onChange({ ...cond, value: e.target.value })} />
             ))}
@@ -134,8 +134,7 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
       {open && (
         <div id={`${uid}-panel`} className="flex flex-col gap-3 border-t border-bone px-3 py-3">
           <Labeled id={`${uid}-type`} label="Type" hint={CONTACT_FIELD_TYPES.find(t => t.value === type)?.hint}>
-            <select id={`${uid}-type`} className={inp} value={type}
-              onChange={e => {
+            <Select id={`${uid}-type`} value={type} onChange={e => {
                 const next = e.target.value as ContactFieldType;
                 onChange({
                   type: next,
@@ -152,7 +151,7 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
                 });
               }}>
               <TypeOptions />
-            </select>
+            </Select>
           </Labeled>
 
           <Labeled id={`${uid}-label`} label={type === 'paragraph' ? 'Text' : type === 'heading' ? 'Heading' : type === 'step' ? 'Step title (shown above the fields of this page)' : type === 'consent' ? 'Sentence next to the tick box' : 'Label'}>
@@ -186,20 +185,20 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
           )}
           {(type === 'dropdown' || type === 'radio') && (field.options?.length ?? 0) > 0 && (
             <Labeled id={`${uid}-def`} label="Starting choice">
-              <select id={`${uid}-def`} className={inp} value={field.defaultValue ?? ''} onChange={e => onChange({ defaultValue: e.target.value || undefined })}>
+              <Select id={`${uid}-def`} value={field.defaultValue ?? ''} onChange={e => onChange({ defaultValue: e.target.value || undefined })}>
                 <option value="">None</option>
                 {field.options!.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
+              </Select>
             </Labeled>
           )}
           {isHidden && (
             <>
               <Labeled id={`${uid}-hid`} label="Saved with every answer" hint="The visitor never sees this field.">
-                <select id={`${uid}-hid`} className={inp} value={hiddenKind} onChange={e => onChange({ defaultValue: e.target.value === 'custom' ? 'My text' : e.target.value })}>
+                <Select id={`${uid}-hid`} value={hiddenKind} onChange={e => onChange({ defaultValue: e.target.value === 'custom' ? 'My text' : e.target.value })}>
                   <option value="{page_url}">The page address</option>
                   <option value="{page_title}">The page title</option>
                   <option value="custom">A fixed text</option>
-                </select>
+                </Select>
               </Labeled>
               {hiddenKind === 'custom' && (
                 <Labeled id={`${uid}-hidtext`} label="Fixed text">
@@ -236,9 +235,9 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
           {type === 'file' && (
             <div className="grid grid-cols-2 gap-2">
               <Labeled id={`${uid}-kinds`} label="Accepted files" hint={FILE_KIND_OPTIONS.find(o => o.value === (field.fileKinds ?? 'both'))?.hint}>
-                <select id={`${uid}-kinds`} className={inp} value={field.fileKinds ?? 'both'} onChange={e => onChange({ fileKinds: e.target.value as ContactFormField['fileKinds'] })}>
+                <Select id={`${uid}-kinds`} value={field.fileKinds ?? 'both'} onChange={e => onChange({ fileKinds: e.target.value as ContactFormField['fileKinds'] })}>
                   {FILE_KIND_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
+                </Select>
               </Labeled>
               <Labeled id={`${uid}-mb`} label="Largest file (MB)" hint={`Up to ${MAX_FILE_MB} MB.`}>
                 <input id={`${uid}-mb`} type="number" min={1} max={MAX_FILE_MB} className={inp} value={field.maxSizeMb ?? MAX_FILE_MB} onChange={e => onChange({ maxSizeMb: Math.min(MAX_FILE_MB, Math.max(1, Math.round(Number(e.target.value) || MAX_FILE_MB))) })} />
@@ -270,9 +269,9 @@ function FieldCard({ field, index, total, open, sources, onToggle, onChange, onM
           )}
           {!isHidden && (
             <Labeled id={`${uid}-width`} label="Column width">
-              <select id={`${uid}-width`} className={inp} value={field.width ?? 'full'} onChange={e => onChange({ width: e.target.value as ContactFormField['width'] })}>
+              <Select id={`${uid}-width`} value={field.width ?? 'full'} onChange={e => onChange({ width: e.target.value as ContactFormField['width'] })}>
                 {FIELD_WIDTHS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
-              </select>
+              </Select>
             </Labeled>
           )}
           {!isHidden && <ConditionEditor field={field} sources={sources} onChange={showIf => onChange({ showIf })} />}
@@ -333,9 +332,7 @@ export function FormFieldsEditor({ settings, set, storeId }: { settings: Record<
       )}
 
       <div className="flex items-center gap-2">
-        <select
-          aria-label="Add a field" className={inp} value="" disabled={!canAddMore}
-          onChange={e => {
+        <Select aria-label="Add a field" value="" disabled={!canAddMore} onChange={e => {
             const type = e.target.value as ContactFieldType;
             if (!type) return;
             const field = newContactField(type);
@@ -344,7 +341,7 @@ export function FormFieldsEditor({ settings, set, storeId }: { settings: Record<
           }}>
           <option value="">+ Add field…</option>
           <TypeOptions />
-        </select>
+        </Select>
         <span className="shrink-0 text-[11px] text-slate">{fields.length} / {MAX_CONTACT_FIELDS}</span>
       </div>
       {problem && <p role="alert" className="m-0 text-[12px] text-error">{problem}</p>}

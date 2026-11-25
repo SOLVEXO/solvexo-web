@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { dropdown, chooseValue } from '@/components/comman/ui/dropdownTesting';
 import { SectionFields } from './SectionFields';
 
 afterEach(cleanup);
@@ -32,8 +33,7 @@ describe('SectionFields: Design & visibility groups', () => {
 
   it('writes the new settings', () => {
     const onChange = mount({ animation: 'fade' });
-    const select = screen.getByDisplayValue('Fade in') as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: 'zoom' } });
+    chooseValue(dropdown('Fade in'), 'zoom');
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ animation: 'zoom' }));
   });
 

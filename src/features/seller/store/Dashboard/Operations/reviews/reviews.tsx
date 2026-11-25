@@ -1,11 +1,9 @@
 import { can } from '@/hooks/auth/useCan';
 import { useEffect, useState } from 'react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import {
-  StarRating, EmptyState, SkeletonBox, Card, Badge,
+import { StarRating, EmptyState, SkeletonBox, Card, Badge,
   Table, type TableColumn, ActionMenu, type ActionMenuItem,
-  Modal, Button, FilterDropdown, TabBar,
-} from '@/components/comman/ui';
+  Modal, Button, FilterDropdown, TabBar, Select } from '@/components/comman/ui';
 import { Star, Flag, MessageSquare, Trash2, ImageIcon, Check, X as XIcon } from 'lucide-react';
 import {
   apiGetStoreReviews, apiReplyToReview, apiEditReply, apiFlagReview, apiUnflagReview, apiModerateDeleteReview,
@@ -313,28 +311,20 @@ export function StoreReviews() {
 
           {/* Filters */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-[10px] px-5 py-4 border-b border-bone">
-            <select
-              value={ratingFilter}
-              onChange={e => { setRatingFilter(e.target.value); setPage(1); }}
-              className="w-full sm:w-[150px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
-            >
+            <Select value={ratingFilter} onChange={e => { setRatingFilter(e.target.value); setPage(1); }} wrapperClassName="w-full sm:w-[150px]">
               <option value="">All Ratings</option>
               <option value="5">5 Stars</option>
               <option value="4">4 Stars</option>
               <option value="3">3 Stars</option>
               <option value="2">2 Stars</option>
               <option value="1">1 Star</option>
-            </select>
-            <select
-              value={replyStatusFilter}
-              onChange={e => { setReplyStatusFilter(e.target.value); setPage(1); }}
-              className="w-full sm:w-[140px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
-            >
+            </Select>
+            <Select value={replyStatusFilter} onChange={e => { setReplyStatusFilter(e.target.value); setPage(1); }} wrapperClassName="w-full sm:w-[140px]">
               <option value="">All</option>
               <option value="replied">Replied</option>
               <option value="unreplied">Unreplied</option>
               <option value="flagged">Flagged</option>
-            </select>
+            </Select>
             {(stats?.reviewedProducts?.length ?? 0) > 0 && (
               <FilterDropdown
                 placeholder="All Products"

@@ -9,6 +9,7 @@ import { useSiteText } from '@/i18n/site/useSiteText';
 import { useSiteLang } from '@/i18n/site/siteLangContext';
 import { countryLabel } from '../authPages.text';
 import { STRIPE_CARD_SETUP_TEXT } from './StripeCardSetup.text';
+import { Select } from '@/components/comman/ui';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
 
@@ -109,14 +110,9 @@ function FloatSelect({ label, value, onChange, children }: {
   const [focused, setFocused] = useState(false);
   return (
     <FloatBox label={label} floated focused={focused}>
-      <select
-        aria-label={label} value={value} autoComplete="country"
-        onChange={e => onChange(e.target.value)}
-        onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        className="w-full appearance-none bg-transparent border-0 outline-none text-[15px] text-carbon p-0 pe-7 leading-[1.2] cursor-pointer truncate"
-      >
+      <Select aria-label={label} value={value} autoComplete="country" onChange={e => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} wrapperClassName="w-full">
         {children}
-      </select>
+      </Select>
       <ChevronsUpDown size={16} className="pointer-events-none absolute end-0 bottom-[2px] text-carbon" />
     </FloatBox>
   );

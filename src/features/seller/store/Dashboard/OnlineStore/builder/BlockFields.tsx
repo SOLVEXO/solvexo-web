@@ -1,4 +1,4 @@
-import { Field, Toggle } from '@/components/comman/ui';
+import { Field, Toggle, Select } from '@/components/comman/ui';
 import { TRUST_ICON_OPTIONS } from '@/features/storefront-themes/core/product/trustBadgeData';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 import { SortableList } from './Sortable';
@@ -150,9 +150,9 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
         <div className="flex flex-col gap-3">
           <Field label="Column heading"><input className={inp} value={settings.heading ?? ''} onChange={e => set({ heading: e.target.value })} /></Field>
           <Field label="Column width">
-            <select className={inp} value={settings.width ?? 'auto'} onChange={e => set({ width: e.target.value })}>
+            <Select value={settings.width ?? 'auto'} onChange={e => set({ width: e.target.value })}>
               {FOOTER_WIDTH_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            </Select>
           </Field>
           <div className="flex flex-col gap-2">
             {links.map((link, i) => (
@@ -213,20 +213,20 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
         <div className="flex flex-col gap-3">
           <Field label="Heading (optional)"><input className={inp} value={settings.heading ?? ''} maxLength={60} onChange={e => onChange({ ...settings, heading: e.target.value })} /></Field>
           <div className="flex gap-2">
-            <Field label="Layout"><select className={inp} value={settings.layout ?? 'row'} onChange={e => onChange({ ...settings, layout: e.target.value })}>
+            <Field label="Layout"><Select value={settings.layout ?? 'row'} onChange={e => onChange({ ...settings, layout: e.target.value })}>
               <option value="row">In a row</option><option value="column">One under another</option><option value="grid">Grid</option>
-            </select></Field>
-            <Field label="Look"><select className={inp} value={settings.style ?? 'plain'} onChange={e => onChange({ ...settings, style: e.target.value })}>
+            </Select></Field>
+            <Field label="Look"><Select value={settings.style ?? 'plain'} onChange={e => onChange({ ...settings, style: e.target.value })}>
               <option value="plain">Plain</option><option value="boxed">Boxed</option>
-            </select></Field>
+            </Select></Field>
           </div>
           <div className="flex flex-col gap-2">
             {items.map((it, i) => (
               <div key={i} className="border border-bone rounded-lg p-2 relative">
                 <button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))} className="absolute top-1 right-1 text-[11px] text-error bg-transparent border-none cursor-pointer">Remove</button>
-                <Field label="Icon"><select className={inp} aria-label="Badge icon" value={it.icon ?? 'check'} onChange={e => setItems(items.map((x, j) => j === i ? { ...x, icon: e.target.value } : x))}>
+                <Field label="Icon"><Select aria-label="Badge icon" value={it.icon ?? 'check'} onChange={e => setItems(items.map((x, j) => j === i ? { ...x, icon: e.target.value } : x))}>
                   {TRUST_ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select></Field>
+                </Select></Field>
                 <Field label="Title"><input className={inp} aria-label="Badge title" value={it.title ?? ''} maxLength={40} onChange={e => setItems(items.map((x, j) => j === i ? { ...x, title: e.target.value } : x))} /></Field>
                 <Field label="Small text (optional)"><input className={inp} aria-label="Badge text" value={it.text ?? ''} maxLength={120} onChange={e => setItems(items.map((x, j) => j === i ? { ...x, text: e.target.value } : x))} /></Field>
               </div>

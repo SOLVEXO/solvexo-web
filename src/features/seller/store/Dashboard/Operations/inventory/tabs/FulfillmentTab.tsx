@@ -2,7 +2,7 @@ import { PageJump } from '@/components/comman/ui/Pagination';
 import { useCallback, useEffect, useState } from 'react';
 import { Copy, Plus, RotateCw, Warehouse } from 'lucide-react';
 import { useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
-import { SkeletonBox, EmptyState, Badge, Input } from '@/components/comman/ui';
+import { SkeletonBox, EmptyState, Badge, Input, Select } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { useToast } from '@/contexts/ToastContext';
@@ -125,10 +125,10 @@ export default function FulfillmentTab() {
       <section aria-labelledby="ff-requests">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <h2 id="ff-requests" className="text-[15px] font-semibold text-charcoal m-0">Requests</h2>
-          <select aria-label="Filter by status" className="h-9 rounded-lg border border-border-soft px-2 text-[13px]" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
+          <Select aria-label="Filter by status" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
             <option value="">All statuses</option>
             {(Object.keys(STATUS_LABEL) as FulfillmentRequestStatus[]).map((k) => <option key={k} value={k}>{STATUS_LABEL[k]}</option>)}
-          </select>
+          </Select>
         </div>
         {loading && !requests.length ? <SkeletonBox className="h-32 w-full" /> : requests.length === 0 ? (
           <EmptyState icon={<Warehouse size={22} />} title="No requests yet" description="Open an order and send it to a service, or switch on automatic sending." />
@@ -170,10 +170,10 @@ export default function FulfillmentTab() {
           <div className="flex flex-col gap-3">
             <Input label="Name" value={form.name} maxLength={80} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             <label className="flex flex-col gap-1 text-[13px] text-charcoal">Type
-              <select className="h-10 rounded-lg border border-border-soft px-2" value={form.provider} onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value as FulfillmentProviderKind }))}>
+              <Select value={form.provider} onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value as FulfillmentProviderKind }))}>
                 <option value="generic_http">Warehouse / 3PL (signed web request)</option>
                 <option value="mock">Test mode (sends nothing)</option>
-              </select>
+              </Select>
             </label>
             {form.provider === 'generic_http' && <Input label="Their https address that receives orders" value={form.endpointUrl} maxLength={500} onChange={(e) => setForm((f) => ({ ...f, endpointUrl: e.target.value }))} />}
             <label className="flex items-center gap-2 text-[13px] text-charcoal cursor-pointer"><input type="checkbox" className="accent-brand-orange" checked={form.autoRoute} onChange={(e) => setForm((f) => ({ ...f, autoRoute: e.target.checked }))} /> Send paid orders to this service automatically</label>

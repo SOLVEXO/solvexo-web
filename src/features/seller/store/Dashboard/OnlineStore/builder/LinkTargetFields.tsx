@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Field } from '@/components/comman/ui';
+import { Field, Select } from '@/components/comman/ui';
 import { EntityPickerModal } from './EntityPickerModal';
 import { apiGetCategoryById } from '@/api/services/categories';
 import { apiGetCollection } from '@/api/services/collections';
@@ -53,7 +53,7 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId, allowN
   return (
     <div className="grid grid-cols-2 gap-2">
       <Field label="Links to">
-        <select className={inp} value={value.linkType} onChange={e => onChange({ ...value, linkType: e.target.value as LinkTarget['linkType'] })}>
+        <Select value={value.linkType} onChange={e => onChange({ ...value, linkType: e.target.value as LinkTarget['linkType'] })}>
           {(allowNone || value.linkType === 'none') && <option value="none">No link (opens its dropdown only)</option>}
           <option value="home">Home page</option>
           <option value="blog">Blog</option>
@@ -68,14 +68,14 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId, allowN
           <option value="email">Email address</option>
           <option value="phone">Phone number</option>
           <option value="external">External URL</option>
-        </select>
+        </Select>
       </Field>
       {value.linkType === 'page' && (
         <Field label="Page">
-          <select className={inp} value={value.pageSlug ?? ''} onChange={e => onChange({ ...value, pageSlug: e.target.value })}>
+          <Select value={value.pageSlug ?? ''} onChange={e => onChange({ ...value, pageSlug: e.target.value })}>
             <option value="">Select a page</option>
             {pageOptions.map(p => <option key={p.slug} value={p.slug}>{p.title}</option>)}
-          </select>
+          </Select>
         </Field>
       )}
       {(value.linkType === 'email' || value.linkType === 'phone') && (

@@ -5,7 +5,7 @@ import {
   Heading1, Type, Image as ImageIcon, MousePointerClick, ShoppingBag, Columns2, Ticket, Minus, MoveVertical, Share2, PanelTop,
   ArrowUp, ArrowDown, Package, type LucideIcon,
 } from 'lucide-react';
-import { Button } from '@/components/comman/ui';
+import { Button, Select } from '@/components/comman/ui';
 import type { StoreData } from '@/api/services/store';
 import { apiGetStoreInventory, type InventoryProduct } from '@/api/services/product';
 import {
@@ -322,9 +322,9 @@ function BlockSettings({ block, storeId, onChange }: { block: EmailBlock; storeI
         <div className="flex flex-col gap-3">
           {block.links.map((l, i) => (
             <div key={i} className="flex gap-2 items-center">
-              <select aria-label="Network" value={l.network} onChange={e => setLink(i, { network: e.target.value as SocialNetwork })} className={`${INPUT} max-w-[120px] cursor-pointer`}>
+              <Select aria-label="Network" value={l.network} onChange={e => setLink(i, { network: e.target.value as SocialNetwork })}>
                 {NETWORKS.map(n => <option key={n} value={n}>{n === 'x' ? 'X' : n[0].toUpperCase() + n.slice(1)}</option>)}
-              </select>
+              </Select>
               <input aria-label="Profile URL" value={l.url} onChange={e => setLink(i, { url: e.target.value })} placeholder="https://" className={INPUT} />
               <button type="button" aria-label="Remove link" onClick={() => set({ links: block.links.filter((_, idx) => idx !== i) })} className="text-slate hover:text-error bg-transparent border-none cursor-pointer"><Trash2 size={14} /></button>
             </div>
@@ -348,9 +348,9 @@ function StylesPanel({ styles, onChange }: { styles: EmailDesignStyles; onChange
     <div className="flex flex-col gap-4">
       <Field label="Font">
         {id => (
-          <select id={id} value={styles.fontFamily} onChange={e => set({ fontFamily: e.target.value })} className={`${INPUT} cursor-pointer`}>
+          <Select id={id} value={styles.fontFamily} onChange={e => set({ fontFamily: e.target.value })}>
             {FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
+          </Select>
         )}
       </Field>
       <ColorField label="Page background" value={styles.background} onChange={v => set({ background: v })} />
@@ -720,11 +720,11 @@ export function EmailCampaignEditor({ storeId, store, campaign, onClose, onSaved
                 </Field>
                 <Field label="Send to">
                   {id => (
-                    <select id={id} value={audience} onChange={e => { setAudience(e.target.value as EmailCampaignAudience); touch(); }} className={`${INPUT} cursor-pointer`}>
+                    <Select id={id} value={audience} onChange={e => { setAudience(e.target.value as EmailCampaignAudience); touch(); }}>
                       <option value="all">All email subscribers</option>
                       <option value="buyers">Subscribers who have ordered</option>
                       <option value="abandoned">Subscribers with an abandoned cart</option>
-                    </select>
+                    </Select>
                   )}
                 </Field>
                 <div className="p-3 rounded-lg border border-bone bg-[#faf9f6] flex flex-col gap-3">
