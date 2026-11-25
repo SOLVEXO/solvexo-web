@@ -31,4 +31,22 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // One dropdown for the whole dashboard, admin and sign-in pages: use <Select> from '@/components/comman/ui'
+    // (search, icons, keyboard, phone sheet). Storefront themes own their look and keep native controls.
+    files: ['src/**/*.tsx'],
+    ignores: [
+      'src/components/comman/ui/Dropdown.tsx',
+      'src/features/storefront/**',
+      'src/features/storefront-themes/**',
+      'src/features/themes-assets/**',
+      '**/*.test.tsx',
+    ],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: "JSXOpeningElement[name.name='select']",
+        message: "Do not use a raw <select>. Use <Select> from '@/components/comman/ui' (same <option> children and onChange(e)); it has search, icons, keyboard and a phone sheet.",
+      }],
+    },
+  },
 ])

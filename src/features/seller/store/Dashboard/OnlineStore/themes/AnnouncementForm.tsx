@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Eye, EyeOff, GripVertical, Megaphone, Plus, Trash2, Copy } from 'lucide-react';
-import { Toggle } from '@/components/comman/ui';
+import { Toggle, Select as DropdownSelect } from '@/components/comman/ui';
 import type { StoreAnnouncementBar as StoreAnnouncementBarValue, StoreAnnouncementType } from '@/api/services/store';
 import { ANNOUNCEMENT_TYPE_LABEL } from './announcementDefaults';
 import { Group, ColorField } from './HeaderFooterSettingsPanels';
@@ -46,14 +46,14 @@ function fromBlocks(v: Value, blocks: Block[]): Value {
   };
 }
 
-function Select<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
+function SelectField<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className={LABEL}>{label}</span>
-      <select value={value} onChange={e => onChange(e.target.value as T)} className={INPUT}>
-        {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-      </select>
-    </label>
+    <DropdownSelect
+      label={label}
+      value={value}
+      onValueChange={v => onChange(v as T)}
+      options={options.map(([v, l]) => ({ value: v, label: l }))}
+    />
   );
 }
 
@@ -178,29 +178,29 @@ export function AnnouncementForm({ value, onChange }: { value: Value; onChange: 
       </Group>
 
       <Group title="Motion">
-        <Select label="How messages change" value={value.animation ?? 'slide'} onChange={animation => set({ animation })}
+        <SelectField label="How messages change" value={value.animation ?? 'slide'} onChange={animation => set({ animation })}
           options={[['slide', 'Slide in, one at a time'], ['fade', 'Fade, one at a time'], ['marquee', 'Scrolling strip (all at once)']]} />
         {marquee
-          ? <Select label="Scroll speed" value={value.marqueeSpeed ?? 'normal'} onChange={marqueeSpeed => set({ marqueeSpeed })}
+          ? <SelectField label="Scroll speed" value={value.marqueeSpeed ?? 'normal'} onChange={marqueeSpeed => set({ marqueeSpeed })}
               options={[['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]} />
-          : <Select label="Change every" value={String(value.rotateSeconds ?? 5)} onChange={v => set({ rotateSeconds: Number(v) })}
+          : <SelectField label="Change every" value={String(value.rotateSeconds ?? 5)} onChange={v => set({ rotateSeconds: Number(v) })}
               options={['3', '4', '5', '6', '8', '10', '15'].map(n => [n, `${n} seconds`] as [string, string])} />}
       </Group>
 
       <Group title="Text">
         <div className="grid grid-cols-2 gap-3">
-          <Select label="Text size" value={value.fontSize ?? 'sm'} onChange={fontSize => set({ fontSize })} options={[['sm', 'Small'], ['md', 'Medium'], ['lg', 'Large']]} />
-          <Select label="Bar height" value={value.barHeight ?? 'md'} onChange={barHeight => set({ barHeight })} options={[['sm', 'Slim'], ['md', 'Normal'], ['lg', 'Tall']]} />
+          <SelectField label="Text size" value={value.fontSize ?? 'sm'} onChange={fontSize => set({ fontSize })} options={[['sm', 'Small'], ['md', 'Medium'], ['lg', 'Large']]} />
+          <SelectField label="Bar height" value={value.barHeight ?? 'md'} onChange={barHeight => set({ barHeight })} options={[['sm', 'Slim'], ['md', 'Normal'], ['lg', 'Tall']]} />
         </div>
-        <Select label="Alignment" value={value.align ?? 'left'} onChange={align => set({ align })} options={[['left', 'Left'], ['center', 'Centered']]} />
+        <SelectField label="Alignment" value={value.align ?? 'left'} onChange={align => set({ align })} options={[['left', 'Left'], ['center', 'Centered']]} />
         <SwitchRow label="Bold" checked={!!value.bold} onChange={bold => set({ bold })} />
         <SwitchRow label="Capital letters" checked={!!value.uppercase} onChange={uppercase => set({ uppercase })} />
         <SwitchRow label="Show icon" checked={value.showIcon !== false} onChange={showIcon => set({ showIcon })} />
         {value.showIcon !== false && (
-          <Select label="Icon" value={value.type} onChange={type => set({ type: type as StoreAnnouncementType })}
+          <SelectField label="Icon" value={value.type} onChange={type => set({ type: type as StoreAnnouncementType })}
             options={(Object.keys(ANNOUNCEMENT_TYPE_LABEL) as StoreAnnouncementType[]).map(k => [k, ANNOUNCEMENT_TYPE_LABEL[k]] as [StoreAnnouncementType, string])} />
         )}
-        <Select label="Link style" value={value.linkStyle ?? 'underline'} onChange={linkStyle => set({ linkStyle })}
+        <SelectField label="Link style" value={value.linkStyle ?? 'underline'} onChange={linkStyle => set({ linkStyle })}
           options={[['underline', 'Underlined text'], ['button', 'Small outlined button']]} />
       </Group>
 
@@ -227,12 +227,12 @@ export function AnnouncementForm({ value, onChange }: { value: Value; onChange: 
 
       <Group title="Where and when">
         <div className="grid grid-cols-2 gap-3">
-          <Select label="Position" value={value.placement ?? 'below'} onChange={placement => set({ placement })} options={[['below', 'Below the header'], ['above', 'Above the header']]} />
-          <Select label="Show on" value={value.device ?? 'all'} onChange={device => set({ device })} options={[['all', 'All devices'], ['mobile', 'Mobile only'], ['desktop', 'Desktop only']]} />
+          <SelectField label="Position" value={value.placement ?? 'below'} onChange={placement => set({ placement })} options={[['below', 'Below the header'], ['above', 'Above the header']]} />
+          <SelectField label="Show on" value={value.device ?? 'all'} onChange={device => set({ device })} options={[['all', 'All devices'], ['mobile', 'Mobile only'], ['desktop', 'Desktop only']]} />
         </div>
         <SwitchRow label="Let visitors close the bar" checked={value.closable !== false} onChange={closable => set({ closable })} />
         {value.closable !== false && (
-          <Select label="After closing, show it again" value={value.dismissFor ?? 'forever'} onChange={dismissFor => set({ dismissFor })}
+          <SelectField label="After closing, show it again" value={value.dismissFor ?? 'forever'} onChange={dismissFor => set({ dismissFor })}
             options={[['session', 'On their next visit'], ['day', 'After 24 hours'], ['forever', 'Only when the message changes']]} />
         )}
         <p className={`${LABEL} mt-1`}>Schedule (optional)</p>

@@ -7,6 +7,7 @@ import {
   type ThemePackageRevision, type ThemePackageStructure,
 } from '@/api/services/liquidTheme';
 import { LiquidTemplateEditor } from './LiquidTemplateEditor';
+import { Select } from '@/components/comman/ui';
 
 export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }: { storeId: string; installedThemeId: string; onClose: () => void }) {
   const toast = useToast();
@@ -365,7 +366,7 @@ export function ThemeSourcePackageDialog({ storeId, installedThemeId, onClose }:
                 {activePanel === 'editor' && <span role="status" className="flex items-center gap-1 text-[10px] text-slate">{livePreviewPending ? <><Loader2 size={11} className="animate-spin" /> Updating preview…</> : 'Live preview'}</span>}
                 {activePanel !== 'editor' && previewHtml && <button type="button" onClick={() => setPreviewHtml('')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer"><Code2 size={12} /> Edit source</button>}
                 <input aria-label="Preview page path" value={previewPath} onChange={(e) => setPreviewPath(e.target.value)} placeholder="/products/handle" className="w-36 px-2 py-1 rounded-lg border border-bone text-[11px]" />
-                <select aria-label="Preview device" value={device} onChange={(e) => setDevice(e.target.value as 'desktop' | 'tablet' | 'mobile')} className="px-2 py-1 rounded-lg border border-bone bg-white text-[11px]"><option value="desktop">Desktop</option><option value="tablet">Tablet</option><option value="mobile">Mobile</option></select>
+                <Select aria-label="Preview device" value={device} onChange={(e) => setDevice(e.target.value as 'desktop' | 'tablet' | 'mobile')}><option value="desktop">Desktop</option><option value="tablet">Tablet</option><option value="mobile">Mobile</option></Select>
                 {activePanel !== 'editor' && <button type="button" disabled={busy} onClick={preview} title={dirty ? 'Previews your unsaved edit without saving it.' : undefined} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><MonitorPlay size={12} /> Preview revision</button>}
                 <button type="button" disabled={busy || !dirty} onClick={save} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><Save size={12} /> Save source</button>
                 <button type="button" disabled={busy || selected.version === revisions[0]?.version} onClick={rollback} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-bone bg-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"><RotateCcw size={12} /> Restore revision</button>

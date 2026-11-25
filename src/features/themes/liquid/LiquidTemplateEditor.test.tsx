@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiGetStoreInventory } from '@/api/services/product';
 import type { ThemePackageStructure } from '@/api/services/liquidTheme';
 import { LiquidTemplateEditor } from './LiquidTemplateEditor';
+import { chooseValue } from '@/components/comman/ui/dropdownTesting';
 
 vi.mock('@/api/services/product', () => ({
   apiGetStoreInventory: vi.fn().mockResolvedValue({
@@ -65,7 +66,7 @@ describe('LiquidTemplateEditor', () => {
     };
     const { rerender, getByRole, getByLabelText } = render(<LiquidTemplateEditor {...props} />);
 
-    fireEvent.change(getByRole('combobox', { name: 'Add section' }), { target: { value: 'hero::0' } });
+    chooseValue(getByRole('combobox', { name: 'Add section' }), 'hero::0');
     const changedTemplate = onChange.mock.calls.at(-1)?.[0] as string;
     const added = JSON.parse(changedTemplate) as { sections: Record<string, { settings: Record<string, unknown> }>; order: string[] };
     expect(added.order).toHaveLength(1);
@@ -119,7 +120,7 @@ describe('LiquidTemplateEditor', () => {
       onChange={onChange}
     />);
 
-    fireEvent.change(getByRole('combobox', { name: 'Add section' }), { target: { value: 'hero::0' } });
+    chooseValue(getByRole('combobox', { name: 'Add section' }), 'hero::0');
     const added = onChange.mock.calls.at(-1)?.[0] as string;
     rerender(<LiquidTemplateEditor
       storeId="store-1"
@@ -134,7 +135,7 @@ describe('LiquidTemplateEditor', () => {
       onSelectFile={vi.fn()}
       onChange={onChange}
     />);
-    fireEvent.change(getByLabelText('Hero image'), { target: { value: 'assets/hero.png' } });
+    chooseValue(getByLabelText('Hero image'), 'assets/hero.png');
     const updated = JSON.parse(onChange.mock.calls.at(-1)?.[0] as string);
     expect(updated.sections[updated.order[0]].settings.hero_image).toBe('assets/hero.png');
     rerender(<LiquidTemplateEditor
@@ -166,7 +167,7 @@ describe('LiquidTemplateEditor', () => {
       onChange={onChange}
     />);
 
-    fireEvent.change(getByRole('combobox', { name: 'Add section' }), { target: { value: 'hero::0' } });
+    chooseValue(getByRole('combobox', { name: 'Add section' }), 'hero::0');
     const added = onChange.mock.calls.at(-1)?.[0] as string;
     rerender(<LiquidTemplateEditor
       storeId="store-1"

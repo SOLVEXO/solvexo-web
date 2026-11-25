@@ -23,6 +23,7 @@ import {
   type LiquidJsonTemplate,
   type LiquidTemplateSection,
 } from './liquidTemplateEditor.utils';
+import { Select } from '@/components/comman/ui';
 
 type ThemeSettingSchema = {
   id?: string;
@@ -189,10 +190,10 @@ export function LiquidTemplateEditor({
     </div>
     {view === 'template' && <div className="flex items-center gap-2">
       <label htmlFor="shopify-template-select" className="text-[11px] font-semibold text-charcoal">Template or section group</label>
-      <select id="shopify-template-select" value={templatePath} onChange={(event) => selectTemplate(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-bone bg-white px-2 py-1.5 text-[11px]">
+      <Select id="shopify-template-select" value={templatePath} onChange={(event) => selectTemplate(event.target.value)} wrapperClassName="min-w-0 flex-1">
         {templatePaths.map((path) => <option key={path} value={path}>Template · {path}</option>)}
         {sectionGroupPaths.map((path) => <option key={path} value={path}>Section group · {path}</option>)}
-      </select>
+      </Select>
     </div>}
     <p className="m-0 rounded-lg bg-cream p-2 text-[10px] leading-relaxed text-slate">
       Edits update this revision&apos;s JSON template. Save source to create a revision; this does not publish or change the live storefront.
@@ -203,11 +204,7 @@ export function LiquidTemplateEditor({
     {view === 'template' && templateFile && parsed && !(parsed instanceof Error) && <>
       <div className="flex items-center justify-between gap-2">
         <p className="m-0 text-[10px] font-bold uppercase tracking-wide text-slate">{isSectionGroup ? 'Group sections' : 'Template sections'} ({parsed.order.length}/25)</p>
-        <select
-          aria-label="Add section"
-          value=""
-          disabled={availableSections.length === 0 || parsed.order.length >= 25}
-          onChange={(event) => {
+        <Select aria-label="Add section" value="" disabled={availableSections.length === 0 || parsed.order.length >= 25} onChange={(event) => {
             if (event.target.value) {
               const [sectionType, rawPresetIndex] = event.target.value.split('::');
               const presetIndex = Number(rawPresetIndex);
@@ -217,16 +214,14 @@ export function LiquidTemplateEditor({
               ));
             }
             event.target.value = '';
-          }}
-          className="max-w-[180px] rounded-lg border border-bone bg-white px-2 py-1.5 text-[10px] disabled:opacity-50"
-        >
+          }} wrapperClassName="max-w-[180px]">
           <option value=""><Plus size={12} /> Add section…</option>
           {availableSections.flatMap((component) => (component.schema.presets ?? []).map((preset, index) => (
             <option key={`${component.type}::${index}`} value={`${component.type}::${index}`}>
               {component.schema.name}{component.schema.presets!.length > 1 ? ` · ${preset.name ?? `Preset ${index + 1}`}` : ''}
             </option>
           )))}
-        </select>
+        </Select>
       </div>
       {parsed.order.length === 0 && <p className="m-0 text-[11px] text-slate">No sections are configured in this template.</p>}
       {parsed.order.map((sectionId, index) => {
@@ -335,13 +330,9 @@ function SectionEditor({
     {blockDefinitions.length > 0 && <div className="mt-3 border-t border-bone pt-3">
       <div className="flex items-center justify-between gap-2">
         <p className="m-0 text-[10px] font-bold uppercase tracking-wide text-slate">Blocks ({blockOrder.length}/{Math.min(schema.max_blocks ?? 50, 50)})</p>
-        <select
-          aria-label={`Add block to ${schema.name}`}
-          value=""
-          disabled={blockOrder.length >= Math.min(schema.max_blocks ?? 50, 50) || !blockDefinitions.some((block) => block.type && (
+        <Select aria-label={`Add block to ${schema.name}`} value="" disabled={blockOrder.length >= Math.min(schema.max_blocks ?? 50, 50) || !blockDefinitions.some((block) => block.type && (
             typeof block.limit !== 'number' || blockOrder.filter((blockId) => section.blocks?.[blockId]?.type === block.type).length < block.limit
-          ))}
-          onChange={(event) => {
+          ))} onChange={(event) => {
             const type = event.target.value;
             if (!type) return;
             try {
@@ -349,16 +340,14 @@ function SectionEditor({
             } catch (error) {
               setBlockError(error instanceof Error ? error.message : 'Could not add this block.');
             }
-          }}
-          className="max-w-[160px] rounded-lg border border-bone bg-white px-2 py-1 text-[10px]"
-        >
+          }} wrapperClassName="max-w-[160px]">
           <option value="">Add block…</option>
           {blockDefinitions.filter((block) => block.type).map((block) => {
             const count = blockOrder.filter((blockId) => section.blocks?.[blockId]?.type === block.type).length;
             const limitReached = typeof block.limit === 'number' && count >= block.limit;
             return <option key={block.type} value={block.type} disabled={limitReached}>{block.name ?? block.type}{limitReached ? ' (limit reached)' : ''}</option>;
           })}
-        </select>
+        </Select>
       </div>
       {blockError && <p role="alert" className="m-0 mt-2 text-[10px] text-error">{blockError}</p>}
       {blockOrder.map((blockId, blockIndex) => {
@@ -435,9 +424,9 @@ function SettingsEditor({
         <input type="checkbox" checked={Boolean(value)} onChange={(event) => onChange(id, event.target.checked)} />{label}
       </label>;
       if (type === 'select' || type === 'radio') return <label key={id} className="flex flex-col gap-1 text-[10px] text-slate">
-        {label}<select value={String(value)} onChange={(event) => onChange(id, event.target.value)} className="rounded border border-bone bg-white px-2 py-1 text-[11px]">
+        {label}<Select value={String(value)} onChange={(event) => onChange(id, event.target.value)}>
           {(setting.options ?? []).map((option) => <option key={option.value} value={option.value}>{option.label ?? option.value}</option>)}
-        </select>
+        </Select>
       </label>;
       if (type === 'image_picker' || type === 'video') {
         const allowedAssets = assets.filter((file) => type === 'video'
@@ -450,11 +439,11 @@ function SettingsEditor({
             : '';
         return <label key={id} className="flex flex-col gap-1 text-[10px] text-slate">
           {label}
-          <select value={currentValue} onChange={(event) => onChange(id, event.target.value)} className="min-w-0 rounded border border-bone bg-white px-2 py-1.5 text-[11px]">
+          <Select value={currentValue} onChange={(event) => onChange(id, event.target.value)} wrapperClassName="min-w-0">
             <option value="">Select a theme {type === 'video' ? 'video' : 'image'}…</option>
             {currentValue && !allowedAssets.some((asset) => asset.path === currentValue) && <option value={currentValue}>{currentValue}</option>}
             {allowedAssets.map((asset) => <option key={asset.path} value={asset.path}>{asset.path.replace(/^assets\//i, '')}</option>)}
-          </select>
+          </Select>
           {type === 'image_picker' && currentValue && <span className="flex items-center gap-2 text-[10px] text-slate">
             <span className="h-10 w-10 overflow-hidden rounded border border-bone bg-white">
                   <img src={resolveEditorAssetUrl(assets, currentValue)} alt="" className="h-full w-full object-contain" />
@@ -510,9 +499,9 @@ function SettingsEditor({
         </label>;
       }
       if (type === 'text_alignment') return <label key={id} className="flex flex-col gap-1 text-[10px] text-slate">
-        {label}<select value={String(value)} onChange={(event) => onChange(id, event.target.value)} className="rounded border border-bone bg-white px-2 py-1 text-[11px]">
+        {label}<Select value={String(value)} onChange={(event) => onChange(id, event.target.value)}>
           {['left', 'center', 'right'].map((alignment) => <option key={alignment} value={alignment}>{alignment}</option>)}
-        </select>
+        </Select>
       </label>;
       return <p key={id} className="m-0 rounded bg-cream p-2 text-[10px] text-slate">{label}: <span className="text-charcoal">{String(value || '—')}</span> · edit this Shopify setting type in the Files tab</p>;
     })}
