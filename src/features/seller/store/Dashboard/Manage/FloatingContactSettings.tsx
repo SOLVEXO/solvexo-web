@@ -28,6 +28,18 @@ const POSITIONS: { position: FloatingContactConfig['position']; vertical: Floati
 
 const PREVIEW_SIZE = { sm: 26, md: 30, lg: 34 } as const;
 
+type SocialKey = 'facebook' | 'instagram' | 'tiktok' | 'youtube' | 'x' | 'linkedin' | 'snapchat';
+
+const SOCIALS: { key: SocialKey; label: string }[] = [
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'tiktok', label: 'TikTok' },
+  { key: 'youtube', label: 'YouTube' },
+  { key: 'x', label: 'X (Twitter)' },
+  { key: 'linkedin', label: 'LinkedIn' },
+  { key: 'snapchat', label: 'Snapchat' },
+];
+
 /** Small mock of the storefront, so the seller sees the position/look before saving. Drag it to place the buttons anywhere. */
 function PreviewBox({ cfg, onPlace }: { cfg: FloatingContactConfig; onPlace?: (x: number, y: number) => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -146,7 +158,7 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
       <section className={card}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-[16px] font-semibold text-ink">Social icons</h2>
+            <h2 className="text-[16px] font-semibold text-ink">Social media links</h2>
             <p className="mt-1 text-[13px] text-slate">The WhatsApp / Facebook / Instagram buttons that float on every page of your store. Each one only opens a link — no popups, no forms. Pick one of nine spots, or choose “Anywhere” and drag the buttons to the exact pixel you want.</p>
           </div>
           <Toggle checked={cfg.enabled} onChange={v => set('enabled', v)} disabled={!canManage} ariaLabel="Show the floating contact bar" />
@@ -168,16 +180,39 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
       </section>
 
       <section className={card}>
-        <h3 className="mb-3 text-[14px] font-semibold text-ink">Social links</h3>
-        <p className="mb-3 text-[12px] text-slate">Full links starting with https://. Empty ones are not shown.</p>
-        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))]">
-          {text('facebook', 'Facebook', undefined, 'https://facebook.com/yourpage')}
-          {text('instagram', 'Instagram', undefined, 'https://instagram.com/yourhandle')}
-          {text('tiktok', 'TikTok', undefined, 'https://tiktok.com/@yourhandle')}
-          {text('youtube', 'YouTube', undefined, 'https://youtube.com/@yourchannel')}
-          {text('x', 'X (Twitter)', undefined, 'https://x.com/yourhandle')}
-          {text('linkedin', 'LinkedIn', undefined, 'https://linkedin.com/company/yourcompany')}
-          {text('snapchat', 'Snapchat', undefined, 'https://snapchat.com/add/yourhandle')}
+        <h3 className="mb-1 text-[14px] font-semibold text-ink">Social media links</h3>
+        <p className="mb-3 text-[12px] text-slate">Add a network, paste its full link (https://…), and it becomes an icon — the same way the footer's social icons work.</p>
+        <div className="flex flex-col gap-2">
+          {SOCIALS.filter(s => cfg[s.key]).map(s => (
+            <div key={s.key} className="flex flex-wrap items-center gap-2">
+              <Select className="w-[150px]" value={s.key} disabled={!canManage}
+                onChange={e => {
+                  const next = e.target.value as SocialKey;
+                  setCfg(c => {
+                    const url = c[s.key] ?? '';
+                    const out = { ...c, [s.key]: '' };
+                    out[next] = url;
+                    return out;
+                  });
+                }}>
+                {SOCIALS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+              </Select>
+              <input className={INPUT + ' min-w-0 flex-1'} value={cfg[s.key] ?? ''} placeholder="https://" disabled={!canManage}
+                onChange={e => set(s.key, e.target.value)} />
+              <button type="button" disabled={!canManage} onClick={() => set(s.key, '')}
+                className="rounded-lg border border-slate-200 px-2.5 py-2 text-[12px] text-slate hover:bg-slate-50 disabled:opacity-40">Remove</button>
+            </div>
+          ))}
+          {SOCIALS.every(s => !cfg[s.key]) && <p className="text-[12px] text-slate">No social links yet. Add one below.</p>}
+          <div>
+            <Button variant="outline" size="sm" disabled={!canManage || SOCIALS.every(s => !!cfg[s.key])}
+              onClick={() => {
+                const free = SOCIALS.find(s => !cfg[s.key]);
+                if (free) set(free.key, 'https://');
+              }}>
+              Add social link
+            </Button>
+          </div>
         </div>
       </section>
 

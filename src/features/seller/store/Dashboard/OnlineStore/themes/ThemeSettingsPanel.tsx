@@ -740,8 +740,8 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
         );
       })}
 
-      {(!query.trim() || 'floating whatsapp contact bar call social icons'.includes(query.trim().toLowerCase())) && (
-        <Collapsible title="Floating WhatsApp" hint="WhatsApp, call and social buttons — pin them to a spot or place them anywhere" open={!!query.trim() || floatingOpen} onToggle={() => setFloatingOpen(o => !o)}>
+      {(!query.trim() || 'social media links whatsapp floating contact bar call icons'.includes(query.trim().toLowerCase())) && (
+        <Collapsible title="Social media links" hint="WhatsApp, call and social buttons — pin them to a spot or place them anywhere" open={!!query.trim() || floatingOpen} onToggle={() => setFloatingOpen(o => !o)}>
           <FloatingContactSettings canManage compact />
         </Collapsible>
       )}
