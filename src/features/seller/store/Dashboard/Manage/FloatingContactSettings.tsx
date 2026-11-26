@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ChromeItemsEditor } from '@/features/seller/store/Dashboard/OnlineStore/themes/ChromeItemsEditor';
 import { Button, Select, ColorField } from '@/components/comman/ui';
 import { Toggle } from '@/components/comman/ui/Toggle';
@@ -28,8 +28,9 @@ const POSITIONS: { position: FloatingContactConfig['position']; vertical: Floati
 
 const PREVIEW_SIZE = { sm: 26, md: 30, lg: 34 } as const;
 
-/** Small mock of the storefront, so the seller sees the position/look before saving. */
-function PreviewBox({ cfg }: { cfg: FloatingContactConfig }) {
+/** Small mock of the storefront, so the seller sees the position/look before saving. Drag it to place the buttons anywhere. */
+function PreviewBox({ cfg, onPlace }: { cfg: FloatingContactConfig; onPlace?: (x: number, y: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
   const size = cfg.sizePx > 0 ? cfg.sizePx : PREVIEW_SIZE[cfg.size] ?? 30;
   const round = cfg.shape === 'round';
   const bg = cfg.customBg || '#25D366';
@@ -37,20 +38,35 @@ function PreviewBox({ cfg }: { cfg: FloatingContactConfig }) {
   const gap = cfg.gapPx >= 0 ? cfg.gapPx : round ? 8 : 2;
   const edge = Math.min(28, Math.max(0, cfg.edgeOffset || 0) / 4);
   const lift = Math.min(28, Math.max(0, cfg.bottomOffset || 0) / 4);
+  const free = cfg.posMode === 'free';
+  const x = Math.min(100, Math.max(0, cfg.freeX ?? 90));
+  const y = Math.min(100, Math.max(0, cfg.freeY ?? 50));
   const sideStyle: CSSProperties = cfg.position === 'left' ? { left: 10 + edge } : { right: 10 + edge };
   const verticalStyle: CSSProperties = cfg.vertical === 'top' ? { top: 12 }
     : cfg.vertical === 'bottom' ? { bottom: 12 + lift }
     : { top: '50%', marginTop: -size * 1.5 };
-  const style: CSSProperties = cfg.position === 'center'
-    ? { left: '50%', transform: 'translateX(-50%)', ...verticalStyle }
-    : { ...sideStyle, ...verticalStyle };
+  const style: CSSProperties = free
+    ? { left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }
+    : cfg.position === 'center'
+      ? { left: '50%', transform: 'translateX(-50%)', ...verticalStyle }
+      : { ...sideStyle, ...verticalStyle };
   const dots = [0, 1, 2].slice(0, cfg.whatsapp || cfg.phone || cfg.email ? 3 : 1);
+  const place = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!onPlace || !ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * 100;
+    const py = ((e.clientY - r.top) / r.height) * 100;
+    onPlace(Math.round(Math.min(100, Math.max(0, px))), Math.round(Math.min(100, Math.max(0, py))));
+  };
   return (
-    <div className="relative h-[188px] overflow-hidden rounded-xl border border-slate-200 bg-[#faf9f7]">
+    <div ref={ref}
+      onPointerDown={e => { if (onPlace) { e.currentTarget.setPointerCapture(e.pointerId); place(e); } }}
+      onPointerMove={e => { if (onPlace && e.buttons > 0) place(e); }}
+      className={`relative h-[188px] touch-none overflow-hidden rounded-xl border border-slate-200 bg-[#faf9f7] ${onPlace ? 'cursor-crosshair' : ''}`}>
       <div className="absolute inset-x-0 top-0 h-6 border-b border-slate-200 bg-white" />
       <div className="absolute inset-x-3 top-9 h-10 rounded-lg bg-white/70" />
       <div className="absolute inset-x-3 top-24 h-10 rounded-lg bg-white/50" />
-      <span className="absolute bottom-1 end-2 text-[10px] uppercase tracking-wide text-slate">Preview</span>
+      <span className="absolute bottom-1 end-2 text-[10px] uppercase tracking-wide text-slate">{onPlace ? 'Drag to place' : 'Preview'}</span>
       <div className="absolute flex flex-col" style={{ ...style, gap }}>
         {dots.map(i => (
           <span key={i} className="grid place-items-center text-[11px] font-semibold"
@@ -173,28 +189,55 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
         <h3 className="mb-3 text-[14px] font-semibold text-ink">Look</h3>
         <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))]">
           <div className="flex min-w-0 flex-col gap-1">
-            <span className="text-[13px] font-medium text-ink">Position on the screen</span>
-            <div className="grid w-[132px] grid-cols-3 gap-1 rounded-lg border border-slate-200 p-1">
-              {POSITIONS.map(p => {
-                const on = cfg.position === p.position && cfg.vertical === p.vertical;
-                return (
-                  <button key={p.label} type="button" title={p.label} aria-label={p.label} aria-pressed={on} disabled={!canManage}
-                    onClick={() => setCfg(c => ({ ...c, position: p.position, vertical: p.vertical }))}
-                    className={`h-8 rounded-md border text-[10px] font-medium transition ${on ? 'border-brand-orange bg-brand-orange/10 text-ink' : 'border-transparent bg-slate-50 text-slate hover:bg-slate-100'}`}>
-                    {p.label.split(' ')[0] === 'Middle' ? 'Mid' : p.label.split(' ')[0]}
-                  </button>
-                );
-              })}
+            <span className="text-[13px] font-medium text-ink">Place the buttons</span>
+            <div className="flex w-[228px] gap-1 rounded-lg border border-slate-200 p-1">
+              {([{ v: 'anchor', label: 'Fixed spots' }, { v: 'free', label: 'Anywhere' }] as const).map(o => (
+                <button key={o.v} type="button" aria-pressed={(cfg.posMode ?? 'anchor') === o.v} disabled={!canManage}
+                  onClick={() => set('posMode', o.v)}
+                  className={`h-8 flex-1 rounded-md text-[12px] font-medium transition ${(cfg.posMode ?? 'anchor') === o.v ? 'bg-brand-orange/10 text-ink' : 'text-slate hover:bg-slate-50'}`}>
+                  {o.label}
+                </button>
+              ))}
             </div>
-            <p className="text-[12px] text-slate">{POSITIONS.find(p => p.position === cfg.position && p.vertical === cfg.vertical)?.label ?? 'Middle right'}</p>
+            <p className="text-[12px] text-slate">{(cfg.posMode ?? 'anchor') === 'free' ? 'Drag the buttons in the preview, or type the exact spot.' : 'Pick one of the nine spots on the right.'}</p>
           </div>
+          {(cfg.posMode ?? 'anchor') === 'free' ? (
+            <>
+              <Field label="From the left (%)" hint="0 = left edge, 100 = right edge.">
+                {id => <input id={id} type="number" min={0} max={100} className={INPUT} disabled={!canManage} value={cfg.freeX ?? 90}
+                  onChange={e => set('freeX', Math.min(100, Math.max(0, Math.round(Number(e.target.value) || 0))))} />}
+              </Field>
+              <Field label="From the top (%)" hint="0 = top edge, 100 = bottom edge.">
+                {id => <input id={id} type="number" min={0} max={100} className={INPUT} disabled={!canManage} value={cfg.freeY ?? 50}
+                  onChange={e => set('freeY', Math.min(100, Math.max(0, Math.round(Number(e.target.value) || 0))))} />}
+              </Field>
+            </>
+          ) : (
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className="text-[13px] font-medium text-ink">Position on the screen</span>
+              <div className="grid w-[132px] grid-cols-3 gap-1 rounded-lg border border-slate-200 p-1">
+                {POSITIONS.map(p => {
+                  const on = cfg.position === p.position && cfg.vertical === p.vertical;
+                  return (
+                    <button key={p.label} type="button" title={p.label} aria-label={p.label} aria-pressed={on} disabled={!canManage}
+                      onClick={() => setCfg(c => ({ ...c, position: p.position, vertical: p.vertical }))}
+                      className={`h-8 rounded-md border text-[10px] font-medium transition ${on ? 'border-brand-orange bg-brand-orange/10 text-ink' : 'border-transparent bg-slate-50 text-slate hover:bg-slate-100'}`}>
+                      {p.label.split(' ')[0] === 'Middle' ? 'Mid' : p.label.split(' ')[0]}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[12px] text-slate">{POSITIONS.find(p => p.position === cfg.position && p.vertical === cfg.vertical)?.label ?? 'Middle right'}</p>
+            </div>
+          )}
           <Pick label="Icon size" value={cfg.size} onChange={v => set('size', v)} options={[{ value: 'sm', label: 'Small (40px)' }, { value: 'md', label: 'Medium (48px)' }, { value: 'lg', label: 'Large (56px)' }]} />
           <Pick label="Colours" value={cfg.style} onChange={v => set('style', v)} options={[{ value: 'brand', label: 'Each brand\'s own colour' }, { value: 'theme', label: 'My store\'s brand colour' }]} />
           <Pick label="Show on" value={cfg.device} onChange={v => set('device', v)} options={[{ value: 'all', label: 'All screens' }, { value: 'desktop', label: 'Desktop and tablet only' }, { value: 'mobile', label: 'Phones only' }]} />
           <Pick label="Icon names" value={cfg.labelMode ?? (cfg.showLabels ? 'hover' : 'none')} onChange={v => setCfg(c => ({ ...c, labelMode: v, showLabels: v !== 'none' }))}
             options={[{ value: 'hover', label: 'Slide open on hover' }, { value: 'always', label: 'Always beside the icon' }, { value: 'none', label: 'Icons only' }]} />
           <div className="flex items-end">
-            <PreviewBox cfg={cfg} />
+            <PreviewBox cfg={cfg}
+              onPlace={cfg.posMode === 'free' && canManage ? (x, y) => setCfg(c => ({ ...c, freeX: x, freeY: y })) : undefined} />
           </div>
         </div>
         <div className="mt-4 grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))]">

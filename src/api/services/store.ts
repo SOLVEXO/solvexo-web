@@ -23,6 +23,8 @@ export interface FloatingContactConfig {
   shape: 'flush' | 'round'; bubbleText: string; customBg: string; customFg: string;
   /** Exact button size px (0 = by `size`), distance from the edge px, space between buttons px (-1 = automatic). */
   sizePx: number; edgeOffset: number; bottomOffset?: number; gapPx: number;
+  /** `anchor` = the nine fixed spots, `free` = anywhere on the screen (percent of the viewport). */
+  posMode?: 'anchor' | 'free'; freeX?: number; freeY?: number;
 }
 
 export interface EnabledCurrency {

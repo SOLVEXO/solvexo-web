@@ -1,6 +1,7 @@
 import '@/features/storefront-themes/editorThemes';
 
 import { Loader2, RotateCcw, Undo2, Redo2, History, Search, ChevronDown } from 'lucide-react';
+import { FloatingContactSettings } from '../../Manage/FloatingContactSettings';
 import { useEffect } from 'react';
 import { ColorField as OptionalColorField } from './HeaderFooterSettingsPanels';
 import { useToast } from '@/contexts/ToastContext';
@@ -477,6 +478,7 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [versions, setVersions] = useState<{ _id: string; publishedAt: string }[]>([]);
   const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
+  const [floatingOpen, setFloatingOpen] = useState(false);
 
   // Click a part of the live preview → scroll to and flash the color field that controls it.
   const [flashKey, setFlashKey] = useState<string | null>(null);
@@ -737,6 +739,12 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
           </Collapsible>
         );
       })}
+
+      {(!query.trim() || 'floating whatsapp contact bar call social icons'.includes(query.trim().toLowerCase())) && (
+        <Collapsible title="Floating WhatsApp" hint="WhatsApp, call and social buttons — pin them to a spot or place them anywhere" open={!!query.trim() || floatingOpen} onToggle={() => setFloatingOpen(o => !o)}>
+          <FloatingContactSettings canManage compact />
+        </Collapsible>
+      )}
 
       {!query.trim() && (
       <SavedPalettes

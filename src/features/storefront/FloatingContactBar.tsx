@@ -100,20 +100,34 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
   // Bottom gap: a round corner button sits above a sticky buy bar, a flush stack clears it too.
   const bottomGap = (round ? 24 : 96) + lift;
   const sideGap = (round ? 20 : 0) + edge;
-  const vertical: CSSProperties = config.vertical === 'top' ? { top: '18%' }
+  const free = config.posMode === 'free';
+  // Free spot: a percentage of the screen, clamped so the button never leaves the viewport.
+  const freeStyle: CSSProperties = free
+    ? {
+      left: `clamp(0px, ${Math.min(100, Math.max(0, config.freeX ?? 90))}%, calc(100% - var(--s, 48px)))`,
+      top: `clamp(0px, ${Math.min(100, Math.max(0, config.freeY ?? 50))}%, calc(100% - var(--s, 48px)))`,
+    }
+    : {};
+  const vertical: CSSProperties = free ? {} : config.vertical === 'top' ? { top: '18%' }
     : config.vertical === 'bottom' ? { bottom: bottomGap }
     : { top: '50%', transform: 'translateY(-50%)' };
   const sideProp = end ? 'insetInlineEnd' : 'insetInlineStart';
-  const boxPos: CSSProperties = centre
-    ? { left: '50%', transform: `${config.vertical === 'middle' ? 'translateY(-50%) ' : ''}translateX(-50%)` }
-    : { [sideProp]: sideGap };
+  const boxPos: CSSProperties = free ? freeStyle
+    : centre
+      ? { left: '50%', transform: `${config.vertical === 'middle' ? 'translateY(-50%) ' : ''}translateX(-50%)` }
+      : { [sideProp]: sideGap };
   const showClass = config.device === 'desktop' ? 'fcb-desktop' : config.device === 'mobile' ? 'fcb-mobile' : '';
   const popupTheme: ChromeTheme = { bg: '#ffffff', fg: '#161412', accent: brandColor, accentText: '#ffffff', font, radius: radius && /^\d/.test(radius) ? `min(${radius}, 18px)` : '12px', popup: { variant: 'card' } };
   const bubble = (config.bubbleText ?? '').trim();
   const gapPx = config.gapPx >= 0 ? config.gapPx : round ? 12 : 2;
-  const bubbleStyle: CSSProperties = centre
-    ? { bottom: bottomGap + size + 12, left: '50%', transform: 'translateX(-50%)' }
-    : { bottom: bottomGap + size / 2 - 20, [sideProp]: sideGap + size + 12 };
+  const bubbleStyle: CSSProperties = free
+    ? {
+      left: `clamp(0px, ${Math.min(100, Math.max(0, config.freeX ?? 90))}%, calc(100% - 200px))`,
+      top: `clamp(0px, calc(${Math.min(100, Math.max(0, config.freeY ?? 50))}% + ${size + 10}px), calc(100% - 64px))`,
+    }
+    : centre
+      ? { bottom: bottomGap + size + 12, left: '50%', transform: 'translateX(-50%)' }
+      : { bottom: bottomGap + size / 2 - 20, [sideProp]: sideGap + size + 12 };
 
   return (
     <>

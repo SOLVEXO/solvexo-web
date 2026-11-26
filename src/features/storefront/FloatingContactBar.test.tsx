@@ -49,6 +49,13 @@ describe('FloatingContactBar', () => {
     expect(nav().style.bottom).toBe('64px');
   });
 
+  it('places the buttons anywhere with a free spot', () => {
+    renderBar({ posMode: 'free', freeX: 20, freeY: 80 });
+    const el = nav();
+    expect(el.style.left).toContain('20%');
+    expect(el.style.top).toContain('80%');
+  });
+
   it('opens a wa.me chat with the pre-filled message', () => {
     renderBar({ whatsappMessage: 'Hi there' });
     const link = screen.getByRole('link', { name: /whatsapp/i });
