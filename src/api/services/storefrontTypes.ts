@@ -23,6 +23,7 @@ export const SECTION_TYPES = [
   'testimonials',
   'faq',
   'video',
+  'documents_grid',
   'featured_category_grid',
   'trust_badges',
   'newsletter',

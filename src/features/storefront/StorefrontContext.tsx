@@ -164,6 +164,10 @@ export interface StorefrontLinkSettings {
   categoryId?:   string;
   collectionId?: string;
   productId?:    string;
+  /** A document from the store's Documents library (`linkType: 'document'`). */
+  documentId?:   string;
+  /** Documents: open in the browser or really download. */
+  documentMode?: 'view' | 'download';
   /** Open in a new tab. */
   newTab?:       boolean;
 }
@@ -255,6 +259,10 @@ function resolveLinkTarget(link: StorefrontLinkSettings): { to?: string; href?: 
   if (link.linkType === 'category' && link.categoryId) return { to: `/category/${link.categoryId}` };
   if (link.linkType === 'collection' && link.collectionId) return { to: `/collections/${link.collectionId}` };
   if (link.linkType === 'product' && link.productId) return { to: `/product/${link.productId}` };
+  // A document from the store's library: `view` opens the PDF, `download` really downloads it.
+  if (link.linkType === 'document' && link.documentId) {
+    return { href: `/documents/${link.documentId}${link.documentMode === 'download' ? '/download' : '/view'}` };
+  }
   return { to: `/` }; // 'home' (and any unrecognized/incomplete fallback)
 }
 

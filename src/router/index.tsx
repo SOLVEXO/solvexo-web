@@ -191,6 +191,7 @@ const StoreDiscounts = lazy(() => import('@/features/seller/store/Dashboard/Mana
 const StoreGiftCards = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreGiftCards'));
 const ContactMessages = lazy(() => import('@/features/seller/store/Dashboard/Manage/ContactMessages'));
 const StoreHelp = lazy(() => import('@/features/seller/store/Dashboard/Manage/Help'));
+const StoreDocuments = lazy(() => import('@/features/seller/store/Dashboard/Manage/Documents'));
 const StoreMobileApp = lazy(() => import('@/features/seller/store/Dashboard/Manage/MobileApp'));
 const MetafieldDefinitionsPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MetafieldDefinitionsPage').then(m => ({ default: m.MetafieldDefinitionsPage })));
 const MetaobjectTypesPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/Metaobjects/MetaobjectTypesPage').then(m => ({ default: m.MetaobjectTypesPage })));
@@ -525,6 +526,7 @@ const mainRouter = createBrowserRouter([
           // Edited in Themes → Customize now (Header group / Featured products section).
           { path: 'online-store/announcement-bar',     element: <Navigate to="../online-store/themes" replace /> },
           { path: 'online-store/contact-messages',     element: <ContactMessages /> },
+          { path: 'online-store/documents',            element: <StoreDocuments /> },
           { path: 'help',                             element: <StoreHelp /> },
           // Home-page title/description/social image now lives in one place
           // only: SEO → Store SEO (`SeoMetaForm` over the same

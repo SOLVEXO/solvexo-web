@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+import { DocumentsGridSection } from '@/features/storefront-themes/core/documents/DocumentsGrid';
 import { useState } from 'react';
 import { CardOverridesProvider } from '../../core/product/cardOverrides';
 import { Plus } from 'lucide-react';
@@ -78,6 +79,13 @@ registerFashionSection('video', (section, _b, colors) => {
 
 // ── FAQ ───────────────────────────────────────────────────────────────────────
 registerFashionSection('faq', (section, blocks, colors) => <Faq settings={section.settings} blocks={blocks} colors={colors} />);
+
+// Documents library as cards (cover, name, View, Download).
+registerFashionSection('documents_grid', (section, _b, colors) => (
+  <SectionShell colors={colors} heading={section.settings?.heading}>
+    <DocumentsGridSection settings={section.settings} colors={colors as any} />
+  </SectionShell>
+));
 
 function Faq({ settings: s, blocks, colors }: { settings: Record<string, any>; blocks: { _id?: string; type: string; settings: Record<string, any> }[]; colors: typeof t.colors }) {
   const fromStore = useStoreFaqBlocks(s.source === 'store');

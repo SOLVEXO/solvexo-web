@@ -143,6 +143,7 @@ const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIc
       { id: 'online-store-menus',     Icon: ListTree,   label: 'Navigation', path: 'online-store/menus',     requiredPermission: 'content.menus.manage' },
       { id: 'online-store-section-builder', Icon: Boxes, label: 'Section builder', path: 'online-store/section-builder', requiredPermission: 'onlinestore.themes.manage' },
       { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog',      requiredPermission: 'onlinestore.content.manage' },
+      { id: 'online-store-documents', Icon: FileText,   label: 'Documents', path: 'online-store/documents', requiredPermission: 'onlinestore.content.manage' },
       // { id: 'online-store-apps',      Icon: Blocks,     label: 'Apps',      path: 'online-store/apps',      requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files',                  requiredPermission: 'files.manage' },
       { id: 'online-store-translations', Icon: Languages, label: 'Translate & adapt', path: 'online-store/translations', requiredPermission: 'onlinestore.content.manage' },

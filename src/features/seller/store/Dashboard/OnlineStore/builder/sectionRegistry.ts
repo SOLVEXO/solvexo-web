@@ -254,6 +254,28 @@ export const SECTION_META: SectionMeta[] = [
     ]),
   },
   {
+    type: 'documents_grid', label: 'Documents', description: 'Your Documents library as cards — cover, name, View and Download. New uploads appear here on their own.',
+    Icon: FileText, color: '#7C3AED',
+    defaultSettings: { heading: 'Downloads', category: '', columns: 3, showDescription: false },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: withHeading([
+      { key: 'category', kind: 'select', label: 'Category', hint: 'Leave empty to show every document.', options: [
+        { value: '', label: 'All documents' },
+        { value: 'catalogue', label: 'Catalogue' },
+        { value: 'brochure', label: 'Brochure' },
+        { value: 'price_list', label: 'Price list' },
+        { value: 'manual', label: 'Manual' },
+        { value: 'certificate', label: 'Certificate' },
+        { value: 'other', label: 'Other' },
+      ] },
+      { key: 'columns', kind: 'select', label: 'Columns', options: [
+        { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
+      ] },
+      { key: 'showDescription', kind: 'checkbox', label: 'Show the short description' },
+    ]),
+  },
+  {
     type: 'featured_category_grid', label: 'Category Grid', description: 'Tiles linking to your subcategories — a "shop by category" grid.',
     Icon: Grid3x3, color: '#0891B2',
     defaultSettings: { heading: 'Shop by Category', categoryIds: [], columns: 4 },

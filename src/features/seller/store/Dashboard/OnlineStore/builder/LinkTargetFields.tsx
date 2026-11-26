@@ -4,14 +4,19 @@ import { EntityPickerModal } from './EntityPickerModal';
 import { apiGetCategoryById } from '@/api/services/categories';
 import { apiGetCollection } from '@/api/services/collections';
 import { apiGetMyProductById } from '@/api/services/product';
+import { apiListStoreDocuments, type StoreDocumentFile } from '@/api/services/storeDocuments';
 
 export interface LinkTarget {
-  linkType: 'home' | 'page' | 'blog' | 'search' | 'external' | 'category' | 'collection' | 'product' | 'cart' | 'account' | 'faqs' | 'email' | 'phone' | 'none';
+  linkType: 'home' | 'page' | 'blog' | 'search' | 'external' | 'category' | 'collection' | 'product' | 'cart' | 'account' | 'faqs' | 'email' | 'phone' | 'document' | 'none';
   pageSlug?: string;
   url?: string;
   categoryId?: string;
   collectionId?: string;
   productId?: string;
+  /** A document from the store's Documents library (`linkType: 'document'`). */
+  documentId?: string;
+  /** Documents can open in the browser or really download. */
+  documentMode?: 'view' | 'download';
   /** Open the link in a new tab. */
   newTab?: boolean;
 }
@@ -33,6 +38,12 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId, allowN
   const [pickerOpen, setPickerOpen] = useState(false);
   const [resolvedLabel, setResolvedLabel] = useState('');
   const [broken, setBroken] = useState(false);
+  const [documents, setDocuments] = useState<StoreDocumentFile[]>([]);
+
+  useEffect(() => {
+    if (!storeId) return;
+    apiListStoreDocuments(storeId, { limit: 100 }).then(r => setDocuments(r.items ?? [])).catch(() => setDocuments([]));
+  }, [storeId]);
 
   useEffect(() => {
     setResolvedLabel('');
@@ -47,8 +58,10 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId, allowN
       setBroken(!pageOptions.some(p => p.slug === value.pageSlug));
     } else if (value.linkType === 'external' && value.url) {
       setBroken(!/^https?:\/\//i.test(value.url));
+    } else if (value.linkType === 'document' && value.documentId) {
+      setBroken(!documents.some(d => d._id === value.documentId));
     }
-  }, [value.linkType, value.categoryId, value.collectionId, value.productId, value.pageSlug, value.url, storeId, pageOptions]);
+  }, [value.linkType, value.categoryId, value.collectionId, value.productId, value.pageSlug, value.url, value.documentId, storeId, pageOptions, documents]);
 
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -62,6 +75,7 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId, allowN
           <option value="product">A product…</option>
           <option value="category">A category…</option>
           <option value="collection">A collection…</option>
+          <option value="document">A document (PDF)…</option>
           <option value="cart">Cart</option>
           <option value="account">Account page</option>
           <option value="faqs">FAQs page</option>
@@ -102,6 +116,25 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId, allowN
         </Field>
       )}
 
+      {value.linkType === 'document' && (
+        <>
+          <Field label="Document">
+            <Select value={value.documentId ?? ''} onChange={e => onChange({ ...value, documentId: e.target.value })}>
+              <option value="">Select a document</option>
+              {documents.map(d => <option key={d._id} value={d._id}>{d.title}</option>)}
+            </Select>
+          </Field>
+          <Field label="When clicked">
+            <Select value={value.documentMode ?? 'view'} onChange={e => onChange({ ...value, documentMode: e.target.value as 'view' | 'download' })}>
+              <option value="view">Open in the browser</option>
+              <option value="download">Download the file</option>
+            </Select>
+          </Field>
+          {documents.length === 0 && (
+            <p className="col-span-2 m-0 text-[11px] text-slate">No documents yet. Add one in Online Store → Documents, then it appears here.</p>
+          )}
+        </>
+      )}
       {value.linkType === 'none' && (
         <p className="col-span-2 m-0 text-[11px] text-slate">Shows as plain text in the menu. Add items below so the dropdown has something to open.</p>
       )}
