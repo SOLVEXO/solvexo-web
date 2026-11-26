@@ -307,31 +307,19 @@ export default function StoreProductList() {
         subtitle={loading ? 'Loading…' : `${totalProducts} product${totalProducts !== 1 ? 's' : ''}`}
         actions={
           <div className="flex items-center gap-2">
-            {canImport && (
-              <>
+{canImport && (
                 <BulkImportButton
                   entityLabel="products"
                   basePath={`/api/products/store-products/${storeId}`}
                   onImported={() => setRefreshKey(k => k + 1)}
                   notes={[
-                    'SKU is the key: a row whose SKU already exists updates that product (blank cells are left unchanged; stock is never changed here).',
+                    'Single CSV (Shopify format): group rows by Handle — first row = product data, all rows = variants with Option1–3 Name/Value.',
+                    'SKU is the key: a row whose SKU already exists updates that variant (blank cells are left unchanged; stock is never changed here).',
                     'Category must match one of your store categories. Status is active or draft.',
-                    'To change stock use Inventory > Import. To add variants use Import variants.',
+                    'To change stock use Inventory > Import. Option names in a row must match the product\'s existing option names (case-insensitive).',
                   ]}
                 />
-                <BulkImportButton
-                  label="Import variants"
-                  entityLabel="variants"
-                  basePath={`/api/products/store-products/${storeId}/variants`}
-                  onImported={() => setRefreshKey(k => k + 1)}
-                  notes={[
-                    'Find the product by Product SKU (any existing variant SKU of it); Product Name is only a fallback and must be unique.',
-                    'A new variant must use the same option names as the product already uses.',
-                    'A variant SKU that already exists only gets its price / compare-at price updated.',
-                  ]}
-                />
-              </>
-            )}
+              )}
             {canExport && <button
               onClick={handleExportCsv}
               disabled={exporting}
