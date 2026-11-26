@@ -3,7 +3,7 @@ import { useSearchParams, useParams, useNavigate, Navigate } from 'react-router-
 import {
   Store, CreditCard, Plug, Users, SlidersHorizontal, Boxes, History,
   Package, Wallet, Globe, ShieldCheck, Bell, Languages, FileText, Scale, BadgeCheck,
-  Truck, ListChecks, ShieldAlert, Webhook, Landmark, MapPin, Gift, Lock, UserCheck,
+  Truck, ListChecks, ShieldAlert, Webhook, Landmark, MapPin, Gift, Lock, UserCheck, MessageCircle,
 } from 'lucide-react';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { StorePageHeader, StoreNavMenu, useStoreWorkspace, hasNavPermission } from '@/components/layouts/StoreLayout';
@@ -25,6 +25,7 @@ import { ActivityLogTab } from './tabs/ActivityLogTab';
 import { NotificationsHub } from './notifications/NotificationsHub';
 import { OrderDocumentsSettings } from './orderDocuments/OrderDocumentsSettings';
 import { PoliciesSettings } from './policies/PoliciesSettings';
+import { FloatingContactSettings } from './FloatingContactSettings';
 import { StoreIntegrations } from '../Operations/integrations/Integrations';
 import { MarketsSettings } from '../Operations/MarketsSettings';
 import { VerifyBusinessPage } from '../verification/VerifyBusinessPage';
@@ -83,6 +84,7 @@ const NAV_GROUPS: SettingsNavGroup[] = [
       { id: 'notifications',   label: 'Notifications',   icon: <Bell size={13} />,     hint: 'Email and in-app alerts' },
       { id: 'policies',        label: 'Policies',        icon: <Scale size={13} />,    hint: 'Refund, shipping, terms' },
       { id: 'order-documents', label: 'Order documents', icon: <FileText size={13} />, hint: 'Invoices, receipts, packing slips' },
+      { id: 'floating-contact', label: 'Floating WhatsApp', icon: <MessageCircle size={13} />, hint: 'WhatsApp, call and social buttons on every page' },
     ],
   },
   {
@@ -199,6 +201,7 @@ const TAB_PERMS: Record<string, string[]> = {
   profile: ['settings.general.manage'], 'product-types': ['settings.general.manage'],
   'payment-methods': ['settings.payments.manage'], domains: ['settings.domains.manage'], privacy: ['settings.general.manage'],
   markets: ['settings.general.manage'], 'order-documents': ['settings.general.manage'], policies: ['onlinestore.content.manage'],
+  'floating-contact': ['settings.general.manage'],
   billing: ['settings.billing.view', 'settings.billing.manage'], integrations: ['settings.payments.manage', 'settings.shipping.manage'],
   staff: ['staff.manage'], 'custom-fields': ['content.menus.manage', 'content.metaobjects.manage'],
   'content-types': ['content.menus.manage', 'content.metaobjects.manage'], 'activity-log': ['settings.general.manage'],
@@ -326,6 +329,11 @@ export default function SettingsHub() {
         {isVisited('order-documents') && (
           <div className={paneClassName('order-documents') + ' px-4 lg:px-7 py-6'}>
             <OrderDocumentsSettings key={storeId} storeId={storeId} canManage={hasNavPermission(user, ['settings.general.manage'])} />
+          </div>
+        )}
+        {isVisited('floating-contact') && (
+          <div className={paneClassName('floating-contact') + ' px-4 lg:px-7 py-6'}>
+            <FloatingContactSettings key={storeId} canManage={hasNavPermission(user, ['settings.general.manage'])} />
           </div>
         )}
         {isVisited('shipping')         && <div className={paneClassName('shipping')}><SellerShipping embedded /></div>}

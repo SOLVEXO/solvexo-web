@@ -1,5 +1,5 @@
 import '@/features/storefront-themes/editorThemes';
-import { FloatingContactSettings } from '../../Manage/FloatingContactSettings';
+
 import { Loader2, RotateCcw, Undo2, Redo2, History, Search, ChevronDown } from 'lucide-react';
 import { useEffect } from 'react';
 import { ColorField as OptionalColorField } from './HeaderFooterSettingsPanels';
@@ -481,7 +481,7 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
   // Click a part of the live preview → scroll to and flash the color field that controls it.
   const [flashKey, setFlashKey] = useState<string | null>(null);
   // Groups are closed cards (Colors starts open); a search shows every matching group open.
-  const [floatingOpen, setFloatingOpen] = useState(false);
+
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(['Colors']));
   const toggleGroup = (group: string) => setOpenGroups(prev => { const next = new Set(prev); if (next.has(group)) next.delete(group); else next.add(group); return next; });
   useEffect(() => {
@@ -737,12 +737,6 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
           </Collapsible>
         );
       })}
-
-      {(!query.trim() || 'floating contact bar call whatsapp social icons'.includes(query.trim().toLowerCase())) && (
-        <Collapsible title="Floating contact bar" hint="Call, WhatsApp and social icons on the side of every page" open={!!query.trim() || floatingOpen} onToggle={() => setFloatingOpen(o => !o)}>
-          <FloatingContactSettings canManage compact />
-        </Collapsible>
-      )}
 
       {!query.trim() && (
       <SavedPalettes
