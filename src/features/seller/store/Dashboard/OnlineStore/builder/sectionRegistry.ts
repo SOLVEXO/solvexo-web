@@ -198,12 +198,32 @@ export const SECTION_META: SectionMeta[] = [
     settingsSchema: withHeading([]),
   },
   {
-    type: 'testimonials', label: 'Testimonials', description: 'Customer quotes with a name, role, and star rating.',
+    type: 'testimonials', label: 'Testimonials', description: 'Customer quotes with a name, role, and star rating — as a grid or a rotating carousel.',
     Icon: Quote, color: '#A855F7',
-    defaultSettings: { heading: 'What buyers say' },
+    defaultSettings: { heading: 'What buyers say', layout: 'grid', columns: 3, textAlign: 'center', imagePosition: 'top', autoplay: true, autoplaySeconds: 5, showArrows: true, pagination: 'dots', transition: 'slide' },
     allowedBlockTypes: ['testimonial'], blockLabel: 'Testimonial',
     defaultBlockSettings: { quote: '', authorName: '', rating: 5 },
-    settingsSchema: withHeading([]), // content lives entirely in blocks — matches the backend validator, which validates no section-level settings for this type either
+    settingsSchema: withHeading([
+      { key: 'layout', kind: 'select', label: 'Layout', options: [
+        { value: 'grid', label: 'Grid (static cards)' }, { value: 'carousel', label: 'Carousel (rotating slides)' },
+      ] },
+      { key: 'columns', kind: 'number', label: 'Columns', min: 1, max: 8, showIf: s => s.layout !== 'carousel', hint: 'Any number from 1 to 8. Phones always show fewer.' },
+      { key: 'textAlign', kind: 'select', label: 'Text alignment', half: true, options: [
+        { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' },
+      ] },
+      { key: 'imagePosition', kind: 'select', label: 'Photo position', half: true, options: [
+        { value: 'top', label: 'Top' }, { value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }, { value: 'bottom', label: 'Bottom' }, { value: 'none', label: 'No photo' },
+      ] },
+      { key: 'autoplay', kind: 'checkbox', label: 'Auto-rotate slides', showIf: s => s.layout === 'carousel' },
+      { key: 'autoplaySeconds', kind: 'number', label: 'Change slides every (seconds)', min: 3, max: 10, step: 1, half: true, showIf: s => s.layout === 'carousel' && s.autoplay !== false },
+      { key: 'showArrows', kind: 'checkbox', label: 'Show navigation arrows', half: true, showIf: s => s.layout === 'carousel' },
+      { key: 'pagination', kind: 'select', label: 'Pagination', showIf: s => s.layout === 'carousel', options: [
+        { value: 'dots', label: 'Dots' }, { value: 'none', label: 'None' },
+      ] },
+      { key: 'transition', kind: 'select', label: 'Slide transition', showIf: s => s.layout === 'carousel', options: [
+        { value: 'slide', label: 'Slide' }, { value: 'fade', label: 'Fade' },
+      ] },
+    ]),
   },
   {
     type: 'faq', label: 'FAQ', description: 'A list of collapsible question/answer pairs.',
@@ -1070,10 +1090,13 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'focalPoint', kind: 'focalPoint', label: 'Image focal point', showIf: s => s.imageRatio !== 'adapt', hint: 'The part of the image that stays visible when it is cropped.' },
   ],
   testimonial: [
-    { key: 'quote', kind: 'textarea', label: 'Quote', maxLength: 500 },
-    { key: 'authorName', kind: 'text', label: 'Author name', half: true, required: true },
-    { key: 'authorRole', kind: 'text', label: 'Author role', half: true },
-    { key: 'avatarUrl', kind: 'image', label: 'Avatar (optional)' },
+    { key: 'title', kind: 'text', label: 'Title (optional)', maxLength: 120, hint: 'A short headline shown above the quote.' },
+    { key: 'quote', kind: 'textarea', label: 'Quote', maxLength: 500, required: true },
+    { key: 'description', kind: 'textarea', label: 'Description (optional)', maxLength: 1000, rows: 3, hint: 'A longer text shown below the quote.' },
+    { key: 'authorName', kind: 'text', label: 'Author name', half: true, required: true, maxLength: 100 },
+    { key: 'authorRole', kind: 'text', label: 'Author role', half: true, maxLength: 100 },
+    { key: 'subtitle', kind: 'text', label: 'Subtitle (optional)', maxLength: 120, hint: 'A short tagline shown under the author name.' },
+    { key: 'avatarUrl', kind: 'image', label: 'Photo (optional)', hint: 'Shown where the "Photo position" setting places it.' },
     { key: 'rating', kind: 'number', label: 'Rating (1-5)', min: 1, max: 5 },
   ],
   faq_item: [

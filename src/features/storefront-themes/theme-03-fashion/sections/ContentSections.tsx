@@ -13,6 +13,7 @@ import { imageFit } from '../../imageFit';
 import { fashionTheme as t, type FashionColors } from '../theme.config';
 import { registerFashionSection } from './sectionRegistry';
 import { LinkButton, SectionShell } from './SectionShell';
+import { TestimonialsSection } from '../../TestimonialsSection';
 
 const bid = (b: Block, i: number) => b._id ?? String(i);
 
@@ -99,27 +100,11 @@ registerFashionSection('testimonials', (section, blocks, colors) => {
   const items = blocks.filter(b => b.type === 'testimonial');
   if (items.length === 0) return null;
   return (
-    <SectionShell colors={colors} heading={section.settings.heading} align="center">
-      <ul className="m-0 grid list-none gap-6 p-0 md:grid-cols-3">
-        {items.map((b, i) => {
-          const s = b.settings;
-          const rating = Math.min(5, Math.max(0, Number(s.rating) || 0));
-          return (
-            <li key={bid(b, i)}>
-              <PreviewBlock blockId={bid(b, i)}>
-                <figure className="m-0 flex h-full flex-col gap-5 p-8" style={{ background: colors.bgAlt }}>
-                  {rating > 0 && <div className="flex gap-0.5" aria-label={ts('reviews.outOf5', '{{value}} out of 5 stars', { value: rating })}>{Array.from({ length: 5 }).map((_, k) => <Star key={k} size={15} fill={k < rating ? colors.ink : 'none'} stroke={colors.ink} />)}</div>}
-                  <blockquote className="m-0 flex-1 text-[19px] leading-[1.5]" style={{ fontFamily: t.fonts.display }}>“{s.quote}”</blockquote>
-                  <figcaption className="flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.inkMuted }}>
-                    {s.avatarUrl && <img src={s.avatarUrl} alt="" loading="lazy" className="h-9 w-9 shrink-0 rounded-full object-cover" />}
-                    <span>{s.authorName}{(s.authorRole || s.role) ? ` · ${s.authorRole || s.role}` : ''}</span>
-                  </figcaption>
-                </figure>
-              </PreviewBlock>
-            </li>
-          );
-        })}
-      </ul>
+    <SectionShell colors={colors} heading={section.settings.heading} align={section.settings.textAlign === 'left' ? 'left' : 'center'}>
+      <TestimonialsSection section={section} blocks={blocks} tokens={{
+        ink: colors.ink, inkMuted: colors.inkMuted, bg: colors.bg, bgAlt: colors.bgAlt,
+        accent: colors.accent, displayFont: t.fonts.display, bodyFont: t.fonts.body, t: ts,
+      }} />
     </SectionShell>
   );
 });
