@@ -30,7 +30,7 @@ function SlideText({ block, color, onImage }: { block: Block; color: string; onI
   const s = block.settings;
   const editing = useInlineEditActive();
   return (
-    <div className={`${onImage ? 'tx-on-image' : ''} max-w-[640px] ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color }}>
+    <div className={`${onImage ? 'tx-on-image' : ''} ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color, maxWidth: ({ narrow: 480, normal: 640, wide: 1100 } as Record<string, number>)[String(s.contentWidth)] ?? 640 }}>
       {s.heading && <h1 className="tx-up m-0 mb-5 text-[clamp(38px,6vw,80px)] font-medium leading-[1.04] tracking-tight" style={{ fontFamily: t.fonts.display }}>{editing ? <EditableText value={s.heading} settingKey="heading" blockId={block._id ?? null} /> : <AccentHeading text={s.heading} />}</h1>}
       {s.subheading && <p className="tx-up tx-up-1 m-0 mb-8 max-w-[520px] text-base leading-relaxed opacity-90 md:text-lg" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" blockId={block._id ?? null} /></p>}
       <LinkButton text={s.ctaText} link={s.ctaLink} variant={onImage ? 'light' : 'outline'} style={{ position: 'relative', zIndex: 2 }} />
@@ -58,7 +58,7 @@ function Slide({ block, height, active, eager, below, whole }: { block: Block; h
       {s.imageOnly !== true && <div className="absolute inset-0" style={{ background: typeof s.overlayOpacity === 'number' ? `rgba(0,0,0,${Math.min(80, Math.max(0, s.overlayOpacity)) / 100})` : 'linear-gradient(90deg, rgba(0,0,0,.52) 0%, rgba(0,0,0,.18) 55%, rgba(0,0,0,0) 100%)' }} />}
       {hasText(block) && (
         // "Below image" on phones: no text over the picture there (it appears under it instead, see Hero).
-        <div className={`absolute inset-0 ${below ? 'hidden md:flex' : 'flex'} items-end md:items-center`}>
+        <div className={`absolute inset-0 ${below ? 'hidden md:flex' : 'flex'} items-end md:items-center`} style={s.contentPosition === 'top' ? { alignItems: 'flex-start' } : s.contentPosition === 'bottom' ? { alignItems: 'flex-end' } : s.contentPosition === 'middle' ? { alignItems: 'center' } : undefined}>
           <div className="mx-auto w-full" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX} 72px`, textAlign: s.contentAlign === 'center' || s.contentAlign === 'right' ? s.contentAlign : 'left' }}>
             <SlideText block={block} onImage color={typeof s.textColor === 'string' && s.textColor ? s.textColor : '#fff'} />
           </div>

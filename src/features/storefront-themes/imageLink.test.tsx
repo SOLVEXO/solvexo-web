@@ -83,3 +83,33 @@ describe('Image Banner "Show the image only"', () => {
     });
   }
 });
+
+describe('Image Banner: any combination the seller types', () => {
+  const colors = { ink: '#111', bgAlt: '#eee' } as never;
+  const section = (settings: Record<string, unknown>) => ({ _id: 'x', type: 'image_banner', settings: { imageUrl: '', heading: '', subheading: '', ctaText: '', ctaLink: { linkType: 'home' }, ...settings } }) as never;
+  for (const [name, Banner] of [['Fashion', FashionBanner], ['Tech', TechBanner], ['LedUp', LedupBanner]] as const) {
+    it(`${name}: a button on its own (no picture, no words) is still a banner`, () => {
+      const { container } = wrap(<Banner section={section({ ctaText: 'Shop', ctaLink: { linkType: 'collection' } })} colors={colors} blocks={[]} />);
+      expect(container.textContent).toContain('Shop');
+      expect(container.querySelector('img')).toBeNull();
+      expect(container.querySelector('a')?.getAttribute('href')).toBe('/collections/sale');
+    });
+    it(`${name}: words with no picture render as a plain text banner`, () => {
+      const { container } = wrap(<Banner section={section({ heading: 'Big sale', subheading: 'Today only' })} colors={colors} blocks={[]} />);
+      expect(container.querySelector('h2')?.textContent).toBe('Big sale');
+      expect(container.querySelector('img')).toBeNull();
+    });
+    it(`${name}: "Narrow" text width keeps the words in a slim column`, () => {
+      const { container } = wrap(<Banner section={section({ heading: 'Big sale', contentWidth: 'narrow' })} colors={colors} blocks={[]} />);
+      expect((container.querySelector('h2')!.parentElement as HTMLElement).style.maxWidth).toBe('480px');
+    });
+    it(`${name}: a custom height in pixels is applied to the banner`, () => {
+      const { container } = wrap(<Banner section={section({ heading: 'Big sale', heightPreset: 'custom', customHeight: 420 })} colors={colors} blocks={[]} />);
+      expect((container.querySelector('section > div') as HTMLElement).style.minHeight).toBe('420px');
+    });
+    it(`${name}: nothing at all draws nothing`, () => {
+      const { container } = wrap(<Banner section={section({})} colors={colors} blocks={[]} />);
+      expect(container.innerHTML).toBe('');
+    });
+  }
+});

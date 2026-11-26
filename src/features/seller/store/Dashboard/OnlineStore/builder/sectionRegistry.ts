@@ -661,7 +661,7 @@ export const SECTION_META: SectionMeta[] = [
   {
     type: 'image_banner', label: 'Image Banner', description: 'A full-width image with a heading, text and button on top.',
     Icon: Image, color: '#F97316',
-    defaultSettings: { imageUrl: '', heading: '', subheading: '', ctaText: '', ctaLink: { linkType: 'home' }, heightPreset: 'medium', contentAlign: 'center', contentPosition: 'middle', overlayOpacity: 30 },
+    defaultSettings: { imageUrl: '', heading: '', subheading: '', ctaText: '', ctaLink: { linkType: 'home' }, heightPreset: 'medium', contentAlign: 'center', contentPosition: 'middle', contentWidth: 'normal', overlayOpacity: 30 },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     settingsSchema: [
@@ -675,13 +675,21 @@ export const SECTION_META: SectionMeta[] = [
       { key: 'ctaText', kind: 'text', label: 'Button text', showIf: s => s.imageOnly !== true },
       { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: s => s.imageOnly !== true && !!s.ctaText },
       { key: 'heightPreset', kind: 'select', label: 'Banner height', options: [
-        { value: 'adapt', label: 'Adapt to image' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
+        { value: 'adapt', label: 'Adapt to image' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'custom', label: 'Custom (my own height)' },
       ] },
+      { key: 'customHeight', kind: 'number', label: 'Custom height (px)', min: 150, max: 1400, placeholder: 'e.g. 420', showIf: s => s.heightPreset === 'custom', hint: 'Any height from 150 to 1400 px.' },
+      { key: 'mobileHeightPreset', kind: 'select', label: 'Banner height on mobile', showIf: s => s.heightPreset !== 'adapt', options: [
+        { value: 'same', label: 'Same as desktop' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }, { value: 'custom', label: 'Custom (my own height)' },
+      ] },
+      { key: 'mobileCustomHeight', kind: 'number', label: 'Custom height on mobile (px)', min: 150, max: 1400, placeholder: 'e.g. 300', showIf: s => s.mobileHeightPreset === 'custom' },
       { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, showIf: s => s.imageOnly !== true, options: [
         { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' },
       ] },
       { key: 'contentPosition', kind: 'select', label: 'Text position', half: true, showIf: s => s.imageOnly !== true, options: [
         { value: 'top', label: 'Top' }, { value: 'middle', label: 'Middle' }, { value: 'bottom', label: 'Bottom' },
+      ] },
+      { key: 'contentWidth', kind: 'select', label: 'Text width', showIf: s => s.imageOnly !== true, hint: 'How wide the text block may get. Narrow keeps the words in a slim column.', options: [
+        { value: 'narrow', label: 'Narrow' }, { value: 'normal', label: 'Normal' }, { value: 'wide', label: 'Wide' },
       ] },
       { key: 'overlayOpacity', kind: 'number', label: 'Image overlay opacity (%)', min: 0, max: 80, step: 5, showIf: s => s.imageOnly !== true },
       { key: 'textColor', kind: 'color', label: 'Text colour', showIf: s => s.imageOnly !== true },
@@ -887,6 +895,12 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
     // Alignment + text colour work in both themes. Overlay only exists where text sits ON the image (another theme); Maison's split layout ignores it.
     { key: 'contentAlign', kind: 'select', label: 'Text alignment', half: true, showIf: s => s.imageOnly !== true, options: [
       { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' },
+    ] },
+    { key: 'contentPosition', kind: 'select', label: 'Text position', half: true, showIf: s => s.imageOnly !== true, options: [
+      { value: 'top', label: 'Top' }, { value: 'middle', label: 'Middle' }, { value: 'bottom', label: 'Bottom' },
+    ] },
+    { key: 'contentWidth', kind: 'select', label: 'Text width', showIf: s => s.imageOnly !== true, hint: 'How wide the text block may get. Narrow keeps the words in a slim column.', options: [
+      { value: 'narrow', label: 'Narrow' }, { value: 'normal', label: 'Normal' }, { value: 'wide', label: 'Wide' },
     ] },
     { key: 'overlayOpacity', kind: 'number', label: 'Image overlay opacity (%)', half: true, showIf: s => s.imageOnly !== true, min: 0, max: 80, step: 5, hint: 'Darkens the image behind the text. Only themes that put text over the image use it . Blank = theme default.' },
     { key: 'textColor', kind: 'color', label: 'Text colour', showIf: s => s.imageOnly !== true },

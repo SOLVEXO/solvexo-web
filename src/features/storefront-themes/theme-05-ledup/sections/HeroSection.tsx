@@ -22,7 +22,7 @@ function SlideText({ block, color, onImage }: { block: Block; color: string; onI
   const s = block.settings;
   const editing = useInlineEditActive();
   return (
-    <div className={`${onImage ? 'ld-on-image' : ''} max-w-[640px] ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color }}>
+    <div className={`${onImage ? 'ld-on-image' : ''} ${s.contentAlign === 'center' ? 'mx-auto' : s.contentAlign === 'right' ? 'ml-auto' : ''}`} style={{ color, maxWidth: ({ narrow: 480, normal: 640, wide: 1100 } as Record<string, number>)[String(s.contentWidth)] ?? 640 }}>
       {s.heading && <h1 className="ld-up m-0 mb-5 text-[clamp(30px,4vw,57.6px)] font-medium leading-[1.2] tracking-normal" style={{ fontFamily: t.fonts.display }}>{editing ? <EditableText value={s.heading} settingKey="heading" blockId={block._id ?? null} /> : s.heading}</h1>}
       {s.subheading && <p className="ld-up ld-up-1 m-0 mb-8 max-w-[820px] text-[15px] leading-[1.5] md:text-[18px]" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" blockId={block._id ?? null} /></p>}
       <LinkButton text={s.ctaText} link={s.ctaLink} variant={onImage ? 'light' : 'outline'} style={{ position: 'relative', zIndex: 2 }} />
@@ -50,7 +50,7 @@ function Slide({ block, height, active, eager, below, whole }: { block: Block; h
       {s.imageOnly !== true && typeof s.overlayOpacity === 'number' && s.overlayOpacity > 0 && <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${Math.min(80, Math.max(0, s.overlayOpacity)) / 100})` }} />}
       {hasText(block) && (
         // "Below image" on phones: no text over the picture there (it appears under it instead, see Hero).
-        <div className={`absolute inset-0 ${below ? 'hidden md:flex' : 'flex'} items-end`}>
+        <div className={`absolute inset-0 ${below ? 'hidden md:flex' : 'flex'} items-end`} style={s.contentPosition === 'top' ? { alignItems: 'flex-start' } : s.contentPosition === 'bottom' ? { alignItems: 'flex-end' } : s.contentPosition === 'middle' ? { alignItems: 'center' } : undefined}>
           <div className="ld-hero-copy w-full" style={{ textAlign: s.contentAlign === 'center' || s.contentAlign === 'right' ? s.contentAlign : 'left' }}>
             <SlideText block={block} onImage color={typeof s.textColor === 'string' && s.textColor ? s.textColor : '#4b423b'} />
           </div>
