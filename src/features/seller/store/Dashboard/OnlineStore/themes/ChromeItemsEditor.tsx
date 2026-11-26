@@ -284,8 +284,10 @@ function PopupEditor({ popup, storeId, onChange }: { popup: ChromePopup; storeId
  * Lets the seller build their own strip / floating items: a plain text, a link, or a button that opens a popup (with their own
  * designed QR code). The theme decides fonts, shapes and popup look; the seller decides content, icons, colours and order.
  */
-export function ChromeItemsEditor({ items, onChange, showZone, itemName = 'item', compactColours = false }: {
+export function ChromeItemsEditor({ items, onChange, showZone, itemName = 'item', compactColours = false, linkOnly = false }: {
   items: ChromeItem[]; onChange: (next: ChromeItem[]) => void; showZone: boolean; itemName?: string; compactColours?: boolean;
+  /** Only plain link icons (no text blocks, no popups/QR) — the floating social bar. */
+  linkOnly?: boolean;
 }) {
   const { storeId } = useStoreWorkspace();
   const [openId, setOpenId] = useState<string | null>(null);
@@ -300,7 +302,7 @@ export function ChromeItemsEditor({ items, onChange, showZone, itemName = 'item'
 
   return (
     <div className="flex flex-col gap-2">
-      {items.length === 0 && <p className="text-[11px] text-slate">No {itemName}s yet. Add a text, a link or a popup.</p>}
+      {items.length === 0 && <p className="text-[11px] text-slate">{linkOnly ? `No ${itemName}s yet. Add a link.` : `No ${itemName}s yet. Add a text, a link or a popup.`}</p>}
       {items.map((it, idx) => {
         const open = openId === it.id;
         return (
@@ -369,7 +371,7 @@ export function ChromeItemsEditor({ items, onChange, showZone, itemName = 'item'
       })}
       {items.length < MAX_CHROME_ITEMS && (
         <div className="flex flex-wrap gap-2">
-          {(['text', 'link', 'popup'] as const).map(k => (
+          {(['text', 'link', 'popup'] as const).filter(k => !linkOnly || k === 'link').map(k => (
             <button key={k} type="button" onClick={() => add(k)}
               className="inline-flex items-center gap-1 rounded-lg border border-bone bg-white px-2.5 py-1.5 text-[12px] text-charcoal cursor-pointer">
               <Plus size={13} /> {k === 'text' ? 'Text' : k === 'link' ? 'Link / icon' : 'Popup'}

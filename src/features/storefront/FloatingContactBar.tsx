@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+﻿import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Mail, Phone, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { SocialIcon } from '@/features/storefront-themes/navigation/FooterParts';
 import { ChromeIcon } from '@/features/storefront/chrome/ChromeIcon';
-import { ChromePopup, type ChromeTheme } from '@/features/storefront/chrome/ChromePopup';
-import type { ChromePopup as PopupData } from '@/features/storefront/chrome/chromeTypes';
+
+
 import { ts } from '@/utils/tStatic';
 import type { FloatingContactConfig } from '@/api/services/store';
 
 /**
- * Floating contact bar (call / WhatsApp / social icons + the seller's own buttons and popups). Theme-agnostic: mounted once by
+ * Floating social icons (WhatsApp / Facebook / Instagram / the seller's own links). Theme-agnostic: mounted once by
  * `StorefrontLayout`, so every theme (native or imported) shows it. It borrows the store's font, button radius and brand colour;
  * everything else (links, position, size, labels, shape, colours, a speech bubble) is the seller's own setting. Labels slide out
  * on hover/focus (not on touch screens).
@@ -17,13 +17,11 @@ import type { FloatingContactConfig } from '@/api/services/store';
 
 interface Item {
   key: string; label: string; href: string; bg: string; fg: string; icon: ReactNode; external: boolean;
-  popup?: PopupData; device?: 'all' | 'desktop' | 'mobile';
+  device?: 'all' | 'desktop' | 'mobile';
 }
 
 const BRAND: Record<string, { bg: string; fg: string }> = {
-  phone: { bg: '#F5B02E', fg: '#fff' },
   whatsapp: { bg: '#25D366', fg: '#fff' },
-  email: { bg: '#EA4335', fg: '#fff' },
   facebook: { bg: '#3B5998', fg: '#fff' },
   instagram: { bg: 'linear-gradient(45deg,#FEDA75 0%,#FA7E1E 25%,#D62976 50%,#962FBF 75%,#4F5BD5 100%)', fg: '#fff' },
   tiktok: { bg: '#111111', fg: '#fff' },
@@ -47,7 +45,6 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
 }) {
   const { pathname } = useLocation();
   const [mounted, setMounted] = useState(false);
-  const [popup, setPopup] = useState<PopupData | null>(null);
   const [bubbleHidden, setBubbleHidden] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the server render must stay empty, then the bar mounts on the client
   useEffect(() => { setMounted(true); }, []);
@@ -59,27 +56,22 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
       return { bg: config.customBg || base.bg, fg: config.customFg || base.fg };
     };
     const out: Item[] = [];
-    const phone = config.phone.trim();
-    if (phone) out.push({ key: 'phone', label: config.phoneLabel.trim() || ts('fc.call', 'Call us'), href: `tel:${phone.replace(/[^0-9+]/g, '')}`, ...paint('phone'), icon: <Phone size={22} strokeWidth={2.2} aria-hidden />, external: false });
     const wa = digits(config.whatsapp);
     if (wa) {
       const msg = config.whatsappMessage.trim();
       out.push({ key: 'whatsapp', label: config.whatsappLabel.trim() || ts('fc.whatsapp', 'Chat on WhatsApp'), href: `https://wa.me/${wa}${msg ? `?text=${encodeURIComponent(msg)}` : ''}`, ...paint('whatsapp'), icon: <SocialIcon platform="whatsapp" size={24} />, external: true });
     }
-    const email = config.email.trim();
-    if (email) out.push({ key: 'email', label: config.emailLabel.trim() || ts('fc.email', 'Email us'), href: `mailto:${email}`, ...paint('email'), icon: <Mail size={22} strokeWidth={2.2} aria-hidden />, external: false });
     for (const k of ORDER) {
       const url = config[k];
       if (url) out.push({ key: k, label: BRAND_NAME[k], href: url, ...paint(k), icon: <SocialIcon platform={k} size={24} />, external: true });
     }
     for (const it of config.items ?? []) {
-      if (it.kind === 'popup' && !it.popup) continue;
-      if (it.kind === 'link' && !it.url) continue;
+      if (it.kind !== 'link' || !it.url) continue;
       out.push({
-        key: it.id, label: it.label || it.icon, href: it.kind === 'popup' ? '' : it.url,
+        key: it.id, label: it.label || it.icon, href: it.url,
         bg: it.bg || config.customBg || (themed ? brandColor : '#111111'), fg: it.fg || config.customFg || '#fff',
         icon: <ChromeIcon icon={it.icon || 'link'} iconUrl={it.iconUrl} size={24} />,
-        external: /^https?:/i.test(it.url) || it.newTab, popup: it.kind === 'popup' ? (it.popup ?? undefined) : undefined, device: it.device,
+        external: /^https?:/i.test(it.url) || it.newTab, device: it.device,
       });
     }
     return out;
@@ -117,7 +109,6 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
       ? { left: '50%', transform: `${config.vertical === 'middle' ? 'translateY(-50%) ' : ''}translateX(-50%)` }
       : { [sideProp]: sideGap };
   const showClass = config.device === 'desktop' ? 'fcb-desktop' : config.device === 'mobile' ? 'fcb-mobile' : '';
-  const popupTheme: ChromeTheme = { bg: '#ffffff', fg: '#161412', accent: brandColor, accentText: '#ffffff', font, radius: radius && /^\d/.test(radius) ? `min(${radius}, 18px)` : '12px', popup: { variant: 'card' } };
   const bubble = (config.bubbleText ?? '').trim();
   const gapPx = config.gapPx >= 0 ? config.gapPx : round ? 12 : 2;
   const bubbleStyle: CSSProperties = free
@@ -173,9 +164,6 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
           } as CSSProperties;
           const cls = `fcb-i${it.device === 'desktop' ? ' fcb-item-desktop' : it.device === 'mobile' ? ' fcb-item-mobile' : ''}`;
           const inner = (<><span className="fcb-l">{it.label}</span><span className="fcb-ic">{it.icon}</span></>);
-          if (it.popup) {
-            return <button key={it.key} type="button" className={cls} aria-label={it.label} aria-haspopup="dialog" style={style} onClick={() => setPopup(it.popup ?? null)}>{inner}</button>;
-          }
           return (
             <a key={it.key} className={cls} href={it.href} aria-label={it.label}
               {...(it.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={style}>
@@ -191,7 +179,6 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
           <button type="button" aria-label="Close" onClick={() => setBubbleHidden(true)}><X size={14} /></button>
         </div>
       )}
-      {popup && <ChromePopup popup={popup} theme={popupTheme} onClose={() => setPopup(null)} />}
     </>
   );
 }

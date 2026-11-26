@@ -114,7 +114,7 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
   useEffect(() => {
     const saved = (store as { floatingContact?: Partial<FloatingContactConfig> | null } | null)?.floatingContact;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the store arrives asynchronously, so the form has to follow it
-    setCfg({ ...EMPTY, ...(saved ?? {}) });
+    setCfg({ ...EMPTY, ...(saved ?? {}), items: (saved?.items ?? []).filter(i => i.kind === 'link') });
   }, [store]);
 
   if (loading) return null;
@@ -146,18 +146,16 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
       <section className={card}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-[16px] font-semibold text-ink">Floating contact bar</h2>
-            <p className="mt-1 text-[13px] text-slate">Call, WhatsApp and social icons that stay on the side of every page of your store, in every theme. Pick one of nine screen positions and check it in the preview; an icon can open its name on hover, always, or never.</p>
+            <h2 className="text-[16px] font-semibold text-ink">Social icons</h2>
+            <p className="mt-1 text-[13px] text-slate">The WhatsApp / Facebook / Instagram buttons that float on every page of your store. Each one only opens a link — no popups, no forms. Pick one of nine spots, or choose “Anywhere” and drag the buttons to the exact pixel you want.</p>
           </div>
           <Toggle checked={cfg.enabled} onChange={v => set('enabled', v)} disabled={!canManage} ariaLabel="Show the floating contact bar" />
         </div>
       </section>
 
       <section className={card}>
-        <h3 className="mb-3 text-[14px] font-semibold text-ink">Contact</h3>
+        <h3 className="mb-3 text-[14px] font-semibold text-ink">WhatsApp</h3>
         <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))]">
-          {text('phone', 'Phone number', 'Opens the phone dialer. Leave empty to hide the icon.', '+92 300 1234567', 'tel')}
-          {text('phoneLabel', 'Phone hover text', 'Shown when the icon is hovered. Default: Call us.')}
           {text('whatsapp', 'WhatsApp number', 'With the country code, e.g. 923001234567. If your footer social icons also show WhatsApp, the customer sees two buttons — keep one.', '+92 300 1234567', 'tel')}
           {text('whatsappLabel', 'WhatsApp hover text', 'Default: Chat on WhatsApp.')}
           <div className="sm:col-span-full">
@@ -166,8 +164,6 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
                 onChange={e => set('whatsappMessage', e.target.value)} placeholder="Hi, I am interested in..." />}
             </Field>
           </div>
-          {text('email', 'Email', 'Opens the customer\'s email app.', 'hello@yourstore.com', 'email')}
-          {text('emailLabel', 'Email hover text', 'Default: Email us.')}
         </div>
       </section>
 
@@ -276,9 +272,9 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
       </section>
 
       <section className={card}>
-        <h3 className="mb-1 text-[14px] font-semibold text-ink">Your own buttons</h3>
-        <p className="mb-3 text-[12px] text-slate">Add any button you like: a link to any page or app (Telegram, Maps, a form), or a popup with your text, image and your own designed QR code. Pick any icon or upload yours.</p>
-        <ChromeItemsEditor items={cfg.items} onChange={next => set('items', next)} showZone={false} itemName="button" compactColours />
+        <h3 className="mb-1 text-[14px] font-semibold text-ink">Your own links</h3>
+        <p className="mb-3 text-[12px] text-slate">Any other link you want as an icon (Telegram, Maps, a form, a page). Pick any icon or upload yours — it only opens the link.</p>
+        <ChromeItemsEditor items={cfg.items ?? []} onChange={next => set('items', next.filter(i => i.kind === 'link'))} showZone={false} itemName="link" compactColours linkOnly />
       </section>
 
       {canManage && (

@@ -5,7 +5,8 @@ import { Loader2 } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { InlineEditProvider } from '@/features/storefront-themes/inlineEdit';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from '@/features/storefront/StorefrontContext';
-import { apiGetPublicStore, type PublicStoreData, type StoreAnnouncementBar as StoreAnnouncementBarValue } from '@/api/services/store';
+import { apiGetPublicStore, type PublicStoreData, type StoreAnnouncementBar as StoreAnnouncementBarValue, type FloatingContactConfig } from '@/api/services/store';
+import { FloatingContactBar } from '@/features/storefront/FloatingContactBar';
 import type { StoreThemeData } from '@/api/services/storeTheme';
 import { StoreAnnouncementBar } from '@/components/comman/ui';
 import { CartProvider } from '@/contexts/CartContext';
@@ -166,7 +167,7 @@ export type AnnouncementBarPreviewValue = Omit<StoreAnnouncementBarValue, 'isAct
  *  in that section's markup can fire, and reports the section id instead. */
 export function ThemeLivePreview({
   sections, showChrome, draftTheme, announcementOverride, interactive, selectedSectionId, onSelectSection, themeIdOverride, previewContext, dynamicSourceValues,
-  selectedBlockId, onSelectBlock, previewCollectionId, selectedChrome, onSelectChrome, hoverSectionId, onEditText, colorPick,
+  selectedBlockId, onSelectBlock, previewCollectionId, selectedChrome, onSelectChrome, hoverSectionId, onEditText, colorPick, floatingContact,
 }: {
   /** Theme Settings → Colors mode: hovering a color field outlines its part
    *  of the preview, and clicking a part of the preview jumps to its color
@@ -214,6 +215,9 @@ export function ThemeLivePreview({
    *  a bound field just falls back to its static value there, same as
    *  before this prop existed. */
   dynamicSourceValues?: Record<string, string>;
+  /** The store's floating social icons (Store.floatingContact) — shown in the preview too,
+   *  so the seller sees the buttons while editing instead of only on the live store. */
+  floatingContact?: FloatingContactConfig | null;
 }) {
   const [storeResult, setStoreResult] = useState<{ slug: string; store?: PublicStoreData; error?: string } | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -418,6 +422,11 @@ export function ThemeLivePreview({
           />
         </div>
         {showChrome && chrome('footer', withEdit('footer', <Footer />))}
+        {floatingContact?.enabled && floatingContact.items?.length !== 0 && (
+          <div style={{ pointerEvents: 'auto' }}>
+            <FloatingContactBar config={floatingContact} brandColor={(t.colors as { accent?: string }).accent ?? '#25D366'} font={t.fonts.body} />
+          </div>
+        )}
       </div>
     </StorefrontProvider>
   );
