@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight, GripVertical, Plus, Trash2 } from 'lucide-re
 import { LinkTargetFields } from './LinkTargetFields';
 import {
   CONTENT_ITEM_ALIGNS, CONTENT_ITEM_ANCHORS, CONTENT_ITEM_KINDS, CONTENT_ITEM_SIZES,
-  CONTENT_ITEM_WIDTHS, CONTENT_TEXT_LIMIT, MAX_CONTENT_ITEMS,
+  CONTENT_ITEM_WIDTHS, CONTENT_MAX_OFFSET, CONTENT_TEXT_LIMIT, MAX_CONTENT_ITEMS,
   type ContentItem, type ContentItemKind,
 } from '@/features/storefront-themes/shared/contentItems';
 
@@ -26,6 +26,14 @@ const SIZE_LABEL: Record<string, string> = { sm: 'Small', md: 'Medium', lg: 'Lar
 
 const inputCls = 'w-full rounded-lg border border-bone bg-white px-2.5 py-1.5 text-[13px] text-charcoal outline-none focus:border-brand-orange';
 const labelCls = 'mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate';
+
+/** Empty input = "no nudge"; anything else is clamped to what the backend accepts. */
+const offsetValue = (raw: string): number | undefined => {
+  if (raw.trim() === '') return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return undefined;
+  return Math.max(-CONTENT_MAX_OFFSET, Math.min(CONTENT_MAX_OFFSET, Math.round(n)));
+};
 
 let seq = 0;
 const newItem = (kind: ContentItemKind): ContentItem => ({
@@ -145,6 +153,23 @@ export function ContentItemsEditor({ value, onChange, storeId, pageOptions }: {
                     {CONTENT_ITEM_SIZES.map(s => <option key={s} value={s}>{SIZE_LABEL[s]}</option>)}
                   </select>
                 </div>
+              </div>
+              <div>
+                <span className={labelCls}>Nudge (desktop only)</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="number" min={-CONTENT_MAX_OFFSET} max={CONTENT_MAX_OFFSET} step={10}
+                    className={inputCls} value={item.offsetX ?? ''} placeholder="← → px"
+                    aria-label="Horizontal nudge in pixels"
+                    onChange={e => patch(index, { offsetX: offsetValue(e.target.value) })} />
+                  <input type="number" min={-CONTENT_MAX_OFFSET} max={CONTENT_MAX_OFFSET} step={10}
+                    className={inputCls} value={item.offsetY ?? ''} placeholder="↑ ↓ px"
+                    aria-label="Vertical nudge in pixels"
+                    onChange={e => patch(index, { offsetY: offsetValue(e.target.value) })} />
+                </div>
+                {(item.offsetX !== undefined || item.offsetY !== undefined) && (
+                  <button type="button" onClick={() => patch(index, { offsetX: undefined, offsetY: undefined })}
+                    className="mt-1 text-[11px] text-brand-orange underline">Reset position</button>
+                )}
               </div>
               <div>
                 <span className={labelCls}>Colour (empty = theme text colour)</span>

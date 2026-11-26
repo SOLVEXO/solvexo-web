@@ -47,11 +47,17 @@ export function SectionContentLayer({ items, ink, displayFont, bodyFont, selecta
     const area = CONTENT_ANCHOR_AREA[item.anchor ?? 'middle-center'] ?? CONTENT_ANCHOR_AREA['middle-center'];
     const align = item.align ?? 'left';
     const justify = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
+    // Free nudge on top of the anchor. Desktop only (`md:`), so a phone's
+    // single column can never be pushed off screen.
+    const offset = {
+      '--sx-ox': `${item.offsetX ?? 0}px`,
+      '--sx-oy': `${item.offsetY ?? 0}px`,
+    } as CSSProperties;
     return (
       <div
         key={`c-${contentItemKey(item, index)}`}
-        className={`flex ${CONTENT_WIDTH_CLASS[item.width ?? 'normal'] ?? CONTENT_WIDTH_CLASS.normal}`}
-        style={{ gridRow: area.row, gridColumn: area.column, justifyContent: justify }}
+        className={`flex md:translate-x-[var(--sx-ox)] md:translate-y-[var(--sx-oy)] ${CONTENT_WIDTH_CLASS[item.width ?? 'normal'] ?? CONTENT_WIDTH_CLASS.normal}`}
+        style={{ gridRow: area.row, gridColumn: area.column, justifyContent: justify, ...offset }}
       >
         <div className="w-full" style={{ maxWidth: '100%' }}>{draw(item, itemStyle(item), resolve, selectable)}</div>
       </div>

@@ -53,7 +53,7 @@ const ADDABLE_BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
   product_frequently_bought: { heading: '', maxItems: 2, buttonLabel: '' },
 };
 
-function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, locked, installedApps, ownerResource }: {
+function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, locked, installedApps, ownerResource, canMove, isMoveSource, onMoveStart, onMoveEnd, onDropBefore, onDragOverRow, dropTarget }: {
   block: Block;
   blockId: string;
   isSelected?: boolean;
@@ -64,6 +64,17 @@ function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onCh
   onDuplicate: () => void;
   pageOptions: PageOption[];
   storeId: string;
+  /** Cross-section move (drag a block into another section). `canMove` is
+   *  false for the fixed blocks of a locked core section; `onDropBefore`
+   *  is only passed while a move is in progress and this row is a legal
+   *  landing spot. */
+  canMove?: boolean;
+  isMoveSource?: boolean;
+  onMoveStart?: () => void;
+  onMoveEnd?: () => void;
+  onDropBefore?: () => void;
+  onDragOverRow?: () => void;
+  dropTarget?: boolean;
   /** Belongs to a locked/core section (`SectionMeta.locked`, see
    *  `sectionRegistry.ts`) — it's one of a fixed, required set (e.g.
    *  `product_main`'s 7 items), so it can be hidden/reordered but never
@@ -95,9 +106,24 @@ function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onCh
   }, [isSelected]);
 
   return (
-    <div ref={rowRef} className={`border rounded-lg bg-white transition-colors ${isSelected ? 'border-brand-orange ring-2 ring-brand-orange/20' : open ? 'border-brand-orange/30' : 'border-bone'} ${hidden ? 'opacity-50' : ''}`}>
+    <div ref={rowRef}
+      onDragOver={onDropBefore ? e => { e.preventDefault(); e.stopPropagation(); onDragOverRow?.(); } : undefined}
+      onDrop={onDropBefore ? e => { e.preventDefault(); e.stopPropagation(); onDropBefore(); } : undefined}
+      className={`border rounded-lg bg-white transition-colors ${isSelected ? 'border-brand-orange ring-2 ring-brand-orange/20' : open ? 'border-brand-orange/30' : 'border-bone'} ${hidden ? 'opacity-50' : ''} ${isMoveSource ? 'opacity-40' : ''} ${dropTarget ? 'border-brand-orange ring-2 ring-brand-orange/30' : ''}`}>
       <div className="flex items-center gap-1.5 pl-1 pr-2 py-1.5">
-        <GripVertical size={13} className="text-bone shrink-0" />
+        <span
+          draggable={!!canMove}
+          onDragStart={canMove ? e => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', blockId);
+            onMoveStart?.();
+          } : undefined}
+          onDragEnd={canMove ? () => onMoveEnd?.() : undefined}
+          title={canMove ? 'Drag into another section' : undefined}
+          aria-hidden={!canMove}
+          className={canMove ? 'shrink-0 cursor-grab active:cursor-grabbing text-bone hover:text-charcoal' : 'shrink-0 text-bone'}>
+          <GripVertical size={13} />
+        </span>
         <button type="button" onClick={() => { setOpen(o => !o); onSelectBlock?.(blockId); }} className="flex-1 min-w-0 flex items-center gap-2 bg-transparent border-none cursor-pointer text-left p-0 py-0.5">
           {open ? <ChevronUp size={13} className="text-slate shrink-0" /> : <ChevronDown size={13} className="text-slate shrink-0" />}
           <span className="text-[12.5px] font-medium text-charcoal truncate">{label || '(untitled)'}</span>
@@ -135,7 +161,7 @@ function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onCh
   );
 }
 
-function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelectSection, onSelectBlock, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, colorSchemes, installedApps, ownerResource, savedEntry, library, embedded, canPaste, onCopy, onPasteBelow, onSaveToLibrary, onDetach }: {
+function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelectSection, onSelectBlock, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, colorSchemes, installedApps, ownerResource, savedEntry, library, embedded, canPaste, onCopy, onPasteBelow, onSaveToLibrary, onDetach, moveBlock, onMoveStartBlock, onMoveEndBlock, onDropBlock }: {
   /** Saved (global) sections: the library entry this card points at, and the library itself. */
   savedEntry?: SavedSectionEntry;
   library: SavedSectionLibrary;
@@ -177,6 +203,12 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
   installedApps?: AppCatalogEntry[];
   /** Phase 9 — Dynamic Sources; see `SchemaForm`'s own doc comment. */
   ownerResource?: MetafieldOwnerResource | null;
+  /** Cross-section move: the block being dragged (only set while a drag is
+   *  in progress), so this card can show "drop here" and accept the drop. */
+  moveBlock?: { sectionId: string; blockId: string; type: string } | null;
+  onMoveStartBlock?: (sectionId: string, blockId: string, type: string) => void;
+  onMoveEndBlock?: () => void;
+  onDropBlock?: (targetSectionId: string, index: number) => void;
 
 }) {
   // Closed by default: the seller opens only the section they want to edit.
@@ -200,6 +232,18 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
       ? app.blocks.filter(b => b.supportedSectionTypes.includes(section.type)).map(block => ({ app, block }))
       : [],
   );
+
+  // Cross-section block move: only a card that is open, unlocked, not a
+  // saved/theme section, below the block cap, and whose section really
+  // accepts the dragged block type, becomes a landing spot.
+  const [dropAt, setDropAt] = useState<number | null>(null);
+  const moveSource = moveBlock && moveBlock.sectionId !== sectionId ? moveBlock : null;
+  const acceptsMove = !!moveSource
+    && !locked && !userLocked && !isSaved && !embedded
+    && section.type !== 'theme_section' && moveSource.type !== 'theme_block'
+    && section.blocks.length < MAX_BLOCKS_PER_SECTION
+    && (meta?.allowedBlockTypes.includes(moveSource.type) ?? false);
+  useEffect(() => { if (!moveBlock) setDropAt(null); }, [moveBlock]);
 
   // Clicking a section in the live preview should surface its card here —
   // auto-expand it and scroll it into view, the same "select it and I'll
@@ -313,7 +357,12 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
           </div>
 
           {meta && (meta.allowedBlockTypes.length > 0 || appBlockOptions.length > 0) && (
-            <div className="flex flex-col gap-2 bg-cream/50 rounded-xl p-3 -mx-1">
+            <div
+              className={`flex flex-col gap-2 bg-cream/50 rounded-xl p-3 -mx-1 transition-colors ${acceptsMove && dropAt !== null ? 'bg-brand-pale-orange/70 ring-2 ring-brand-orange/40' : ''}`}
+              onDragOver={acceptsMove ? e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropAt(section.blocks.length); } : undefined}
+              onDragLeave={acceptsMove ? e => { if (e.currentTarget.contains(e.relatedTarget as Node | null)) return; setDropAt(null); } : undefined}
+              onDrop={acceptsMove ? e => { e.preventDefault(); setDropAt(null); onDropBlock?.(sectionId, section.blocks.length); } : undefined}
+            >
               <p className="text-[10.5px] font-bold uppercase tracking-wide text-slate px-1">{meta.blockLabel}s</p>
               {section.type === 'hero' && section.blocks.length === 0 && (
                 <p className="text-[12px] text-slate px-1">
@@ -349,6 +398,13 @@ function SectionCard({ section, sectionId, isSelected, selectedBlockId, onSelect
                     locked={locked && !meta.addableBlockTypes?.includes(block.type)}
                     installedApps={installedApps}
                     ownerResource={ownerResource}
+                    canMove={!locked}
+                    isMoveSource={moveBlock?.sectionId === sectionId && moveBlock?.blockId === String(block._id ?? i)}
+                    onMoveStart={() => onMoveStartBlock?.(sectionId, String(block._id ?? i), block.type)}
+                    onMoveEnd={onMoveEndBlock}
+                    onDropBefore={acceptsMove ? () => onDropBlock?.(sectionId, i) : undefined}
+                    onDragOverRow={acceptsMove ? () => setDropAt(i) : undefined}
+                    dropTarget={acceptsMove && dropAt === i}
                   />
                 )}
               </SortableList>
@@ -477,6 +533,33 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
   const storeSections = useStoreSectionDefs(storeId);
   const routeStoreId = useParams().storeId;
   const [saveTarget, setSaveTarget] = useState<number | null>(null);
+  // Cross-section block move: the block currently being dragged (its own
+  // section, its id and its type — the target card needs the type to know
+  // whether it accepts it), and the move itself.
+  const [moveBlock, setMoveBlock] = useState<{ sectionId: string; blockId: string; type: string } | null>(null);
+  const sectionIndexOf = (id: string) => sections.findIndex((s, i) => String(s._id ?? i) === id);
+  const dropBlock = (targetSectionId: string, index: number) => {
+    const moving = moveBlock;
+    setMoveBlock(null);
+    if (!moving || moving.sectionId === targetSectionId) return;
+    const from = sectionIndexOf(moving.sectionId);
+    const to = sectionIndexOf(targetSectionId);
+    if (from < 0 || to < 0) return;
+    const blockIndex = sections[from].blocks.findIndex((b, j) => String(b._id ?? j) === moving.blockId);
+    if (blockIndex < 0) return;
+    const block = sections[from].blocks[blockIndex];
+    const next = sections.map((s, i) => {
+      if (i === from) return { ...s, blocks: s.blocks.filter((_, j) => j !== blockIndex) };
+      if (i === to) {
+        const blocks = [...s.blocks];
+        blocks.splice(Math.max(0, Math.min(index, blocks.length)), 0, block);
+        return { ...s, blocks };
+      }
+      return s;
+    });
+    onChange(next);
+    toast.success(`Block moved to ${SECTION_META_BY_TYPE[sections[to].type as SectionType]?.label ?? sections[to].type}`);
+  };
   // A copied section waits in the browser; re-read on every render is cheap (one small localStorage key).
   const clip = readSectionClipboard();
   const pasteProblem = pasteBlockedReason(clip, {
@@ -602,6 +685,10 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
                   onPasteBelow={() => pasteAt(i + 1)}
                   onSaveToLibrary={() => setSaveTarget(i)}
                   onDetach={entry => detach(i, entry)}
+                  moveBlock={moveBlock}
+                  onMoveStartBlock={(sectionId, blockId, type) => setMoveBlock({ sectionId, blockId, type })}
+                  onMoveEndBlock={() => setMoveBlock(null)}
+                  onDropBlock={dropBlock}
                 />
                 </div>
               );

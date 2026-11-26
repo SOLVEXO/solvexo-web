@@ -51,4 +51,19 @@ describe('SectionContentLayer (free content on any section)', () => {
     const { container } = render(<SectionContentLayer items={items([{ kind: 'text', text: 'Body' }])} ink="#123456" />);
     expect((container.querySelector('p') as HTMLElement).style.color).toBe('rgb(18, 52, 86)');
   });
+
+  it('nudges an item by its desktop offset (px vars, md: only)', () => {
+    const { container } = render(<SectionContentLayer items={items([{ kind: 'heading', text: 'Hi', offsetX: 40, offsetY: -20 }])} ink="#111" />);
+    const cell = container.querySelector('[data-sx-content-layer] > div > div') as HTMLElement;
+    expect(cell.style.getPropertyValue('--sx-ox')).toBe('40px');
+    expect(cell.style.getPropertyValue('--sx-oy')).toBe('-20px');
+    expect(cell.className).toContain('md:translate-x-[var(--sx-ox)]');
+    expect(cell.className).toContain('md:translate-y-[var(--sx-oy)]');
+  });
+
+  it('draws no offset vars for an item without a nudge', () => {
+    const { container } = render(<SectionContentLayer items={items([{ kind: 'heading', text: 'Hi' }])} ink="#111" />);
+    const cell = container.querySelector('[data-sx-content-layer] > div > div') as HTMLElement;
+    expect(cell.style.getPropertyValue('--sx-ox')).toBe('0px');
+  });
 });

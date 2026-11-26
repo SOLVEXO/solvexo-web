@@ -39,7 +39,14 @@ export interface ContentItem {
   align?: ContentItemAlign;
   color?: string;
   size?: ContentItemSize;
+  /** Free desktop-only nudge (px) on top of `anchor`; the storefront drops
+   *  it below 1024px so a phone column can never be pushed off screen. */
+  offsetX?: number;
+  offsetY?: number;
 }
+
+/** Largest nudge (px) the editor offers and the backend accepts. */
+export const CONTENT_MAX_OFFSET = 2000;
 
 /** Max characters per kind — must match the backend's `TEXT_LIMIT`. */
 export const CONTENT_TEXT_LIMIT: Record<ContentItemKind, number> = {
