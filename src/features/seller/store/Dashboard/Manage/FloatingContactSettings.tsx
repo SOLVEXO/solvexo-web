@@ -170,18 +170,12 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
         <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))]">
           {text('whatsapp', 'WhatsApp number', 'With the country code, e.g. 923001234567. If your footer social icons also show WhatsApp, the customer sees two buttons — keep one.', '+92 300 1234567', 'tel')}
           {text('whatsappLabel', 'WhatsApp hover text', 'Default: Chat on WhatsApp.')}
-          <div className="sm:col-span-full">
-            <Field label="WhatsApp first message" hint="Pre-filled in the customer's chat. Write your own, or leave empty.">
-              {id => <textarea id={id} rows={2} maxLength={300} className={INPUT} value={cfg.whatsappMessage} disabled={!canManage}
-                onChange={e => set('whatsappMessage', e.target.value)} placeholder="Hi, I am interested in..." />}
-            </Field>
-          </div>
         </div>
       </section>
 
       <section className={card}>
         <h3 className="mb-1 text-[14px] font-semibold text-ink">Social media links</h3>
-        <p className="mb-3 text-[12px] text-slate">Add a network, paste its full link (https://…), and it becomes an icon — the same way the footer's social icons work.</p>
+        <p className="mb-3 text-[12px] text-slate">Pick a network from the list, paste its full link (https://…), and it becomes an icon — the same way the footer's social icons work.</p>
         <div className="flex flex-col gap-2">
           {SOCIALS.filter(s => cfg[s.key]).map(s => (
             <div key={s.key} className="flex flex-wrap items-center gap-2">
@@ -203,16 +197,19 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
                 className="rounded-lg border border-slate-200 px-2.5 py-2 text-[12px] text-slate hover:bg-slate-50 disabled:opacity-40">Remove</button>
             </div>
           ))}
-          {SOCIALS.every(s => !cfg[s.key]) && <p className="text-[12px] text-slate">No social links yet. Add one below.</p>}
-          <div>
-            <Button variant="outline" size="sm" disabled={!canManage || SOCIALS.every(s => !!cfg[s.key])}
-              onClick={() => {
-                const free = SOCIALS.find(s => !cfg[s.key]);
-                if (free) set(free.key, 'https://');
-              }}>
-              Add social link
-            </Button>
-          </div>
+          {SOCIALS.every(s => !cfg[s.key]) && <p className="text-[12px] text-slate">No social links yet. Pick one below.</p>}
+          {SOCIALS.some(s => !cfg[s.key]) && (
+            <div className="flex items-center gap-2">
+              <Select className="w-[190px]" value="" disabled={!canManage} aria-label="Add a social network"
+                onChange={e => {
+                  const key = e.target.value as SocialKey;
+                  if (key) set(key, 'https://');
+                }}>
+                <option value="">Add a social link…</option>
+                {SOCIALS.filter(s => !cfg[s.key]).map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              </Select>
+            </div>
+          )}
         </div>
       </section>
 

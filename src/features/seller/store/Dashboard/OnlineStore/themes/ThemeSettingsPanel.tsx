@@ -741,7 +741,7 @@ export function ThemeSettingsPanel({ storeId, installedThemeId, onDraftChange, o
       })}
 
       {(!query.trim() || 'social media links whatsapp floating contact bar call icons'.includes(query.trim().toLowerCase())) && (
-        <Collapsible title="Social media links" hint="WhatsApp, call and social buttons — pin them to a spot or place them anywhere" open={!!query.trim() || floatingOpen} onToggle={() => setFloatingOpen(o => !o)}>
+        <Collapsible title="Social media links" hint="WhatsApp and social icons — pin them to a spot or place them anywhere" open={!!query.trim() || floatingOpen} onToggle={() => setFloatingOpen(o => !o)}>
           <FloatingContactSettings canManage compact />
         </Collapsible>
       )}
