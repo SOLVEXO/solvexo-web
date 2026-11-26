@@ -14,15 +14,15 @@ export type SupportedCurrency = string;
 
 /** Floating contact bar shown on every storefront theme (see FloatingContactBar). */
 export interface FloatingContactConfig {
-  enabled: boolean; position: 'right' | 'left'; vertical: 'top' | 'middle' | 'bottom'; size: 'sm' | 'md' | 'lg';
-  style: 'brand' | 'theme'; showLabels: boolean; device: 'all' | 'desktop' | 'mobile';
+  enabled: boolean; position: 'right' | 'left' | 'center'; vertical: 'top' | 'middle' | 'bottom'; size: 'sm' | 'md' | 'lg';
+  style: 'brand' | 'theme'; showLabels: boolean; labelMode?: 'hover' | 'always' | 'none'; device: 'all' | 'desktop' | 'mobile';
   phone: string; phoneLabel: string; whatsapp: string; whatsappMessage: string; whatsappLabel: string; email: string; emailLabel: string;
   facebook: string; instagram: string; tiktok: string; youtube: string; x: string; snapchat: string; linkedin: string;
   /** Seller-built buttons (any link or popup with their own QR), shown after the built-in ones. */
   items: import('@/features/storefront/chrome/chromeTypes').ChromeItem[];
   shape: 'flush' | 'round'; bubbleText: string; customBg: string; customFg: string;
   /** Exact button size px (0 = by `size`), distance from the edge px, space between buttons px (-1 = automatic). */
-  sizePx: number; edgeOffset: number; gapPx: number;
+  sizePx: number; edgeOffset: number; bottomOffset?: number; gapPx: number;
 }
 
 export interface EnabledCurrency {

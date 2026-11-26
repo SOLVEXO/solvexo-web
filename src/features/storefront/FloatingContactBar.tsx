@@ -49,6 +49,7 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
   const [mounted, setMounted] = useState(false);
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [bubbleHidden, setBubbleHidden] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- the server render must stay empty, then the bar mounts on the client
   useEffect(() => { setMounted(true); }, []);
 
   const items = useMemo<Item[]>(() => {
@@ -90,19 +91,29 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
 
   const size = config.sizePx > 0 ? config.sizePx : SIZES[config.size] ?? 48;
   const edge = Math.max(0, config.edgeOffset || 0);
+  const lift = Math.max(0, config.bottomOffset || 0);
   const end = config.position !== 'left';
+  const centre = config.position === 'center';
   const round = config.shape === 'round';
+  const labelMode = config.labelMode ?? (config.showLabels ? 'hover' : 'none');
   const r = round ? '999px' : radius && /^\d/.test(radius) ? `min(${radius}, 14px)` : '0px';
-  const vertical: CSSProperties = round ? { bottom: 24 }
-    : config.vertical === 'top' ? { top: '18%' }
-    : config.vertical === 'bottom' ? { bottom: 96 }
+  // Bottom gap: a round corner button sits above a sticky buy bar, a flush stack clears it too.
+  const bottomGap = (round ? 24 : 96) + lift;
+  const sideGap = (round ? 20 : 0) + edge;
+  const vertical: CSSProperties = config.vertical === 'top' ? { top: '18%' }
+    : config.vertical === 'bottom' ? { bottom: bottomGap }
     : { top: '50%', transform: 'translateY(-50%)' };
   const sideProp = end ? 'insetInlineEnd' : 'insetInlineStart';
+  const boxPos: CSSProperties = centre
+    ? { left: '50%', transform: `${config.vertical === 'middle' ? 'translateY(-50%) ' : ''}translateX(-50%)` }
+    : { [sideProp]: sideGap };
   const showClass = config.device === 'desktop' ? 'fcb-desktop' : config.device === 'mobile' ? 'fcb-mobile' : '';
   const popupTheme: ChromeTheme = { bg: '#ffffff', fg: '#161412', accent: brandColor, accentText: '#ffffff', font, radius: radius && /^\d/.test(radius) ? `min(${radius}, 18px)` : '12px', popup: { variant: 'card' } };
   const bubble = (config.bubbleText ?? '').trim();
-  const sideGap = (round ? 20 : 0) + edge;
   const gapPx = config.gapPx >= 0 ? config.gapPx : round ? 12 : 2;
+  const bubbleStyle: CSSProperties = centre
+    ? { bottom: bottomGap + size + 12, left: '50%', transform: 'translateX(-50%)' }
+    : { bottom: bottomGap + size / 2 - 20, [sideProp]: sideGap + size + 12 };
 
   return (
     <>
@@ -123,6 +134,8 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
         .fcb-end .fcb-i:hover .fcb-l,.fcb-end .fcb-i:focus-visible .fcb-l{padding-inline:18px 4px}
         .fcb-start .fcb-i:hover .fcb-l,.fcb-start .fcb-i:focus-visible .fcb-l{padding-inline:4px 18px}
         .fcb-nolabel .fcb-l{display:none}
+        .fcb-always .fcb-l{max-width:220px;opacity:1;padding-inline:18px 4px}
+        .fcb-start.fcb-always .fcb-l{padding-inline:4px 18px}
         .fcb-bubble{position:fixed;z-index:60;display:flex;align-items:center;gap:6px;background:#fff;color:#161412;border-radius:10px;padding:8px 8px 8px 14px;
           font-size:13px;font-weight:500;box-shadow:0 6px 18px rgba(0,0,0,.18);font-family:var(--fcb-font,inherit);max-width:min(220px,50vw)}
         .fcb-bubble button{border:0;background:transparent;cursor:pointer;color:inherit;display:grid;place-items:center;padding:2px;opacity:.6}
@@ -132,9 +145,9 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
         @media (prefers-reduced-motion:reduce){.fcb-l,.fcb-i{transition:none}}
       `}</style>
       <nav
-        className={['fcb', end ? 'fcb-end' : 'fcb-start', round ? 'fcb-round' : '', config.showLabels && !round ? '' : 'fcb-nolabel', showClass].filter(Boolean).join(' ')}
+        className={['fcb', end ? 'fcb-end' : 'fcb-start', round ? 'fcb-round' : '', labelMode === 'none' || round ? 'fcb-nolabel' : labelMode === 'always' ? 'fcb-always' : '', showClass].filter(Boolean).join(' ')}
         aria-label={ts('fc.aria', 'Contact us')}
-        style={{ ...vertical, [sideProp]: sideGap, ['--s' as string]: `${size}px`, ['--fcb-gap' as string]: `${gapPx}px`, ['--fcb-font' as string]: font || 'inherit' } as CSSProperties}
+        style={{ ...vertical, ...boxPos, ['--s' as string]: `${size}px`, ['--fcb-gap' as string]: `${gapPx}px`, ['--fcb-font' as string]: font || 'inherit' } as CSSProperties}
       >
         {items.map(it => {
           const style = {
@@ -159,7 +172,7 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
       </nav>
       {round && bubble && !bubbleHidden && (
         <div className={`fcb-bubble${showClass ? ` ${showClass}` : ''}`}
-          style={{ bottom: 24 + size / 2 - 20, [sideProp]: sideGap + size + 12, ['--fcb-font' as string]: font || 'inherit' } as CSSProperties}>
+          style={{ ...bubbleStyle, ['--fcb-font' as string]: font || 'inherit' } as CSSProperties}>
           <span>{bubble}</span>
           <button type="button" aria-label="Close" onClick={() => setBubbleHidden(true)}><X size={14} /></button>
         </div>
