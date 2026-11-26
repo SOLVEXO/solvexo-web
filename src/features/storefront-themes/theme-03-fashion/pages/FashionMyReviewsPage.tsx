@@ -13,6 +13,7 @@ import { AccountLayout } from '../ui/AccountLayout';
 import { ConfirmDialog } from '../ui/Dialog';
 import { ReviewEditDialog } from './account/ReviewEditDialog';
 import { PendingReviews } from './account/PendingReviews';
+import { ReviewMediaTiles } from '../../core/reviews/ReviewMediaTiles';
 import { useConfirmAction } from '../../core/account/useConfirmAction';
 
 function Stars({ value }: { value: number }) {
@@ -58,7 +59,7 @@ export function FashionMyReviewsPage() {
                     </div>
                   </div>
                   {reviewText(r) && <p className="m-0 mt-3 whitespace-pre-wrap text-[15px] leading-relaxed">{reviewText(r)}</p>}
-                  {r.media?.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{r.media.map(u => <img key={u} src={u} alt={ts('pg.attached_to_your_review', 'Attached to your review')} className="size-16 object-cover" style={{ borderRadius: 12 }} />)}</div>}
+                  <ReviewMediaTiles media={r.media} tokens={{ ink: t.colors.ink, muted: t.colors.inkMuted, bg: t.colors.bg, radius: 12 }} compact />
                   {r.sellerReply && (
                     <div className="mt-3 rounded-xl px-4 py-3" style={{ background: t.colors.bgAlt }}>
                       <p className="m-0 text-xs font-semibold" style={{ color: t.colors.inkMuted }}>{ts('reviews.reply', 'Reply from the store')}</p>

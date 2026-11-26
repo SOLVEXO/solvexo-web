@@ -1,38 +1,24 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { ts } from '@/utils/tStatic';
-import { ImagePlus, Star, X } from 'lucide-react';
-import { apiUploadPublicFile } from '@/api/upload';
+import { ImagePlus, Mic, Star, Video } from 'lucide-react';
 import { apiAddReview, apiEditReview, type MyReviewEntry } from '@/api/services/rating';
 import { reviewText } from '../../../accountUi';
 import { ledupTheme as t } from '../../theme.config';
 import { Dialog } from '../../ui/ledupDialog';
 import { Field, TextArea, PillButton, Notice } from '../../ui/ledupForm';
+import { ReviewMediaTiles } from '../../../core/reviews/ReviewMediaTiles';
+import { useReviewMedia } from '../../../core/reviews/useReviewMedia';
 
 
 /** What a NEW review is about (the order line or product page it was started from). */
 export interface ReviewTarget { productId: string; productName: string; variantId?: string; orderId?: string }
 
-/** Write a review (`target`) or edit the buyer's own (`review`): rating, comment and up to 4 photos. */
+/** Write a review (`target`) or edit the buyer's own (`review`): rating, comment, photos, one audio note and one video. */
 export function ReviewEditDialog({ review, target, onClose, onSaved }: { review?: MyReviewEntry; target?: ReviewTarget; onClose: () => void; onSaved: () => void }) {
   const [rating, setRating] = useState(review?.rating ?? 0);
   const [comment, setComment] = useState(review ? reviewText(review) : '');
-  const [media, setMedia] = useState<string[]>(review?.media ?? []);
+  const { media, uploading, error, setError, counts, inputRef, openPicker, addFiles, remove, limits } = useReviewMedia(review?.media);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  async function addPhotos(files: FileList | null) {
-    const picked = Array.from(files ?? []).filter(f => f.type.startsWith('image/')).slice(0, Math.max(0, 4 - media.length));
-    if (fileRef.current) fileRef.current.value = '';
-    if (picked.length === 0) return;
-    setUploading(true); setError('');
-    try {
-      const urls = await Promise.all(picked.map(f => apiUploadPublicFile(f).then(r => r.data.url)));
-      setMedia(m => [...m, ...urls].slice(0, 4));
-    } catch (err) { setError(err instanceof Error ? err.message : ts('reviews.err.upload', 'Could not upload the photo.')); }
-    finally { setUploading(false); }
-  }
 
   async function submit() {
     if (rating < 1) { setError(ts('reviews.err.rating', 'Please select a star rating.')); return; }
@@ -60,22 +46,22 @@ export function ReviewEditDialog({ review, target, onClose, onSaved }: { review?
           </div>
         </fieldset>
         <Field label={ts('pg.your_review', 'Your review')}>{p => <TextArea {...p} value={comment} onChange={e => setComment(e.target.value)} maxLength={2000} />}</Field>
-        <div>
-          <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={e => addPhotos(e.target.files)} aria-label={ts('pg.add_photos', 'Add photos')} />
-          {media.length < 4 && (
-            <PillButton variant="outline" loading={uploading} onClick={() => fileRef.current?.click()}><ImagePlus size={16} aria-hidden /> {ts('pg.add_photos', 'Add photos')}</PillButton>
-          )}
-        </div>
-        {media.length > 0 && (
-          <div className="flex flex-wrap gap-3">
-            {media.map(url => (
-              <div key={url} className="relative">
-                <img src={url} alt={ts('pg.attached_to_your_review', 'Attached to your review')} className="size-16 object-cover" style={{ borderRadius: t.fieldRadiusPx }} />
-                <button type="button" onClick={() => setMedia(m => m.filter(x => x !== url))} aria-label={ts('pg.remove_photo', 'Remove photo')} className="absolute -right-2 -top-2 grid size-6 cursor-pointer place-items-center rounded-full border-0" style={{ background: t.colors.ink, color: t.colors.bg }}><X size={12} aria-hidden /></button>
-              </div>
-            ))}
+        <div className="flex flex-col gap-3">
+          <input ref={inputRef} type="file" hidden onChange={e => addFiles(e.target.files)} aria-label={ts('pg.add_photos', 'Add photos')} />
+          <div className="flex flex-wrap gap-2">
+            <PillButton variant="outline" loading={uploading} disabled={counts.image >= limits.images} onClick={() => openPicker('image')}>
+              <ImagePlus size={16} aria-hidden /> {ts('pg.add_photos', 'Add photos')} ({counts.image}/{limits.images})
+            </PillButton>
+            <PillButton variant="outline" loading={uploading} disabled={counts.audio >= limits.audio} onClick={() => openPicker('audio')}>
+              <Mic size={16} aria-hidden /> {ts('pg.add_audio', 'Add audio')} ({counts.audio}/{limits.audio})
+            </PillButton>
+            <PillButton variant="outline" loading={uploading} disabled={counts.video >= limits.video} onClick={() => openPicker('video')}>
+              <Video size={16} aria-hidden /> {ts('pg.add_video', 'Add video')} ({counts.video}/{limits.video})
+            </PillButton>
           </div>
-        )}
+          <p className="m-0 text-xs" style={{ color: t.colors.inkMuted }}>{ts('pg.media_limits', 'Photos up to 4 · one audio note (25 MB) · one video (50 MB)')}</p>
+          <ReviewMediaTiles media={media} tokens={{ ink: t.colors.ink, muted: t.colors.inkMuted, bg: t.colors.bg, radius: 12 }} onRemove={remove} />
+        </div>
         {error && <Notice tone="error">{error}</Notice>}
       </div>
     </Dialog>

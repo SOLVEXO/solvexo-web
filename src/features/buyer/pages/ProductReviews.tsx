@@ -7,6 +7,7 @@ import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetProductReviews, apiDeleteReview, apiToggleReviewHelpful, apiReportReview, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
 import { ReviewFormModal } from '../components/ReviewFormModal';
+import { ReviewMediaTiles } from '@/features/storefront-themes/core/reviews/ReviewMediaTiles';
 import { useToast } from '@/contexts/ToastContext';
 
 const AVATAR_PALETTE = [
@@ -287,6 +288,7 @@ function ReviewCard({ review: r, storeName, isLoggedIn, reported, onToggleHelpfu
       {r.media?.length > 0 && (
         <ReviewPhotoStrip media={r.media} onOpen={onOpenPhoto} />
       )}
+      <ReviewMediaTiles media={r.media} kinds={['audio', 'video']} tokens={{ ink: '#1f2937', muted: '#6b7280', bg: '#ffffff', radius: 10 }} />
 
       {r.sellerReply && (
         <div className="mt-3 ml-2 pl-3 border-l-[3px] border-brand-orange/30">

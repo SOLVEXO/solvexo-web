@@ -46,6 +46,7 @@ import { useReviewedProducts } from '../../useReviewedProducts';
 import { imgProps } from '../components/imgProps';
 import { TechNotFoundPage } from './TechNotFoundPage';
 import { ReviewEditDialog } from './account/ReviewEditDialog';
+import { ReviewMediaTiles } from '../../core/reviews/ReviewMediaTiles';
 // Small, token-driven product widgets reused as they are (they read the bridged Tech palette): share, wishlist, SKU, specs,
 // delivery estimate, description tabs, text/pickup/size-chart blocks and the image zoom.
 import { SpecsTabTable, ProductShareButton, ProductSku, ProductSpecsBlock, ProductWishlistButton } from '../components/product/ProductParts';
@@ -375,6 +376,7 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
                   <li key={r.reviewId} className="p-4" style={{ background: t.colors.bgAlt }}>
                     <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">{r.rating != null && <TechStars value={r.rating} />}<span className="text-sm font-semibold">{r.customerName}</span>{r.isVerifiedPurchase && <span className="text-xs" style={{ color: t.colors.success }}>{ts('reviews.verified', 'Verified purchase')}</span>}</div>
                     {r.comments.map((c, i) => <p key={i} className="m-0 text-sm leading-relaxed" style={{ color: t.colors.inkMuted }}>{c.text}</p>)}
+                    <ReviewMediaTiles media={r.media} tokens={{ ink: t.colors.ink, muted: t.colors.inkMuted, bg: t.colors.bg, radius: 12 }} compact />
                     {r.sellerReply && <p className="m-0 mt-3 px-3 py-2 text-sm" style={{ background: t.colors.bg }}><strong>{ts('reviews.replyFrom', 'Reply from {{store}}:', { store: store.name })}</strong> {r.sellerReply.text}</p>}
                   </li>
                 ))}

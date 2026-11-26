@@ -5,6 +5,7 @@ import { StarRating, EmptyState, SkeletonBox, Card, Badge,
   Table, type TableColumn, ActionMenu, type ActionMenuItem,
   Modal, Button, FilterDropdown, TabBar, Select } from '@/components/comman/ui';
 import { Star, Flag, MessageSquare, Trash2, ImageIcon, Check, X as XIcon } from 'lucide-react';
+import { reviewMediaSummary } from '@/features/storefront-themes/core/reviews/reviewMedia';
 import {
   apiGetStoreReviews, apiReplyToReview, apiEditReply, apiFlagReview, apiUnflagReview, apiModerateDeleteReview,
   apiApproveReview, apiRejectReview,
@@ -169,7 +170,7 @@ export function StoreReviews() {
           )}
           {(r.media ?? []).length > 0 && (
             <span className="inline-flex items-center gap-1 text-[11px] text-slate mt-1">
-              <ImageIcon size={11} /> {r.media.length} photo{r.media.length > 1 ? 's' : ''}
+              <ImageIcon size={11} /> {reviewMediaSummary(r.media)}
             </span>
           )}
         </div>

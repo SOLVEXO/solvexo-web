@@ -15,6 +15,7 @@ import { useCartContext } from '@/contexts/CartContext';
 import { TokenStorage, isGuestUser } from '@/api/services/auth';
 import { useReviewedProducts } from '../../useReviewedProducts';
 import { ReviewEditDialog } from './account/ReviewEditDialog';
+import { ReviewMediaTiles } from '../../core/reviews/ReviewMediaTiles';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useRecordProductView } from '@/hooks/marketplace/useRecordProductView';
@@ -399,6 +400,7 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
                   <li key={r.reviewId} className="p-5 md:p-6" style={{ background: t.colors.bg, borderRadius: 20 }}>
                     <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">{r.rating != null && stars(r.rating)}<span className="text-sm font-semibold">{r.customerName}</span>{r.isVerifiedPurchase && <span className="text-xs" style={{ color: t.colors.success }}>{tr('reviews.verified', 'Verified purchase')}</span>}<span className="text-xs" style={{ color: t.colors.inkMuted }}>{new Date(r.createdAt).toLocaleDateString()}</span></div>
                     {r.comments.map((c, i) => <p key={i} className="m-0 text-[15px] leading-relaxed" style={{ color: t.colors.inkMuted }}>{c.text}</p>)}
+                    <ReviewMediaTiles media={r.media} tokens={{ ink: t.colors.ink, muted: t.colors.inkMuted, bg: t.colors.bg, radius: 16 }} />
                     {r.sellerReply && <p className="m-0 mt-3 rounded-xl px-4 py-3 text-sm" style={{ background: t.colors.bgAlt }}><strong>{tr('reviews.replyFrom', 'Reply from {{store}}:', { store: store.name })}</strong> {r.sellerReply.text}</p>}
                   </li>
                 ))}
