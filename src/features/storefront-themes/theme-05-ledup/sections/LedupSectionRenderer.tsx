@@ -4,6 +4,7 @@ import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
 import { useExperimentSections } from '../../core/experiments/useExperimentSections';
 import { localizeSections } from '@/utils/storeText';
 import { resolveSectionColors, baseTypographyCss, baseTheme } from '../theme.base';
+import { SectionContentLayer } from '../../shared/SectionContentLayer';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { SectionRulesGate, SectionVideoBg } from '../../sectionDesignRuntime';
 import { useSectionReveal } from '../../useSectionReveal';
@@ -93,9 +94,10 @@ export function LedupSectionRenderer({
           const Box = reveal ? RevealBox : 'div';
           return (
             <SectionRulesGate key={key} settings={section.settings}>
-            <Box {...common} className={`${spacing.className} ${reveal ? 'ld-rv' : ''}`}>
+            <Box {...common} className={`relative ${spacing.className} ${reveal ? 'ld-rv' : ''}`}>
               <SectionVideoBg settings={section.settings} />
               {scoped && <style>{scoped}</style>}
+              <SectionContentLayer items={section.settings.contentItems} ink={colors.ink} displayFont={baseTheme.fonts.display} bodyFont={baseTheme.fonts.body} />
               {render(section, blocks, colors, dynamic, previewContext)}
             </Box>
           </SectionRulesGate>
@@ -107,7 +109,7 @@ export function LedupSectionRenderer({
             key={key}
             {...common}
             data-fx-section-id={key}
-            className={`${on ? 'ld-sel-on' : 'ld-sel'} ${spacing.className}`}
+            className={`relative ${on ? 'ld-sel-on' : 'ld-sel'} ${spacing.className}`}
             onClickCapture={e => {
               const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');
               e.preventDefault();
@@ -118,6 +120,7 @@ export function LedupSectionRenderer({
           >
             <SectionVideoBg settings={section.settings} />
             {scoped && <style>{scoped}</style>}
+            <SectionContentLayer items={section.settings.contentItems} ink={colors.ink} displayFont={baseTheme.fonts.display} bodyFont={baseTheme.fonts.body} selectable />
             <PreviewInspectorProvider value={{ sectionId: key, selectedBlockId: on ? selectedBlockId : null, onSelectBlock }}>
               {onEditText ? (
                 <InlineEditProvider sectionId={key} onEdit={onEditText}>

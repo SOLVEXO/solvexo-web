@@ -11,6 +11,7 @@ import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
 import { useExperimentSections } from '../../core/experiments/useExperimentSections';
 import { localizeSections } from '@/utils/storeText';
 import { InlineEditProvider, type InlineEditHandler } from '../../inlineEdit';
+import { SectionContentLayer } from '../../shared/SectionContentLayer';
 
 interface Props {
   sections: Section[];
@@ -70,9 +71,10 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
         if (!selectable) {
           return (
             <SectionRulesGate key={key} settings={section.settings}>
-            <div {...common} className={`fx-bidi ${spacing.className}`.trim()}>
+            <div {...common} className={`fx-bidi relative ${spacing.className}`.trim()}>
               <SectionVideoBg settings={section.settings} />
               {scoped && <style>{scoped}</style>}
+              <SectionContentLayer items={section.settings.contentItems} ink={colors.ink} displayFont={fashionTheme.fonts.display} bodyFont={fashionTheme.fonts.body} />
               {render(section, blocks, colors, dynamic, previewContext)}
             </div>
           </SectionRulesGate>
@@ -80,7 +82,7 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
         }
         const on = selectedSectionId === key;
         return (
-          <div key={key} {...common} data-fx-section-id={key} className={`fx-bidi ${on ? 'fx-sel-on' : 'fx-sel'} ${spacing.className}`}
+          <div key={key} {...common} data-fx-section-id={key} className={`fx-bidi relative ${on ? 'fx-sel-on' : 'fx-sel'} ${spacing.className}`}
             onClickCapture={e => {
               const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');
               e.preventDefault();
@@ -90,6 +92,7 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
             }}>
             <SectionVideoBg settings={section.settings} />
             {scoped && <style>{scoped}</style>}
+            <SectionContentLayer items={section.settings.contentItems} ink={colors.ink} displayFont={fashionTheme.fonts.display} bodyFont={fashionTheme.fonts.body} selectable />
             <PreviewInspectorProvider value={{ sectionId: key, selectedBlockId: on ? selectedBlockId : null, onSelectBlock }}>
               {onEditText ? <InlineEditProvider sectionId={key} onEdit={onEditText}>{render(section, blocks, colors, dynamic, previewContext)}</InlineEditProvider> : render(section, blocks, colors, dynamic, previewContext)}
             </PreviewInspectorProvider>

@@ -4,6 +4,7 @@ import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
 import { useExperimentSections } from '../../core/experiments/useExperimentSections';
 import { localizeSections } from '@/utils/storeText';
 import { resolveSectionColors, baseTypographyCss, baseTheme } from '../theme.base';
+import { SectionContentLayer } from '../../shared/SectionContentLayer';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { SectionRulesGate, SectionVideoBg } from '../../sectionDesignRuntime';
 import { useSectionReveal } from '../../useSectionReveal';
@@ -69,9 +70,10 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
         if (!selectable) {
           return (
             <SectionRulesGate key={key} settings={section.settings}>
-            <div {...common} className={`tx-bidi ${spacing.className}`.trim()}>
+            <div {...common} className={`tx-bidi relative ${spacing.className}`.trim()}>
               <SectionVideoBg settings={section.settings} />
               {scoped && <style>{scoped}</style>}
+              <SectionContentLayer items={section.settings.contentItems} ink={colors.ink} displayFont={baseTheme.fonts.display} bodyFont={baseTheme.fonts.body} />
               {render(section, blocks, colors, dynamic, previewContext)}
             </div>
           </SectionRulesGate>
@@ -79,7 +81,7 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
         }
         const on = selectedSectionId === key;
         return (
-          <div key={key} {...common} data-fx-section-id={key} className={`tx-bidi ${on ? 'tx-sel-on' : 'tx-sel'} ${spacing.className}`}
+          <div key={key} {...common} data-fx-section-id={key} className={`tx-bidi relative ${on ? 'tx-sel-on' : 'tx-sel'} ${spacing.className}`}
             onClickCapture={e => {
               const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');
               e.preventDefault();
@@ -89,6 +91,7 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
             }}>
             <SectionVideoBg settings={section.settings} />
             {scoped && <style>{scoped}</style>}
+            <SectionContentLayer items={section.settings.contentItems} ink={colors.ink} displayFont={baseTheme.fonts.display} bodyFont={baseTheme.fonts.body} selectable />
             <PreviewInspectorProvider value={{ sectionId: key, selectedBlockId: on ? selectedBlockId : null, onSelectBlock }}>
               {onEditText ? <InlineEditProvider sectionId={key} onEdit={onEditText}>{render(section, blocks, colors, dynamic, previewContext)}</InlineEditProvider> : render(section, blocks, colors, dynamic, previewContext)}
             </PreviewInspectorProvider>

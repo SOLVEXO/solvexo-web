@@ -6,6 +6,7 @@ import { SchemaForm, type FieldSchema } from './SchemaForm';
 import { SECTION_META_BY_TYPE } from './sectionRegistry';
 import { resolveSectionMeta } from './themeSectionMeta';
 import type { PageOption } from './BlockFields';
+import { ContentItemsEditor } from './ContentItemsEditor';
 
 /** Settings every (non-core) section has, Shopify-style — rendered by each
  *  theme's section wrapper (`storefront-themes/sectionSpacing.ts`). */
@@ -175,6 +176,9 @@ export function SectionFields({ type, settings, onChange, storeId, pageOptions, 
   return (
     <div className="flex flex-col gap-3">
       <SchemaForm schema={schema} settings={settings} onChange={onChange} storeId={storeId} pageOptions={pageOptions} ownerResource={ownerResource} />
+      {!isLocked && (
+        <ContentItemsEditor value={settings.contentItems} onChange={contentItems => onChange({ ...settings, contentItems })} storeId={storeId} pageOptions={pageOptions} />
+      )}
       {!isLocked && (
         <div className="border-t border-bone/70 pt-2">
           <button type="button" onClick={() => setDesignOpen(o => !o)} aria-expanded={designOpen}
