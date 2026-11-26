@@ -369,16 +369,29 @@ export function ChromeItemsEditor({ items, onChange, showZone, itemName = 'item'
           </div>
         );
       })}
-      {items.length < MAX_CHROME_ITEMS && (
+      {items.length < MAX_CHROME_ITEMS && (linkOnly ? (
+        <div className="flex items-center gap-2">
+          <Select value="" aria-label="Add a link" className="w-[190px]" onChange={e => {
+            const icon = e.target.value;
+            if (!icon) return;
+            const it: ChromeItem = { ...newChromeItem('link'), icon };
+            onChange([...items, it]);
+            setOpenId(it.id);
+          }}>
+            <option value="">Add a link…</option>
+            {CHROME_ICON_KEYS.map(k => <option key={k} value={k}>{k.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase())}</option>)}
+          </Select>
+        </div>
+      ) : (
         <div className="flex flex-wrap gap-2">
-          {(['text', 'link', 'popup'] as const).filter(k => !linkOnly || k === 'link').map(k => (
+          {(['text', 'link', 'popup'] as const).map(k => (
             <button key={k} type="button" onClick={() => add(k)}
               className="inline-flex items-center gap-1 rounded-lg border border-bone bg-white px-2.5 py-1.5 text-[12px] text-charcoal cursor-pointer">
               <Plus size={13} /> {k === 'text' ? 'Text' : k === 'link' ? 'Link / icon' : 'Popup'}
             </button>
           ))}
         </div>
-      )}
+      ))}
     </div>
   );
 }
