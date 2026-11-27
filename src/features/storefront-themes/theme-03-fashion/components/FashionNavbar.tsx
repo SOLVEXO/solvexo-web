@@ -195,7 +195,7 @@ export function FashionNavbar() {
                                 <div>
                                   <MegaHeading label={item.label} badge={item.badge} />
                                   {plain.map(c => (
-                                    <NavAnchor key={c.id} link={c.link} className="block rounded-xl px-3 py-2 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                                    <NavAnchor key={c.id} link={c.link} navStyle={c.style} className="block rounded-xl px-3 py-2 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                                   ))}
                                 </div>
                               )}
@@ -203,7 +203,7 @@ export function FashionNavbar() {
                                 <div key={c.id}>
                                   <MegaHeading label={c.label} link={c.link} imageUrl={c.imageUrl} badge={c.badge} />
                                   {c.children.map(g => (
-                                    <NavAnchor key={g.id} link={g.link} className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>
+                                    <NavAnchor key={g.id} link={g.link} navStyle={g.style} className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>
                                       {g.imageUrl && <img src={g.imageUrl} alt="" loading="lazy" className="shrink-0 object-cover" style={{ width: { square: 28, landscape: 36, portrait: 24 }[t.mega.photo], height: { square: 28, landscape: 26, portrait: 34 }[t.mega.photo], borderRadius: 8, background: t.colors.bgAlt }} />}
                                       <span>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></span>
                                     </NavAnchor>
@@ -213,7 +213,7 @@ export function FashionNavbar() {
                             </div>
                             <MegaPromoCards promos={item.promos} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, bg: t.colors.bg, bgAlt: t.colors.bgAlt, accent: t.colors.accent, accentInk: t.colors.accentInk, radius: 16, fontDisplay: t.fonts.display }} />
                             {item.imageUrl && t.mega.featured && (
-                              <NavAnchor link={item.link} className="relative hidden shrink-0 self-stretch overflow-hidden no-underline lg:block" style={{ width: 300, minHeight: 240, borderRadius: 16, background: t.colors.bgAlt }}>
+                              <NavAnchor link={item.link} navStyle={item.style} className="relative hidden shrink-0 self-stretch overflow-hidden no-underline lg:block" style={{ width: 300, minHeight: 240, borderRadius: 16, background: t.colors.bgAlt }}>
                                 <img src={item.imageUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
                                 <span className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-2 p-4" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,.6))', color: '#fff' }}>
                                   <span className="text-base font-semibold" style={{ fontFamily: t.fonts.display }}>{item.label}</span>
@@ -231,9 +231,9 @@ export function FashionNavbar() {
                       <ul data-nav-card className="m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 16 }}>
                         {item.children.map(c => (
                           <li key={c.id}>
-                            <NavAnchor link={c.link} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                            <NavAnchor link={c.link} navStyle={c.style} className="block rounded-xl px-4 py-2.5 text-sm no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                             {c.children.map(g => (
-                              <NavAnchor key={g.id} link={g.link} className="block rounded-xl px-4 py-1.5 pl-7 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                              <NavAnchor key={g.id} link={g.link} navStyle={g.style} className="block rounded-xl px-4 py-1.5 pl-7 text-[13px] no-underline hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)]" style={{ color: t.colors.inkMuted }}>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                             ))}
                           </li>
                         ))}

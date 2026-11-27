@@ -47,7 +47,7 @@ export function LedupMegaMenu({ items, activeId, onClose }: { items: ResolvedSto
                 <ul className="m-0 mt-1 flex list-none flex-col gap-2.5 p-0">
                   {col.links.map(l => (
                     <li key={l.id}>
-                      <NavAnchor link={l.link} onClick={onClose} className="ld-grand" tabIndex={visible ? 0 : -1}>
+                      <NavAnchor link={l.link} navStyle={l.style} onClick={onClose} className="ld-grand" tabIndex={visible ? 0 : -1}>
                         {cased('megaLink', l.label)}<NavBadge badge={l.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /><ArrowRight size={14} className="ld-arrow" aria-hidden />
                       </NavAnchor>
                     </li>
@@ -57,7 +57,7 @@ export function LedupMegaMenu({ items, activeId, onClose }: { items: ResolvedSto
             ))}
           </div>
           {(current.link.to || current.link.href) && (
-            <NavAnchor link={current.link} onClick={onClose} className="ld-pillbtn mt-10" tabIndex={visible ? 0 : -1}>
+            <NavAnchor link={current.link} navStyle={current.style} onClick={onClose} className="ld-pillbtn mt-10" tabIndex={visible ? 0 : -1}>
               {ts('ld.viewAllIn', 'View all in {{name}}', { name: current.label })} <ArrowUpRight size={14} aria-hidden />
             </NavAnchor>
           )}
@@ -67,7 +67,7 @@ export function LedupMegaMenu({ items, activeId, onClose }: { items: ResolvedSto
           {current.imageUrl && (
             <div className="w-1/5 shrink-0 ps-5">
               <p className="m-0 mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#a69d98]">{ts('ld.featured', 'Featured')}</p>
-              <NavAnchor link={current.link} onClick={onClose} className="ld-mega-feature group block no-underline" tabIndex={visible ? 0 : -1}>
+              <NavAnchor link={current.link} navStyle={current.style} onClick={onClose} className="ld-mega-feature group block no-underline" tabIndex={visible ? 0 : -1}>
                 <img src={current.imageUrl} alt="" loading="lazy" className="aspect-[4/3] w-full object-contain p-4 transition duration-500 group-hover:scale-105" />
                 <span className="block px-4 pb-4 text-xs font-medium uppercase text-[#4b423b]">{current.label}</span>
               </NavAnchor>

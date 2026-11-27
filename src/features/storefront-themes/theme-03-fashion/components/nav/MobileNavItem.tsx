@@ -51,14 +51,14 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
             const childStyle = { color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 15 };
             const divider = ci > 0 ? { borderTop: row } : undefined;
             if (child.children.length === 0) {
-              return <NavAnchor key={child.id} link={child.link} onClick={onNavigate} className="block no-underline" style={{ ...childStyle, padding: '13px 18px', ...divider }}>{child.label}<NavBadge badge={child.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>;
+              return <NavAnchor key={child.id} link={child.link} navStyle={child.style} onClick={onNavigate} className="block no-underline" style={{ ...childStyle, padding: '13px 18px', ...divider }}>{child.label}<NavBadge badge={child.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>;
             }
             const gridWithImages = mega && child.children.some(g => g.imageUrl);
             return (
               <div key={child.id} style={divider}>
                 <div className="flex items-center justify-between gap-2 py-1.5 pl-[18px] pr-2">
                   {child.link.to || child.link.href
-                    ? <NavAnchor link={child.link} onClick={onNavigate} className="flex-1 py-2 no-underline" style={{ ...childStyle, fontWeight: 600 }}>{child.label}<NavBadge badge={child.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                    ? <NavAnchor link={child.link} navStyle={child.style} onClick={onNavigate} className="flex-1 py-2 no-underline" style={{ ...childStyle, fontWeight: 600 }}>{child.label}<NavBadge badge={child.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                     : <button type="button" onClick={() => setOpenChildId(childOpen ? null : child.id)} aria-expanded={childOpen} aria-controls={childPanelId} className="flex-1 cursor-pointer border-0 bg-transparent py-2 text-left" style={{ ...childStyle, fontWeight: 600 }}>{child.label}</button>}
                   <Toggle expanded={childOpen} label={child.label} controls={childPanelId} onClick={() => setOpenChildId(childOpen ? null : child.id)} />
                 </div>
@@ -67,7 +67,7 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
                     {gridWithImages ? (
                       <div className="grid grid-cols-3 gap-3">
                         {child.children.map(g => (
-                          <NavAnchor key={g.id} link={g.link} onClick={onNavigate} className="flex flex-col gap-1.5 no-underline" style={childStyle}>
+                          <NavAnchor key={g.id} link={g.link} navStyle={g.style} onClick={onNavigate} className="flex flex-col gap-1.5 no-underline" style={childStyle}>
                             <span className="block aspect-square w-full overflow-hidden" style={{ borderRadius: 16, background: t.colors.border }}>
                               {g.imageUrl && <img src={g.imageUrl} alt="" loading="lazy" className="block size-full object-cover" />}
                             </span>
@@ -77,7 +77,7 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
                       </div>
                     ) : (
                       <div className="flex flex-col">
-                        {child.children.map(g => <NavAnchor key={g.id} link={g.link} onClick={onNavigate} className="block py-2 no-underline" style={{ ...childStyle, color: t.colors.inkMuted }}>{g.label}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>)}
+                        {child.children.map(g => <NavAnchor key={g.id} link={g.link} navStyle={g.style} onClick={onNavigate} className="block py-2 no-underline" style={{ ...childStyle, color: t.colors.inkMuted }}>{g.label}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>)}
                       </div>
                     )}
                   </div>
