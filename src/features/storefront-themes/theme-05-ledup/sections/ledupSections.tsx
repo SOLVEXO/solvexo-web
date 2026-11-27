@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this file registers renderers, it exports none */
+import { applyBlockStyle } from '../../blockStyle';
 import { useState } from 'react';
 import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Download, Search } from 'lucide-react';
@@ -180,15 +181,13 @@ function Documents({ settings, blocks }: { settings: Record<string, any>; blocks
                     const id = String(b._id ?? i);
                     const h = hrefOf(s);
                     return (
-                      <PreviewBlock key={id} blockId={id}>
-                        <tr style={{ borderTop: '1px solid #4b423b' }}>
+                      applyBlockStyle(<tr key={id} style={{ borderTop: '1px solid #4b423b' }}>
                           <td style={{ padding: '14px 8px' }}>{text(s.title)}</td>
                           <td style={{ padding: '14px 8px', textAlign: 'center' }}><bdi>{text(s.kind)}</bdi></td>
                           <td style={{ padding: '10px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                             <a href={h.href} {...(h.blank ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="lds-pill lds-pill--solid" style={{ padding: '6px 18px', marginRight: 8 }}>Download <Download size={14} aria-hidden /></a>
                           </td>
-                        </tr>
-                      </PreviewBlock>
+                        </tr>, s.style)
                     );
                   })}
                 </tbody>

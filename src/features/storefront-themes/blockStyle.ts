@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { cloneElement, type CSSProperties, type ReactElement } from 'react';
 
 /** Block-level Style (no-code): every block can carry `settings.style`. All values optional; unset = the theme's own look.
  *  Keep the keys in step with the API validator (`validateBlockStyle`) and the editor panel (`BlockStylePanel`). */
@@ -83,4 +83,12 @@ export function blockStyle(raw: unknown): { className: string; style: CSSPropert
 
 export function blockStyleProps(raw: unknown): { className?: string; style?: CSSProperties } {
   return blockStyle(raw) ?? {};
+}
+
+/** Adds a block's Style (settings.style) to an element the theme already renders: merges className and style, never adds a wrapper (so grids, carousels and tabs keep their layout). */
+export function applyBlockStyle<P extends { className?: string; style?: CSSProperties }>(node: ReactElement<P>, raw: unknown): ReactElement<P> {
+  const bs = blockStyle(raw);
+  if (!bs) return node;
+  const p = node.props as { className?: string; style?: CSSProperties };
+  return cloneElement(node, { className: `${p.className ?? ''} ${bs.className}`.trim(), style: { ...p.style, ...bs.style } } as Partial<P>);
 }

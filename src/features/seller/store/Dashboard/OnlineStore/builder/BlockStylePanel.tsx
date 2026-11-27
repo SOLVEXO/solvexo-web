@@ -41,7 +41,7 @@ function Color({ label, value, onChange }: { label: string; value: unknown; onCh
 }
 
 /** Blocks whose section renderer does not draw per-block styles yet (no PreviewBlock): the panel is hidden so it never promises what it cannot do. */
-const NO_STYLE = new Set(['theme_block', 'nav_link', 'footer_column']);
+const NO_STYLE = new Set(['nav_link', 'footer_column']);
 export function styleSupported(type: string): boolean {
   return !NO_STYLE.has(type) && !type.startsWith('blog_');
 }
