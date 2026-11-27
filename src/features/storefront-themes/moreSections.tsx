@@ -42,7 +42,7 @@ function Row({ block, index, colors, theme, ratio, alternate }: { block: Block; 
   const imageRight = alternate ? index % 2 === 1 : false;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-14 items-center">
-      <div className={imageRight ? 'md:order-2' : ''} style={{ ...fit.box, background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden', position: 'relative' }}>
+      <div className={`sx-media ${imageRight ? 'md:order-2' : ''}`} style={{ ...fit.box, background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden', position: 'relative' }}>
         {s.imageUrl && !errored && <img src={s.imageUrl} alt={s.heading ?? ''} loading="lazy" onError={() => setErrored(true)} style={fit.img} />}
         <ImageLink settings={s} label={s.heading} />
       </div>
@@ -77,7 +77,7 @@ function CollageTile({ block, big, colors, theme }: { block: Block; big: boolean
   const s = block.settings;
   const [errored, setErrored] = useState(false);
   const inner = (
-    <div className="relative h-full w-full" style={{ background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden', minHeight: big ? '360px' : '200px' }}>
+    <div className="sx-media relative h-full w-full" style={{ background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden', minHeight: big ? '360px' : '200px' }}>
       {s.imageUrl && !errored && <img src={s.imageUrl} alt={s.heading ?? ''} loading="lazy" onError={() => setErrored(true)} className="absolute inset-0 w-full h-full" style={{ objectFit: 'cover' }} />}
       {s.heading && (
         <div className="absolute inset-x-0 bottom-0" style={{ padding: '18px', background: 'linear-gradient(transparent, rgba(0,0,0,0.55))' }}>
@@ -157,7 +157,7 @@ export function FeaturedProductSection({ section, colors, theme }: Props) {
   return (
     <div style={box(theme)}>
       <div className="mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-14 items-center" style={{ maxWidth: theme.layout.maxWidth }}>
-        <div style={{ aspectRatio: '1 / 1', background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden' }}>
+        <div className="sx-media" style={{ aspectRatio: '1 / 1', background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden' }}>
           {product.images?.[0] && <img src={product.images[0]} alt={product.name} loading="lazy" className="w-full h-full" style={{ objectFit: 'cover' }} />}
         </div>
         <div className="flex flex-col gap-4 items-start">
@@ -198,7 +198,7 @@ export function CollectionBannerSection({ section, colors, theme }: Props) {
           {section.settings.showDescription !== false && c.description && <p style={{ fontFamily: theme.fonts.body, fontSize: '14.5px', color: colors.inkMuted, lineHeight: 1.7, margin: 0 }}>{c.description}</p>}
         </div>
         {showImage && (
-          <div style={{ aspectRatio: '16 / 10', background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden' }}>
+          <div className="sx-media" style={{ aspectRatio: '16 / 10', background: colors.bgAlt, borderRadius: theme.imageRadiusPx, overflow: 'hidden' }}>
             <img src={c.image!} alt={c.name} className="w-full h-full" style={{ objectFit: 'cover' }} />
           </div>
         )}

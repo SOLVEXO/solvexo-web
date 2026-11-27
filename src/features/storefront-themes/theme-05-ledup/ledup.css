@@ -357,3 +357,7 @@
 .ld-root .sx-eyebrow { font-size: 13px; font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
 .ld-root .sx-card { padding: 2rem; box-shadow: 0 .1px 20px #efefef, 0 14px 34px -22px rgba(75,66,59,.25); transition: transform .28s cubic-bezier(.22,.61,.36,1), box-shadow .28s; }
 .ld-root .sx-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(0,0,0,.1), 0 2px 8px rgba(0,0,0,.05); }
+.ld-root .sx-faq { border-radius: 24px !important; box-shadow: 0 .1px 20px #efefef; }
+.ld-root .sx-faq button { font-weight: 400; }
+.ld-root .sx-media { position: relative; }
+.ld-root .sx-media:not(:has(img, video, iframe, picture))::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='rgba(0,0,0,.22)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='10' y='14' width='44' height='36' rx='5'/%3E%3Ccircle cx='24' cy='26' r='4'/%3E%3Cpath d='M10 44l12-11 9 8 9-9 14 13'/%3E%3C/svg%3E") center / 56px no-repeat; }

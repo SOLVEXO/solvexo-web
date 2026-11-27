@@ -32,7 +32,7 @@ registerTechSection('image_with_text', (section, blocks, colors) => {
           return (
             <PreviewBlock key={bid(b, i)} blockId={bid(b, i)}>
               <div className={`grid items-center gap-8 md:grid-cols-2 md:gap-16 ${right ? 'md:[&>*:first-child]:order-2' : ''}`}>
-                <div className="relative overflow-hidden" style={{ ...fit.box, background: colors.bgAlt, borderRadius: t.imageRadiusPx }}>
+                <div className="sx-media relative overflow-hidden" style={{ ...fit.box, background: colors.bgAlt, borderRadius: t.imageRadiusPx }}>
                   {s.imageUrl && <img src={s.imageUrl} alt={s.heading ?? ''} loading="lazy" style={fit.img} />}
                   <ImageLink settings={s} label={s.heading} />
                 </div>
@@ -59,7 +59,7 @@ registerTechSection('rich_text', (section, blocks, colors, dynamic) => {
   return (
     <SectionShell colors={colors}>
       <div className="mx-auto max-w-[760px]" style={{ textAlign: align }}>
-        {heading && <h2 className="m-0 mb-6 text-[clamp(28px,3.4vw,44px)] leading-[1.12]" style={{ fontFamily: t.fonts.display, fontWeight: t.headingWeight }}>{heading}</h2>}
+        {heading && <h2 className="sx-h2 m-0 mb-6 text-[clamp(28px,3.4vw,44px)] leading-[1.12]" style={{ fontFamily: t.fonts.display, fontWeight: t.headingWeight }}>{heading}</h2>}
         {blocks.map((b, i) => {
           const bs = b.settings;
           const text = (bs.dynamicSourceKey && dynamic[bs.dynamicSourceKey]) || bs.text;
@@ -151,7 +151,7 @@ function Newsletter({ settings: s, colors }: { settings: Record<string, any>; co
     <section style={{ background: colors.bgAlt, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto max-w-[620px] text-center">
         {eyebrowText(s) && <p className="m-0 mb-3 text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: colors.inkMuted }}>{eyebrowText(s)}</p>}
-        <h2 className="m-0 mb-4 text-[clamp(28px,3.6vw,44px)] leading-[1.1]" style={{ fontFamily: t.fonts.display, fontWeight: t.headingWeight }}>{s.heading || ts('pg.stay_in_the_loop', 'Stay in the loop')}</h2>
+        <h2 className="sx-h2 m-0 mb-4 text-[clamp(28px,3.6vw,44px)] leading-[1.1]" style={{ fontFamily: t.fonts.display, fontWeight: t.headingWeight }}>{s.heading || ts('pg.stay_in_the_loop', 'Stay in the loop')}</h2>
         {s.subtext && <p className="m-0 mb-8 text-[15px] leading-[1.7]" style={{ color: colors.inkMuted }}>{s.subtext}</p>}
         {state === 'done' ? <p role="status" className="m-0 text-[15px]" style={{ color: t.colors.success }}>{message}</p> : (
           <form onSubmit={submit} className="mt-8 flex flex-col gap-3 sm:flex-row">

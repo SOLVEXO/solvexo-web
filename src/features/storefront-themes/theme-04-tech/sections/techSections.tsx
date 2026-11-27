@@ -4,6 +4,7 @@ import { CardOverridesProvider } from '../../core/product/cardOverrides';
 import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { featureIcon } from '../../featureIcons';
 import { ts } from '@/utils/tStatic';
 import type { Block, Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -183,7 +184,7 @@ custom.set('tech.feature_strip', (_section, blocks) => {
       <div className="mx-auto grid gap-8 text-center sm:grid-cols-3" style={{ maxWidth: t.layout.maxWidth, padding: `clamp(32px,5vw,56px) ${t.layout.containerPadX}` }}>
         {items.map((b, i) => (
           <div key={b._id ?? i} className="flex flex-col items-center gap-2">
-            {text(b.settings.imageUrl) ? <img src={text(b.settings.imageUrl)} alt="" loading="lazy" className="size-14 rounded-full object-cover" /> : <span className="grid size-14 place-items-center rounded-full text-xl font-bold" style={{ background: t.colors.accent, color: t.colors.accentInk }} aria-hidden>{text(b.settings.title).charAt(0)}</span>}
+            {text(b.settings.imageUrl) ? <img src={text(b.settings.imageUrl)} alt="" loading="lazy" className="size-14 rounded-full object-cover" /> : <span className="grid size-14 place-items-center rounded-full" style={{ background: t.colors.accent, color: t.colors.accentInk }} aria-hidden>{(() => { const Icon = featureIcon(b.settings.icon); return <Icon size={24} />; })()}</span>}
             <p className="m-0 mt-1 text-base font-semibold">{text(b.settings.title)}</p>
             {text(b.settings.text) && <p className="m-0 max-w-[260px] text-sm" style={{ color: t.colors.inkMuted }}>{text(b.settings.text)}</p>}
           </div>

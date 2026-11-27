@@ -44,7 +44,7 @@ export function ImageBannerSection({ section, colors }: SharedSectionProps) {
         <ImageLink settings={s} label={s.heading} />
         {!only && <div className={`${hasImage ? 'lb-on-image ' : ''}flex p-8 md:p-14`} style={{ position: adapt ? 'absolute' : 'relative', inset: adapt ? 0 : undefined, minHeight: adapt ? undefined : 'inherit', justifyContent: justify, alignItems, textAlign: align, color: textColor }}>
           <div className="flex w-full flex-col gap-4" style={{ maxWidth: textWidth }}>
-            {s.heading && <h2 className="m-0 max-w-[720px] text-[clamp(30px,5vw,60px)] font-medium leading-[1.05] tracking-tight" style={{ fontFamily: t.fonts.display }}><EditableText value={s.heading} settingKey="heading" /></h2>}
+            {s.heading && <h2 className="sx-h2 m-0 max-w-[720px] text-[clamp(30px,5vw,60px)] leading-[1.05]" style={{ fontFamily: t.fonts.display }}><EditableText value={s.heading} settingKey="heading" /></h2>}
             {s.subheading && <p className="m-0 max-w-[560px] text-base leading-relaxed opacity-90 md:text-lg" style={{ fontFamily: t.fonts.body }}><EditableText value={s.subheading} settingKey="subheading" /></p>}
             <div style={{ position: 'relative', zIndex: 2 }}><LinkButton text={s.ctaText} link={s.ctaLink} variant={hasImage && !s.textColor ? 'light' : 'primary'} /></div>
           </div>

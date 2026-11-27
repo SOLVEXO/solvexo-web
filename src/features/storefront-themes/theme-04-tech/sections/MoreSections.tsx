@@ -105,7 +105,7 @@ function Faq({ settings: s, blocks, colors }: { settings: Record<string, any>; b
           return (
             <li key={id}><PreviewBlock blockId={id}>
               {/* Same look as the /faqs page accordion: grey card when open, round +/x button. */}
-              <div style={{ borderRadius: t.productCardRadiusPx, background: isOpen ? colors.bgAlt : colors.bg, border: `1px solid ${isOpen ? 'transparent' : colors.border}`, transition: 'background-color .2s' }}>
+              <div className="sx-faq" style={{ borderRadius: t.productCardRadiusPx, background: isOpen ? colors.bgAlt : colors.bg, border: `1px solid ${isOpen ? 'transparent' : colors.border}`, transition: 'background-color .2s' }}>
                 <button type="button" aria-expanded={isOpen} aria-controls={`tx-faq-${id}`} onClick={() => setOpen(isOpen ? null : id)}
                   className="flex w-full cursor-pointer items-center justify-between gap-4 border-0 bg-transparent text-left" style={{ padding: '18px 22px', fontFamily: t.fonts.display, fontSize: 17, fontWeight: 500, color: colors.ink, borderRadius: t.productCardRadiusPx }}>
                   <span>{b.settings.question}</span>

@@ -141,7 +141,7 @@ function DropCountdownSection({ section }: { section: Section }) {
   return (
     <section style={{ background: t.colors.accent, color: t.colors.accentInk, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto flex max-w-[680px] flex-col items-center gap-6 text-center">
-        {s.heading && <h2 className="m-0 text-[clamp(26px,3.5vw,42px)] font-semibold leading-tight tracking-tight" style={{ fontFamily: t.fonts.display }}>{s.heading}</h2>}
+        {s.heading && <h2 className="sx-h2 m-0 text-[clamp(26px,3.5vw,42px)] leading-tight" style={{ fontFamily: t.fonts.display }}>{s.heading}</h2>}
         {s.subheading && <p className="m-0 text-sm font-medium uppercase tracking-widest opacity-70" style={{ fontFamily: t.fonts.body }}>{s.subheading}</p>}
         {now.done ? (
           <p className="m-0 text-2xl" style={{ fontFamily: t.fonts.display }}>{copyText(s, 'endedText', 'Dropped!')}</p>
