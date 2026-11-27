@@ -35,7 +35,8 @@ export function convertForeignSection(section: Section, blocks: Block[]): { sect
   }).filter(i => i.title || i.text || i.image);
 
   const make = (type: string, settings: Rec, list: Block[]) => ({ section: { ...section, type, settings } as Section, blocks: list });
-  const blk = (type: string, settings: Rec, i: number): Block => ({ _id: `fx-${i}`, type, settings, visible: true } as unknown as Block);
+  // a converted block keeps the source block's id and its Style (settings.style), so the seller's look survives a theme switch
+  const blk = (type: string, settings: Rec, i: number, src?: Block): Block => ({ _id: src?._id ?? `fx-${i}`, type, settings: src?.settings?.style ? { ...settings, style: src.settings.style } : settings, visible: true } as unknown as Block);
 
   // a table typed as lines ("Size | Chest | Waist") keeps its data as a real table
   const rows = typeof s.rows === 'string' ? s.rows.split(/\r?\n/).map(l => l.split('|').map(c => c.trim())).filter(r => r.some(Boolean)) : [];
@@ -53,22 +54,22 @@ export function convertForeignSection(section: Section, blocks: Block[]): { sect
   const valued = blocks.filter(b => b.type === 'theme_block' && str(b.settings, ['value']));
   if (valued.length > 0) {
     return make('feature_list', { heading, columns: Math.min(4, Math.max(2, valued.length)) },
-      valued.map((b, n) => blk('feature_item', { icon: 'star', title: str(b.settings, ['value']), description: [str(b.settings, HEADING), str(b.settings, TEXT)].filter(Boolean).join(' · ') }, n)));
+      valued.map((b, n) => blk('feature_item', { icon: 'star', title: str(b.settings, ['value']), description: [str(b.settings, HEADING), str(b.settings, TEXT)].filter(Boolean).join(' · ') }, n, b)));
   }
 
   const withImage = items.filter(i => i.image);
   if (withImage.length > 0 && withImage.every(i => !i.text)) {
     return make('gallery_grid', { heading, columns: Math.min(4, Math.max(2, withImage.length)) },
-      withImage.map((i, n) => blk('gallery_image', { imageUrl: i.image, alt: i.title, caption: i.title, link: i.link }, n)));
+      withImage.map((i, n) => blk('gallery_image', { imageUrl: i.image, alt: i.title, caption: i.title, link: i.link }, n, i.b)));
   }
   if (withImage.length > 0) {
     return make('image_with_text', { heading: items.length > 1 ? heading : '' },
-      withImage.map((i, n) => blk('image_text_pair', { imageUrl: i.image, heading: i.title, body: i.text, ctaLink: i.link, imagePosition: n % 2 ? 'right' : 'left' }, n)));
+      withImage.map((i, n) => blk('image_text_pair', { imageUrl: i.image, heading: i.title, body: i.text, ctaLink: i.link, imagePosition: n % 2 ? 'right' : 'left' }, n, i.b)));
   }
   const titled = items.filter(i => i.title);
   if (titled.length > 0) {
     return make('feature_list', { heading, columns: Math.min(3, Math.max(2, titled.length)) },
-      titled.map((i, n) => blk('feature_item', { icon: 'star', title: i.title, description: i.text }, n)));
+      titled.map((i, n) => blk('feature_item', { icon: 'star', title: i.title, description: i.text }, n, i.b)));
   }
   const image = str(s, IMAGE);
   const ctaText = str(s, CTA_LABEL);
