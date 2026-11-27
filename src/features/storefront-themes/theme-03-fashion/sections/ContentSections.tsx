@@ -103,7 +103,7 @@ registerFashionSection('testimonials', (section, blocks, colors) => {
     <SectionShell colors={colors} heading={section.settings.heading} align={section.settings.textAlign === 'left' ? 'left' : 'center'}>
       <TestimonialsSection section={section} blocks={blocks} tokens={{
         ink: colors.ink, inkMuted: colors.inkMuted, bg: colors.bg, bgAlt: colors.bgAlt,
-        accent: colors.accent, displayFont: t.fonts.display, bodyFont: t.fonts.body, t: ts,
+        accent: colors.accent, displayFont: t.fonts.display, bodyFont: t.fonts.body, t: ts, cardRadius: 24,
       }} />
     </SectionShell>
   );

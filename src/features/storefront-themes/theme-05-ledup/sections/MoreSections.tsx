@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+import { LayoutGridSection } from '../../LayoutGridSection';
 import { DocumentsGridSection } from '@/features/storefront-themes/core/documents/DocumentsGrid';
 import { useState } from 'react';
 import { CardOverridesProvider } from '../../core/product/cardOverrides';
@@ -38,6 +39,7 @@ registerLedupSection('custom_html', (section, blocks, colors) => <CustomHtmlSect
 registerLedupSection('image_banner', (section, blocks, colors) => <ImageBannerSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('collection_list', (section, blocks, colors) => <CollectionListSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('gallery_grid', (section, blocks, colors) => <GalleryGridSection section={section} blocks={blocks} colors={colors} />);
+registerLedupSection('layout_grid', (section, blocks, colors) => <LayoutGridSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('store_locations', (section, blocks, colors) => <StoreLocationsSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('contact_form', (section, blocks, colors) => <ContactFormSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('related_products', (section, blocks, colors) => <CardOverridesProvider settings={section.settings}><RelatedProductsSection section={section} blocks={blocks} colors={colors} /></CardOverridesProvider>);

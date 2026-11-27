@@ -158,7 +158,7 @@ function TestimonialCard({ block, index, settings, tokens, as = 'li' }: {
   return (
     <Wrapper style={{ height: '100%' }}>
       <PreviewBlock blockId={block._id ?? String(index)}>
-        <figure className="m-0" style={style}>
+        <figure className="sx-card m-0" style={style}>
           {stacked ? body : (
             <>
               {imagePosition === 'left' && avatar}

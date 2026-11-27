@@ -136,3 +136,10 @@ article[data-fx-align='center'] .tx-card-body :is(p.flex, ul.flex, div.flex.item
 .tx-card[data-fx-hover='lift']:hover { transform: translateY(-3px); box-shadow: 0 10px 24px -12px rgba(2, 2, 3, .3); }
 .tx-card[data-fx-hover='none']:hover { transform: none; box-shadow: none; }
 .tx-card[data-fx-align='center'] > :is(p, a, div:not(.relative)) { text-align: center; align-items: center; justify-content: center; }
+
+/* ── Section look (generic sections): Tech = precise, outlined cards, tight bold type ─────────── */
+.tx-root .sx-h2 { font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; }
+.tx-root .sx-h3 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; }
+.tx-root .sx-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: .75; }
+.tx-root .sx-card { border: 1px solid color-mix(in srgb, currentColor 14%, transparent); padding: 1.25rem; transition: border-color .2s ease, box-shadow .2s ease; }
+.tx-root .sx-card:hover { border-color: color-mix(in srgb, currentColor 38%, transparent); box-shadow: 0 8px 24px -14px rgba(0,0,0,.35); }

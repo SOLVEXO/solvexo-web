@@ -13,6 +13,7 @@ registerThemePreviewComponents({
   Navbar: LedupNavbar,
   Footer: LedupFooter,
   theme: ledupTheme,
+  rootClass: 'ld-root lb-root',
   applyMerchantThemeOverrides,
   supportedSectionTypes: getRegisteredLedupSectionTypes() as SectionType[],
 });

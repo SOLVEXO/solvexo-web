@@ -398,7 +398,7 @@ export function ThemeLivePreview({
   // same fallback convention as every other generic resolver in this system
   // (`getThemeManifest`, `getThemeDevFiles`, `ThemedRoute`).
   const preview = getThemePreviewComponents(themeIdOverride ?? draftTheme?.themeDefinitionId, DEFAULT_THEME_ID);
-  const { SectionRenderer, Navbar, Footer, theme: t, applyMerchantThemeOverrides } = preview;
+  const { SectionRenderer, Navbar, Footer, theme: t, applyMerchantThemeOverrides, rootClass } = preview;
 
   // Storefront chrome reads the live-shaped `theme.header`/`theme.footer`
   // fields from context. Project the draft over those fields so Navbar and
@@ -476,6 +476,7 @@ export function ThemeLivePreview({
     <StorefrontProvider value={contextValue}>
       <div
         ref={setRoot}
+        className={rootClass}
         style={{ background: t.colors.bg, fontFamily: t.fonts.body, pointerEvents: colorPick ? 'auto' : 'none', cursor: colorPick ? 'crosshair' : undefined }}
         onClickCapture={colorPick ? (e => { e.preventDefault(); e.stopPropagation(); pickColorRole(roleFromElement(e.target as Element)); }) : undefined}
       >

@@ -14,7 +14,7 @@ function Column({ block, colors, ratio, center }: { block: Block; colors: BaseCo
   const [errored, setErrored] = useState(false);
   const fit = imageFit(ratio, '4 / 3');
   return (
-    <div className={`flex h-full min-w-0 flex-col gap-4 overflow-hidden p-4 [overflow-wrap:anywhere] ${center ? 'items-center text-center' : 'items-start'}`} style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
+    <div className={`sx-card flex h-full min-w-0 flex-col gap-4 overflow-hidden p-4 [overflow-wrap:anywhere] ${center ? 'items-center text-center' : 'items-start'}`} style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
       {s.imageUrl && !errored && (
         <div className="relative w-full overflow-hidden" style={{ ...fit.box, background: colors.bg, borderRadius: Math.max(parseInt(t.imageRadiusPx) - 4, 0) }}>
           <img src={s.imageUrl} alt={s.heading ?? ''} loading="lazy" onError={() => setErrored(true)} style={fit.img} />
@@ -22,7 +22,7 @@ function Column({ block, colors, ratio, center }: { block: Block; colors: BaseCo
         </div>
       )}
       <div className="flex min-w-0 max-w-full flex-col gap-2 px-1 pb-1" style={{ alignItems: center ? 'center' : 'flex-start' }}>
-        {s.heading && <h3 className="m-0 text-xl font-semibold tracking-tight" style={{ fontFamily: t.fonts.display, color: colors.ink }}>{s.heading}</h3>}
+        {s.heading && <h3 className="sx-h3 m-0" style={{ fontFamily: t.fonts.display, color: colors.ink }}>{s.heading}</h3>}
         {s.body && <RichContent text={s.body} headingColor={colors.ink} headingFont={t.fonts.display} className="text-[15px] leading-[1.7]" style={{ fontFamily: t.fonts.body, color: colors.inkMuted }} />}
         <div className="relative z-[2] mt-2"><LinkButton text={s.ctaText} link={s.ctaLink} variant="outline" /></div>
       </div>
@@ -36,7 +36,7 @@ export function MulticolumnSection({ section, blocks, colors }: SharedSectionPro
   const center = section.settings.textAlign === 'center';
   return (
     <SectionShell colors={colors} heading={section.settings.heading} align={center ? 'center' : 'left'}>
-      <div className="grid gap-5" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${Math.floor(960 / cols)}px), 1fr))` }}>
+      <div className="grid gap-5" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${Math.floor(840 / cols)}px), 1fr))` }}>
         {blocks.map((b, i) => (
           <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
             <Column block={b} colors={colors} ratio={section.settings.imageRatio} center={center} />

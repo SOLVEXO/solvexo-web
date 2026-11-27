@@ -76,7 +76,7 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
     const wrap = (node: ReactNode) => <div key={f.id} className={SPAN[f.width ?? 'full'] ?? SPAN.full}>{node}</div>;
 
     if (f.type === 'step') return null;
-    if (f.type === 'heading') return wrap(<h3 className="m-0 mt-2 text-xl font-medium" style={{ fontFamily: t.fonts.display }}>{f.label}</h3>);
+    if (f.type === 'heading') return wrap(<h3 className="sx-h3 m-0 mt-2" style={{ fontFamily: t.fonts.display }}>{f.label}</h3>);
     if (f.type === 'paragraph') return wrap(<p className="m-0 whitespace-pre-line text-[15px] leading-relaxed" style={{ color: colors.inkMuted }}>{f.label}</p>);
 
     if (f.type === 'radio' || (f.type === 'checkbox' && f.options?.length)) {
@@ -218,14 +218,14 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
   const formBlock = (
     <>
         {form.status === 'done' ? (
-          <div role="status" className="flex flex-col items-center gap-3 px-6 py-12 text-center" style={{ background: colors.bgAlt, borderRadius: t.sectionRadiusPx }}>
+          <div role="status" className="sx-card flex flex-col items-center gap-3 px-6 py-12 text-center" style={{ background: colors.bgAlt, borderRadius: t.sectionRadiusPx }}>
             <CheckCircle2 size={32} style={{ color: t.colors.success }} aria-hidden />
             <p className="m-0 text-lg font-medium" style={{ color: colors.ink }}>
               {successRedirect(s) ? tt('sections.contactRedirecting', 'Thank you! Taking you on...') : (s.successMessage || tt('sections.contactThanks', 'Thanks, we got your message and will reply soon.'))}
             </p>
           </div>
         ) : (
-          <form onSubmit={form.submit} className="flex flex-col gap-4 p-6 md:p-8" style={{ background: colors.bgAlt, borderRadius: t.sectionRadiusPx, color: colors.ink }}>
+          <form onSubmit={form.submit} className="sx-card flex flex-col gap-4 p-6 md:p-8" style={{ background: colors.bgAlt, borderRadius: t.sectionRadiusPx, color: colors.ink }}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
               {form.page.fields.map(renderField)}
             </div>

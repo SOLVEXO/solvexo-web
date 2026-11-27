@@ -13,15 +13,15 @@ export function FeatureListSection({ section, blocks, colors }: SharedSectionPro
   const center = section.settings.textAlign === 'center';
   return (
     <SectionShell colors={colors} heading={section.settings.heading} align={center ? 'center' : 'left'}>
-      <div className="grid gap-5" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${Math.floor(960 / cols)}px), 1fr))` }}>
+      <div className="grid gap-5" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${Math.floor(840 / cols)}px), 1fr))` }}>
         {blocks.map((b, i) => {
           const Icon = featureIcon(b.settings.icon);
           return (
             <PreviewBlock key={b._id ?? i} blockId={String(b._id ?? i)}>
-              <div className={`flex h-full flex-col gap-4 p-6 ${center ? 'items-center text-center' : 'items-start'}`} style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
+              <div className={`sx-card flex h-full flex-col gap-4 p-6 ${center ? 'items-center text-center' : 'items-start'}`} style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
                 <span className="grid size-12 place-items-center rounded-full" style={{ background: colors.accent, color: colors.accentInk }}><Icon size={22} aria-hidden /></span>
                 <div className="flex flex-col gap-2">
-                  {b.settings.title && <h3 className="m-0 text-xl font-semibold tracking-tight" style={{ fontFamily: t.fonts.display, color: colors.ink }}>{b.settings.title}</h3>}
+                  {b.settings.title && <h3 className="sx-h3 m-0" style={{ fontFamily: t.fonts.display, color: colors.ink }}>{b.settings.title}</h3>}
                   {b.settings.description && <p className="m-0 text-[15px] leading-[1.7]" style={{ fontFamily: t.fonts.body, color: colors.inkMuted }}>{renderRichText(b.settings.description)}</p>}
                 </div>
               </div>
