@@ -1,6 +1,7 @@
 import { usePublicCollections, usePublicPages } from '../../core/hooks/usePublicLists';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased, textCaseOf } from '../../textCase';
+import { NavMoreList } from '../../navigation/NavMoreList';
 import { ts } from '@/utils/tStatic';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, Menu, X } from 'lucide-react';
@@ -160,7 +161,7 @@ export function FashionNavbar() {
           </div>
 
           <div className={`hidden min-w-0 lg:flex ${layout.nav}`}>
-            <NavScrollRow enabled={o.menuOverflow === 'scroll'} navRef={navRef} ariaLabel={ts('pg.main', 'Main')} navClassName="items-center gap-1 [&>*]:shrink-0" wrapClassName="flex flex-wrap justify-center"
+            <NavScrollRow mode={o.menuOverflow} more={{ label: ts('nav.more', 'More'), render: from => <NavMoreList items={items.slice(from)} accent={t.colors.accent} accentInk={t.colors.accentInk} /> }} navRef={navRef} ariaLabel={ts('pg.main', 'Main')} navClassName="items-center gap-1 [&>*]:shrink-0" wrapClassName="flex flex-wrap justify-center"
               arrow={{ bg: t.colors.bg, fg: t.colors.ink, border: t.colors.border, radius: Math.min(parseInt(String(t.buttonRadiusPx), 10) || 0, 14), fade: headerBg }}>
               {items.map(item => (
                 <div key={item.id} className="group relative" data-open={openMenu === item.id} data-dismissed={dismissedMenu === item.id} data-nav-group={item.id}
@@ -179,7 +180,7 @@ export function FashionNavbar() {
                     const columns = item.children.filter(c => c.children.length > 0 || c.imageUrl);
                     const plain = item.children.filter(c => c.children.length === 0 && !c.imageUrl);
                     return (
-                      <MegaPanel fixedMode={o.menuOverflow === 'scroll'} className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
+                      <MegaPanel fixedMode={o.menuOverflow !== 'wrap'} className="invisible absolute top-full z-50 pt-3 opacity-0 transition-all duration-200 group-data-[open=true]:visible group-data-[open=true]:opacity-100 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-data-[dismissed=true]:invisible! group-data-[dismissed=true]:opacity-0!">
                         <div style={{ padding: "0 24px" }}>
                           <div data-nav-card className="mx-auto flex gap-8 p-6" style={{ maxWidth: 1840, width: t.mega.width === 'fit' ? 'fit-content' : undefined, maxHeight: '72vh', overflowY: 'auto', background: t.colors.bg, border: `1px solid ${t.colors.border}`, borderRadius: 24 }}>
                             <div className="grid min-w-0 flex-1 content-start gap-x-8 gap-y-6" style={{ gridTemplateColumns: t.mega.width === 'fit' ? `repeat(${item.megaColumns || t.mega.columns}, minmax(150px, max-content))` : `repeat(${item.megaColumns || t.mega.columns}, minmax(0, 1fr))` }}>

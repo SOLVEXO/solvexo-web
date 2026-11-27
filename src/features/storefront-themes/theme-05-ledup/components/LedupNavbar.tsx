@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cased } from '../../textCase';
+import { NavMoreList } from '../../navigation/NavMoreList';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, Search, User, Menu, X, ArrowUpRight, Phone } from 'lucide-react';
 import { HeaderIconButton, HeaderIconStyles, resolveIconPrefs } from '../../navigation/headerIcons';
@@ -91,7 +92,7 @@ export function LedupNavbar() {
               : <span className="whitespace-nowrap text-2xl font-bold tracking-tight" style={{ color: onDark ? '#fff' : 'var(--ld-accent)', transition: 'color .3s ease' }}>{store.name}</span>}
           </NavAnchor>
 
-          <NavScrollRow enabled={o.menuOverflow === 'scroll'} ariaLabel={ts('nav.main', 'Main')} className="ld-glass-pill" navClassName="items-center [justify-content:safe_center] [&>*]:shrink-0" wrapClassName="flex-wrap justify-center"
+          <NavScrollRow mode={o.menuOverflow} more={{ label: ts('nav.more', 'More'), render: from => <NavMoreList items={items.slice(from)} accent="#4b423b" accentInk="#ffffff" /> }} ariaLabel={ts('nav.main', 'Main')} className="ld-glass-pill" navClassName="items-center [justify-content:safe_center] [&>*]:shrink-0" wrapClassName="flex-wrap justify-center"
             arrow={{ bg: '#ffffff', fg: '#4b423b', border: '#e2dedb', radius: 9999, fade: 'rgba(246,246,246,.96)' }}>
             {items.map(it => {
               const hasKids = it.children.length > 0;

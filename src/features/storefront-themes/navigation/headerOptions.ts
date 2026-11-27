@@ -40,7 +40,7 @@ export interface HeaderOptions {
   navHoverStyle: 'none' | 'underline' | 'pill';
   searchStyle: 'icon' | 'bar';
   /** Menu with more items than fit: one scrolling line with arrows (default) or wrapping rows. */
-  menuOverflow: 'scroll' | 'wrap';
+  menuOverflow: 'scroll' | 'wrap' | 'more';
   /** Theme-defined slug (default 'icons'); each theme interprets the ones it offers. */
   searchPosition: string;
   /** Cart icon: on unless the seller turns it off. */
@@ -144,7 +144,7 @@ export function readHeaderOptions(header: Partial<StorefrontHeader> | null | und
     navUppercase: h.navUppercase === true,
     navHoverStyle: h.navHoverStyle === 'underline' || h.navHoverStyle === 'pill' ? h.navHoverStyle : 'none',
     searchStyle: h.searchStyle === 'bar' ? 'bar' : 'icon',
-    menuOverflow: h.menuOverflow === 'wrap' ? 'wrap' : 'scroll',
+    menuOverflow: h.menuOverflow === 'wrap' ? 'wrap' : h.menuOverflow === 'scroll' ? 'scroll' : 'more',
     searchPosition: typeof h.searchPosition === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(h.searchPosition) ? h.searchPosition : 'icons',
     showCart: h.showCart !== false,
     iconSet: typeof h.iconSet === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(h.iconSet) ? h.iconSet : null,

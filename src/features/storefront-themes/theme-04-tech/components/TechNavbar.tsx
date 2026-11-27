@@ -1,6 +1,7 @@
 import { usePublicCollections, usePublicPages } from '../../core/hooks/usePublicLists';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased } from '../../textCase';
+import { NavMoreList } from '../../navigation/NavMoreList';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Heart, Menu, User, X } from 'lucide-react';
 import { HeaderIconButton, HeaderIconStyles, resolveIconPrefs } from '../../navigation/headerIcons';
@@ -218,13 +219,13 @@ export function TechNavbar() {
   const logoLink = <NavAnchor link={resolveLink(header?.logoLink ?? { linkType: 'home' })} className="flex shrink-0 items-center no-underline" style={{ color: t.colors.ink }}>{wordmark}</NavAnchor>;
   const menuButton = <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: t.colors.ink }}><Menu size={22} /></button>;
 
-  const scrollMenu = o.menuOverflow === 'scroll';
+  const scrollMenu = o.menuOverflow !== 'wrap';
   const ctaLink = cta && (
     <NavAnchor link={cta.link.startsWith('/') ? { to: cta.link } : { href: cta.link }} className="tx-btn tx-btn-sm no-underline" style={{ ...techButtonStyle('outline'), borderRadius: t.buttonRadiusPx }}>{cta.label}</NavAnchor>
   );
   const navList = (className: string): ReactNode => (
     <>
-    <NavScrollRow enabled={scrollMenu} className={`hidden min-w-0 lg:flex ${className}`} navClassName="items-center gap-7 [&>*]:shrink-0" wrapClassName="min-w-0 flex-wrap justify-center gap-y-1" ariaLabel={ts('pg.main', 'Main')}
+    <NavScrollRow mode={o.menuOverflow} more={{ label: ts('nav.more', 'More'), render: from => <NavMoreList items={items.slice(from)} accent={t.colors.accent} accentInk={t.colors.accentInk} /> }} className={`hidden min-w-0 lg:flex ${className}`} navClassName="items-center gap-7 [&>*]:shrink-0" wrapClassName="min-w-0 flex-wrap justify-center gap-y-1" ariaLabel={ts('pg.main', 'Main')}
       arrow={{ bg: t.colors.bg, fg: t.colors.ink, border: t.colors.border, radius: t.buttonRadiusPx, fade: t.colors.bg }}>
       {items.map(item => (
         <div key={item.id} className="group relative" data-nav-group={item.id}>
