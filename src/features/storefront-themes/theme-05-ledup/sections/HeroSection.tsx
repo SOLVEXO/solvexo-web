@@ -71,7 +71,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   const seconds = Math.min(10, Math.max(3, Number(settings.autoplaySeconds) || 5));
   const fade = settings.transition === 'fade';
   const cur = n ? i % n : 0;
-  // Fade: the slide that is leaving stays fully visible UNDER the incoming one until it has finished fading in â€” two half-transparent slides at once showed as a ghosted double image.
+  // Fade: the slide that is leaving stays fully visible UNDER the incoming one until it has finished fading in — two half-transparent slides at once showed as a ghosted double image.
   const [shown, setShown] = useState({ cur, prev: cur });
   if (shown.cur !== cur) setShown({ cur, prev: shown.cur });
   const touch = useRef<number | null>(null);

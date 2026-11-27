@@ -36,7 +36,7 @@ import DevelopersPage from '../StoreSection/developers/DevelopersPage';
 import { planGateFor } from '@/components/layouts/planGate';
 import { PlanUpgradeNeeded } from '@/components/layouts/PlanUpgradeNeeded';
 
-// Old `?tab=` ids (dashboard links, notification bell, bookmarks) â†’ URL slugs.
+// Old `?tab=` ids (dashboard links, notification bell, bookmarks) → URL slugs.
 const LEGACY_TAB_IDS: Record<string, string> = { 'store-profile': 'profile', brand: 'profile', activity: 'activity-log' };
 
 // The hub's own navigation, grouped for the desktop rail (each group gets an
@@ -105,11 +105,11 @@ const NAV_GROUPS: SettingsNavGroup[] = [
   },
 ];
 
-// â”€â”€ Mobile-only store hero â€” same gradient hero + stats-strip pattern as
+// ── Mobile-only store hero — same gradient hero + stats-strip pattern as
 // SellerSettings.tsx's own `MobileSellerHero` ("Account" screen), just fed
 // this STORE's own identity/plan/status instead of the seller's cross-store
 // summary. Products/Orders/Revenue are the exact same real 30-day numbers
-// the Dashboard shows â€” fetched independently here (self-contained, same
+// the Dashboard shows — fetched independently here (self-contained, same
 // convention as SetupGuideCard/RecentActivityCard's own self-fetching) since
 // this hub has no access to the Dashboard's own metrics hook.
 function MobileStoreHero({ storeId, name, logo, status, plan }: {
@@ -175,18 +175,18 @@ function MobileStoreHero({ storeId, name, logo, status, plan }: {
 
       <div className="relative -mt-6 mx-4 rounded-t-[24px] bg-white px-2 pt-5 pb-4 flex items-center">
         <div className="flex-1 flex flex-col items-center gap-[2px]">
-          <span className="text-[19px] font-bold text-brand-orange leading-none">{stats ? stats.totalProducts.toLocaleString() : 'â€”'}</span>
+          <span className="text-[19px] font-bold text-brand-orange leading-none">{stats ? stats.totalProducts.toLocaleString() : '—'}</span>
           <span className="text-[11px] text-slate">Products</span>
         </div>
         <div className="w-px h-9 bg-bone" />
         <div className="flex-1 flex flex-col items-center gap-[2px]">
-          <span className="text-[19px] font-bold text-brand-orange leading-none">{stats ? stats.totalOrders.toLocaleString() : 'â€”'}</span>
+          <span className="text-[19px] font-bold text-brand-orange leading-none">{stats ? stats.totalOrders.toLocaleString() : '—'}</span>
           <span className="text-[11px] text-slate">Orders</span>
         </div>
         <div className="w-px h-9 bg-bone" />
         <div className="flex-1 flex flex-col items-center gap-[2px]">
           <span className="text-[19px] font-bold text-brand-orange leading-none">
-            {stats ? formatMoneyCompact(stats.totalRevenue, stats.currency) : 'â€”'}
+            {stats ? formatMoneyCompact(stats.totalRevenue, stats.currency) : '—'}
           </span>
           <span className="text-[11px] text-slate">Revenue</span>
         </div>
@@ -211,23 +211,23 @@ const TAB_PERMS: Record<string, string[]> = {
   locations: ['settings.locations.manage'], 'gift-cards': ['giftcards.view', 'giftcards.manage'],
 };
 
-/** Single tabbed "Settings" hub â€” same Inventory-Hub-style consolidation
+/** Single tabbed "Settings" hub — same Inventory-Hub-style consolidation
  *  (`InventoryHub.tsx`) of what used to be 6 separate top-level pages/routes
  *  (Store Settings, Billing, Integrations, Staff, Custom Fields, Content
  *  Types) plus Store Settings' own former "Activity Log" sub-tab, now
  *  promoted to a hub-level tab of its own. Each tab reuses its original
  *  component as-is (via an `embedded` prop that skips its own duplicate
- *  `StorePageHeader`, and â€” for Store Settings/Custom Fields/Content Types,
- *  whose header carried an action button â€” relocates that button inline
- *  into the tab body instead) â€” no logic was rebuilt, only the page shell.
+ *  `StorePageHeader`, and — for Store Settings/Custom Fields/Content Types,
+ *  whose header carried an action button — relocates that button inline
+ *  into the tab body instead) — no logic was rebuilt, only the page shell.
  *  The old standalone routes (`/settings`, `/plan-billing`, `/integrations`,
  *  `/staff`, `/metafields`, `/metaobjects`) are still reachable by direct
  *  URL (this project's established "disconnect, don't delete" convention)
- *  â€” only the sidebar NAV was consolidated down to this one "Settings"
+ *  — only the sidebar NAV was consolidated down to this one "Settings"
  *  entry. `Metaobjects`' own detail/session route (`/metaobjects/:id`)
- *  stays its own separate route, exactly like Purchase Orders' listâ†’detail
- *  split already works â€” row-click there still navigates to that real URL.
- *  "Mobile App" deliberately does NOT live here â€” it's a sales-channel
+ *  stays its own separate route, exactly like Purchase Orders' list→detail
+ *  split already works — row-click there still navigates to that real URL.
+ *  "Mobile App" deliberately does NOT live here — it's a sales-channel
  *  concept (native app/POS access), not store configuration, so it got its
  *  own separate nav entry instead of being folded into Settings.
  *
@@ -235,10 +235,10 @@ const TAB_PERMS: Record<string, string[]> = {
  *  the sidebar is desktop-only (`hidden lg:flex`, StoreLayout.tsx), so on
  *  mobile the bottom nav's "More" tab pointed straight at `/settings` as
  *  its one gateway into every OTHER section of the dashboard (Orders,
- *  Products, Marketing, etc. â€” see `StoreNavMenu`'s own doc comment). The
+ *  Products, Marketing, etc. — see `StoreNavMenu`'s own doc comment). The
  *  old raw `StoreSettings.tsx` carried that `StoreNavMenu` render itself;
  *  now that `/settings` shows this hub instead, that gateway has to live
- *  here â€” excluding `'settings'` itself, same as before, since a mobile
+ *  here — excluding `'settings'` itself, same as before, since a mobile
  *  visitor is already looking at Settings' own tabs directly above it. */
 export default function SettingsHub() {
   const { store, storeId, entitlements } = useStoreWorkspace();
@@ -284,13 +284,13 @@ export default function SettingsHub() {
 
   return (
     <>
-      <StorePageHeader plain={!validTab} title="Settings" subtitle="Your store's configuration, billing, integrations, and team access â€” all in one place." />
+      <StorePageHeader plain={!validTab} title="Settings" subtitle="Your store's configuration, billing, integrations, and team access — all in one place." />
 
       {/* `SettingsShell` owns both navigation surfaces from these groups: the
          mobile menu screen (hero + flat rows list + the rest of the dashboard
          nav, since the sidebar isn't shown below `lg:`) and, on desktop, the
          sticky tab rail to the right of the content. Panes mount once, inside
-         the shell â€” the mobile/desktop split is a display toggle, not a
+         the shell — the mobile/desktop split is a display toggle, not a
          second render. */}
       <SettingsShell
         groups={GROUPS}
@@ -302,7 +302,7 @@ export default function SettingsHub() {
         mobileFooter={<StoreNavMenu storeId={storeId} excludeItemIds={['settings']} />}
       >
         {/* Each tab stays mounted (hidden via CSS) once visited, instead of
-            unmounting on switch â€” a repeat visit is instant, no refetch/skeleton.
+            unmounting on switch — a repeat visit is instant, no refetch/skeleton.
             Store Profile/Product Types/Payment Methods/Domains/Privacy/Billing/
             Integrations/Staff bring their own `px-4 lg:px-7 py-...` padding
             (unchanged from their standalone-page layout); the rest never had any

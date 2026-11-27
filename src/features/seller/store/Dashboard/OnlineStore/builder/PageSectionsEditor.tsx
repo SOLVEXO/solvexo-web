@@ -727,11 +727,13 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
             const next = [...sections];
             next.splice(Math.min(insertAt, sections.length), 0, { type: 'saved_section', settings: { savedSectionId: entry._id }, blocks: [] } as Section);
             onChange(next);
+            onSelectSection?.(String(Math.min(insertAt, sections.length))); // show the new section in the preview
           }}
           onPick={picked => {
             const next = [...sections];
             next.splice(Math.min(insertAt, sections.length), 0, ...picked.map(p => ({ type: p.type, settings: p.settings, blocks: p.blocks }) as Section));
             onChange(next);
+            onSelectSection?.(String(Math.min(insertAt, sections.length))); // show the new section in the preview
           }}
         />
       )}

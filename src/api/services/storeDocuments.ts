@@ -43,7 +43,7 @@ export function storeDocumentMeta(doc: { sizeBytes?: number | null; pages?: numb
   return parts.join(' · ');
 }
 
-const BASE = (storeId: string) => `/store-documents/${storeId}`;
+const BASE = (storeId: string) => `/api/store-documents/${storeId}`;
 
 export async function apiListStoreDocuments(storeId: string, params: { page?: number; limit?: number; search?: string; category?: string; status?: string } = {}) {
   const res = await api.get(BASE(storeId), { params });
@@ -51,7 +51,7 @@ export async function apiListStoreDocuments(storeId: string, params: { page?: nu
 }
 
 export async function apiListPublicStoreDocuments(storeId: string, category?: string) {
-  const res = await api.get(`/public/store-documents/${storeId}`, { params: category ? { category } : {} });
+  const res = await api.get(`/api/public/store-documents/${storeId}`, { params: category ? { category } : {} });
   return (res.data?.items ?? []) as StoreDocumentFile[];
 }
 
@@ -93,9 +93,9 @@ export async function apiDeleteStoreDocument(storeId: string, id: string) {
 
 /** The public file URLs — `view` opens the PDF, `download` really downloads it. */
 export function storeDocumentViewUrl(id: string) {
-  return `/documents/${id}/view`;
+  return `/api/documents/${id}/view`;
 }
 
 export function storeDocumentDownloadUrl(id: string) {
-  return `/documents/${id}/download`;
+  return `/api/documents/${id}/download`;
 }
