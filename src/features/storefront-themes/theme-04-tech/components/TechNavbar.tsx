@@ -54,15 +54,15 @@ function MegaColumns({ item }: { item: ResolvedStorefrontNavItem }) {
       <div className="grid gap-x-8 gap-y-6 p-6" style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))${item.promos?.length ? ' 260px' : ''}${t.megaFeatured && item.imageUrl ? ' 260px' : ''}` }}>
         {cols.map(c => (
           <div key={c.id} className="min-w-0">
-            <NavAnchor link={c.link} className="block pb-2 text-sm font-semibold no-underline" style={{ color: t.colors.ink, borderBottom: `2px solid ${t.colors.accent}` }}>{cased('megaHeading', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+            <NavAnchor link={c.link} navStyle={c.style} className="block pb-2 text-sm font-semibold no-underline" style={{ color: t.colors.ink, borderBottom: `2px solid ${t.colors.accent}` }}>{cased('megaHeading', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
             <ul className="m-0 mt-2 list-none p-0">
-              {c.children.map(g => <li key={g.id}><NavAnchor link={g.link} className="block py-1.5 text-sm no-underline hover:underline" style={{ color: t.colors.inkMuted }}>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor></li>)}
+              {c.children.map(g => <li key={g.id}><NavAnchor link={g.link} navStyle={g.style} className="block py-1.5 text-sm no-underline hover:underline" style={{ color: t.colors.inkMuted }}>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor></li>)}
             </ul>
           </div>
         ))}
         <MegaPromoCards promos={item.promos} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, bg: t.colors.bg, bgAlt: t.colors.bgAlt, accent: t.colors.accent, accentInk: t.colors.accentInk, radius: parseInt(t.cardRadiusPx, 10) || 0, fontDisplay: t.fonts.display }} />
         {t.megaFeatured && item.imageUrl && (
-          <NavAnchor link={item.link} className="relative hidden overflow-hidden no-underline lg:block" style={{ background: t.colors.bgAlt, minHeight: 180 }}>
+          <NavAnchor link={item.link} navStyle={item.style} className="relative hidden overflow-hidden no-underline lg:block" style={{ background: t.colors.bgAlt, minHeight: 180 }}>
             <img src={item.imageUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
             <span className="absolute inset-x-0 bottom-0 p-4 text-sm font-semibold" style={{ background: 'linear-gradient(transparent, rgba(2,2,3,.65))', color: '#fff' }}>{item.label}</span>
           </NavAnchor>
@@ -85,7 +85,7 @@ function MegaSidebar({ item }: { item: ResolvedStorefrontNavItem }) {
         <ul className="m-0 list-none p-0" style={{ borderRight: `1px solid ${t.colors.border}` }}>
           {item.children.map(c => (
             <li key={c.id} onMouseEnter={() => setActive(c.id)}>
-              <NavAnchor link={c.link} onFocus={() => setActive(c.id)} className="flex items-center justify-between px-6 py-3 text-sm font-semibold no-underline"
+              <NavAnchor link={c.link} navStyle={c.style} onFocus={() => setActive(c.id)} className="flex items-center justify-between px-6 py-3 text-sm font-semibold no-underline"
                 style={{ color: t.colors.ink, background: c.id === current?.id ? t.colors.bgAlt : 'transparent' }}>
                 {c.label}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} />{c.children.length > 0 && <ChevronRight size={14} aria-hidden className="tx-flip-rtl" />}
               </NavAnchor>
@@ -95,16 +95,16 @@ function MegaSidebar({ item }: { item: ResolvedStorefrontNavItem }) {
         <ul className="m-0 grid list-none content-start gap-x-6 p-6 sm:grid-cols-2">
           {current?.children.map(g => (
             <li key={g.id}>
-              <NavAnchor link={g.link} className="block py-2 text-sm no-underline hover:underline" style={{ color: t.colors.ink }}>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+              <NavAnchor link={g.link} navStyle={g.style} className="block py-2 text-sm no-underline hover:underline" style={{ color: t.colors.ink }}>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
             </li>
           ))}
           {current && current.children.length === 0 && (
-            <li><NavAnchor link={current.link} className="block py-2 text-sm font-semibold no-underline hover:underline" style={{ color: t.colors.accent }}>{ts('pg.shop_now', 'Shop now')}</NavAnchor></li>
+            <li><NavAnchor link={current.link} navStyle={current.style} className="block py-2 text-sm font-semibold no-underline hover:underline" style={{ color: t.colors.accent }}>{ts('pg.shop_now', 'Shop now')}</NavAnchor></li>
           )}
         </ul>
         <MegaPromoCards promos={item.promos} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, bg: t.colors.bg, bgAlt: t.colors.bgAlt, accent: t.colors.accent, accentInk: t.colors.accentInk, radius: parseInt(t.cardRadiusPx, 10) || 0, fontDisplay: t.fonts.display }} />
         {t.megaFeatured && item.imageUrl && (
-          <NavAnchor link={item.link} className="relative hidden overflow-hidden no-underline lg:block" style={{ background: t.colors.bgAlt }}>
+          <NavAnchor link={item.link} navStyle={item.style} className="relative hidden overflow-hidden no-underline lg:block" style={{ background: t.colors.bgAlt }}>
             <img src={item.imageUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
             <span className="absolute inset-x-0 bottom-0 p-4 text-sm font-semibold" style={{ background: 'linear-gradient(transparent, rgba(2,2,3,.65))', color: '#fff' }}>{item.label}</span>
           </NavAnchor>
@@ -138,7 +138,7 @@ function MobileNav({ open, onClose, items, logo, accountTo, wishlistCount }: { o
           {items.map(it => (
             <li key={it.id} style={{ borderBottom: `1px solid ${t.colors.border}` }}>
               <div className="flex items-center">
-                <NavAnchor link={it.link} onClick={it.children.length === 0 ? onClose : undefined} className="block flex-1 px-5 py-3.5 text-[15px] font-medium no-underline" style={{ color: t.colors.ink }}>{cased('mobile', it.label)}<NavBadge badge={it.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                <NavAnchor link={it.link} navStyle={it.style} onClick={it.children.length === 0 ? onClose : undefined} className="block flex-1 px-5 py-3.5 text-[15px] font-medium no-underline" style={{ color: t.colors.ink }}>{cased('mobile', it.label)}<NavBadge badge={it.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                 {it.children.length > 0 && (
                   <button type="button" aria-expanded={expanded === it.id} aria-label={ts('pg.open_label_menu', 'Open {{label}} menu', { label: it.label })} onClick={() => setExpanded(e => (e === it.id ? null : it.id))} className="grid size-12 cursor-pointer place-items-center border-0 bg-transparent" style={{ color: t.colors.ink }}>
                     <ChevronDown size={18} aria-hidden className={expanded === it.id ? 'rotate-180' : ''} />
@@ -149,8 +149,8 @@ function MobileNav({ open, onClose, items, logo, accountTo, wishlistCount }: { o
                 <ul className="m-0 list-none p-0 pb-2" style={{ background: t.colors.bgAlt }}>
                   {it.children.map(c => (
                     <li key={c.id}>
-                      <NavAnchor link={c.link} onClick={onClose} className="block px-8 py-2.5 text-sm font-medium no-underline" style={{ color: t.colors.ink }}>{cased('mobile', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
-                      {c.children.map(g => <NavAnchor key={g.id} link={g.link} onClick={onClose} className="block px-12 py-2 text-[13px] no-underline" style={{ color: t.colors.inkMuted }}>{cased('mobile', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>)}
+                      <NavAnchor link={c.link} navStyle={c.style} onClick={onClose} className="block px-8 py-2.5 text-sm font-medium no-underline" style={{ color: t.colors.ink }}>{cased('mobile', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                      {c.children.map(g => <NavAnchor key={g.id} link={g.link} navStyle={g.style} onClick={onClose} className="block px-12 py-2 text-[13px] no-underline" style={{ color: t.colors.inkMuted }}>{cased('mobile', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>)}
                     </li>
                   ))}
                 </ul>
@@ -229,7 +229,7 @@ export function TechNavbar() {
       arrow={{ bg: t.colors.bg, fg: t.colors.ink, border: t.colors.border, radius: t.buttonRadiusPx, fade: t.colors.bg }}>
       {items.map(item => (
         <div key={item.id} className="group relative" data-nav-group={item.id}>
-          <NavAnchor link={item.link} className="tx-navlink inline-flex items-center gap-1 whitespace-nowrap py-3 text-sm font-medium no-underline" style={{ color: t.colors.ink }}>
+          <NavAnchor link={item.link} navStyle={item.style} className="tx-navlink inline-flex items-center gap-1 whitespace-nowrap py-3 text-sm font-medium no-underline" style={{ color: t.colors.ink }}>
             {cased('menu', item.label)}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} />{item.children.length > 0 && <ChevronDown size={13} aria-hidden />}
           </NavAnchor>
           {item.children.length > 0 && (
@@ -238,8 +238,8 @@ export function TechNavbar() {
                 <ul data-nav-card className="tx-pop m-0 list-none p-2" style={{ background: t.colors.bg, border: `1px solid ${t.colors.border}`, boxShadow: '0 12px 32px -12px rgba(2,2,3,.25)' }}>
                   {item.children.map(c => (
                     <li key={c.id}>
-                      <NavAnchor link={c.link} className="block px-4 py-2.5 text-sm no-underline hover:underline" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
-                      {c.children.map(g => <NavAnchor key={g.id} link={g.link} className="block px-4 py-1.5 ps-7 text-[13px] no-underline hover:underline" style={{ color: t.colors.inkMuted }}>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>)}
+                      <NavAnchor link={c.link} navStyle={c.style} className="block px-4 py-2.5 text-sm no-underline hover:underline" style={{ color: t.colors.ink }}>{cased('megaLink', c.label)}<NavBadge badge={c.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                      {c.children.map(g => <NavAnchor key={g.id} link={g.link} navStyle={g.style} className="block px-4 py-1.5 ps-7 text-[13px] no-underline hover:underline" style={{ color: t.colors.inkMuted }}>{cased('megaLink', g.label)}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>)}
                     </li>
                   ))}
                 </ul>

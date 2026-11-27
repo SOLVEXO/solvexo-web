@@ -225,7 +225,7 @@ export function FooterColumns({ tokens: k }: { tokens: FooterColumnTokens }) {
         );
       case 'footer_column':
         return fold(id, b._id && s.heading && !opts.mobileAccordion ? <EditableText value={s.heading} settingKey="heading" blockId={b._id} /> : s.heading, linkList((s.links ?? []).filter((l: Record<string, unknown>) => editing || sectionAllowed(l, ruleCtx)).map((l: StorefrontLinkSettings & { label: string; labelTranslations?: Record<string, string | undefined> | null }, j: number) => (
-          <NavAnchor key={j} link={resolveLink(l)} className={linkCls} style={link}>{cased('footerLink', localizeMenuItemLabel(l, locale))}<NavBadge badge={normalizeBadge(l as never)} fallbackBg={k.fg} fallbackInk={k.heading.color as string ?? '#ffffff'} /></NavAnchor>
+          <NavAnchor key={j} link={resolveLink(l)} navStyle={(l as { style?: unknown }).style} className={linkCls} style={link}>{cased('footerLink', localizeMenuItemLabel(l, locale))}<NavBadge badge={normalizeBadge(l as never)} fallbackBg={k.fg} fallbackInk={k.heading.color as string ?? '#ffffff'} /></NavAnchor>
         ))));
       case 'footer_text':
         return fold(id, b._id && s.heading && !opts.mobileAccordion ? <EditableText value={s.heading} settingKey="heading" blockId={b._id} /> : s.heading, <p style={{ ...body, whiteSpace: 'pre-line' }}>{s.text}</p>);

@@ -56,6 +56,7 @@ export function normalizeNavItems(
       : undefined;
     out.push({
       id,
+      style: item.style && typeof item.style === 'object' ? item.style : undefined,
       label: localizeMenuItemLabel(item, locale),
       link: resolveLink(item),
       menuStyle: item.menuStyle === 'mega' ? 'mega' : 'dropdown',

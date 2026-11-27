@@ -97,7 +97,7 @@ export function LedupNavbar() {
             {items.map(it => {
               const hasKids = it.children.length > 0;
               if (!hasKids) {
-                return <NavAnchor key={it.id} link={it.link} className="ld-navlink" onMouseEnter={() => setMegaId(null)}>{cased('menu', it.label)}<NavBadge badge={it.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>;
+                return <NavAnchor key={it.id} link={it.link} navStyle={it.style} className="ld-navlink" onMouseEnter={() => setMegaId(null)}>{cased('menu', it.label)}<NavBadge badge={it.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>;
               }
               const open = megaId === it.id;
               return (
@@ -144,10 +144,10 @@ export function LedupNavbar() {
             <ul className="m-0 mt-4 flex list-none flex-col gap-1 p-0">
               {items.map(it => (
                 <li key={it.id}>
-                  <NavAnchor link={it.link} onClick={closeAll} className="ld-mobile-item">{cased('mobile', it.label)}<NavBadge badge={it.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>
+                  <NavAnchor link={it.link} navStyle={it.style} onClick={closeAll} className="ld-mobile-item">{cased('mobile', it.label)}<NavBadge badge={it.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>
                   {it.children.length > 0 && (
                     <div className="mb-2 ps-3">
-                      {it.children.map(c => <NavAnchor key={c.id} link={c.link} onClick={closeAll} className="ld-mobile-sub">{cased('mobile', c.label)}<NavBadge badge={c.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>)}
+                      {it.children.map(c => <NavAnchor key={c.id} link={c.link} navStyle={c.style} onClick={closeAll} className="ld-mobile-sub">{cased('mobile', c.label)}<NavBadge badge={c.badge} fallbackBg="#4b423b" fallbackInk="#ffffff" /></NavAnchor>)}
                     </div>
                   )}
                 </li>

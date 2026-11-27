@@ -176,6 +176,8 @@ export interface StorefrontLinkSettings {
  *  header blocks. The backend stores up to three levels. */
 export interface StorefrontNavItemSettings extends StorefrontLinkSettings {
   id?: string;
+  /** The seller's no-code Style for this link (colour, size, spacing...), see storefront-themes/blockStyle.ts. */
+  style?: Record<string, unknown>;
   label: string;
   /** Seller translations of the label per language (empty = source label). */
   labelTranslations?: Record<string, string | undefined> | null;
@@ -210,6 +212,7 @@ export interface StorefrontMegaPromo {
 
 export interface ResolvedStorefrontNavItem {
   id: string;
+  style?: Record<string, unknown>;
   label: string;
   link: { to?: string; href?: string; newTab?: boolean };
   menuStyle?: 'dropdown' | 'mega';
