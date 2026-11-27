@@ -37,12 +37,11 @@ export function useCollectionTiles(section: Section, blocks: Block[]): Collectio
   return useMemo(() => {
     if (!items) return null;
     const manual = blocks.filter(b => b.type === 'collection_item' && b.enabled !== false);
-    if (manual.length === 0) {
-      return items.slice(0, limit).map(c => ({
-        key: c._id, collectionId: c._id, name: c.name, description: showDesc ? c.description ?? '' : '', image: c.image ?? '', icon: '',
-        to: `/collections/${handleOf(c)}`, ctaText: '',
-      }));
-    }
+    const automatic = (): CollectionTileData[] => items.slice(0, limit).map(c => ({
+      key: c._id, collectionId: c._id, name: c.name, description: showDesc ? c.description ?? '' : '', image: c.image ?? '', icon: '',
+      to: `/collections/${handleOf(c)}`, ctaText: '',
+    }));
+    if (manual.length === 0) return automatic();
     const out: CollectionTileData[] = [];
     manual.forEach((b, i) => {
       const s = b.settings ?? {};
@@ -58,7 +57,8 @@ export function useCollectionTiles(section: Section, blocks: Block[]): Collectio
         ctaText: String(s.ctaText ?? '').trim(), ctaLink: s.ctaLink,
       });
     });
-    return out;
+    // tiles the seller added but has not filled in yet must not hide every collection: show the automatic list until one is filled
+    return out.length === 0 ? automatic() : out;
   }, [items, blocks, limit, showDesc]);
 }
 

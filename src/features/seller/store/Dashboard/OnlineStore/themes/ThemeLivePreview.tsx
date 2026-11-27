@@ -295,7 +295,7 @@ export function ThemeLivePreview({
     const root = rootEl;
     if (!root || !interactive) return;
     const SKIP = new Set(['divider', 'spacer', 'custom_css', 'custom_html_hidden']);
-    const MEDIA = 'img,video,svg,iframe,canvas,input,button,hr,picture,select,textarea,[role="img"]';
+    const MEDIA = 'img,video,iframe,canvas,picture,input,select,textarea,[role="img"]'; // svg, buttons and rules are carousel arrows / decoration, not content
     const sync = () => {
       root.querySelectorAll<HTMLElement>('[data-fx-section-id]').forEach(el => {
         const type = el.dataset.fxSectionType ?? '';

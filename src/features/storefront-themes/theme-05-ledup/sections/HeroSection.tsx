@@ -87,7 +87,7 @@ function Hero({ settings, blocks }: { settings: Record<string, any>; blocks: Blo
   const nav = heroNavLook(settings, 'right');
   const drag = useHeroDrag(go, dx => swipeStep(dx, rtl), n > 1);
 
-  if (n === 0) return null;
+  if (n === 0 || slides.every(b => !b.settings.imageUrl && !hasText(b))) return null; // slides with no picture and no text: nothing to show (the editor then shows its empty-section placeholder)
   const desk = (settings.heightPreset ?? 'large') as HeightPreset;
   const mob = mobileHeightOf(desk, settings.mobileHeightPreset);
   // Small / Medium / Large, or the seller's own height in px ("Custom"); the phone height falls back to the desktop one.
