@@ -86,7 +86,7 @@ export function HeaderIconGlyph({ kind, prefs, skin, base = 20, glyph }: {
 
 /** Tooltip + label styles. Zero specificity on the wrapper so a theme's own `hidden sm:flex` class still wins. */
 export const HEADER_ICON_CSS = `
-:where(.sx-hi){position:relative;display:inline-flex}
+@layer base{:where(.sx-hi){position:relative;display:inline-flex}}
 .sx-hi-tip{position:absolute;top:calc(100% + 8px);left:50%;transform:translate(-50%,-3px);z-index:80;opacity:0;visibility:hidden;pointer-events:none;white-space:nowrap;
   padding:6px 10px;font-size:12px;line-height:1.2;font-weight:500;letter-spacing:.01em;
   background:var(--tip-bg);color:var(--tip-ink);border-radius:var(--tip-radius);font-family:var(--tip-font);box-shadow:var(--tip-shadow,none);
