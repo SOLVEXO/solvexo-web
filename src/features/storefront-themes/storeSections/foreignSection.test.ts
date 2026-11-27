@@ -35,4 +35,20 @@ describe('foreign theme sections', () => {
     expect(convertForeignSection(sec({ sectionKey: 'ledup.statement', heading: 'Hi', text: 'There' }), [])?.section.type).toBe('rich_text');
     expect(convertForeignSection(sec({ sectionKey: 'tech.x' }), [])).toBeNull();
   });
+  it('keeps the source block id and its Style when a section is converted', () => {
+    const style = { backgroundColor: '#ffeecc', borderWidth: 4 };
+    const mk = (id: string, settings: Record<string, unknown>) => ({ _id: id, type: 'theme_block', settings } as unknown as Block);
+    const cases: [string, Block[]][] = [
+      ['gallery_grid', [mk('p1', { imageUrl: 'https://x/1.jpg', style })]],
+      ['image_with_text', [mk('p1', { imageUrl: 'https://x/1.jpg', title: 'A', text: 'B', style })]],
+      ['feature_list', [mk('p1', { title: 'Fast', text: 'Quick', style })]],
+      ['feature_list', [mk('p1', { value: '16GB', title: 'Memory', style })]],
+    ];
+    for (const [type, blocks] of cases) {
+      const c = convertForeignSection(sec({ sectionKey: 'tech.x' }), blocks);
+      expect(c?.section.type).toBe(type);
+      expect(c?.blocks[0]._id).toBe('p1');
+      expect(c?.blocks[0].settings.style).toEqual(style);
+    }
+  });
 });

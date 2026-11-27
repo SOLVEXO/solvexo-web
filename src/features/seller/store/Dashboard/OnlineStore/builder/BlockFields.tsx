@@ -7,6 +7,7 @@ import { MegaExtrasField, NavBadgeField, NavRulesField } from './MenuItemExtras'
 import { SchemaForm, type FieldSchema, type FieldKind } from './SchemaForm';
 import { BLOCK_SCHEMAS, FOOTER_WIDTH_OPTIONS } from './sectionRegistry';
 import { customBlockSchema } from './themeSectionMeta';
+import { BlockStylePanel } from './BlockStylePanel';
 import { isAppBlockType, findInstalledAppBlock, type AppCatalogEntry, type AppBlockFieldKind } from '@/api/services/apps';
 import type { MetafieldOwnerResource } from '@/api/services/metafields';
 
@@ -115,6 +116,7 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
                   <Field label="Label"><input className={inp} value={child.label ?? ''} onChange={e => set({ children: children.map((c, j) => j === i ? { ...c, label: e.target.value } : c) })} /></Field>
                   <LinkTargetFields value={child} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, ...next } : c) })} pageOptions={pageOptions} storeId={storeId} allowNone />
                   <NavBadgeField value={child} onChange={patch => set({ children: children.map((c, j) => j === i ? { ...c, ...patch } : c) })} />
+                  <BlockStylePanel variant="nav" settings={child} onChange={next => set({ children: children.map((c, j) => j === i ? next : c) })} />
                   {settings.menuStyle === 'mega' && (
                     <MenuImageField value={child.imageUrl} onChange={imageUrl => set({ children: children.map((c, j) => j === i ? { ...c, imageUrl } : c) })} storeId={storeId} />
                   )}
@@ -126,6 +128,7 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
                           className="absolute top-1 right-1 text-[10px] text-error bg-transparent border-none cursor-pointer">Remove</button>
                         <Field label="Label"><input className={inp} value={grandchild.label ?? ''} onChange={e => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: any, n: number) => n === k ? { ...g, label: e.target.value } : g) } : c) })} /></Field>
                         <LinkTargetFields value={grandchild} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: any, n: number) => n === k ? { ...g, ...next } : g) } : c) })} pageOptions={pageOptions} storeId={storeId} allowNone />
+                        <BlockStylePanel variant="nav" settings={grandchild} onChange={next => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: any, n: number) => n === k ? next : g) } : c) })} />
                         {settings.menuStyle === 'mega' && (
                           <MenuImageField value={grandchild.imageUrl} onChange={imageUrl => set({ children: children.map((c, j) => j === i ? { ...c, children: (c.children ?? []).map((g: Record<string, unknown>, n: number) => n === k ? { ...g, imageUrl } : g) } : c) })} storeId={storeId} />
                         )}
@@ -167,6 +170,7 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, in
                 </div>
                 <div className="mt-2 flex flex-col gap-2">
                   <NavBadgeField value={link} onChange={patch => set({ links: links.map((l, j) => j === i ? { ...l, ...patch } : l) })} />
+                  <BlockStylePanel variant="nav" settings={link} onChange={next => set({ links: links.map((l, j) => j === i ? next : l) })} />
                   <NavRulesField value={link} onChange={patch => set({ links: links.map((l, j) => j === i ? { ...l, ...patch } : l) })} />
                 </div>
               </div>
