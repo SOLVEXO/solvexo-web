@@ -12,7 +12,8 @@ import { PreviewBlock } from '../../previewInspector';
 import { LedupHeroCategoryBanner } from '../components/LedupHeroCategoryBanner';
 import { LedupBox } from '../ui/ledupUi';
 import { baseTheme as t } from '../theme.base';
-import { registerLedupSection } from './ledupSectionRegistry';
+import { registerLedupSection, resolveLedupSection } from './ledupSectionRegistry';
+import { convertForeignSection, isForeignThemeKey } from '../../storeSections/foreignSection';
 import { Bento, LinkOrDiv, Projects, Simulation, Stacked, Statement } from './ledupSignature';
 import { LedupSectionShell } from './ledupSectionsPort';
 import { renderStoreSection } from '../../storeSections/renderStoreSection';
@@ -222,7 +223,11 @@ registerLedupSection('theme_section', (sec, blocks, col, dynamic) => {
   if (key === 'ledup.mission') return <Mission settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.districts') return <Districts settings={sec.settings} blocks={blocks} />;
   if (key === 'ledup.contact') return <ContactReveal section={sec} />;
-  void dynamic;
+  // another theme's section: shown through this theme's own matching section instead of being dropped
+  if (isForeignThemeKey(key, 'ledup.')) {
+    const c = convertForeignSection(sec, blocks);
+    return c ? resolveLedupSection(c.section.type)?.(c.section, c.blocks, col, dynamic) ?? null : null;
+  }
   // not one of the theme's own: a section the seller built in the Section builder (`my.*`) is drawn from its layout
   return renderStoreSection(sec, blocks, col, LedupSectionShell);
 });
