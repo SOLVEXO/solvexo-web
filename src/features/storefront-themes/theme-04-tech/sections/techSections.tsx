@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+import { applyBlockStyle } from '../../blockStyle';
 import { useRef, useState, type ReactNode } from 'react';
 import { CardOverridesProvider } from '../../core/product/cardOverrides';
 import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { featureIcon } from '../../featureIcons';
 import { ts } from '@/utils/tStatic';
 import type { Block, Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -111,12 +113,12 @@ custom.set('tech.category_tiles', (section, blocks, colors) => {
   return (
     <TechSectionShell colors={colors} heading={text(section.settings.heading)}>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        {tiles.map((b, i) => (
+        {tiles.map((b, i) => applyBlockStyle((
           <BlockLink key={b._id ?? i} block={b} className="group flex flex-col items-center gap-2 p-3 text-center no-underline" style={{ background: colors.bgAlt, color: colors.ink }}>
             {text(b.settings.imageUrl) ? <img src={text(b.settings.imageUrl)} alt="" loading="lazy" className="h-24 w-full object-contain transition-transform group-hover:scale-105" /> : <span className="block h-24" />}
             <span className="text-sm font-semibold">{text(b.settings.title)}</span>
           </BlockLink>
-        ))}
+        ), b.settings.style))}
       </div>
     </TechSectionShell>
   );
@@ -166,9 +168,9 @@ custom.set('tech.brand_strip', (section, blocks, colors) => {
   return (
     <TechSectionShell colors={colors} heading={text(section.settings.heading)}>
       <ul className="m-0 flex list-none flex-wrap items-center justify-between gap-x-8 gap-y-4 p-0">
-        {brands.map((b, i) => (
+        {brands.map((b, i) => applyBlockStyle((
           <li key={b._id ?? i}><BlockLink block={b} className="block no-underline"><img src={text(b.settings.imageUrl)} alt={text(b.settings.title)} loading="lazy" className="h-10 max-w-[140px] object-contain opacity-70 grayscale transition hover:opacity-100 hover:grayscale-0" /></BlockLink></li>
-        ))}
+        ), b.settings.style))}
       </ul>
     </TechSectionShell>
   );
@@ -181,13 +183,13 @@ custom.set('tech.feature_strip', (_section, blocks) => {
   return (
     <section style={{ background: t.colors.bgAlt, color: t.colors.ink, fontFamily: t.fonts.body }}>
       <div className="mx-auto grid gap-8 text-center sm:grid-cols-3" style={{ maxWidth: t.layout.maxWidth, padding: `clamp(32px,5vw,56px) ${t.layout.containerPadX}` }}>
-        {items.map((b, i) => (
+        {items.map((b, i) => applyBlockStyle((
           <div key={b._id ?? i} className="flex flex-col items-center gap-2">
-            {text(b.settings.imageUrl) ? <img src={text(b.settings.imageUrl)} alt="" loading="lazy" className="size-14 rounded-full object-cover" /> : <span className="grid size-14 place-items-center rounded-full text-xl font-bold" style={{ background: t.colors.accent, color: t.colors.accentInk }} aria-hidden>{text(b.settings.title).charAt(0)}</span>}
+            {text(b.settings.imageUrl) ? <img src={text(b.settings.imageUrl)} alt="" loading="lazy" className="size-14 rounded-full object-cover" /> : <span className="grid size-14 place-items-center rounded-full" style={{ background: t.colors.accent, color: t.colors.accentInk }} aria-hidden>{(() => { const Icon = featureIcon(b.settings.icon); return <Icon size={24} />; })()}</span>}
             <p className="m-0 mt-1 text-base font-semibold">{text(b.settings.title)}</p>
             {text(b.settings.text) && <p className="m-0 max-w-[260px] text-sm" style={{ color: t.colors.inkMuted }}>{text(b.settings.text)}</p>}
           </div>
-        ))}
+        ), b.settings.style))}
       </div>
     </section>
   );
@@ -203,13 +205,13 @@ custom.set('tech.spec_highlights', (section, blocks) => {
         {text(section.settings.heading) && <h2 className="m-0 mb-3 text-[clamp(24px,3vw,34px)] font-semibold">{text(section.settings.heading)}</h2>}
         {text(section.settings.intro) && <p className="m-0 mx-auto mb-10 max-w-[560px] text-sm opacity-80">{text(section.settings.intro)}</p>}
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {items.map((b, i) => (
+          {items.map((b, i) => applyBlockStyle((
             <div key={b._id ?? i} className="flex flex-col items-center gap-2">
               <b className="text-[clamp(32px,4vw,48px)] font-semibold leading-none" style={{ color: t.colors.accent }}><bdi>{text(b.settings.value)}</bdi></b>
               <span className="text-sm font-semibold">{text(b.settings.title)}</span>
               {text(b.settings.text) && <span className="max-w-[220px] text-xs opacity-70">{text(b.settings.text)}</span>}
             </div>
-          ))}
+          ), b.settings.style))}
         </div>
       </div>
     </section>

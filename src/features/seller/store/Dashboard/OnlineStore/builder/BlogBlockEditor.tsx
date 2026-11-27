@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from 'react';
 import { Plus, Trash2, Copy, ChevronUp, ChevronDown, Type, Heading as HeadingIcon, Image as ImageIcon, Quote, List, Minus } from 'lucide-react';
 import type { Block } from '@/api/services/storefrontTypes';
 import { Field, Select } from '@/components/comman/ui';
+import { BlockStylePanel } from './BlockStylePanel';
 import { BlockFields } from './BlockFields';
 import { SortableList } from './Sortable';
 
@@ -117,6 +118,7 @@ export function BlogBlockEditor({ content, onChange, onRequestRemove, storeId }:
                   storeId={storeId}
                 />
               )}
+              <BlockStylePanel settings={block.settings} onChange={settings => update(i, { settings })} />
             </div>
           );
         }}

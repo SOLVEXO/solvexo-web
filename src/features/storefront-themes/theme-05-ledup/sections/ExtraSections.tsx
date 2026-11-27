@@ -92,9 +92,9 @@ function MetaobjectListSection({ section, colors }: { section: Section; colors: 
     <SectionShell colors={colors} heading={section.settings.heading} align="center">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {entries === null
-          ? Array.from({ length: 3 }).map((_, i) => <div key={i} aria-hidden className="h-32 animate-pulse" style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }} />)
+          ? Array.from({ length: 3 }).map((_, i) => <div key={i} aria-hidden className="sx-card h-32 animate-pulse" style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }} />)
           : entries.map(entry => (
-            <div key={entry._id} className="flex flex-col gap-3 p-6" style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
+            <div key={entry._id} className="sx-card flex flex-col gap-3 p-6" style={{ background: colors.bgAlt, borderRadius: t.productCardRadiusPx }}>
               <p className="m-0 text-lg font-semibold" style={{ fontFamily: t.fonts.display }}>{entry.displayName}</p>
               {entry.fields.length > 0 && (
                 <dl className="m-0 flex flex-col gap-1.5">
@@ -141,7 +141,7 @@ function DropCountdownSection({ section }: { section: Section }) {
   return (
     <section style={{ background: t.colors.accent, color: t.colors.accentInk, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto flex max-w-[680px] flex-col items-center gap-6 text-center">
-        {s.heading && <h2 className="m-0 text-[clamp(26px,3.5vw,42px)] font-light leading-tight" style={{ fontFamily: t.fonts.display }}>{s.heading}</h2>}
+        {s.heading && <h2 className="sx-h2 m-0 text-[clamp(26px,3.5vw,42px)] font-light leading-tight" style={{ fontFamily: t.fonts.display }}>{s.heading}</h2>}
         {s.subheading && <p className="m-0 text-sm font-medium opacity-70" style={{ fontFamily: t.fonts.body }}>{s.subheading}</p>}
         {now.done ? (
           <p className="m-0 text-2xl" style={{ fontFamily: t.fonts.display }}>{copyText(s, 'endedText', 'Dropped!')}</p>

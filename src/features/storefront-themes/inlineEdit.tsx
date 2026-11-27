@@ -10,6 +10,11 @@ export function InlineEditProvider({ sectionId, onEdit, children }: { sectionId:
   return <InlineEditContext.Provider value={{ sectionId, onEdit }}>{children}</InlineEditContext.Provider>;
 }
 
+/** The Customize preview's edit handler (null on the live store): used for drag-to-move in the free layout. */
+export function useInlineEdit() {
+  return useContext(InlineEditContext);
+}
+
 /** True only inside the Customize preview. */
 export function useInlineEditActive() {
   return useContext(InlineEditContext) !== null;

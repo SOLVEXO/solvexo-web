@@ -2,7 +2,8 @@
 import type { Block } from '@/api/services/storefrontTypes';
 import { MaisonAppBlock } from './MaisonAppBlock';
 import { renderRichText } from '@/utils/richText';
-import { PreviewBlock } from '../../../previewInspector';
+import { PreviewBlock, BlockStyleProvider } from '../../../previewInspector';
+import { BLOCK_STYLE_CSS } from '../../../blockStyle';
 import { fashionTheme as t } from '../../theme.config';
 import { safeUrl } from '../../../core/community/communityFormat';
 
@@ -19,7 +20,8 @@ const HEADINGS = { h2: { Tag: 'h2', size: 'clamp(26px,3vw,34px)' }, h3: { Tag: '
  *  never raw HTML), image URLs are checked, unknown block types render nothing. */
 export function BlogContentBlocks({ blocks, dynamicSourceValues = {} }: { blocks: Block[]; dynamicSourceValues?: Record<string, string> }) {
   return (
-    <>
+    <BlockStyleProvider blocks={blocks.map((b, i) => ({ ...b, _id: (b as { id?: string }).id ?? b._id ?? i }))}>
+      <style>{BLOCK_STYLE_CSS}</style>
       {blocks.map((block, i) => {
         const s = (block.settings ?? {}) as Record<string, any>;
         const id = String((block as { id?: string }).id ?? block._id ?? i);
@@ -71,7 +73,7 @@ export function BlogContentBlocks({ blocks, dynamicSourceValues = {} }: { blocks
             return null;
         }
       })}
-    </>
+    </BlockStyleProvider>
   );
 }
 

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components -- section settings are seller-authored JSON; this module registers renderers as a side effect */
+import { LayoutGridSection } from '../../LayoutGridSection';
 import { DocumentsGridSection } from '@/features/storefront-themes/core/documents/DocumentsGrid';
 import { useState } from 'react';
 import { CardOverridesProvider } from '../../core/product/cardOverrides';
@@ -38,6 +39,7 @@ registerLedupSection('custom_html', (section, blocks, colors) => <CustomHtmlSect
 registerLedupSection('image_banner', (section, blocks, colors) => <ImageBannerSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('collection_list', (section, blocks, colors) => <CollectionListSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('gallery_grid', (section, blocks, colors) => <GalleryGridSection section={section} blocks={blocks} colors={colors} />);
+registerLedupSection('layout_grid', (section, blocks, colors) => <LayoutGridSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('store_locations', (section, blocks, colors) => <StoreLocationsSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('contact_form', (section, blocks, colors) => <ContactFormSection section={section} blocks={blocks} colors={colors} />);
 registerLedupSection('related_products', (section, blocks, colors) => <CardOverridesProvider settings={section.settings}><RelatedProductsSection section={section} blocks={blocks} colors={colors} /></CardOverridesProvider>);
@@ -103,7 +105,7 @@ function Faq({ settings: s, blocks, colors }: { settings: Record<string, any>; b
           return (
             <li key={id}><PreviewBlock blockId={id}>
               {/* Same look as the /faqs page accordion: grey card when open, round +/x button. */}
-              <div style={{ borderRadius: t.productCardRadiusPx, background: isOpen ? colors.bgAlt : colors.bg, border: `1px solid ${isOpen ? 'transparent' : colors.border}`, transition: 'background-color .2s' }}>
+              <div className="sx-faq" style={{ borderRadius: t.productCardRadiusPx, background: isOpen ? colors.bgAlt : colors.bg, border: `1px solid ${isOpen ? 'transparent' : colors.border}`, transition: 'background-color .2s' }}>
                 <button type="button" aria-expanded={isOpen} aria-controls={`lb-faq-${id}`} onClick={() => setOpen(isOpen ? null : id)}
                   className="flex w-full cursor-pointer items-center justify-between gap-4 border-0 bg-transparent text-left" style={{ padding: '18px 22px', fontFamily: t.fonts.display, fontSize: 17, fontWeight: 500, color: colors.ink, borderRadius: t.productCardRadiusPx }}>
                   <span>{b.settings.question}</span>

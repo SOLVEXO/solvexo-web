@@ -5,6 +5,8 @@ import { LedupFooter } from './components/LedupFooter';
 import { ledupTheme, applyMerchantThemeOverrides } from './theme.config';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import './ledup.css';
+import './ledup-base.css';
+import './ledup-signature.css';
 
 /** What the Customize / Header & Footer live preview renders for stores on this theme. */
 registerThemePreviewComponents({
@@ -13,6 +15,7 @@ registerThemePreviewComponents({
   Navbar: LedupNavbar,
   Footer: LedupFooter,
   theme: ledupTheme,
+  rootClass: 'ld-root lb-root',
   applyMerchantThemeOverrides,
   supportedSectionTypes: getRegisteredLedupSectionTypes() as SectionType[],
 });

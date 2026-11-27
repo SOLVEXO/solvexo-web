@@ -84,3 +84,14 @@ article[data-fx-align='center'] .fx-card-body :is(p.flex, ul.flex, div.flex.item
 :lang(ur) .fx-cta, :lang(ur) .fx-pill { line-height: 1.4; }
 /* Seller-written section text: each heading/paragraph picks its own direction so English copy in an RTL page keeps its punctuation */
 .fx-bidi :is(h1, h2, h3, h4, h5, h6, p, li, blockquote, figcaption, div:not(:has(div, p, section, ul, ol, h1, h2, h3, h4, h5, h6, table, form, img, svg, button, input, select, textarea))) { unicode-bidi: plaintext; }
+
+/* ── Section look (generic sections): Maison = editorial, soft filled cards ───────────────────── */
+.fx-root .sx-h2 { font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; }
+.fx-root .sx-h3 { font-size: 1.3rem; font-weight: 500; letter-spacing: -0.015em; line-height: 1.25; }
+.fx-root .sx-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+.fx-root .sx-card { padding: 1.75rem; transition: transform .35s cubic-bezier(.22,.61,.36,1); }
+.fx-root .sx-card:hover { transform: translateY(-3px); }
+.fx-root .sx-faq { transition: background-color .2s, transform .25s; }
+.fx-root .sx-faq:hover { transform: translateX(2px); }
+.fx-root .sx-media { position: relative; }
+.fx-root .sx-media:not(:has(img, video, iframe, picture))::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='rgba(0,0,0,.22)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='10' y='14' width='44' height='36' rx='5'/%3E%3Ccircle cx='24' cy='26' r='4'/%3E%3Cpath d='M10 44l12-11 9 8 9-9 14 13'/%3E%3C/svg%3E") center / 56px no-repeat; }

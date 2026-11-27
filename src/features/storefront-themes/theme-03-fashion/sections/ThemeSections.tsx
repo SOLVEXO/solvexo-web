@@ -1,5 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- this module registers renderers as a side effect */
+import { blockStyleProps } from '../../blockStyle';
 import { columnCount } from '@/features/storefront/browse/gridLayout';
+import { useInlineEditActive } from '../../inlineEdit';
 import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
@@ -37,7 +39,8 @@ const text = (v: unknown) => (typeof v === 'string' ? v : '');
 
 // ── Lookbook ────────────────────────────────────────────────────────────────────────────
 custom.set('maison.lookbook', (section, blocks, colors) => {
-  const looks = blocks.filter(b => b.type === 'theme_block' && text(b.settings.imageUrl));
+  // a look without a photo is a placeholder tile in the editor (LookTile hides it on the live store)
+  const looks = blocks.filter(b => b.type === 'theme_block');
   if (looks.length === 0) return null;
   const cols = columnCount(section.settings.columns, 3);
   const ratio = imageFit(section.settings.imageRatio, '3 / 4');
@@ -55,10 +58,14 @@ function LookTile({ block, fit, colors }: { block: Block; fit: ReturnType<typeof
   const { resolveLink } = useStorefront();
   const link = block.settings.link ? resolveLink(block.settings.link) : null;
   const title = text(block.settings.title);
+  const bs = blockStyleProps(block.settings.style);
+  const editing = useInlineEditActive();
+  const image = text(block.settings.imageUrl);
+  if (!image && !editing) return null;
   const tile = (
     <>
-      <div className="overflow-hidden" style={{ ...fit.box, borderRadius: t.imageRadiusPx, background: colors.bgAlt }}>
-        <img src={text(block.settings.imageUrl)} alt={title} loading="lazy" className="transition-transform duration-500 hover:scale-105" style={fit.img} />
+      <div className="sx-media overflow-hidden" style={{ ...fit.box, borderRadius: t.imageRadiusPx, background: colors.bgAlt }}>
+        {image && <img src={image} alt={title} loading="lazy" className="transition-transform duration-500 hover:scale-105" style={fit.img} />}
       </div>
       {(title || text(block.settings.caption)) && (
         <div className="pt-3">
@@ -68,9 +75,9 @@ function LookTile({ block, fit, colors }: { block: Block; fit: ReturnType<typeof
       )}
     </>
   );
-  if (link?.to) return <Link to={link.to} {...newTabProps(link)} className="block no-underline" style={{ color: colors.ink }}>{tile}</Link>;
-  if (link?.href) return <a href={link.href} {...newTabProps(link)} className="block no-underline" style={{ color: colors.ink }}>{tile}</a>;
-  return <div>{tile}</div>;
+  if (link?.to) return <Link to={link.to} {...newTabProps(link)} className={`block no-underline ${bs.className ?? ''}`} style={{ color: colors.ink, ...bs.style }}>{tile}</Link>;
+  if (link?.href) return <a href={link.href} {...newTabProps(link)} className={`block no-underline ${bs.className ?? ''}`} style={{ color: colors.ink, ...bs.style }}>{tile}</a>;
+  return <div className={bs.className} style={bs.style}>{tile}</div>;
 }
 
 // ── Size guide ──────────────────────────────────────────────────────────────────────────

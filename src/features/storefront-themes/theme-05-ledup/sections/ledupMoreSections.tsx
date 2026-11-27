@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- this module registers renderers as a side effect */
+import { applyBlockStyle, blockStyleProps } from '../../blockStyle';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Clock, Mail, MapPin, Phone } from 'lucide-react';
 import { ts } from '@/utils/tStatic';
@@ -35,7 +36,7 @@ function HeroSlider({ section, blocks }: { section: Section; blocks: Block[] }) 
   return (
     <section aria-roledescription="carousel" aria-label={text(section.settings.heading) || ts('pg.featured', 'Featured')} style={{ background: t.colors.dark, color: t.colors.darkInk, fontFamily: t.fonts.body }}>
       <div className="relative mx-auto grid items-center gap-8 md:grid-cols-2" style={{ maxWidth: t.layout.maxWidth, minHeight, padding: `clamp(28px,4vw,56px) ${t.layout.containerPadX}` }}>
-        <div aria-live={autoplay ? 'off' : 'polite'}>
+        <div aria-live={autoplay ? 'off' : 'polite'} {...blockStyleProps(slides[Math.min(index, count - 1)].settings.style)}>
           {text(s.eyebrow) && <p className="m-0 mb-3 text-[13px] font-medium" style={{ color: t.colors.accent }}>{text(s.eyebrow)}</p>}
           <h2 className="m-0 text-[clamp(28px,4vw,48px)] font-light leading-[1.1]" style={{ fontFamily: t.fonts.display }}>{text(s.heading)}</h2>
           {text(s.text) && <p className="m-0 mt-4 max-w-[460px] text-base leading-relaxed opacity-80">{text(s.text)}</p>}
@@ -65,7 +66,7 @@ ledupCustom.set('tech.bento_grid', (section, blocks, colors) => {
   return (
     <LedupSectionShell colors={colors} heading={text(section.settings.heading)}>
       <div className="grid auto-rows-[minmax(180px,1fr)] grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-        {tiles.map((b, i) => (
+        {tiles.map((b, i) => applyBlockStyle((
           <BlockLink key={b._id ?? i} block={b} className={`group relative block overflow-hidden no-underline ${BENTO_SPAN[text(b.settings.size)] ?? ''}`} style={{ background: t.colors.dark, color: '#fff', borderRadius: t.cardRadiusPx, minHeight: 180 }}>
             {text(b.settings.imageUrl) && <img src={text(b.settings.imageUrl)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-105" />}
             <span className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-4" style={{ background: 'linear-gradient(transparent, rgba(2,2,3,.75))' }}>
@@ -73,7 +74,7 @@ ledupCustom.set('tech.bento_grid', (section, blocks, colors) => {
               {text(b.settings.text) && <span className="text-sm opacity-85">{text(b.settings.text)}</span>}
             </span>
           </BlockLink>
-        ))}
+        ), b.settings.style))}
       </div>
     </LedupSectionShell>
   );
@@ -88,14 +89,14 @@ ledupCustom.set('tech.image_grid', (section, blocks, colors) => {
   return (
     <LedupSectionShell colors={colors} heading={text(section.settings.heading)}>
       <ul className={`m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 ${cols}`}>
-        {items.map((b, i) => (
+        {items.map((b, i) => applyBlockStyle((
           <li key={b._id ?? i}>
             <BlockLink block={b} className="block no-underline" style={{ color: colors.ink }}>
               <img src={text(b.settings.imageUrl)} alt={text(b.settings.caption)} loading="lazy" className="aspect-square w-full object-cover" style={{ borderRadius: t.imageRadiusPx }} />
               {text(b.settings.caption) && <span className="mt-2 block text-xs leading-snug" style={{ color: colors.inkMuted }}>{text(b.settings.caption)}</span>}
             </BlockLink>
           </li>
-        ))}
+        ), b.settings.style))}
       </ul>
     </LedupSectionShell>
   );
@@ -144,10 +145,10 @@ function TabbedProducts({ section, blocks, colors }: { section: Section; blocks:
   return (
     <LedupSectionShell colors={colors} heading={text(section.settings.heading)}>
       <div role="tablist" aria-label={text(section.settings.heading) || ts('pg.products', 'Products')} className="lb-hide-scroll mb-5 flex gap-1 overflow-x-auto" style={{ borderBottom: `1px solid ${t.colors.border}` }}>
-        {tabs.map((b, i) => (
+        {tabs.map((b, i) => applyBlockStyle((
           <button key={b._id ?? i} type="button" role="tab" aria-selected={i === active} onClick={() => setActive(i)} className="cursor-pointer whitespace-nowrap border-0 bg-transparent px-4 py-3 text-sm font-semibold"
             style={{ color: i === active ? t.colors.accent : t.colors.inkMuted, boxShadow: i === active ? `inset 0 -2px 0 ${t.colors.accent}` : 'none' }}>{text(b.settings.label)}</button>
-        ))}
+        ), b.settings.style))}
       </div>
       {error ? <p role="alert" className="m-0 text-sm" style={{ color: colors.inkMuted }}>{ts('pg.we_couldn_t_load_these_products', "We couldn't load these products.")} <button type="button" onClick={retry} className="cursor-pointer border-0 bg-transparent p-0 underline" style={{ color: colors.ink }}>{ts('checkout.tryAgain', 'Try again')}</button></p>
         : (

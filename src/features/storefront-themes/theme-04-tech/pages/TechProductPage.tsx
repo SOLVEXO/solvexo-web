@@ -1,3 +1,4 @@
+import { BLOCK_STYLE_CSS, blockStyleProps } from '../../blockStyle';
 import { useProductReviews } from '../../core/hooks/useProductReviews';
 import { siteOrigin, sitePathname } from '@/utils/siteOrigin';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -304,9 +305,10 @@ function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?:
           {b.showBreadcrumbs && <TechBreadcrumbs items={[{ label: ts('product.crumbHome', 'Home'), to: '/' }, { label: ts('product.crumbShop', 'Shop'), to: '/search' }, { label: product.name }]} />}
           <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-14">
             <div className="flex flex-col gap-5">
+              <style>{BLOCK_STYLE_CSS}</style>
               {layout.infoItems.map(item => {
                 const node = info[item.type]?.(item.settings);
-                return node ? <div key={item.key}>{node}</div> : null;
+                return node ? <div key={item.key} {...blockStyleProps(item.settings.style)}>{node}</div> : null;
               })}
               {!isDigital && b.showDelivery && <ProductDelivery storeId={store.storeId} />}
             </div>

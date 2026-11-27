@@ -76,7 +76,7 @@ export function ContactFormSection({ section, colors }: SharedSectionProps) {
     const wrap = (node: ReactNode) => <div key={f.id} className={SPAN[f.width ?? 'full'] ?? SPAN.full}>{node}</div>;
 
     if (f.type === 'step') return null;
-    if (f.type === 'heading') return wrap(<h3 className="m-0 mt-2 text-xl font-medium" style={{ fontFamily: t.fonts.display }}>{f.label}</h3>);
+    if (f.type === 'heading') return wrap(<h3 className="sx-h3 m-0 mt-2" style={{ fontFamily: t.fonts.display }}>{f.label}</h3>);
     if (f.type === 'paragraph') return wrap(<p className="m-0 whitespace-pre-line text-[15px] leading-relaxed" style={{ color: colors.inkMuted }}>{f.label}</p>);
 
     if (f.type === 'radio' || (f.type === 'checkbox' && f.options?.length)) {

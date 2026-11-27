@@ -3,6 +3,8 @@ import { LEDUP_DEMO_STORE, LEDUP_DEMO_SECTIONS } from './demo/ledupDemoData';
 import { LedupDemoChrome, LedupDemoRenderer } from './demo/LedupDemoStore';
 import { ledupTheme } from './theme.config';
 import './ledup.css';
+import './ledup-base.css';
+import './ledup-signature.css';
 
 registerThemeDemoPreview({
   id: 'theme-05-ledup',

@@ -1,3 +1,4 @@
+import { BLOCK_STYLE_CSS, blockStyleProps } from '../../blockStyle';
 import { useProductReviews } from '../../core/hooks/useProductReviews';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased } from '../../textCase';
@@ -361,9 +362,10 @@ function ProductPageInner({ slug, embedded = false, draftMain }: { slug: string;
             </div>
           )}
           <div className={`flex flex-col gap-6 ${layout.mediaOn ? 'lg:col-span-5' : 'lg:col-span-12'}`}>
+            <style>{BLOCK_STYLE_CSS}</style>
             {layout.infoItems.map(item => {
               const node = info[item.type]?.(item.settings);
-              return node ? <div key={item.key}>{node}</div> : null;
+              return node ? <div key={item.key} {...blockStyleProps(item.settings.style)}>{node}</div> : null;
             })}
             {t.showDelivery && !isDigital && <ProductDelivery storeId={store.storeId} />}
           </div>
