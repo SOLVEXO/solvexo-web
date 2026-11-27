@@ -1,3 +1,4 @@
+import { BLOCK_STYLE_CSS, blockStyle } from '../../blockStyle';
 import { usePublicCollections, usePublicPages } from '../../core/hooks/usePublicLists';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cased, textCaseOf } from '../../textCase';
@@ -40,6 +41,12 @@ function maisonNoLinkNavCss(scope: string, o: { navFontSize: 'sm' | 'md' | 'lg';
     rules.push(`${sel}:hover,${sel}:focus-visible{background-size:100% 1.5px}`);
   }
   return rules.join('');
+}
+
+/** A menu link's own Style (Header editor -> link -> Style), merged onto the link: no wrapper, the menu layout is untouched. */
+function styledNav(raw: unknown, className: string, style: React.CSSProperties) {
+  const bs = blockStyle(raw);
+  return { className: `${className} ${bs?.className ?? ''}`.trim(), style: { ...style, ...bs?.style } };
 }
 
 export function FashionNavbar() {
@@ -153,7 +160,7 @@ export function FashionNavbar() {
     <>
       {o.topBar && <HeaderTopBar bar={o.topBar} fallbackBg={t.colors.ink} fallbackColor={t.colors.bg} fontFamily={t.fonts.body} maxWidth={t.layout.maxWidth} padX={t.layout.containerPadX} />}
       <header className="relative" ref={el => scroll.attach(el)} data-sx-header={scope} style={{ ...scroll.style, background: headerBg, color: fg, borderBottom: o.showDivider && !(transparent && scroll.clear) ? `1px solid ${t.colors.border}` : '1px solid transparent', fontFamily: t.fonts.body, backdropFilter: o.stickyMode !== 'off' ? 'saturate(1.4) blur(10px)' : undefined }}>
-        <style>{headerNavCss(scope, { ...o, navHoverStyle: o.navHoverStyle === 'pill' ? 'none' : o.navHoverStyle }) + maisonNoLinkNavCss(scope, o) + headerPopupCss(o, { bg: t.colors.accent, ink: t.colors.accentInk })}</style>
+        <style>{headerNavCss(scope, { ...o, navHoverStyle: o.navHoverStyle === 'pill' ? 'none' : o.navHoverStyle }) + maisonNoLinkNavCss(scope, o) + headerPopupCss(o, { bg: t.colors.accent, ink: t.colors.accentInk }) + BLOCK_STYLE_CSS}</style>
         <div className={`mx-auto grid grid-cols-[1fr_auto_1fr] items-center ${layout.grid} ${layout.rows}`} style={{ maxWidth: t.layout.maxWidth, padding: `${padY}px ${t.layout.containerPadX}`, columnGap: 16 }}>
           <div className={`col-start-1 row-start-1 flex min-w-0 items-center gap-2 ${layout.logo}`}>
             <button type="button" className={`${iconBtn} lg:hidden`} aria-label={ts('nav.openMenu', 'Open menu')} onClick={() => setMobileOpen(true)} style={{ color: fg }}><Menu size={22} /></button>
@@ -167,7 +174,7 @@ export function FashionNavbar() {
                 <div key={item.id} className="group relative" data-open={openMenu === item.id} data-dismissed={dismissedMenu === item.id} data-nav-group={item.id}
                   onMouseEnter={() => { if (dismissedMenu === item.id) setDismissedMenu(null); }} onFocus={() => { if (dismissedMenu === item.id) setDismissedMenu(null); }}>
                   <div className={`inline-flex items-center rounded-full transition-colors ${o.navHoverStyle !== 'underline' ? 'group-hover:bg-[color-mix(in_srgb,currentColor_8%,transparent)] group-data-[open=true]:bg-[color-mix(in_srgb,currentColor_8%,transparent)] group-data-[dismissed=true]:bg-transparent!' : ''}`}>
-                  <NavAnchor link={item.link} className={`inline-block whitespace-nowrap rounded-full py-2 text-sm font-medium no-underline ${item.children.length > 0 ? 'pl-4 pr-1' : 'px-4'}`} style={{ color: fg }}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : cased('menu', item.label)}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                  <NavAnchor link={item.link} {...styledNav(item.style, `inline-block whitespace-nowrap rounded-full py-2 text-sm font-medium no-underline ${item.children.length > 0 ? 'pl-4 pr-1' : 'px-4'}`, { color: fg })}>{/^nav-\d+$/.test(item.id) && !header?.menuId ? <EditableText value={item.label} settingKey="label" blockId={item.id} /> : cased('menu', item.label)}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                   {item.children.length > 0 && (
                     <button type="button" aria-expanded={openMenu === item.id} aria-label={openMenu === item.id ? ts('pg.close_label_menu', 'Close {{label}} menu', { label: item.label }) : ts('pg.open_label_menu', 'Open {{label}} menu', { label: item.label })} onPointerDown={e => { lastPointer.current = e.pointerType; }} onClick={e => toggleMenu(item.id, e.currentTarget)}
                       className="mr-2 inline-grid size-7 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 align-middle" style={{ color: fg }}>

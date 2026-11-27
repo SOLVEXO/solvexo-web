@@ -5,6 +5,7 @@ import type { StorefrontHeader, StorefrontFooter, LogoLink } from '@/api/service
 import { LinkTargetFields, type LinkTarget } from '../builder/LinkTargetFields';
 import type { Block } from '@/api/services/storefrontTypes';
 import { BlockFields, type PageOption } from '../builder/BlockFields';
+import { BlockStylePanel } from '../builder/BlockStylePanel';
 import { SortableList } from '../builder/Sortable';
 import { PageSectionsEditor } from '../builder/PageSectionsEditor';
 import type { Section, SectionType } from '@/api/services/storefrontTypes';
@@ -101,7 +102,7 @@ function BlockRow({ block, onChange, onRemove, onDuplicate, pageOptions, storeId
         </button>
         <button type="button" onClick={() => setConfirming(true)} className="text-error text-[11px] font-semibold px-2 py-1 hover:bg-error-bg rounded-md bg-transparent border-none cursor-pointer shrink-0">Remove</button>
       </div>
-      {open && <div className="px-3 pb-3 pt-1 border-t border-bone/70"><BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} storeId={storeId} /></div>}
+      {open && <div className="px-3 pb-3 pt-1 border-t border-bone/70"><BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} storeId={storeId} />{block.type === 'nav_link' && <BlockStylePanel variant="nav" settings={block.settings} onChange={settings => onChange({ ...block, settings })} />}</div>}
       {confirming && (
         <ConfirmDialog title="Remove item" message={`Remove "${label}"? This cannot be undone.`} confirmLabel="Remove" onCancel={() => setConfirming(false)} onConfirm={() => { setConfirming(false); onRemove(); }} />
       )}
