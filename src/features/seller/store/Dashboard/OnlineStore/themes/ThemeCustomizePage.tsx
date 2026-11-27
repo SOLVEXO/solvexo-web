@@ -351,7 +351,7 @@ export function ThemeCustomizePage() {
     editor.edit(cur.map((sec, i) => {
       if (String(sec._id ?? i) !== sectionKey) return sec;
       if (!blockId) return { ...sec, settings: { ...sec.settings, [key]: value } };
-      return { ...sec, blocks: (sec.blocks ?? []).map((b, bi) => String(b._id ?? bi) === blockId ? { ...b, settings: { ...b.settings, [key]: value } } : b) };
+      return { ...sec, blocks: (sec.blocks ?? []).map((b, bi) => String(b._id ?? bi) === blockId ? { ...b, settings: { ...b.settings, [key]: key === 'column' ? Number(value) : value } } : b) };
     }));
   };
   const selectChrome = (part: PreviewChromePart | null) => {

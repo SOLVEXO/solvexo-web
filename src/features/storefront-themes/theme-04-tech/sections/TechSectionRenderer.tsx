@@ -5,11 +5,12 @@ import { useExperimentSections } from '../../core/experiments/useExperimentSecti
 import { localizeSections } from '@/utils/storeText';
 import { resolveSectionColors, baseTypographyCss, baseTheme } from '../theme.base';
 import { SectionContentLayer } from '../../shared/SectionContentLayer';
+import { BLOCK_STYLE_CSS } from '../../blockStyle';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { SectionRulesGate, SectionVideoBg } from '../../sectionDesignRuntime';
 import { useSectionReveal } from '../../useSectionReveal';
 import { useResolvedSavedSections } from '../../useSavedSections';
-import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
+import { PreviewInspectorProvider, BlockStyleProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { InlineEditProvider, type InlineEditHandler } from '../../inlineEdit';
 import './register';
 import { resolveTechSection } from './techSectionRegistry';
@@ -53,7 +54,7 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
 
   return (
     <>
-      <style>{SECTION_SPACING_CSS}{baseTypographyCss('[data-sx]')}{selectable ? EDITOR_CSS : ''}</style>
+      <style>{SECTION_SPACING_CSS}{BLOCK_STYLE_CSS}{baseTypographyCss('[data-sx]')}{selectable ? EDITOR_CSS : ''}</style>
       {sections.map((rawSection, i) => {
         if (rawSection.enabled === false) return null;
         const render = resolveTechSection(rawSection.type);
@@ -74,7 +75,7 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
               <SectionVideoBg settings={section.settings} />
               {scoped && <style>{scoped}</style>}
               <SectionContentLayer items={section.settings.contentItems} ink={colors.ink} displayFont={baseTheme.fonts.display} bodyFont={baseTheme.fonts.body} />
-              {render(section, blocks, colors, dynamic, previewContext)}
+              <BlockStyleProvider blocks={blocks}>{render(section, blocks, colors, dynamic, previewContext)}</BlockStyleProvider>
             </div>
           </SectionRulesGate>
           );
@@ -92,7 +93,7 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
             <SectionVideoBg settings={section.settings} />
             {scoped && <style>{scoped}</style>}
             <SectionContentLayer items={section.settings.contentItems} ink={colors.ink} displayFont={baseTheme.fonts.display} bodyFont={baseTheme.fonts.body} selectable />
-            <PreviewInspectorProvider value={{ sectionId: key, selectedBlockId: on ? selectedBlockId : null, onSelectBlock }}>
+            <PreviewInspectorProvider value={{ sectionId: key, selectedBlockId: on ? selectedBlockId : null, onSelectBlock, blockStyles: Object.fromEntries(blocks.map(b => [String(b._id), (b.settings as Record<string, unknown>).style])) }}>
               {onEditText ? <InlineEditProvider sectionId={key} onEdit={onEditText}>{render(section, blocks, colors, dynamic, previewContext)}</InlineEditProvider> : render(section, blocks, colors, dynamic, previewContext)}
             </PreviewInspectorProvider>
           </div>

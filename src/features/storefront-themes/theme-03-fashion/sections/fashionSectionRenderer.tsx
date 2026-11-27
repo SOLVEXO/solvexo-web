@@ -1,11 +1,12 @@
 import type { Section, CoreSectionPreviewContext } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { resolveSectionColors, fashionTypographyCss, fashionTheme } from '../theme.config';
+import { BLOCK_STYLE_CSS } from '../../blockStyle';
 import { SECTION_SPACING_CSS, sectionSpacing, sectionAnchorId, sectionScopedCss } from '../../sectionSpacing';
 import { SectionRulesGate, SectionVideoBg } from '../../sectionDesignRuntime';
 import { useSectionReveal } from '../../useSectionReveal';
 import { useResolvedSavedSections } from '../../useSavedSections';
-import { PreviewInspectorProvider, type PreviewBlockSelection } from '../../previewInspector';
+import { PreviewInspectorProvider, BlockStyleProvider, type PreviewBlockSelection } from '../../previewInspector';
 import { registry } from './sectionRegistry';
 import { useStoreTextIndex } from '@/features/storefront/storeTextContext';
 import { useExperimentSections } from '../../core/experiments/useExperimentSections';
@@ -54,7 +55,7 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
 
   return (
     <>
-      <style>{SECTION_SPACING_CSS}{fashionTypographyCss('[data-sx]')}{selectable ? EDITOR_CSS : ''}</style>
+      <style>{SECTION_SPACING_CSS}{BLOCK_STYLE_CSS}{fashionTypographyCss('[data-sx]')}{selectable ? EDITOR_CSS : ''}</style>
       {sections.map((rawSection, i) => {
         if (rawSection.enabled === false) return null;
         const render = registry.get(rawSection.type);
@@ -75,7 +76,7 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
               <SectionVideoBg settings={section.settings} />
               {scoped && <style>{scoped}</style>}
               <SectionContentLayer items={section.settings.contentItems} ink={colors.ink} displayFont={fashionTheme.fonts.display} bodyFont={fashionTheme.fonts.body} />
-              {render(section, blocks, colors, dynamic, previewContext)}
+              <BlockStyleProvider blocks={blocks}>{render(section, blocks, colors, dynamic, previewContext)}</BlockStyleProvider>
             </div>
           </SectionRulesGate>
           );
@@ -93,7 +94,7 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
             <SectionVideoBg settings={section.settings} />
             {scoped && <style>{scoped}</style>}
             <SectionContentLayer items={section.settings.contentItems} ink={colors.ink} displayFont={fashionTheme.fonts.display} bodyFont={fashionTheme.fonts.body} selectable />
-            <PreviewInspectorProvider value={{ sectionId: key, selectedBlockId: on ? selectedBlockId : null, onSelectBlock }}>
+            <PreviewInspectorProvider value={{ sectionId: key, selectedBlockId: on ? selectedBlockId : null, onSelectBlock, blockStyles: Object.fromEntries(blocks.map(b => [String(b._id), (b.settings as Record<string, unknown>).style])) }}>
               {onEditText ? <InlineEditProvider sectionId={key} onEdit={onEditText}>{render(section, blocks, colors, dynamic, previewContext)}</InlineEditProvider> : render(section, blocks, colors, dynamic, previewContext)}
             </PreviewInspectorProvider>
           </div>

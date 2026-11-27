@@ -15,6 +15,7 @@ import { resolveSectionMeta } from './themeSectionMeta';
 import { findCustomBlockDef } from '@/features/storefront-themes/themeManifest';
 import { SectionFields } from './SectionFields';
 import { BlockFields, type PageOption } from './BlockFields';
+import { BlockStylePanel, styleSupported, layoutItemLabel } from './BlockStylePanel';
 import { SortableList } from './Sortable';
 import { MAX_BLOCKS_PER_SECTION, MAX_SECTIONS_PER_PAGE } from './editorLimits';
 import { AddSectionModal } from './AddSectionModal';
@@ -96,7 +97,7 @@ function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onCh
   // "show block name" requirement for a freshly-added, not-yet-configured
   // app block.
   const appBlockDef = installedApps ? findInstalledAppBlock(installedApps, block.type)?.block : undefined;
-  const label = block.settings.label || (block.type === 'product_text' ? (block.settings.text ? String(block.settings.text).slice(0, 40) : 'Text') : undefined) || block.settings.title || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || appBlockDef?.label || (block.type === 'theme_block' ? findCustomBlockDef(block.settings.blockKey)?.label : undefined) || (sectionType === 'product_main' ? ADDABLE_BLOCK_LABELS[block.type] : undefined) || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
+  const label = block.settings.label || (block.type === 'layout_item' ? layoutItemLabel(block.settings) : undefined) || (block.type === 'product_text' ? (block.settings.text ? String(block.settings.text).slice(0, 40) : 'Text') : undefined) || block.settings.title || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || appBlockDef?.label || (block.type === 'theme_block' ? findCustomBlockDef(block.settings.blockKey)?.label : undefined) || (sectionType === 'product_main' ? ADDABLE_BLOCK_LABELS[block.type] : undefined) || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
   const hidden = block.enabled === false;
 
   useEffect(() => {
@@ -145,7 +146,7 @@ function BlockRow({ block, blockId, isSelected, onSelectBlock, sectionType, onCh
       </div>
       {open && (
         <div className="px-3 pb-3 pt-1 border-t border-bone/70">
-          <BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} storeId={storeId} installedApps={installedApps} ownerResource={ownerResource} />
+          <><BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} storeId={storeId} installedApps={installedApps} ownerResource={ownerResource} />{styleSupported(block.type) && <BlockStylePanel settings={block.settings} onChange={settings => onChange({ ...block, settings })} />}</>
         </div>
       )}
       {confirmingRemove && (
