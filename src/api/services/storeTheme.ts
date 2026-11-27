@@ -529,13 +529,32 @@ export interface BrandKit {
   saleColor:    string | null;
   /** When true, installing/activating/applying any theme keeps these colors. */
   locked:       boolean;
+  /** Extra colour roles, fonts, shape and buttons. Missing / null = the theme keeps its own value. */
+  linkColor?: string | null; priceColor?: string | null; starColor?: string | null; headingColor?: string | null; buttonTextColor?: string | null; cardBgColor?: string | null;
+  font?: string | null; headingFont?: string | null;
+  headingWeight?: StorefrontColors['headingWeight'] | null; headingCase?: StorefrontColors['headingCase'] | null; headingTracking?: StorefrontColors['headingTracking'] | null;
+  buttonCase?: StorefrontColors['buttonCase'] | null; buttonStyle?: ThemeButtonStyle | null;
+  buttonRadius?: string | null; imageRadius?: string | null; sectionRadius?: string | null; inputRadius?: string | null; productCardRadius?: string | null;
+  buttonHover?: StorefrontColors['buttonHover'] | null; buttonShadow?: StorefrontColors['buttonShadow'] | null; cardHover?: StorefrontColors['cardHover'] | null;
+  /** The style preset the seller started from (informational). */
+  presetId?: string | null;
 }
+/** Every theme setting key a Brand Kit can drive, in addition to the five core colours. Mirrors the backend list. */
+export const BRAND_KIT_EXTRA_KEYS = [
+  'linkColor', 'priceColor', 'starColor', 'headingColor', 'buttonTextColor', 'cardBgColor',
+  'font', 'headingFont', 'headingWeight', 'headingCase', 'headingTracking', 'buttonCase',
+  'buttonStyle', 'buttonRadius', 'imageRadius', 'sectionRadius', 'inputRadius', 'productCardRadius', 'buttonHover', 'buttonShadow', 'cardHover',
+] as const;
 /** The theme colour fields a Brand Kit drives (optional roles only when the seller set them) — the same set the backend overlays onto a theme. */
 export function brandKitColors(kit: BrandKit): Partial<StorefrontColors> {
   const colors: Partial<StorefrontColors> = { primaryColor: kit.primaryColor, accentColor: kit.accentColor };
   if (kit.bgColor) colors.bgColor = kit.bgColor;
   if (kit.textColor) colors.textColor = kit.textColor;
   if (kit.saleColor) colors.saleColor = kit.saleColor;
+  for (const key of BRAND_KIT_EXTRA_KEYS) {
+    const v = kit[key];
+    if (typeof v === 'string' && v) (colors as Record<string, unknown>)[key] = v;
+  }
   return colors;
 }
 export function apiGetBrandKit(storeId: string) {

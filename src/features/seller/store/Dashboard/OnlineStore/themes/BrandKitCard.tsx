@@ -20,7 +20,7 @@ function contrast(a: string, b: string) {
   return (hi + 0.05) / (lo + 0.05);
 }
 /** Most common distinct, reasonably colourful tones in an image (client-side, nothing is uploaded). */
-async function extractPalette(file: File): Promise<string[]> {
+export async function extractPalette(file: File): Promise<string[]> {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
