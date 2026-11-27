@@ -46,7 +46,8 @@ export function styleSupported(type: string): boolean {
   return !NO_STYLE.has(type) && !type.startsWith('blog_');
 }
 
-export function BlockStylePanel({ settings, onChange }: { settings: Record<string, any>; onChange: (next: Record<string, any>) => void }) {
+export function BlockStylePanel({ settings, onChange, variant = 'block' }: { settings: Record<string, any>; onChange: (next: Record<string, any>) => void; variant?: 'block' | 'nav' }) {
+  const nav = variant === 'nav'; // menu links: no animation, margins, width or position (they would fight the menu layout)
   const [open, setOpen] = useState(false);
   const style: Style = (settings.style && typeof settings.style === 'object') ? settings.style : {};
   const set = (key: string, v: unknown) => {
@@ -75,8 +76,8 @@ export function BlockStylePanel({ settings, onChange }: { settings: Record<strin
           </div>
           <p className="text-[10.5px] font-semibold text-slate">Space (px)</p>
           <div className="grid grid-cols-2 gap-2">
-            <Num label="Margin top" value={style.marginTop} min={-200} onChange={v => set('marginTop', v)} />
-            <Num label="Margin bottom" value={style.marginBottom} min={-200} onChange={v => set('marginBottom', v)} />
+            {!nav && <Num label="Margin top" value={style.marginTop} min={-200} onChange={v => set('marginTop', v)} />}
+            {!nav && <Num label="Margin bottom" value={style.marginBottom} min={-200} onChange={v => set('marginBottom', v)} />}
             <Num label="Padding top" value={style.paddingTop} onChange={v => set('paddingTop', v)} />
             <Num label="Padding bottom" value={style.paddingBottom} onChange={v => set('paddingBottom', v)} />
             <Num label="Padding left" value={style.paddingLeft} onChange={v => set('paddingLeft', v)} />
@@ -90,22 +91,22 @@ export function BlockStylePanel({ settings, onChange }: { settings: Record<strin
             <Num label="Corner radius" value={style.borderRadius} max={200} onChange={v => set('borderRadius', v)} />
             <Pick label="Shadow" value={style.shadow} onChange={v => set('shadow', v)} options={[['soft', 'Soft'], ['medium', 'Medium'], ['strong', 'Strong']]} />
             <Num label="Opacity (%)" value={style.opacity} max={100} onChange={v => set('opacity', v)} />
-            <Num label="Max width (px)" value={style.maxWidth} min={40} max={2000} onChange={v => set('maxWidth', v)} />
-            <Pick label="Position" value={style.align} onChange={v => set('align', v)} options={[['center', 'Centre'], ['right', 'Right']]} />
+            {!nav && <Num label="Max width (px)" value={style.maxWidth} min={40} max={2000} onChange={v => set('maxWidth', v)} />}
+            {!nav && <Pick label="Position" value={style.align} onChange={v => set('align', v)} options={[['center', 'Centre'], ['right', 'Right']]} />}
           </div>
           <p className="text-[10.5px] font-semibold text-slate">Behaviour</p>
           <div className="grid grid-cols-2 gap-2">
             <Pick label="On hover" value={style.hover} onChange={v => set('hover', v)} options={[['lift', 'Lift up'], ['zoom', 'Zoom'], ['fade', 'Fade'], ['shadow', 'Add shadow'], ['tilt', 'Tilt'], ['glow', 'Glow']]} />
             <Pick label="Show on" value={style.visibility} onChange={v => set('visibility', v)} options={[['desktop', 'Desktop only'], ['mobile', 'Phone only']]} />
           </div>
-          <p className="text-[10.5px] font-semibold text-slate">Animation</p>
-          <div className="grid grid-cols-2 gap-2">
+          {!nav && <p className="text-[10.5px] font-semibold text-slate">Animation</p>}
+          {!nav && <div className="grid grid-cols-2 gap-2">
             <Pick label="When it appears" value={style.animation} onChange={v => set('animation', v)} options={[['fade', 'Fade in'], ['slide-up', 'Slide up'], ['slide-down', 'Slide down'], ['slide-left', 'Slide from left'], ['slide-right', 'Slide from right'], ['zoom', 'Zoom in'], ['zoom-out', 'Zoom out'], ['blur', 'Blur in'], ['rotate', 'Rotate in'], ['flip', 'Flip in'], ['bounce', 'Bounce up'], ['wipe', 'Wipe (left to right)']]} />
             <Pick label="Speed" value={style.animationSpeed} onChange={v => set('animationSpeed', v)} options={[['fast', 'Fast'], ['normal', 'Normal'], ['slow', 'Slow'], ['very-slow', 'Very slow']]} />
             <Pick label="Easing" value={style.animationEase} onChange={v => set('animationEase', v)} options={[['smooth', 'Smooth'], ['ease-out', 'Soft stop'], ['bouncy', 'Bouncy'], ['linear', 'Even']]} />
             <Num label="Delay (ms)" value={style.animationDelay} max={3000} onChange={v => set('animationDelay', v)} />
             <Pick label="Keeps moving" value={style.loop} onChange={v => set('loop', v)} options={[['float', 'Float'], ['pulse', 'Pulse'], ['spin', 'Slow spin'], ['shake', 'Shake']]} />
-          </div>
+          </div>}
           {count > 0 && <button type="button" className="self-start text-[11px] underline text-slate" onClick={() => { const r = { ...settings }; delete r.style; onChange(r); }}>Reset style</button>}
         </div>
       )}

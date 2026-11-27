@@ -116,6 +116,7 @@ const MenuManagerPage = lazy(() => import('@/features/seller/store/Dashboard/Man
 const TranslationsPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/translations/TranslationsPage').then(m => ({ default: m.TranslationsPage })));
 const BlogPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage').then(m => ({ default: m.BlogPage })));
 const AppsPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/apps/AppsPage').then(m => ({ default: m.AppsPage })));
+const BrandKitPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/brand/BrandKitPage').then(m => ({ default: m.BrandKitPage })));
 const ThemeLibraryPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage').then(m => ({ default: m.ThemeLibraryPage })));
 const ThemeCustomizePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeCustomizePage').then(m => ({ default: m.ThemeCustomizePage })));
 const ThemeHeaderFooterPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeHeaderFooterPage').then(m => ({ default: m.ThemeHeaderFooterPage })));
@@ -499,6 +500,7 @@ const mainRouter = createBrowserRouter([
           { path: 'verification',                     element: <Navigate to="../settings/verification" replace /> },
           { path: 'storebuilder',                     element: <Navigate to="online-store/themes" replace /> },
           { path: 'online-store/themes',               element: <ThemeLibraryPage /> },
+          { path: 'online-store/brand-kit',            element: <BrandKitPage /> },
           // `:themeId` is carried in the URL for a real reason now — it used
           // to be a hardcoded theme name unconditionally, even while
           // editing another theme (or any other) store's theme, which is exactly

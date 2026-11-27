@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, ClipboardList, Megaphone, Star, Search, Wallet, Inbox,
   Truck, MessageSquare, FolderTree, Undo2, AlertTriangle, Layers, Image as ImageIcon, FileText,
-  LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, ListTree,
+  LayoutGrid, Newspaper, Paintbrush, Palette, Percent, Gift, Smartphone, ListTree,
   Store, TrendingUp, Landmark, LifeBuoy, Languages, Share2, Boxes, Mail,
 } from 'lucide-react';
 import type { AppRole } from '@/api/services/auth';
@@ -139,6 +139,7 @@ const RAW_NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIc
     groupIcon: Store,
     items: [
       { id: 'online-store-themes',    Icon: Palette,    label: 'Themes',    path: 'online-store/themes',    requiredPermission: 'onlinestore.themes.manage' },
+      { id: 'online-store-brand',     Icon: Paintbrush, label: 'Brand Kit', path: 'online-store/brand-kit', requiredPermission: 'onlinestore.themes.manage' },
       { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages',     requiredPermission: 'onlinestore.content.manage' },
       { id: 'online-store-menus',     Icon: ListTree,   label: 'Navigation', path: 'online-store/menus',     requiredPermission: 'content.menus.manage' },
       { id: 'online-store-section-builder', Icon: Boxes, label: 'Section builder', path: 'online-store/section-builder', requiredPermission: 'onlinestore.themes.manage' },

@@ -7,6 +7,7 @@ import { LinkTargetFields, type LinkTarget } from '@/features/seller/store/Dashb
 import { SortableList } from '@/features/seller/store/Dashboard/OnlineStore/builder/Sortable';
 import { MenuStyleField, MenuImageField } from '@/features/seller/store/Dashboard/OnlineStore/builder/MenuItemExtraFields';
 import { MegaExtrasField, NavBadgeField, NavRulesField } from '@/features/seller/store/Dashboard/OnlineStore/builder/MenuItemExtras';
+import { BlockStylePanel } from '@/features/seller/store/Dashboard/OnlineStore/builder/BlockStylePanel';
 import { apiListStorePages } from '@/api/services/storePages';
 import {
   apiListMenus, apiCreateMenu, apiUpdateMenu, apiDeleteMenu,
@@ -73,6 +74,7 @@ function MenuItemEditor({ item, onChange, onRemove, pageOptions, storeId, depth 
           <MenuImageField value={item.imageUrl} onChange={imageUrl => onChange({ ...item, imageUrl })} storeId={storeId} />
         )}
         <NavBadgeField value={item} onChange={patch => onChange({ ...item, ...patch })} />
+        <BlockStylePanel variant="nav" settings={item as unknown as Record<string, any>} onChange={next => onChange(next as unknown as MenuItem)} />
         {depth === 1 && item.menuStyle === 'mega' && children.length > 0 && (
           <MegaExtrasField value={item} onChange={patch => onChange({ ...item, ...patch })} storeId={storeId} pageOptions={pageOptions} />
         )}

@@ -5,6 +5,7 @@ import { NavAnchor } from '../../../navigation/NavAnchor';
 import { NavBadge } from '../../../navigation/NavBadge';
 import { isMegaItem } from '../../../navigation/megaNav';
 import { fashionTheme as t } from '../../theme.config';
+import { blockStyle } from '../../../blockStyle';
 
 function Toggle({ expanded, label, controls, onClick }: { expanded: boolean; label: string; controls: string; onClick: () => void }) {
   return (
@@ -23,10 +24,13 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
   const [openChildId, setOpenChildId] = useState<string | null>(null);
   const mega = isMegaItem(item);
   const row = `1px solid ${t.colors.border}`;
+  // the seller's own Style for this link (Header editor -> link -> Style), merged on, no wrapper
+  const bs = blockStyle(item.style);
+  const sty = (className: string, style: React.CSSProperties) => ({ className: `${className} ${bs?.className ?? ""}`.trim(), style: { ...style, ...bs?.style } });
   const top = { color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' } as const;
 
   if (item.children.length === 0) {
-    return <NavAnchor link={item.link} onClick={onNavigate} className="block no-underline" style={{ ...top, padding: '16px 4px', borderBottom: row }}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>;
+    return <NavAnchor link={item.link} onClick={onNavigate} {...sty("block no-underline", { ...top, padding: '16px 4px', borderBottom: row })}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>;
   }
 
   const panelId = `${baseId}-panel`;
@@ -34,8 +38,8 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
     <div style={{ borderBottom: row }}>
       <div className="flex items-center justify-between gap-2 py-2.5 pl-1">
         {item.link.to || item.link.href
-          ? <NavAnchor link={item.link} onClick={onNavigate} className="flex-1 py-1.5 no-underline" style={top}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
-          : <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={panelId} className="flex-1 cursor-pointer border-0 bg-transparent py-1.5 text-left" style={top}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></button>}
+          ? <NavAnchor link={item.link} onClick={onNavigate} {...sty("flex-1 py-1.5 no-underline", top)}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+          : <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={panelId} {...sty("flex-1 cursor-pointer border-0 bg-transparent py-1.5 text-left", top)}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></button>}
         <Toggle expanded={open} label={item.label} controls={panelId} onClick={() => setOpen(o => !o)} />
       </div>
 
@@ -47,14 +51,14 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
             const childStyle = { color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 15 };
             const divider = ci > 0 ? { borderTop: row } : undefined;
             if (child.children.length === 0) {
-              return <NavAnchor key={child.id} link={child.link} onClick={onNavigate} className="block no-underline" style={{ ...childStyle, padding: '13px 18px', ...divider }}>{child.label}<NavBadge badge={child.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>;
+              return <NavAnchor key={child.id} link={child.link} navStyle={child.style} onClick={onNavigate} className="block no-underline" style={{ ...childStyle, padding: '13px 18px', ...divider }}>{child.label}<NavBadge badge={child.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>;
             }
             const gridWithImages = mega && child.children.some(g => g.imageUrl);
             return (
               <div key={child.id} style={divider}>
                 <div className="flex items-center justify-between gap-2 py-1.5 pl-[18px] pr-2">
                   {child.link.to || child.link.href
-                    ? <NavAnchor link={child.link} onClick={onNavigate} className="flex-1 py-2 no-underline" style={{ ...childStyle, fontWeight: 600 }}>{child.label}<NavBadge badge={child.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+                    ? <NavAnchor link={child.link} navStyle={child.style} onClick={onNavigate} className="flex-1 py-2 no-underline" style={{ ...childStyle, fontWeight: 600 }}>{child.label}<NavBadge badge={child.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
                     : <button type="button" onClick={() => setOpenChildId(childOpen ? null : child.id)} aria-expanded={childOpen} aria-controls={childPanelId} className="flex-1 cursor-pointer border-0 bg-transparent py-2 text-left" style={{ ...childStyle, fontWeight: 600 }}>{child.label}</button>}
                   <Toggle expanded={childOpen} label={child.label} controls={childPanelId} onClick={() => setOpenChildId(childOpen ? null : child.id)} />
                 </div>
@@ -63,7 +67,7 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
                     {gridWithImages ? (
                       <div className="grid grid-cols-3 gap-3">
                         {child.children.map(g => (
-                          <NavAnchor key={g.id} link={g.link} onClick={onNavigate} className="flex flex-col gap-1.5 no-underline" style={childStyle}>
+                          <NavAnchor key={g.id} link={g.link} navStyle={g.style} onClick={onNavigate} className="flex flex-col gap-1.5 no-underline" style={childStyle}>
                             <span className="block aspect-square w-full overflow-hidden" style={{ borderRadius: 16, background: t.colors.border }}>
                               {g.imageUrl && <img src={g.imageUrl} alt="" loading="lazy" className="block size-full object-cover" />}
                             </span>
@@ -73,7 +77,7 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
                       </div>
                     ) : (
                       <div className="flex flex-col">
-                        {child.children.map(g => <NavAnchor key={g.id} link={g.link} onClick={onNavigate} className="block py-2 no-underline" style={{ ...childStyle, color: t.colors.inkMuted }}>{g.label}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>)}
+                        {child.children.map(g => <NavAnchor key={g.id} link={g.link} navStyle={g.style} onClick={onNavigate} className="block py-2 no-underline" style={{ ...childStyle, color: t.colors.inkMuted }}>{g.label}<NavBadge badge={g.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>)}
                       </div>
                     )}
                   </div>
