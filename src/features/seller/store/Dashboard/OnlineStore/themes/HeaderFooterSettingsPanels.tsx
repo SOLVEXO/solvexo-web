@@ -257,7 +257,8 @@ export function HeaderSettingsPanel({ header, onChange, logoSlot, supports = [],
       {can('menuOverflow') && <Group title="Menu overflow">
         <label className="flex flex-col gap-1">
           <span className="text-[11.5px] text-charcoal">When the menu has more links than fit</span>
-          <Select value={header.menuOverflow ?? 'scroll'} onChange={e => set({ menuOverflow: e.target.value as 'scroll' | 'wrap' })}>
+          <Select value={header.menuOverflow ?? 'more'} onChange={e => set({ menuOverflow: e.target.value as 'scroll' | 'wrap' | 'more' })}>
+            <option value="more">One line, extra links in a "More" menu</option>
             <option value="scroll">One line with scroll arrows</option>
             <option value="wrap">Wrap onto more lines</option>
           </Select>
