@@ -19,7 +19,8 @@ import { techTheme as t } from '../theme.config';
 import { TechProductCard } from '../components/TechProductCard';
 import { TechLinkButton } from '../ui/techUi';
 import { techButtonStyle } from '../ui/techStyle';
-import { registerTechSection } from './techSectionRegistry';
+import { registerTechSection, resolveTechSection } from './techSectionRegistry';
+import { convertForeignSection, isForeignThemeKey } from '../../storeSections/foreignSection';
 import { renderStoreSection } from '../../storeSections/renderStoreSection';
 
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -83,7 +84,17 @@ const custom = new Map<string, Custom>();
 /** The registry of theme-declared sections (also filled by techMoreSections.tsx). */
 export const techCustom = custom;
 // a key without code here is a section the seller built in the Section builder (`my.*`): drawn from its layout
-registerTechSection('theme_section', (section, blocks, colors) => custom.get(String(section.settings.sectionKey))?.(section, blocks, colors) ?? renderStoreSection(section, blocks, colors, TechSectionShell));
+registerTechSection('theme_section', (section, blocks, colors, dynamic) => {
+  const key = String(section.settings.sectionKey);
+  const own = custom.get(key)?.(section, blocks, colors);
+  if (own !== undefined) return own;
+  // another theme's section: shown through this theme's own matching section instead of being dropped
+  if (isForeignThemeKey(key, 'tech.')) {
+    const c = convertForeignSection(section, blocks);
+    return c ? resolveTechSection(c.section.type)?.(c.section, c.blocks, colors, dynamic) ?? null : null;
+  }
+  return renderStoreSection(section, blocks, colors, TechSectionShell);
+});
 
 export function BlockLink({ block, children, className, style }: { block: Block; children: ReactNode; className?: string; style?: React.CSSProperties }) {
   const { resolveLink } = useStorefront();
