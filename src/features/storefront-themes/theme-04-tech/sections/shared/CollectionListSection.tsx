@@ -30,7 +30,7 @@ export function CollectionListSection({ section, blocks, colors }: SharedSection
       <SectionShell colors={colors} heading={section.settings.heading} eyebrow={eyebrow}>
         <div className="relative">
           <div ref={rowRef} className="flex gap-5 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ scrollSnapType: 'x mandatory' }}>
-            {tiles.map(c => <div key={c.key} className="shrink-0" style={{ width: `min(75%, ${Math.floor(960 / cols)}px)`, scrollSnapAlign: 'start' }}>{tile(c)}</div>)}
+            {tiles.map(c => <div key={c.key} className="shrink-0" style={{ width: `min(75%, ${Math.floor(840 / cols)}px)`, scrollSnapAlign: 'start' }}>{tile(c)}</div>)}
           </div>
           {tiles.length > cols && (
             <>
@@ -45,7 +45,7 @@ export function CollectionListSection({ section, blocks, colors }: SharedSection
   }
   return (
     <SectionShell colors={colors} heading={section.settings.heading} eyebrow={eyebrow}>
-      <div className="grid gap-x-5 gap-y-9" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${Math.floor(960 / cols)}px), 1fr))` }}>
+      <div className="grid gap-x-5 gap-y-9" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${Math.floor(840 / cols)}px), 1fr))` }}>
         {tiles.map(tile)}
       </div>
       {panel}

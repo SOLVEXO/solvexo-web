@@ -13,6 +13,7 @@ registerThemePreviewComponents({
   Navbar: TechNavbar,
   Footer: TechFooter,
   theme: techTheme,
+  rootClass: 'tx-root',
   applyMerchantThemeOverrides,
   supportedSectionTypes: getRegisteredTechSectionTypes() as SectionType[],
 });

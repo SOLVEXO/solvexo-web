@@ -1,6 +1,7 @@
 import { registerThemeManifest, type ThemeManifest, type ThemeSettingsFieldDef, type ThemeStylePreset } from '../themeManifest';
 import { baseManifest } from './manifestBase';
 import { TECH_ICON_SETS } from './headerIconSets';
+import { FEATURE_ICON_OPTIONS } from '../featureIcons';
 import type { StorefrontColors } from '@/api/services/storeTheme';
 
 const SHOW_HIDE = [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }];
@@ -205,13 +206,14 @@ export const techThemeManifest: ThemeManifest = {
       description: 'Three or more short promises (support, warranty, savings) on a soft blue band.',
       fields: [],
       block: { key: 'item', label: 'Feature', fields: [
-        { key: 'imageUrl', kind: 'image', label: 'Icon or photo (optional)' },
+        { key: 'icon', kind: 'select', label: 'Icon', options: FEATURE_ICON_OPTIONS },
+        { key: 'imageUrl', kind: 'image', label: 'Own photo instead of the icon (optional)' },
         { key: 'title', kind: 'text', label: 'Title', required: true, maxLength: 50 },
         { key: 'text', kind: 'text', label: 'Short line', maxLength: 140 },
       ] },
       initialBlocks: 3,
       presets: [
-        { id: 'three', name: 'Three promises', description: 'Support, account and savings.', blocks: [{ title: 'Product support' }, { title: 'Personal account' }, { title: 'Amazing savings' }] },
+        { id: 'three', name: 'Three promises', description: 'Support, account and savings.', blocks: [{ icon: 'headphones', title: 'Product support' }, { icon: 'lock', title: 'Personal account' }, { icon: 'percent', title: 'Amazing savings' }] },
       ],
     },
     {

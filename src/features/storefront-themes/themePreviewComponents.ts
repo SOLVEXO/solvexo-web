@@ -51,6 +51,8 @@ export interface ThemePreviewComponents {
   }>;
   Navbar: ComponentType;
   Footer: ComponentType;
+  /** The class the theme's real layout puts on its root element (`fx-root`, `tx-root`...). The editor preview wraps the page in it so the theme's own CSS (typography, section look) applies there too. */
+  rootClass?: string;
   /** The theme's own mutable theme singleton (`fashionTheme`/`fashionTheme`) —
    *  only the two fields the preview wrapper itself needs to style around
    *  the embedded chrome are typed here; each theme's real object has more

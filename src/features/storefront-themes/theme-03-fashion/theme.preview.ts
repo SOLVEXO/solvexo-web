@@ -13,6 +13,7 @@ registerThemePreviewComponents({
   Navbar: FashionNavbar,
   Footer: FashionFooter,
   theme: fashionTheme,
+  rootClass: 'fx-root',
   applyMerchantThemeOverrides,
   supportedSectionTypes: getRegisteredFashionSectionTypes() as SectionType[],
 });

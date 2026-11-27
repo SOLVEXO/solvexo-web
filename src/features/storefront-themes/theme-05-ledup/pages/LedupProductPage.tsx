@@ -5,7 +5,10 @@ import { buildOptionValues, resolveOptionStyle } from '../../core/product/varian
 import { useProductPickerSettings } from '../../core/product/pickerSettings';
 import { variantGallery } from '../../core/product/variantGallery';
 import { usePreloadVariantCovers } from '../../core/product/usePreloadVariantCovers';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { Section } from '@/api/services/storefrontTypes';
+import { ProductTrustBadges } from '../../core/product/trustBadges';
+import { BLOCK_STYLE_CSS, blockStyleProps } from '../../blockStyle';
 import { useNavigate, useParams } from 'react-router-dom';
 import { VendorLink } from '@/features/storefront-themes/core/VendorLink';
 import { ShoppingBag, Minus, Play, Plus } from 'lucide-react';
@@ -52,11 +55,11 @@ export function LedupProductPage() {
 }
 
 /** The Customize editor's preview of the Main Product card: the real product page body for the picked product. Nothing is recorded, nothing is added to a cart, the tab title is left alone. */
-export function LedupProductMainPreview({ slug }: { slug: string; section?: unknown }) {
-  return <Inner key={slug} slug={slug} embedded />;
+export function LedupProductMainPreview({ slug, section }: { slug: string; section?: unknown }) {
+  return <Inner key={slug} slug={slug} embedded draftMain={section as Section | undefined} />;
 }
 
-function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean }) {
+function Inner({ slug, embedded = false, draftMain }: { slug: string; embedded?: boolean; draftMain?: Section }) {
   const { store } = useStorefront();
   const navigate = useNavigate();
   const { addToCart, adding } = useCartContext();
@@ -72,6 +75,8 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
   const storeTabs = useMemo(() => resolveProductMainLayout(templateSections.find(s => s.type === 'product_main')).infoItems
     .filter(i => i.type === 'product_collapsible_tab' && typeof i.settings.title === 'string' && i.settings.title.trim() && typeof i.settings.content === 'string' && i.settings.content.trim())
     .map(i => ({ key: i.key, title: String(i.settings.title), content: String(i.settings.content), open: i.settings.openByDefault === true })), [templateSections]);
+  const sectionsForLayout = useMemo(() => (embedded ? (draftMain ? [draftMain] : []) : templateSections), [embedded, draftMain, templateSections]);
+  const layout = useMemo(() => resolveProductMainLayout(sectionsForLayout.find(s => s.type === 'product_main')), [sectionsForLayout]);
   const product = detail ? localize.product(detail.product) : null;
   const variants = useMemo(() => detail?.variants ?? [], [detail?.variants]);
   const isDigital = detail?.product.type === 'digital' || detail?.product.productType === 'digital';
@@ -174,50 +179,29 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
   const rowCls = 'grid grid-cols-[minmax(0,1fr)_2.2fr] items-center gap-4 border-b border-[#e2dedb] py-6 last:border-b-0';
   const labelCls = 'text-[16px] font-normal text-[#4b423b]';
 
-  return (
-    <div>
-    <div className="ld-split-bg pb-14 pt-8">
-      <LedupBox padY={false}>
-        <LedupBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: product.name }]} />
-
-        <div className="mt-6 grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
-          <div className="flex flex-col gap-4 lg:col-span-6">
-            <div className="relative flex aspect-[5/5.9] w-full items-center justify-center rounded-3xl bg-white p-8 sm:p-12 lg:max-w-[508px]">
-              {videoOn && video ? <LedupVideoBox video={video} poster={images[0]} /> : mainImage
-                ? <img src={mainImage} alt={product.name} className="max-h-full max-w-full object-contain transition duration-300" />
-                : <div className="text-sm text-stone-300">{ts('ld.noImage', 'No image')}</div>}
-            </div>
-            {(images.length > 1 || !!video) && (
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:max-w-[508px] lg:justify-center">
-                {images.map((img, i) => (
-                  <button key={img + i} type="button" aria-label={ts('product.showImage', 'Show image {{n}}', { n: i + 1 })} aria-current={imageIndex === i}
-                    onClick={() => { setGallery({ vid: variant._id, i }); setVideoOn(false); }}
-                    className={`relative h-[100px] w-[80px] shrink-0 rounded-xl border-0 bg-white p-2 shadow-md transition ${imageIndex === i ? 'ring-2 ring-[#9b8b80]' : 'opacity-80 hover:opacity-100'}`}>
-                    <img src={img} alt="" className="h-full w-full object-contain" />
-                  </button>
-                ))}
-                {video && (
-                  <button type="button" aria-label={ts('product.showVideo', 'Show video')} aria-current={videoOn} onClick={() => setVideoOn(true)}
-                    className={`relative grid h-[100px] w-[80px] shrink-0 place-items-center overflow-hidden rounded-xl border-0 bg-black p-0 shadow-md transition ${videoOn ? 'ring-2 ring-[#9b8b80]' : 'opacity-80 hover:opacity-100'}`}>
-                    {video.poster && <img src={video.poster} alt="" className="absolute inset-0 size-full object-cover opacity-70" />}
-                    <Play size={22} fill="#fff" color="#fff" className="relative" />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col lg:col-span-6">
+  const info: Record<string, (s: Record<string, unknown>) => ReactNode> = {
+    product_title: () => (
+<>
             {detail.product.vendor && <p className="m-0 mb-1 text-xs font-medium uppercase tracking-wider text-stone-400"><VendorLink name={detail.product.vendor} /></p>}
             <h1 className="m-0 text-[clamp(28px,3.4vw,40px)] font-medium leading-tight tracking-normal" style={{ fontFamily: t.fonts.display, color: '#4b423b' }}>{cased('product', product.name, 'uppercase')}</h1>
             {short && <p className="mt-2 text-base font-normal leading-relaxed text-[#4b423b]">{short}</p>}
+</>
+),
+    product_description: () => (
+<>
             {description && <div className="prose prose-sm mt-6 max-w-none text-[16px] leading-relaxed text-[#6b625b]" dangerouslySetInnerHTML={{ __html: description }} />}
-
+</>
+),
+    product_price: () => (
+<>
             <div className="mt-6 flex flex-wrap items-baseline gap-3">
               {!wholesale.locked && <span className="text-2xl font-bold" style={{ color: sale.onSale ? t.colors.danger : t.colors.price }}>{show(variant.price)}</span>}
               {!wholesale.locked && sale.onSale && <s className="text-base text-stone-400">{show(sale.compareAmount, true)}</s>}
             </div>
-
+</>
+),
+    product_variant_picker: () => (
+<>
             <div className="mt-8 border-t border-stone-200/80 pt-6">
               <h2 className="mb-4 text-[24px] font-semibold normal-case tracking-normal text-[#4b423b]">{ts('ld.technicalSpecs', 'Technical characteristics')}</h2>
               <div className="flex flex-col text-xs sm:text-sm">
@@ -263,7 +247,11 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
                 )}
               </div>
             </div>
-
+</>
+),
+    product_quantity: () => null,
+    product_buy_buttons: () => (
+<>
             <p className="mt-4 text-xs font-medium" style={{ color: state === 'sold_out' ? t.colors.danger : t.colors.success }} aria-live="polite">
               {state === 'sold_out' ? ts('product.soldOut', 'Sold out') : state === 'low' ? ts('product.lowStock', 'Low stock') : state === 'preorder' ? ts('product.preorder', 'Pre-order') : ts('product.inStock', 'In stock')}
             </p>
@@ -296,7 +284,50 @@ function Inner({ slug, embedded = false }: { slug: string; embedded?: boolean })
                 <ShoppingBag size={16} aria-hidden /> {!canBuy ? ts('product.soldOut', 'Sold out') : pre ? ts('product.preorder', 'Pre-order') : ts('product.addToCart', 'Add to cart')}
               </LedupButton>
             </div>}
+</>
+),
+    product_trust_badges: s => <ProductTrustBadges settings={s} tokens={{ ink: t.colors.ink, inkMuted: t.colors.inkMuted, border: t.colors.border, radius: t.fieldRadiusPx, fontBody: t.fonts.body }} />,
+  };
 
+  return (
+    <div>
+    <div className="ld-split-bg pb-14 pt-8">
+      <LedupBox padY={false}>
+        <LedupBreadcrumbs items={[{ label: ts('pg.home', 'Home'), to: '/' }, { label: product.name }]} />
+
+        <div className="mt-6 grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
+          <div className="flex flex-col gap-4 lg:col-span-6">
+            <div className="relative flex aspect-[5/5.9] w-full items-center justify-center rounded-3xl bg-white p-8 sm:p-12 lg:max-w-[508px]">
+              {videoOn && video ? <LedupVideoBox video={video} poster={images[0]} /> : mainImage
+                ? <img src={mainImage} alt={product.name} className="max-h-full max-w-full object-contain transition duration-300" />
+                : <div className="text-sm text-stone-300">{ts('ld.noImage', 'No image')}</div>}
+            </div>
+            {(images.length > 1 || !!video) && (
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:max-w-[508px] lg:justify-center">
+                {images.map((img, i) => (
+                  <button key={img + i} type="button" aria-label={ts('product.showImage', 'Show image {{n}}', { n: i + 1 })} aria-current={imageIndex === i}
+                    onClick={() => { setGallery({ vid: variant._id, i }); setVideoOn(false); }}
+                    className={`relative h-[100px] w-[80px] shrink-0 rounded-xl border-0 bg-white p-2 shadow-md transition ${imageIndex === i ? 'ring-2 ring-[#9b8b80]' : 'opacity-80 hover:opacity-100'}`}>
+                    <img src={img} alt="" className="h-full w-full object-contain" />
+                  </button>
+                ))}
+                {video && (
+                  <button type="button" aria-label={ts('product.showVideo', 'Show video')} aria-current={videoOn} onClick={() => setVideoOn(true)}
+                    className={`relative grid h-[100px] w-[80px] shrink-0 place-items-center overflow-hidden rounded-xl border-0 bg-black p-0 shadow-md transition ${videoOn ? 'ring-2 ring-[#9b8b80]' : 'opacity-80 hover:opacity-100'}`}>
+                    {video.poster && <img src={video.poster} alt="" className="absolute inset-0 size-full object-cover opacity-70" />}
+                    <Play size={22} fill="#fff" color="#fff" className="relative" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col lg:col-span-6">
+            <style>{BLOCK_STYLE_CSS}</style>
+            {layout.infoItems.map(item => {
+              const node = info[item.type]?.(item.settings);
+              return node ? <div key={item.key} {...blockStyleProps(item.settings.style)}>{node}</div> : null;
+            })}
             <LedupProductTabs tabs={detail.product.tabs} shared={storeTabs} />
           </div>
         </div>

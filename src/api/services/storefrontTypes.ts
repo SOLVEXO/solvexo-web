@@ -68,6 +68,7 @@ export const SECTION_TYPES = [
   'contact_form',
   'related_products',
   'gallery_grid',
+  'layout_grid',
   'feature_list',
   'team_grid',
   'stats_counter',

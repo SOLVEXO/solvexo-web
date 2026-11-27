@@ -17,7 +17,7 @@ function Photo({ block, colors, ratio }: { block: Block; colors: BaseColors; rat
   if (!s.imageUrl || errored) return null;
   const fit = imageFit(ratio, '1 / 1');
   const img = (
-    <div className="group overflow-hidden" style={{ ...fit.box, background: colors.bgAlt, borderRadius: t.imageRadiusPx }}>
+    <div className="sx-media group overflow-hidden" style={{ ...fit.box, background: colors.bgAlt, borderRadius: t.imageRadiusPx }}>
       <img src={s.imageUrl} alt={s.alt ?? ''} loading="lazy" onError={() => setErrored(true)} className="transition-transform duration-700 group-hover:scale-105" style={fit.img} />
     </div>
   );
