@@ -7,7 +7,8 @@ import type { Block, Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { imageFit } from '../../imageFit';
 import { fashionTheme as t, type FashionColors } from '../theme.config';
-import { registerFashionSection } from './sectionRegistry';
+import { registerFashionSection, registry } from './sectionRegistry';
+import { convertForeignSection, isForeignThemeKey } from '../../storeSections/foreignSection';
 import { SectionShell } from './SectionShell';
 import { renderStoreSection } from '../../storeSections/renderStoreSection';
 import { ts } from '@/utils/tStatic';
@@ -20,7 +21,17 @@ type CustomRenderer = (section: Section, blocks: Block[], colors: FashionColors)
 const custom = new Map<string, CustomRenderer>();
 
 // a key without code here is a section the seller built in the Section builder (`my.*`): drawn from its layout
-registerFashionSection('theme_section', (section, blocks, colors) => custom.get(String(section.settings.sectionKey))?.(section, blocks, colors) ?? renderStoreSection(section, blocks, colors, SectionShell));
+registerFashionSection('theme_section', (section, blocks, colors, dynamic) => {
+  const key = String(section.settings.sectionKey);
+  const own = custom.get(key)?.(section, blocks, colors);
+  if (own !== undefined) return own;
+  // another theme's section: shown through this theme's own matching section instead of being dropped
+  if (isForeignThemeKey(key, 'maison.')) {
+    const c = convertForeignSection(section, blocks);
+    return c ? registry.get(c.section.type)?.(c.section, c.blocks, colors, dynamic) ?? null : null;
+  }
+  return renderStoreSection(section, blocks, colors, SectionShell);
+});
 
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
 
