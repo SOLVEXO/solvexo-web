@@ -108,7 +108,7 @@ export function LedupSectionRenderer({
           <div
             key={key}
             {...common}
-            data-fx-section-id={key}
+            data-fx-section-id={key} data-fx-section-type={section.type}
             className={`relative ${on ? 'ld-sel-on' : 'ld-sel'} ${spacing.className}`}
             onClickCapture={e => {
               const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');

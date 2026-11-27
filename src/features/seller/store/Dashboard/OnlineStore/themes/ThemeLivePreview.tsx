@@ -1,5 +1,5 @@
 import '@/features/storefront-themes/editorThemes';
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
@@ -20,14 +20,40 @@ import { ROLE_SELECTORS, pickColorRole, roleFromElement, subscribeHoveredColorRo
 /** Render the preview in its own browsing context. Besides making responsive
  *  breakpoints use the selected device width (instead of the dashboard
  *  window), this prevents merchant custom CSS from restyling the editor UI. */
-function ThemePreviewFrame({ children }: { children: ReactNode }) {
+function ThemePreviewFrame({ children, fill }: { children: ReactNode; fill?: boolean }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;
+    // Styles that the dashboard loads AFTER the frame was built (lazy theme / section chunks) must reach the frame too,
+    // otherwise those sections render unstyled or invisible. Every stylesheet is mirrored one-to-one and kept in sync.
+    const copies = new Map<Node, HTMLElement>();
+    const isSheet = (n: Node): n is HTMLElement => n instanceof HTMLElement && (n.tagName === 'STYLE' || (n instanceof HTMLLinkElement && /\bstylesheet\b/i.test(n.rel)));
+    const addCopy = (source: Element) => {
+      const previewDocument = frame.contentDocument;
+      if (!previewDocument || copies.has(source)) return;
+      const copy = source.cloneNode(true) as HTMLElement;
+      if (source instanceof HTMLLinkElement && copy instanceof HTMLLinkElement) copy.href = source.href;
+      previewDocument.head.appendChild(copy);
+      copies.set(source, copy);
+    };
+    const head = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === 'childList') {
+          m.addedNodes.forEach(n => { if (isSheet(n)) addCopy(n); });
+          m.removedNodes.forEach(n => { const c = copies.get(n); if (c) { c.remove(); copies.delete(n); } });
+        } else if (m.type === 'characterData') {
+          const owner = m.target.parentNode;
+          const c = owner ? copies.get(owner) : null;
+          if (c) c.textContent = owner!.textContent;
+        }
+      }
+    });
+    head.observe(document.head, { childList: true, subtree: true, characterData: true });
     const syncDocument = () => {
+      copies.clear();
       const previewDocument = frame.contentDocument;
       if (!previewDocument) return;
       previewDocument.documentElement.lang = document.documentElement.lang;
@@ -39,11 +65,7 @@ function ThemePreviewFrame({ children }: { children: ReactNode }) {
         }
       }
       previewDocument.head.replaceChildren();
-      document.head.querySelectorAll('link[rel~="stylesheet"], style').forEach((source) => {
-        const copy = source.cloneNode(true) as HTMLElement;
-        if (source instanceof HTMLLinkElement && copy instanceof HTMLLinkElement) copy.href = source.href;
-        previewDocument.head.appendChild(copy);
-      });
+      document.head.querySelectorAll('link[rel~="stylesheet"], style').forEach(addCopy);
       previewDocument.body.replaceChildren();
       previewDocument.body.style.margin = '0';
       previewDocument.body.style.minHeight = '100vh';
@@ -54,7 +76,7 @@ function ThemePreviewFrame({ children }: { children: ReactNode }) {
     };
     frame.addEventListener('load', syncDocument);
     if (frame.contentDocument?.readyState === 'complete') syncDocument();
-    return () => frame.removeEventListener('load', syncDocument);
+    return () => { frame.removeEventListener('load', syncDocument); head.disconnect(); };
   }, []);
 
   return (
@@ -65,7 +87,7 @@ function ThemePreviewFrame({ children }: { children: ReactNode }) {
         sandbox="allow-same-origin"
         srcDoc={'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>'}
         className="block w-full border-0"
-        style={{ height: 'calc(100vh - 260px)', minHeight: 600 }}
+        style={fill ? { height: '100%', minHeight: 420 } : { height: 'calc(100vh - 260px)', minHeight: 600 }}
       />
       {mountNode ? createPortal(children, mountNode) : null}
     </>
@@ -100,6 +122,9 @@ const CHROME_CSS = '.editor-chrome-target{outline:2px solid transparent;outline-
   + '.editor-chrome-target:hover{outline-color:rgba(217,119,87,0.45)}'
   + '.editor-chrome-selected,.editor-chrome-selected:hover{outline-color:#D97757}'
   + '[data-editor-hover="1"]{outline:2px dashed rgba(217,119,87,0.8)!important;outline-offset:-2px}'
+  // a section that renders nothing yet (no blocks / no content): show a placeholder, like Shopify, so it is never "missing"
+  + '[data-sx-empty]::before{content:attr(data-sx-empty);display:flex;align-items:center;justify-content:center;text-align:center;min-height:140px;margin:10px 16px;padding:16px;'
+  + 'border:2px dashed rgba(217,119,87,.55);border-radius:12px;background:rgba(217,119,87,.07);color:#8a4f38;font:600 13px/1.4 system-ui,sans-serif}'
   + '[data-inline-edit]{cursor:text;outline:1px dashed transparent;outline-offset:3px;border-radius:2px}'
   + '[data-inline-edit]:hover{outline-color:rgba(217,119,87,.7)}'
   + '[data-inline-edit]:focus{outline:2px solid #D97757;background:rgba(217,119,87,.08)}';
@@ -167,8 +192,10 @@ export type AnnouncementBarPreviewValue = Omit<StoreAnnouncementBarValue, 'isAct
  *  in that section's markup can fire, and reports the section id instead. */
 export function ThemeLivePreview({
   sections, showChrome, draftTheme, announcementOverride, interactive, selectedSectionId, onSelectSection, themeIdOverride, previewContext, dynamicSourceValues,
-  selectedBlockId, onSelectBlock, previewCollectionId, selectedChrome, onSelectChrome, hoverSectionId, onEditText, colorPick, floatingContact,
+  selectedBlockId, onSelectBlock, previewCollectionId, selectedChrome, onSelectChrome, hoverSectionId, onEditText, colorPick, floatingContact, fill,
 }: {
+  /** Fill the height of the parent (the Customize editor) instead of a fixed viewport-based height. */
+  fill?: boolean;
   /** Theme Settings → Colors mode: hovering a color field outlines its part
    *  of the preview, and clicking a part of the preview jumps to its color
    *  field (see `colorRoleBridge.ts`). Nothing in the preview ever navigates. */
@@ -223,7 +250,10 @@ export function ThemeLivePreview({
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [menus, setMenus] = useState<Menu[]>([]);
   const { store: workspaceStore } = useStoreWorkspace();
-  const rootRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  // the preview root lives inside the iframe and mounts later than this component: a state copy re-runs the observers once it exists
+  const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
+  const setRoot = useCallback((el: HTMLDivElement | null) => { rootRef.current = el; setRootEl(el); }, []);
 
   // The editor is not a storefront visit: no market / IP detection runs here, so without this the preview fell back to
   // the platform default (USD) and showed a PKR store's prices converted into dollars. Show the store's own currency.
@@ -234,17 +264,62 @@ export function ThemeLivePreview({
     if (storeCurrency && setPreviewCurrency) setPreviewCurrency(storeCurrency);
   }, [storeCurrency, setPreviewCurrency]);
 
-  // Sidebar → preview: bring the selected section / header / footer into view.
+  // Sidebar → preview: bring the selected section / header / footer into view. A section that was just added is
+  // not in the DOM yet when this effect first runs, so look for it for a few frames.
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    const target = selectedChrome
+    const find = () => (selectedChrome
       ? root.querySelector<HTMLElement>(`[data-editor-chrome="${selectedChrome}"]`)
       : selectedSectionId
         ? root.querySelector<HTMLElement>(`[data-fx-section-id="${CSS.escape(selectedSectionId)}"]`)
-        : null;
-    target?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        : null);
+    if (!selectedChrome && !selectedSectionId) return;
+    let raf = 0;
+    let tries = 0;
+    const go = () => {
+      const target = find();
+      if (!target) { if (tries++ < 20) raf = requestAnimationFrame(go); return; }
+      const view = target.ownerDocument.defaultView;
+      const r = target.getBoundingClientRect();
+      const h = view?.innerHeight ?? 0;
+      if (h && r.top >= 0 && r.bottom <= h) return; // already fully visible
+      target.scrollIntoView({ block: h && r.height < h * 0.7 ? 'center' : 'start', behavior: 'smooth' });
+    };
+    go();
+    return () => cancelAnimationFrame(raf);
   }, [selectedSectionId, selectedChrome]);
+
+  // Sections that render nothing (renderers return null until they have blocks / content) get a placeholder in the editor.
+  useEffect(() => {
+    const root = rootEl;
+    if (!root || !interactive) return;
+    const SKIP = new Set(['divider', 'spacer', 'custom_css', 'custom_html_hidden']);
+    const MEDIA = 'img,video,iframe,canvas,picture,input,select,textarea,[role="img"]'; // svg, buttons and rules are carousel arrows / decoration, not content
+    const sync = () => {
+      root.querySelectorAll<HTMLElement>('[data-fx-section-id]').forEach(el => {
+        const type = el.dataset.fxSectionType ?? '';
+        const kids = Array.from(el.children).filter(c => c.tagName !== 'STYLE');
+        let empty = kids.length === 0 || kids.every(c => (c as HTMLElement).dataset.sxEmptyIgnore !== undefined);
+        if (!empty && el.offsetHeight >= 60 && !(el.innerText ?? '').trim() && !el.querySelector(MEDIA)) {
+          // text-less and media-less shells (blocks added with nothing in them): blank unless a child paints a real picture (a flat colour or gradient overlay is not content)
+          empty = !Array.from(el.querySelectorAll<HTMLElement>('*')).some(n => (n.ownerDocument.defaultView?.getComputedStyle(n).backgroundImage ?? 'none').includes('url('));
+        }
+        if (SKIP.has(type)) empty = false;
+        const label = 'Empty section: add blocks or content in the left panel';
+        if (empty) { if (el.getAttribute('data-sx-empty') !== label) el.setAttribute('data-sx-empty', label); }
+        else if (el.hasAttribute('data-sx-empty')) el.removeAttribute('data-sx-empty');
+      });
+    };
+    let raf = 0;
+    const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; sync(); }); };
+    const mo = new MutationObserver(later);
+    mo.observe(root, { childList: true, subtree: true });
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(later);
+    root.querySelectorAll('[data-fx-section-id]').forEach(el => ro?.observe(el));
+    later();
+    return () => { cancelAnimationFrame(raf); mo.disconnect(); ro?.disconnect(); };
+  }, [rootEl, interactive]);
 
   // Sidebar hover → dashed outline on that section in the preview.
   useEffect(() => {
@@ -400,7 +475,7 @@ export function ThemeLivePreview({
   const body = (
     <StorefrontProvider value={contextValue}>
       <div
-        ref={rootRef}
+        ref={setRoot}
         style={{ background: t.colors.bg, fontFamily: t.fonts.body, pointerEvents: colorPick ? 'auto' : 'none', cursor: colorPick ? 'crosshair' : undefined }}
         onClickCapture={colorPick ? (e => { e.preventDefault(); e.stopPropagation(); pickColorRole(roleFromElement(e.target as Element)); }) : undefined}
       >
@@ -435,6 +510,6 @@ export function ThemeLivePreview({
   // is shown, so the lighter section-only scopes (Product/Collection/
   // Search/Cart/Blog) skip mounting a real CartProvider (and its real
   // fetch) entirely, same as before this extraction.
-  const frame = <ThemePreviewFrame>{body}</ThemePreviewFrame>;
+  const frame = <ThemePreviewFrame fill={fill}>{body}</ThemePreviewFrame>;
   return showChrome ? <CartProvider storeId={store.storeId}>{frame}</CartProvider> : frame;
 }

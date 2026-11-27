@@ -81,7 +81,7 @@ export function TechSectionRenderer({ sections: authored, selectable, selectedSe
         }
         const on = selectedSectionId === key;
         return (
-          <div key={key} {...common} data-fx-section-id={key} className={`tx-bidi relative ${on ? 'tx-sel-on' : 'tx-sel'} ${spacing.className}`}
+          <div key={key} {...common} data-fx-section-id={key} data-fx-section-type={section.type} className={`tx-bidi relative ${on ? 'tx-sel-on' : 'tx-sel'} ${spacing.className}`}
             onClickCapture={e => {
               const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');
               e.preventDefault();

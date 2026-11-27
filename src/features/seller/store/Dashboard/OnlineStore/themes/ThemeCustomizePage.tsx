@@ -50,7 +50,7 @@ import { useResolvedThemeInstance } from '../builder/useResolvedThemeInstance';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { getThemeManifest, type ThemeTemplateScopeDef } from '@/features/storefront-themes/themeManifest';
 // See the load-bearing comment on this same import in
-// `ThemeSettingsPanel.tsx` â€” importing `DEFAULT_THEME_ID` from
+// `ThemeSettingsPanel.tsx` — importing `DEFAULT_THEME_ID` from
 // `registry.ts` here (not redeclaring the literal) is what guarantees this
 // theme's manifest has already registered itself before `getThemeManifest`
 // below is called.
@@ -62,24 +62,24 @@ const DEVICE_WIDTH: Record<'desktop' | 'tablet' | 'mobile', string> = { desktop:
 
 /** Every real customization surface for the active theme. `'theme'` is a
  *  fixed sentinel scope (not part of any theme's manifest) for the
- *  Schema-Driven Theme Settings screen (colors/fonts/buttons/spacing â€” a
- *  `StoreTheme` document, not a `Section[]` template) â€” it renders
+ *  Schema-Driven Theme Settings screen (colors/fonts/buttons/spacing — a
+ *  `StoreTheme` document, not a `Section[]` template) — it renders
  *  `ThemeSettingsPanel` instead of the section editor below and owns
  *  its own draft/undo-redo/save/publish/version-history toolbar, since it's
  *  editing a fundamentally different resource. Every other scope comes from
- *  `manifest.templates` (see `themeManifest.ts` â€” a `store-page` resource
+ *  `manifest.templates` (see `themeManifest.ts` — a `store-page` resource
  *  is one real `StorePage` like Home; a `collection-template` resource is a
  *  real `CollectionTemplate` row, optionally with real alternate templates
  *  via `templateKey`). This page no longer hardcodes which scopes exist or
- *  how each is addressed on the backend â€” that's Phase 4 of the theme-
+ *  how each is addressed on the backend — that's Phase 4 of the theme-
  *  agnostic architecture: a second theme's manifest drives this same page
  *  with no new code here. */
 type ResourceConfig = { resourceType: ResourceTemplateType; templateKey: string; allowAltTemplates: boolean; previewPicker?: 'blog' | 'article' };
 
-// Fixed platform brand color â€” same literal `ThemeLibraryPage.tsx` uses for
+// Fixed platform brand color — same literal `ThemeLibraryPage.tsx` uses for
 // its own Install button. Admin-chrome controls (Save Draft/Publish here,
 // same reasoning as every other seller-dashboard button) intentionally use
-// the PLATFORM's own brand color, not the active theme's accent â€” an admin
+// the PLATFORM's own brand color, not the active theme's accent — an admin
 // screen isn't the merchant's storefront, so it shouldn't visually change
 // depending on which theme happens to be active (this was ALSO a real,
 // if purely cosmetic, per-theme-hardcoding bug before this pass: it read
@@ -87,20 +87,20 @@ type ResourceConfig = { resourceType: ResourceTemplateType; templateKey: string;
 // was actually active on the store being edited).
 const ADMIN_ACCENT = '#D97757';
 
-// Phase 4 â€” explains the locked "core content" card these 5 scopes now
+// Phase 4 — explains the locked "core content" card these 5 scopes now
 // always seed (Main Product / Search Results / Cart Contents+Summary /
 // Blog Posts / Article Content), instead of leaving a merchant to wonder
 // why a section they can't delete is sitting in what used to look like an
-// empty list. `undefined` for every other scope (Home, Collection, theme) â€”
+// empty list. `undefined` for every other scope (Home, Collection, theme) —
 // `PageSectionsEditor` simply shows no banner then, unchanged from before.
 const SCOPE_HELPER_TEXT: Record<string, string> = {
   pages: 'Pick a page to edit. Its sections render through the active theme.',
-  product: 'This product\'s page always shows its media, title, price, variant picker, quantity and buy buttons â€” the locked "Main Product" card below. Hide or reorder its individual items there, or add more sections to customize what surrounds it.',
-  category: 'The Category page always shows its products â€” the locked "Category Product Grid" card below, where you set the columns, sort and filters. Add sections to customize what surrounds it.',
-  search: 'The Search page always shows its live results grid â€” the locked "Search Results" card below. Add sections to customize what surrounds it.',
-  cart: 'The Cart page always shows its line items and summary/checkout button â€” the two locked cards below. Add sections to customize what surrounds them.',
-  blogIndex: 'The Blog index always shows your list of posts â€” the locked "Blog Posts" card below. Add sections to customize what surrounds it.',
-  blogArticle: 'Every article always shows its title and body â€” the locked "Article Content" card below. Add sections to customize what surrounds it.',
+  product: 'This product\'s page always shows its media, title, price, variant picker, quantity and buy buttons — the locked "Main Product" card below. Hide or reorder its individual items there, or add more sections to customize what surrounds it.',
+  category: 'The Category page always shows its products — the locked "Category Product Grid" card below, where you set the columns, sort and filters. Add sections to customize what surrounds it.',
+  search: 'The Search page always shows its live results grid — the locked "Search Results" card below. Add sections to customize what surrounds it.',
+  cart: 'The Cart page always shows its line items and summary/checkout button — the two locked cards below. Add sections to customize what surrounds them.',
+  blogIndex: 'The Blog index always shows your list of posts — the locked "Blog Posts" card below. Add sections to customize what surrounds it.',
+  blogArticle: 'Every article always shows its title and body — the locked "Article Content" card below. Add sections to customize what surrounds it.',
 };
 
 function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: boolean; label: string }) {
@@ -115,12 +115,12 @@ function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: b
   );
 }
 
-/** Theme 01's own Merchant Visual Customizer â€” `Online Store â†’ Themes â†’
- *  Maison â†’ Customize`. Covers every real Maison template (Home, Product,
+/** Theme 01's own Merchant Visual Customizer — `Online Store → Themes →
+ *  Maison → Customize`. Covers every real Maison template (Home, Product,
  *  Collection, Search, Cart, Blog Index, Blog Article), including real
  *  alternate templates for Product/Collection. Reuses the exact same real
  *  section/block editor (`PageSectionsEditor`) and draft/publish/version-
- *  history engine the Pages tool already uses â€” no parallel editor built. */
+ *  history engine the Pages tool already uses — no parallel editor built. */
 /** 409 DRAFT_CONFLICT from a sections save (stale baseUpdatedAt). */
 const isDraftConflict = (err: unknown) => (err as { status?: number; apiCode?: string })?.status === 409 && (err as { apiCode?: string }).apiCode === 'DRAFT_CONFLICT';
 
@@ -139,7 +139,7 @@ export function ThemeCustomizePage() {
   const { storeId, loading: storeLoading, store: workspaceStore, refetch: refetchStore } = useStoreWorkspace();
   const toast = useToast();
   const flash = (ok: boolean, text: string, onClick?: () => void) => { if (ok) toast.success(text); else toast.error(text, onClick); };
-  // Server paths like `sections.1.settingsâ€¦` become "Image Banner: â€¦" (see builder/editorErrors.ts).
+  // Server paths like `sections.1.settings…` become "Image Banner: …" (see builder/editorErrors.ts).
   /** Error toast that jumps to the section the server complained about. */
   const flashEditorError = (err: unknown, fallback: string) => {
     const info = describeEditorError(err instanceof Error ? err.message : fallback, editor.workingCopy ?? []);
@@ -155,7 +155,7 @@ export function ThemeCustomizePage() {
   const themeInstance = useResolvedThemeInstance(storeId);
   const installedThemeId = themeInstance.status === 'ready' ? themeInstance.installedThemeId : undefined;
 
-  // Header group (announcement bar + header) and Footer group â€” edited right
+  // Header group (announcement bar + header) and Footer group — edited right
   // here, Shopify-style, on every template. Their draft is the theme's own.
   const hf = useHeaderFooterDraft({ storeId, installedThemeId, ready: themeInstance.status === 'ready', store: workspaceStore, refetchStore });
   const [selectedChrome, setSelectedChrome] = useState<PreviewChromePart | null>(() => CHROME_IDS.find(c => c === urlParam('panel')) ?? null);
@@ -171,13 +171,13 @@ export function ThemeCustomizePage() {
   const [versions, setVersions] = useState<VersionRow[]>([]);
   const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
 
-  // Home AND every real custom Page (Phase 5) are `StorePage` documents â€”
+  // Home AND every real custom Page (Phase 5) are `StorePage` documents —
   // `pages` holds ALL of them from one `apiListStorePages` call; `homePage`/
   // `customPages`/`currentStorePage` below just slice that one list.
   // Every other scope is a real CollectionTemplate row (see `config`,
   // derived below from the active theme's manifest).
   const [pages, setPages] = useState<StorePageData[]>([]);
-  // Which real custom page is being edited while `scope === 'pages'` â€”
+  // Which real custom page is being edited while `scope === 'pages'` —
   // irrelevant (and untouched) for every other scope. Persists across a
   // scope switch, same convention as `templateKey` below, so coming back to
   // Pages remembers what the seller was last working on.
@@ -191,11 +191,11 @@ export function ThemeCustomizePage() {
   const [draftTheme, setDraftTheme] = useState<StoreThemeData | null>(null);
   const [themeSettingsDirty, setThemeSettingsDirty] = useState(false);
 
-  // Phase 5 â€” Blogs/Articles never change WHICH document the Blog-Index/
+  // Phase 5 — Blogs/Articles never change WHICH document the Blog-Index/
   // Blog-Article template edits (still the one shared `activeTemplate` per
   // theme, exactly as Phase 4 built it); a real selected Blog/Article only
   // changes what real data the live preview shows alongside it (see
-  // `previewContext` below). `posts` is every real post across every blog â€”
+  // `previewContext` below). `posts` is every real post across every blog —
   // used both as the Article picker's own list and, filtered by
   // `selectedBlogId`, as the Blog Index preview's "recent posts" sample.
   const [blogs, setBlogs] = useState<BlogData[]>([]);
@@ -204,12 +204,12 @@ export function ThemeCustomizePage() {
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(() => urlParam('article'));
   const [selectedArticleDetail, setSelectedArticleDetail] = useState<BlogPostData | null>(null);
 
-  // Phase 9 â€” Dynamic Sources: Product/Collection Template each need a real
-  // picked resource too (previously neither had one at all â€” Product/
+  // Phase 9 — Dynamic Sources: Product/Collection Template each need a real
+  // picked resource too (previously neither had one at all — Product/
   // Collection Template only ever rendered against synthetic/no data).
   // Same "loaded once, lazily, the first time this scope is visited" and
   // "never overrides a seller's own later pick" conventions as Blogs/
-  // Articles above â€” a capped, un-paginated fetch (same
+  // Articles above — a capped, un-paginated fetch (same
   // `PRODUCTS_FETCH_LIMIT` precedent `EntityPickerModal` already uses), not
   // a new backend endpoint.
   const [products, setProducts] = useState<{ id: string; label: string }[]>([]);
@@ -246,16 +246,16 @@ export function ThemeCustomizePage() {
   /** The template a page scope opens on (changing scope resets to it in the same update, so the URL never sees a stale template). */
   const defaultTemplateOf = (id: string) => { const r = scopeDefsById[id]?.resource; return r && r.kind === 'collection-template' ? r.templateKey : null; };
   const scopeLabel = (s: string) => (s === 'theme' ? 'Theme Settings' : scopeDefsById[s]?.label ?? s);
-  // Phase 5 â€” real derived lists/booleans for the Pages/Blogs/Articles
+  // Phase 5 — real derived lists/booleans for the Pages/Blogs/Articles
   // resource pickers and their empty states.
   const homePage = pages.find(p => p.type === 'home') ?? null;
   const customPages = useMemo(() => pages.filter(p => p.type === 'custom'), [pages]);
   const currentStorePage = isCustomPageScope ? customPages.find(p => p._id === selectedPageId) ?? null : homePage;
   const needsBlogPicker = config?.previewPicker === 'blog';
   const needsArticlePicker = config?.previewPicker === 'article';
-  // Phase 9 â€” a real picked Product/Collection is needed for BOTH the live
+  // Phase 9 — a real picked Product/Collection is needed for BOTH the live
   // preview (Dynamic Sources resolution) AND, going forward, any other
-  // per-instance preview data this template might want â€” `resourceType`
+  // per-instance preview data this template might want — `resourceType`
   // alone (not `previewPicker`, which only Blog/Article scopes set) is
   // enough to tell these two scopes apart from every other one.
   const needsProductPicker = config?.resourceType === 'product';
@@ -295,13 +295,13 @@ export function ThemeCustomizePage() {
   const blogsEmpty = needsBlogPicker && blogs.length === 0;
   const articlesEmpty = needsArticlePicker && posts.length === 0;
   // Deliberately NOT gating on "0 products"/"0 collections" the way Pages/
-  // Blogs/Articles gate on being empty â€” Product/Collection Template is a
+  // Blogs/Articles gate on being empty — Product/Collection Template is a
   // real SHARED template (editable and useful even before the store's
   // first product/collection exists, exactly as it already was before this
   // phase); Dynamic Sources simply has nothing to resolve against yet, the
   // same as a fresh store with no metafield definitions.
   const emptyResourceState = pagesEmpty || blogsEmpty || articlesEmpty;
-  // Live working copy while the seller is on the Theme scope â€” composited
+  // Live working copy while the seller is on the Theme scope — composited
   // into the preview instead of `draftTheme` so every keystroke reflects
   // immediately, same as every section scope already does. `null` while on
   // any other scope, so those fall back to `draftTheme` untouched below.
@@ -309,7 +309,7 @@ export function ThemeCustomizePage() {
 
   // Click-to-select: which section is highlighted, shared between
   // `PageSectionsEditor`'s cards and `ThemeLivePreview`'s clickable
-  // sections â€” either side setting it drives both (see each component's own
+  // sections — either side setting it drives both (see each component's own
   // doc comment for how the id is computed/kept in sync). Cleared whenever
   // the sections being edited change out from under it (scope/template
   // switch), so a stale id never appears to "select" an unrelated section.
@@ -373,12 +373,12 @@ export function ThemeCustomizePage() {
     return () => { cancelled = true; };
   }, [storeId, themeInstance.status, installedThemeId, onThemeScope]);
 
-  // Phase 8 â€” this store's real installed apps (+ every catalog app's
+  // Phase 8 — this store's real installed apps (+ every catalog app's
   // block definitions, needed to render an installed one's settings form),
   // fetched once and passed straight through to `PageSectionsEditor`'s own
   // "+ Add block" picker for whichever scope/section actually supports
   // them. A fetch failure just means "no app blocks offered this session"
-  // â€” never a hard error for a feature most sections don't even use.
+  // — never a hard error for a feature most sections don't even use.
   const [installedApps, setInstalledApps] = useState<AppCatalogEntry[]>([]);
   useEffect(() => { apiListAppCatalog(storeId).then(res => setInstalledApps(res.data)).catch(() => setInstalledApps([])); }, [storeId]);
 
@@ -389,14 +389,14 @@ export function ThemeCustomizePage() {
       .then(res => {
         setPages(res.data);
         // Default to the first real custom page the first time this scope
-        // is visited â€” never overrides a seller's own later pick.
+        // is visited — never overrides a seller's own later pick.
         setSelectedPageId(prev => (prev && res.data.some(p => p._id === prev) ? prev : res.data.find(p => p.type === 'custom')?._id ?? null));
       })
       .catch(err => setResourceLoadError(err instanceof Error ? err.message : 'Could not load pages.'))
       .finally(() => setLoading(false));
   }, [storeId, installedThemeId]);
 
-  // Phase 5 â€” loaded once, lazily, the first time either Blog-Index or
+  // Phase 5 — loaded once, lazily, the first time either Blog-Index or
   // Blog-Article's scope is visited (both reuse the same real blogs/posts
   // lists for their resource pickers). Never re-fetched on every scope
   // switch between the two.
@@ -414,7 +414,7 @@ export function ThemeCustomizePage() {
       .finally(() => setLoading(false));
   }, [storeId]);
 
-  // Phase 9 â€” same lazy-load-once convention as `loadBlogsAndPosts`.
+  // Phase 9 — same lazy-load-once convention as `loadBlogsAndPosts`.
   const loadProducts = useCallback(() => {
     apiGetStoreInventory(storeId, 1, 200)
       .then(res => {
@@ -460,7 +460,7 @@ export function ThemeCustomizePage() {
     // Wait for the theme id: loading before it is known fetched everything twice (once without the id, once with it).
     if (!installedThemeId) return;
     if (isStorePage) { loadPages(); return; }
-    if (!config) return; // scope not (yet) resolvable against the manifest â€” nothing to load
+    if (!config) return; // scope not (yet) resolvable against the manifest — nothing to load
     if (config.previewPicker) loadBlogsAndPosts();
     if (config.resourceType === 'product') loadProducts();
     if (config.resourceType === 'collection') loadCollectionsList();
@@ -472,7 +472,7 @@ export function ThemeCustomizePage() {
   }, [scope, installedThemeId]);
 
   // Fetches the REAL selected article's title/excerpt for the live preview
-  // (see `previewContext` below) â€” only while on the Blog-Article scope
+  // (see `previewContext` below) — only while on the Blog-Article scope
   // with a real post actually picked.
   useEffect(() => {
     if (!needsArticlePicker || !selectedArticleId) { setSelectedArticleDetail(null); return; }
@@ -480,10 +480,10 @@ export function ThemeCustomizePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [needsArticlePicker, selectedArticleId, storeId]);
 
-  // Phase 9 â€” Dynamic Sources: which real resource type/id (if any) the
+  // Phase 9 — Dynamic Sources: which real resource type/id (if any) the
   // CURRENT scope represents (see `MetafieldKeyPickerField`'s own doc
   // comment for the full picture). `null` for every scope with no single
-  // real resource â€” Home, Search, Cart, Blog Index, and the Theme sentinel.
+  // real resource — Home, Search, Cart, Blog Index, and the Theme sentinel.
   const dynamicSourceOwnerResource: MetafieldOwnerResource | null = isCustomPageScope
     ? 'page'
     : needsProductPicker ? 'product'
@@ -499,7 +499,7 @@ export function ThemeCustomizePage() {
 
   // Real metafield values for whichever resource is picked, resolved
   // exactly the way the real storefront already does (`FashionProductPage.
-  // tsx`) â€” this is what makes the seller's own live preview (below) show a
+  // tsx`) — this is what makes the seller's own live preview (below) show a
   // bound paragraph/heading's ACTUAL value instead of always falling back
   // to blank/static, closing the gap this phase's own research found.
   useEffect(() => {
@@ -513,14 +513,14 @@ export function ThemeCustomizePage() {
 
   // Re-fetch the active template doc (not the list) whenever the seller
   // switches which alternate template they're editing (Product/Collection
-  // only â€” the other scopes' `templateKey` never changes from its fixed value).
+  // only — the other scopes' `templateKey` never changes from its fixed value).
   useEffect(() => {
     if (!config || !config.allowAltTemplates || !installedThemeId) return;
     const fetchKey = `${config.resourceType}:${templateKey}:${installedThemeId}`;
     if (lastTemplateFetch.current === fetchKey) return; // already requested by the scope loader
     lastTemplateFetch.current = fetchKey;
     // Ignore a response for a template the seller has already switched away
-    // from â€” otherwise it lands late and replaces the doc being edited.
+    // from — otherwise it lands late and replaces the doc being edited.
     let cancelled = false;
     apiGetCollectionTemplate(storeId, config.resourceType, templateKey, installedThemeId)
       .then(res => { if (!cancelled) setActiveTemplate(res.data); })
@@ -544,7 +544,7 @@ export function ThemeCustomizePage() {
     || hf.editor.phase === 'saving' || hf.editor.phase === 'publishing' || hf.discarding;
 
   // After switching the alternate template, the editor still holds the OLD
-  // template's sections until the new one is fetched â€” saving in that window
+  // template's sections until the new one is fetched — saving in that window
   // would write them into the newly selected template. Block it.
   const templateSwitchPending = !isStorePage && !!config && !!activeTemplate && activeTemplate.templateKey !== templateKey;
 
@@ -633,15 +633,15 @@ export function ThemeCustomizePage() {
   // `silent` = autosave: no success toast, and no complaint while a template is still loading.
   const handleSave = async (_event?: unknown, silent = false) => {
     if (!editor.workingCopy) return;
-    if (templateSwitchPending) { if (!silent) flash(false, 'Template is still loading â€” try again in a moment.'); return; }
-    // Header/footer are their own (theme) draft â€” saved on their own so a
+    if (templateSwitchPending) { if (!silent) flash(false, 'Template is still loading — try again in a moment.'); return; }
+    // Header/footer are their own (theme) draft — saved on their own so a
     // template save problem never loses them.
     if (hf.editor.dirty) {
       try { await hf.save(); } catch (err) { flash(false, err instanceof Error ? err.message : 'Failed to save the header/footer.', () => selectChrome('header')); return; }
     }
     if (!editor.dirty) {
       if (silent) return;
-      flash(true, hf.announcementDirty ? 'Draft saved. Your announcement bar changes go live when you Publish.' : 'Draft saved â€” Publish to make it live.');
+      flash(true, hf.announcementDirty ? 'Draft saved. Your announcement bar changes go live when you Publish.' : 'Draft saved — Publish to make it live.');
       return;
     }
     const sentCopy = editor.workingCopy;
@@ -659,7 +659,7 @@ export function ThemeCustomizePage() {
       }
       if (!silent) flash(true, hf.announcementDirty
         ? 'Draft saved. Your announcement bar changes go live when you Publish.'
-        : 'Draft saved â€” Publish to make it live.');
+        : 'Draft saved — Publish to make it live.');
     } catch (err) {
       editor.markSaveError(err instanceof Error ? err.message : 'Failed to save.');
       if (isDraftConflict(err)) { flashConflict(); return; }
@@ -677,13 +677,13 @@ export function ThemeCustomizePage() {
 
   const handlePersist = async (next: Section[]) => {
     // Real bug found in Phase 11 QA: `onChange(next)` (the caller's own
-    // optimistic local update) already ran by the time this fires â€” this
+    // optimistic local update) already ran by the time this fires — this
     // function's closure still holds the PRE-change `editor.workingCopy`
     // (React hasn't re-rendered yet), which is exactly what a failed
     // persist needs to roll back to. Without this, a removal the server
     // rejects (e.g. a sibling block left with an invalid required field)
     // stayed "removed" in the editor while the real saved draft never
-    // changed â€” a real, confusing local/server divergence, not just a
+    // changed — a real, confusing local/server divergence, not just a
     // missed toast.
     const rollbackTo = editor.workingCopy;
     if (templateSwitchPending) return;
@@ -706,10 +706,10 @@ export function ThemeCustomizePage() {
   };
 
   const handlePublish = async () => {
-    if (templateSwitchPending) { flash(false, 'Template is still loading â€” try again in a moment.'); return; }
+    if (templateSwitchPending) { flash(false, 'Template is still loading — try again in a moment.'); return; }
     editor.markPublishing();
     try {
-      // Publish must never republish a stale backend draft â€” if there's a
+      // Publish must never republish a stale backend draft — if there's a
       // local edit that hasn't been saved yet, persist it first so Publish
       // always promotes exactly what the merchant currently sees.
       if (editor.dirty && editor.workingCopy) {
@@ -736,7 +736,7 @@ export function ThemeCustomizePage() {
       // announcement bar go live together with the template.
       if (hf.editor.dirty || hf.editor.hasUnpublishedChanges) await hf.publish();
       if (hf.announcementDirty) await hf.saveAnnouncement();
-      flash(true, 'Published â€” your storefront is now live with these changes.');
+      flash(true, 'Published — your storefront is now live with these changes.');
     } catch (err) {
       editor.markPublishError(err instanceof Error ? err.message : 'Failed to publish.');
       if (isDraftConflict(err)) { flashConflict(); return; }
@@ -759,7 +759,7 @@ export function ThemeCustomizePage() {
       }
       if (hf.editor.hasUnpublishedChanges || hf.editor.dirty) await hf.discard();
       hf.resetAnnouncement();
-      flash(true, 'Draft discarded â€” reverted to your published version.');
+      flash(true, 'Draft discarded — reverted to your published version.');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to discard draft.');
     } finally {
@@ -812,7 +812,7 @@ export function ThemeCustomizePage() {
         editor.discardDraft(res.data.draft.sections);
       }
       setVersionsOpen(false);
-      flash(true, 'Version restored to your draft â€” review it, then Publish.');
+      flash(true, 'Version restored to your draft — review it, then Publish.');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to restore version.');
     } finally {
@@ -871,8 +871,8 @@ export function ThemeCustomizePage() {
     }
   };
 
-  // Link pickers ("A pageâ€¦") list Home + every custom page, whatever scope is
-  // open â€” `pages` above is only loaded on the Pages scope.
+  // Link pickers ("A page…") list Home + every custom page, whatever scope is
+  // open — `pages` above is only loaded on the Pages scope.
   const [linkPages, setLinkPages] = useState<StorePageData[]>([]);
   useEffect(() => {
     // Only needed outside page scopes (those already load the pages list themselves).
@@ -893,7 +893,7 @@ export function ThemeCustomizePage() {
     );
   }
 
-  // Safe rejection for an invalid/uninstalled/cross-store theme id â€” never
+  // Safe rejection for an invalid/uninstalled/cross-store theme id — never
   // silently falls back to editing whichever theme happens to be active.
   if (themeInstance.status === 'not-found') {
     return (
@@ -908,7 +908,7 @@ export function ThemeCustomizePage() {
 
   // For a custom-page scope with no pages at all, or a blog/article scope
   // with nothing to pick, `emptyResourceState` (computed above) takes over
-  // the render entirely â€” `docMissing` only ever fires for a genuine load
+  // the render entirely — `docMissing` only ever fires for a genuine load
   // failure now, not "nothing exists yet" (which has its own real empty
   // state below, per Phase 5's requirement 8).
   const docMissing = scope === 'theme' || emptyResourceState ? false : isStorePage ? !currentStorePage : !activeTemplate;
@@ -957,12 +957,12 @@ export function ThemeCustomizePage() {
       </ChromeGroupCard>
     );
   };
-  // The preview PANEL's own background â€” resolved against the real active
+  // The preview PANEL's own background — resolved against the real active
   // theme (not hardcoded to Maison) so the frame around the embedded
   // storefront preview matches whichever theme is actually being edited,
   // instead of showing Maison's background color behind another theme preview.
   const previewPanelBg = getThemePreviewComponents(effectiveDraftTheme?.themeDefinitionId, DEFAULT_THEME_ID).theme.colors.bg;
-  // The real active theme's own registered section types â€” NOT
+  // The real active theme's own registered section types — NOT
   // `effectiveDraftTheme` (which briefly swaps to a theme-settings-only
   // preview while scope === 'theme'), since "which sections can I add" is a
   // property of the store's actual theme, unrelated to which scope's colors
@@ -972,7 +972,7 @@ export function ThemeCustomizePage() {
   const supportedSectionTypes = getThemePreviewComponents(draftTheme?.themeDefinitionId, DEFAULT_THEME_ID).supportedSectionTypes;
   const effectiveSupportedSectionTypes: SectionType[] | undefined = supportedSectionTypes;
 
-  // Phase 5 â€” real data for whichever Blog/Article is currently picked,
+  // Phase 5 — real data for whichever Blog/Article is currently picked,
   // fed into the live preview's `blog_post_list`/`article_content` core
   // sections (see `CoreSectionPreviewContext`). `undefined` for every other
   // scope, or before anything's loaded/picked yet.
@@ -993,8 +993,8 @@ export function ThemeCustomizePage() {
     <div className="bg-[#FAF9F5] min-h-full">
       <EditorTopBar
         exitTo={`/store/${storeId}/online-store/themes`}
-        title={`Customize â€” ${manifest.name}`}
-        subtitle="Edits save to a draft â€” nothing goes live until you Publish."
+        title={`Customize — ${manifest.name}`}
+        subtitle="Edits save to a draft — nothing goes live until you Publish."
       >
         {
           // Two groups: the left one scrolls horizontally on narrow screens
@@ -1013,7 +1013,7 @@ export function ThemeCustomizePage() {
                   items={customPages.map(p => ({ id: p._id, label: p.title }))}
                   valueId={selectedPageId}
                   onChange={id => guardUnsaved(() => setSelectedPageId(id))}
-                  placeholder="Choose a pageâ€¦"
+                  placeholder="Choose a page…"
                 />
               )}
               {needsProductPicker && (
@@ -1021,7 +1021,7 @@ export function ThemeCustomizePage() {
                   items={products}
                   valueId={selectedProductId}
                   onChange={setSelectedProductId}
-                  placeholder="Choose a product to previewâ€¦"
+                  placeholder="Choose a product to preview…"
                 />
               )}
               {needsCollectionPicker && (
@@ -1029,7 +1029,7 @@ export function ThemeCustomizePage() {
                   items={collectionsList}
                   valueId={selectedCollectionId}
                   onChange={setSelectedCollectionId}
-                  placeholder="Choose a collection to previewâ€¦"
+                  placeholder="Choose a collection to preview…"
                 />
               )}
               {needsBlogPicker && (
@@ -1037,7 +1037,7 @@ export function ThemeCustomizePage() {
                   items={blogs.map(b => ({ id: b._id, label: b.title }))}
                   valueId={selectedBlogId}
                   onChange={setSelectedBlogId}
-                  placeholder="Choose a blogâ€¦"
+                  placeholder="Choose a blog…"
                 />
               )}
               {needsArticlePicker && (
@@ -1045,7 +1045,7 @@ export function ThemeCustomizePage() {
                   items={posts.map(p => ({ id: p._id, label: p.status === 'published' ? p.title : `${p.title} (${p.status})` }))}
                   valueId={selectedArticleId}
                   onChange={setSelectedArticleId}
-                  placeholder="Choose an articleâ€¦"
+                  placeholder="Choose an article…"
                 />
               )}
               {(isCustomPageScope || needsBlogPicker || needsArticlePicker) && (
@@ -1054,7 +1054,7 @@ export function ThemeCustomizePage() {
                   target="_blank"
                   className="shrink-0 flex items-center gap-1 text-[12px] font-semibold no-underline whitespace-nowrap"
                   style={{ color: '#D97757' }}
-                  title="Opens in a new tab â€” your unsaved draft here is preserved."
+                  title="Opens in a new tab — your unsaved draft here is preserved."
                 >
                   Manage {isCustomPageScope ? 'Pages' : 'Blog'} <ExternalLink size={12} />
                 </Link>
@@ -1096,7 +1096,7 @@ export function ThemeCustomizePage() {
               </div>
 
               {/* Theme scope owns its own Undo/Redo/Version-History/Discard/
-                 Save/Publish (see `ThemeSettingsPanel`) â€” a different
+                 Save/Publish (see `ThemeSettingsPanel`) — a different
                  resource than a `Section[]` template, so it isn't wired to
                  the `editor` instance below. */}
               {scope !== 'theme' && (
@@ -1118,7 +1118,7 @@ export function ThemeCustomizePage() {
                 >
                   {editor.phase === 'error' ? 'Not saved' :
                     editor.phase === 'dirty' || (anyDirty && editor.phase !== 'saving') ? 'Unsaved changes' :
-                      editor.phase === 'saving' ? 'Saving draftâ€¦' :
+                      editor.phase === 'saving' ? 'Saving draft…' :
                         editor.phase === 'published' ? 'Published' : 'Draft saved'}
                 </span>
                 {anyUnpublished && (
@@ -1150,10 +1150,10 @@ export function ThemeCustomizePage() {
           <div className={`min-w-0 ${mobilePane === 'preview' ? 'hidden lg:block' : ''}`}>
           <ThemeSettingsPanel storeId={storeId} installedThemeId={installedThemeId} onDraftChange={setThemeScopePreview} onDirtyChange={setThemeSettingsDirty} />
           </div>
-          <div className={`min-w-0 border border-bone rounded-2xl bg-white overflow-hidden lg:sticky lg:top-[78px] ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
-            <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
-              <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
-                <ThemeLivePreview sections={homeDraftSections} showChrome colorPick draftTheme={effectiveDraftTheme} announcementOverride={hf.announcementForm ?? undefined} />
+          <div className={`min-w-0 border border-bone rounded-2xl bg-white overflow-hidden lg:sticky lg:top-[78px] ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 92px)' }}>
+            <div className="h-full overflow-hidden flex justify-center bg-[#F1EDE5] p-2">
+              <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', height: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
+                <ThemeLivePreview fill sections={homeDraftSections} showChrome colorPick draftTheme={effectiveDraftTheme} announcementOverride={hf.announcementForm ?? undefined} />
               </div>
             </div>
           </div>
@@ -1170,7 +1170,7 @@ export function ThemeCustomizePage() {
           </button>
         </div>
       ) : emptyResourceState ? (
-        // Phase 5, requirement 8 â€” a useful empty state (not a bare "Select
+        // Phase 5, requirement 8 — a useful empty state (not a bare "Select
         // or create a page" line), with a real action rather than leaving
         // the merchant stuck inside a fullscreen editor with nothing to do.
         <div className="flex flex-col items-center justify-center gap-3 text-center py-24 px-6">
@@ -1179,7 +1179,7 @@ export function ThemeCustomizePage() {
           </p>
           <p className="text-[12.5px] text-slate max-w-[360px]">
             {pagesEmpty
-              ? 'Create your first custom page (About Us, Shipping Policy, â€¦) from the Pages screen, then come back here to pick it.'
+              ? 'Create your first custom page (About Us, Shipping Policy, …) from the Pages screen, then come back here to pick it.'
               : blogsEmpty
                 ? 'Create a blog from the Blog screen, then come back here to preview this template against it.'
                 : 'Write your first post from the Blog screen, then come back here to preview this template against it.'}
@@ -1201,7 +1201,7 @@ export function ThemeCustomizePage() {
             <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1">Header</p>
             {chromeGroup('announcement')}
             {chromeGroup('header')}
-            <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1 mt-2">Template â€” {scopeLabel(scope)}</p>
+            <p className="text-[12px] font-bold uppercase tracking-wide text-slate px-1 mt-2">Template — {scopeLabel(scope)}</p>
             <PageSectionsEditor
               onHoverSection={setHoverSectionId}
               sections={editor.workingCopy ?? []}
@@ -1225,10 +1225,11 @@ export function ThemeCustomizePage() {
             {chromeGroup('footer')}
           </div>
 
-          <div className={`min-w-0 border border-bone rounded-2xl bg-white overflow-hidden lg:sticky lg:top-[78px] ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 220px)' }}>
-            <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
-              <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
+          <div className={`min-w-0 border border-bone rounded-2xl bg-white overflow-hidden lg:sticky lg:top-[78px] ${mobilePane === 'edit' ? 'hidden lg:block' : ''}`} style={{ height: 'calc(100vh - 92px)' }}>
+            <div className="h-full overflow-hidden flex justify-center bg-[#F1EDE5] p-2">
+              <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', height: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
                 <ThemeLivePreview
+                  fill
                   sections={editor.workingCopy ?? []}
                 showChrome={activeScopeDef?.showChrome ?? false}
                 floatingContact={(workspaceStore?.floatingContact as FloatingContactConfig | null) ?? null}
@@ -1282,7 +1283,7 @@ export function ThemeCustomizePage() {
       )}
 
       <VersionHistoryModal
-        title={`${scopeLabel(scope)} â€” Version History`}
+        title={`${scopeLabel(scope)} — Version History`}
         open={versionsOpen}
         loading={versionsLoading}
         versions={versions}

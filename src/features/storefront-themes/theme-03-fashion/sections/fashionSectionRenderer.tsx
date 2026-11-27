@@ -82,7 +82,7 @@ export function FashionSectionRenderer({ sections: authored, selectable, selecte
         }
         const on = selectedSectionId === key;
         return (
-          <div key={key} {...common} data-fx-section-id={key} className={`fx-bidi relative ${on ? 'fx-sel-on' : 'fx-sel'} ${spacing.className}`}
+          <div key={key} {...common} data-fx-section-id={key} data-fx-section-type={section.type} className={`fx-bidi relative ${on ? 'fx-sel-on' : 'fx-sel'} ${spacing.className}`}
             onClickCapture={e => {
               const block = (e.target as HTMLElement).closest<HTMLElement>('[data-editor-block-id]');
               e.preventDefault();
