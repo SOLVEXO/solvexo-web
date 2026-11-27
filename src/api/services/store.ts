@@ -15,7 +15,7 @@ export type SupportedCurrency = string;
 /** Floating contact bar shown on every storefront theme (see FloatingContactBar). */
 export interface FloatingContactConfig {
   enabled: boolean; position: 'right' | 'left' | 'center'; vertical: 'top' | 'middle' | 'bottom'; size: 'sm' | 'md' | 'lg';
-  style: 'brand' | 'theme'; showLabels: boolean; labelMode?: 'hover' | 'always' | 'none'; device: 'all' | 'desktop' | 'mobile';
+  style: 'brand' | 'theme'; showLabels: boolean; labelMode?: 'hover' | 'always' | 'none'; labelPlacement?: 'side' | 'top' | 'bottom'; device: 'all' | 'desktop' | 'mobile';
   phone: string; phoneLabel: string; whatsapp: string; whatsappMessage: string; whatsappLabel: string; email: string; emailLabel: string;
   facebook: string; instagram: string; tiktok: string; youtube: string; x: string; snapchat: string; linkedin: string;
   /** Seller-built buttons (any link or popup with their own QR), shown after the built-in ones. */
