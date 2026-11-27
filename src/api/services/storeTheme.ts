@@ -259,7 +259,7 @@ export interface StorefrontHeader {
   topBarFontSize?:      number | null;
   topBarPadY?:          number | null;
   /** Menu that does not fit: one scrolling line with arrows (default) or wrapping rows. */
-  menuOverflow?:        'scroll' | 'wrap';
+  menuOverflow?:        'scroll' | 'wrap' | 'more';
   preset?:             string | null;
 }
 

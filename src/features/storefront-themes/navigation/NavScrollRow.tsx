@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
  * Headless "one line menu with scroll arrows" shared by every native theme (the YouTube chip-bar pattern).
@@ -68,11 +69,80 @@ function resetPanels(root: HTMLElement) {
   });
 }
 
+/** What happens when the menu has more links than fit: wrap onto more lines, one line with scroll arrows, or a "More" dropdown. */
+export type NavOverflowMode = 'scroll' | 'wrap' | 'more';
+
+/** The links that did not fit (always the LAST ones). Drawn by the theme inside the shared "More" dropdown. */
+export interface NavMoreConfig {
+  label: string;
+  /** Receives the index of the first hidden item (items are the direct children of the row, in order). */
+  render: (hiddenFrom: number) => ReactNode;
+}
+
+/** Dropdown of the "More" button. Portaled to <body> so a sticky/blurred header can never clip or re-anchor it. */
+function MoreMenu({ boxRef, label, arrow, children }: { boxRef: MutableRefObject<HTMLDivElement | null>; label: string; arrow: NavArrowStyle; children: ReactNode }) {
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const timer = useRef(0);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; x: number; rtl: boolean; font: string } | null>(null);
+
+  const openNow = () => {
+    window.clearTimeout(timer.current);
+    const b = btnRef.current;
+    if (!b) return;
+    const r = b.getBoundingClientRect();
+    const cs = getComputedStyle(b);
+    const rtl = cs.direction === 'rtl';
+    setPos({ top: r.bottom + 6, x: rtl ? r.left : document.documentElement.clientWidth - r.right, rtl, font: cs.fontFamily });
+    setOpen(true);
+  };
+  const closeSoon = () => { window.clearTimeout(timer.current); timer.current = window.setTimeout(() => setOpen(false), 160); };
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); btnRef.current?.focus({ preventScroll: true }); } };
+    const onDown = (e: Event) => { const t = e.target as Node; if (!panelRef.current?.contains(t) && !btnRef.current?.contains(t)) setOpen(false); };
+    const onScroll = (e: Event) => { if (!panelRef.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', close);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [open]);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  const radius = typeof arrow.radius === 'number' ? Math.min(arrow.radius, 18) : 14;
+  return (
+    <div ref={boxRef} className="ms-1 shrink-0" style={{ display: 'none' }}>
+      <button ref={btnRef} type="button" aria-expanded={open} aria-haspopup="true" onClick={() => (open ? setOpen(false) : openNow())} onMouseEnter={openNow} onMouseLeave={closeSoon}
+        className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap border-0 bg-transparent px-3 py-2 text-sm font-medium" style={{ color: 'inherit', font: 'inherit' }}>
+        {label}<ChevronDown size={13} aria-hidden className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && pos && createPortal(
+        <div ref={panelRef} onMouseEnter={() => window.clearTimeout(timer.current)} onMouseLeave={closeSoon}
+          onClick={e => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}
+          style={{ position: 'fixed', top: pos.top, ...(pos.rtl ? { left: pos.x } : { right: pos.x }), zIndex: 1000, minWidth: 220, maxWidth: 'min(320px, 92vw)', maxHeight: `calc(100vh - ${pos.top + 16}px)`, overflowY: 'auto',
+            background: arrow.bg, color: arrow.fg, border: `1px solid ${arrow.border ?? 'transparent'}`, borderRadius: radius, padding: 8, fontFamily: pos.font, fontSize: 14,
+            boxShadow: '0 12px 32px -12px rgba(0,0,0,.25)' }}>
+          {children}
+        </div>, document.body)}
+    </div>
+  );
+}
+
 export function NavScrollRow({
-  enabled, className, navClassName, wrapClassName, navStyle, wrapperStyle, arrow, navRef, ariaLabel, children,
+  mode, more, className, navClassName, wrapClassName, navStyle, wrapperStyle, arrow, navRef, ariaLabel, children,
 }: {
-  /** false = plain `<nav>` exactly as before (the seller chose wrapping rows). */
-  enabled: boolean;
+  /** `wrap` = plain `<nav>` exactly as before; `scroll` = one line with arrows; `more` = one line, the rest in a "More" dropdown (falls back to `scroll` without `more`). */
+  mode: NavOverflowMode;
+  more?: NavMoreConfig;
   /** Classes of the wrapper that sits in the header layout (carries `hidden lg:flex`, flex-1, the theme's pill, ...). */
   className?: string;
   /** Classes of the `<nav>` itself (flex, gap...). Items should be `shrink-0`. */
@@ -86,8 +156,36 @@ export function NavScrollRow({
   ariaLabel: string;
   children: ReactNode;
 }) {
+  const enabled = mode !== 'wrap';
+  const moreMode = mode === 'more' && !!more;
   const inner = useRef<HTMLElement | null>(null);
+  const moreBox = useRef<HTMLDivElement | null>(null);
   const [state, setState] = useState({ start: false, end: false, rtl: false });
+  const [hiddenFrom, setHiddenFrom] = useState<number | null>(null);
+
+  /** Hides the trailing links that do not fit (they move into the "More" dropdown). Runs synchronously, so nothing flickers. */
+  const fitMore = useCallback(() => {
+    const el = inner.current;
+    const box = moreBox.current;
+    if (!el || !box) return;
+    const kids = Array.from(el.children) as HTMLElement[];
+    kids.forEach(k => k.removeAttribute('data-nav-hidden'));
+    box.style.display = 'none';
+    if (el.scrollWidth <= el.clientWidth + 1) { setHiddenFrom(null); return; }
+    box.style.display = '';
+    const avail = el.clientWidth;
+    const nr = el.getBoundingClientRect();
+    const rtl = getComputedStyle(el).direction === 'rtl';
+    let from = kids.length;
+    for (let i = 0; i < kids.length; i++) {
+      const r = kids[i].getBoundingClientRect();
+      const end = rtl ? nr.right - r.left : r.right - nr.left;
+      if (end > avail + 0.5) { from = i; break; }
+    }
+    if (from >= kids.length) { box.style.display = 'none'; setHiddenFrom(null); return; }
+    kids.forEach((k, i) => { if (i >= from) k.setAttribute('data-nav-hidden', ''); });
+    setHiddenFrom(from);
+  }, []);
 
   const update = useCallback(() => {
     const el = inner.current;
@@ -102,7 +200,7 @@ export function NavScrollRow({
     const el = inner.current;
     if (!enabled || !el) return;
     let raf = 0;
-    const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; update(); placeAll(el); }); };
+    const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; if (moreMode) fitMore(); update(); placeAll(el); }); };
     const onGroup = (e: Event) => {
       const group = (e.target as HTMLElement | null)?.closest?.<HTMLElement>('[data-nav-group]');
       const panel = group?.querySelector<HTMLElement>(':scope > [data-nav-panel]');
@@ -142,7 +240,7 @@ export function NavScrollRow({
       ro?.disconnect(); mo.disconnect(); dirMo.disconnect();
       resetPanels(el);
     };
-  }, [enabled, update]);
+  }, [enabled, moreMode, update, fitMore]);
 
   const setRef = (el: HTMLElement | null) => { inner.current = el; if (navRef) navRef.current = el; };
 
@@ -176,13 +274,18 @@ export function NavScrollRow({
   };
 
   return (
-    <div className={`relative min-w-0 max-w-full ${className ?? ''}`} style={wrapperStyle}>
-      {state.start && btn(-1)}
-      <nav ref={setRef} data-lenis-prevent aria-label={ariaLabel} tabIndex={-1} className={`flex min-w-0 max-w-full overflow-x-auto overscroll-x-contain outline-none [&::-webkit-scrollbar]:hidden ${navClassName}`}
+    <div className={`relative min-w-0 max-w-full ${moreMode ? 'flex items-center' : ''} ${className ?? ''}`} style={wrapperStyle}>
+      {moreMode && <style>{'[data-nav-hidden]{display:none!important}'}</style>}
+      {!moreMode && state.start && btn(-1)}
+      <nav ref={setRef} data-lenis-prevent={moreMode ? undefined : true} aria-label={ariaLabel} tabIndex={-1}
+        className={`flex min-w-0 max-w-full ${moreMode ? 'overflow-hidden' : 'overflow-x-auto overscroll-x-contain'} outline-none [&::-webkit-scrollbar]:hidden ${navClassName}`}
         style={{ scrollbarWidth: 'none', ...navStyle }}>
         {children}
       </nav>
-      {state.end && btn(1)}
+      {moreMode && more && (
+        <MoreMenu boxRef={moreBox} label={more.label} arrow={arrow}>{hiddenFrom !== null ? more.render(hiddenFrom) : null}</MoreMenu>
+      )}
+      {!moreMode && state.end && btn(1)}
     </div>
   );
 }
