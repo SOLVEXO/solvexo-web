@@ -1036,3 +1036,7 @@
 .sx-tbl[data-overflow="1"][data-right="1"] .sx-sticky-r { box-shadow: -10px 0 10px -10px rgba(20, 15, 10, 0.2); }
 .sx-tbl[data-overflow="1"][data-left="1"] .sx-sticky-l-last { box-shadow: 10px 0 10px -10px rgba(20, 15, 10, 0.2); }
 @media print { .sx-tbl-proxy { display: none; } }
+
+/* Header dropdown / mega / "More" panels scroll without showing a scrollbar (storefront-wide, every theme). */
+[data-nav-card], [data-nav-panel], [data-more-panel] { scrollbar-width: none; -ms-overflow-style: none; }
+[data-nav-card]::-webkit-scrollbar, [data-nav-panel]::-webkit-scrollbar, [data-more-panel]::-webkit-scrollbar { display: none; }
