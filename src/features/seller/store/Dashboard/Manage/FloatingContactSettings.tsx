@@ -7,7 +7,7 @@ import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiUpdateStore, type FloatingContactConfig } from '@/api/services/store';
 
 const EMPTY: FloatingContactConfig = {
-  enabled: false, position: 'right', vertical: 'middle', size: 'md', style: 'brand', showLabels: true, labelMode: 'hover', device: 'all',
+  enabled: false, position: 'right', vertical: 'middle', size: 'md', style: 'brand', showLabels: true, labelMode: 'hover', labelPlacement: 'side', device: 'all',
   phone: '', phoneLabel: '', whatsapp: '', whatsappMessage: '', whatsappLabel: '', email: '', emailLabel: '',
   facebook: '', instagram: '', tiktok: '', youtube: '', x: '', snapchat: '', linkedin: '',
   items: [], shape: 'flush', bubbleText: '', customBg: '', customFg: '', sizePx: 0, edgeOffset: 0, bottomOffset: 0, gapPx: -1,
@@ -165,11 +165,18 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
         </div>
       </section>
 
+      {!cfg.enabled && (
+        <p className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-[13px] text-slate">
+          The buttons are off. Turn on the switch above to add your WhatsApp number and social links.
+        </p>
+      )}
+
+      {cfg.enabled && (<>
       <section className={card}>
         <h3 className="mb-3 text-[14px] font-semibold text-ink">WhatsApp</h3>
         <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))]">
           {text('whatsapp', 'WhatsApp number', 'With the country code, e.g. 923001234567. If your footer social icons also show WhatsApp, the customer sees two buttons — keep one.', '+92 300 1234567', 'tel')}
-          {text('whatsappLabel', 'WhatsApp hover text', 'Default: Chat on WhatsApp.')}
+          {text('whatsappLabel', 'WhatsApp hover text', 'Shown only when the customer hovers over the button. Empty = "Chat on WhatsApp".')}
         </div>
       </section>
 
@@ -262,7 +269,11 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
           <Pick label="Colours" value={cfg.style} onChange={v => set('style', v)} options={[{ value: 'brand', label: 'Each brand\'s own colour' }, { value: 'theme', label: 'My store\'s brand colour' }]} />
           <Pick label="Show on" value={cfg.device} onChange={v => set('device', v)} options={[{ value: 'all', label: 'All screens' }, { value: 'desktop', label: 'Desktop and tablet only' }, { value: 'mobile', label: 'Phones only' }]} />
           <Pick label="Icon names" value={cfg.labelMode ?? (cfg.showLabels ? 'hover' : 'none')} onChange={v => setCfg(c => ({ ...c, labelMode: v, showLabels: v !== 'none' }))}
-            options={[{ value: 'hover', label: 'Slide open on hover' }, { value: 'always', label: 'Always beside the icon' }, { value: 'none', label: 'Icons only' }]} />
+            options={[{ value: 'hover', label: 'Show the name on hover' }, { value: 'always', label: 'Always show the name beside the icon' }, { value: 'none', label: 'Icons only (no names)' }]} />
+          {(cfg.labelMode ?? (cfg.showLabels ? 'hover' : 'none')) === 'hover' && (
+            <Pick label="Hover text appears" value={cfg.labelPlacement ?? 'side'} onChange={v => set('labelPlacement', v)}
+              options={[{ value: 'side', label: 'Beside the icon (slides out)' }, { value: 'top', label: 'Above the icon' }, { value: 'bottom', label: 'Below the icon' }]} />
+          )}
           <div className="flex items-end">
             <PreviewBox cfg={cfg}
               onPlace={cfg.posMode === 'free' && canManage ? (x, y) => setCfg(c => ({ ...c, freeX: x, freeY: y })) : undefined} />
@@ -270,7 +281,7 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
         </div>
         <div className="mt-4 grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))]">
           <Pick label="Button shape" value={cfg.shape} onChange={v => set('shape', v)} options={[{ value: 'flush', label: 'Tabs on the screen edge' }, { value: 'round', label: 'Round buttons in the corner' }]} />
-          {text('bubbleText', 'Speech bubble text', 'Shown next to the buttons, e.g. "Need help? Chat with us". Leave empty for none.', 'Need help? Chat with us')}
+          {cfg.shape === 'round' && text('bubbleText', 'Speech bubble text', 'A small white box that stays open above the round button until the customer closes it, e.g. "Need help? Chat with us". Not a hover text. Empty = no bubble.', 'Need help? Chat with us')}
           <Field label="Button colour (all)" hint="Leave empty to use the colours above.">
             {id => <ColorField compact id={id} value={cfg.customBg || '#25D366'} disabled={!canManage} onChange={e => set('customBg', e.target.value)} />}
           </Field>
@@ -308,6 +319,7 @@ export function FloatingContactSettings({ canManage, compact = false }: { canMan
         <p className="mb-3 text-[12px] text-slate">Any other link you want as an icon (Telegram, Maps, a form, a page). Pick any icon or upload yours — it only opens the link.</p>
         <ChromeItemsEditor items={cfg.items ?? []} onChange={next => set('items', next.filter(i => i.kind === 'link'))} showZone={false} itemName="link" compactColours linkOnly />
       </section>
+      </>)}
 
       {canManage && (
         <div className="sticky bottom-3 flex justify-end">

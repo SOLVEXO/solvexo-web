@@ -88,6 +88,12 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
   const centre = config.position === 'center';
   const round = config.shape === 'round';
   const labelMode = config.labelMode ?? (config.showLabels ? 'hover' : 'none');
+  // Hover text as a floating tip (above / below), or beside a round button. Stores that never picked a placement keep the old look.
+  const placement = config.labelPlacement;
+  const tip = labelMode === 'hover' && !!placement && (round || placement !== 'side');
+  const labelClass = labelMode === 'none' || (round && !tip) ? 'fcb-nolabel'
+    : labelMode === 'always' ? 'fcb-always'
+    : tip ? `fcb-tip fcb-tip-${placement}${placement !== 'side' && (config.posMode === 'free' || config.position === 'center') ? ' fcb-tip-mid' : ''}` : '';
   const r = round ? '999px' : radius && /^\d/.test(radius) ? `min(${radius}, 14px)` : '0px';
   // Bottom gap: a round corner button sits above a sticky buy bar, a flush stack clears it too.
   const bottomGap = (round ? 24 : 96) + lift;
@@ -141,6 +147,18 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
         .fcb-nolabel .fcb-l{display:none}
         .fcb-always .fcb-l{max-width:220px;opacity:1;padding-inline:18px 4px}
         .fcb-start.fcb-always .fcb-l{padding-inline:4px 18px}
+        .fcb-tip .fcb-i{overflow:visible;position:relative}
+        .fcb-tip .fcb-l{display:block;position:absolute;max-width:none;padding:6px 10px;border-radius:8px;background:#161412;color:#fff;
+          font-size:13px;line-height:1.3;pointer-events:none;opacity:0;transition:opacity .15s ease;z-index:1}
+        .fcb-tip .fcb-i:hover .fcb-l,.fcb-tip .fcb-i:focus-visible .fcb-l{max-width:none;padding:6px 10px}
+        .fcb-tip-top .fcb-l{bottom:calc(100% + 8px)}
+        .fcb-tip-bottom .fcb-l{top:calc(100% + 8px)}
+        .fcb-tip-top.fcb-end:not(.fcb-tip-mid) .fcb-l,.fcb-tip-bottom.fcb-end:not(.fcb-tip-mid) .fcb-l{inset-inline-end:0}
+        .fcb-tip-top.fcb-start:not(.fcb-tip-mid) .fcb-l,.fcb-tip-bottom.fcb-start:not(.fcb-tip-mid) .fcb-l{inset-inline-start:0}
+        .fcb-tip-mid .fcb-l{left:50%;transform:translateX(-50%)}
+        .fcb-tip-side .fcb-l{top:50%;transform:translateY(-50%)}
+        .fcb-tip-side.fcb-end .fcb-l{inset-inline-end:calc(100% + 8px)}
+        .fcb-tip-side.fcb-start .fcb-l{inset-inline-start:calc(100% + 8px)}
         .fcb-bubble{position:fixed;z-index:60;display:flex;align-items:center;gap:6px;background:#fff;color:#161412;border-radius:10px;padding:8px 8px 8px 14px;
           font-size:13px;font-weight:500;box-shadow:0 6px 18px rgba(0,0,0,.18);font-family:var(--fcb-font,inherit);max-width:min(220px,50vw)}
         .fcb-bubble button{border:0;background:transparent;cursor:pointer;color:inherit;display:grid;place-items:center;padding:2px;opacity:.6}
@@ -150,7 +168,7 @@ export function FloatingContactBar({ config, brandColor, font, radius }: {
         @media (prefers-reduced-motion:reduce){.fcb-l,.fcb-i{transition:none}}
       `}</style>
       <nav
-        className={['fcb', end ? 'fcb-end' : 'fcb-start', round ? 'fcb-round' : '', labelMode === 'none' || round ? 'fcb-nolabel' : labelMode === 'always' ? 'fcb-always' : '', showClass].filter(Boolean).join(' ')}
+        className={['fcb', end ? 'fcb-end' : 'fcb-start', round ? 'fcb-round' : '', labelClass, showClass].filter(Boolean).join(' ')}
         aria-label={ts('fc.aria', 'Contact us')}
         style={{ ...vertical, ...boxPos, ['--s' as string]: `${size}px`, ['--fcb-gap' as string]: `${gapPx}px`, ['--fcb-font' as string]: font || 'inherit' } as CSSProperties}
       >
