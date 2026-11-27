@@ -6,9 +6,10 @@ import { useToast } from '@/contexts/ToastContext';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { ColorField, Select, SkeletonBox } from '@/components/comman/ui';
 import {
-  apiGetBrandKit, apiGetStoreTheme, apiListInstalledThemes, apiSaveBrandKit, brandKitColors,
-  type BrandKit, type StoreThemeData, type StorefrontColors,
+  apiGetBrandKit, apiGetStoreTheme, apiListInstalledThemes, apiSaveBrandKit, apiUpdateStoreThemeColors, brandKitColors,
+  BRAND_KIT_EXTRA_KEYS, type BrandKit, type StoreThemeData, type StorefrontColors,
 } from '@/api/services/storeTheme';
+import { apiUpdateStore } from '@/api/services/store';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 import { getThemeManifest } from '@/features/storefront-themes/themeManifest';
 import type { Section } from '@/api/services/storefrontTypes';
@@ -68,7 +69,7 @@ function Field({ label, children, note }: { label: string; children: ReactNode; 
 }
 
 export function BrandKitPage() {
-  const { storeId, store } = useStoreWorkspace();
+  const { storeId, store, refetch: refetchStore } = useStoreWorkspace();
   const toast = useToast();
   const [installedId, setInstalledId] = useState<string | undefined>();
   const [theme, setTheme] = useState<StoreThemeData | null>(null);
@@ -81,6 +82,25 @@ export function BrandKitPage() {
   const [lockSaving, setLockSaving] = useState(false);
   const [advanced, setAdvanced] = useState(false);
   const [reload, setReload] = useState(0);
+  // brand name + tagline are Store fields (live at once, not part of the theme draft)
+  const [brandName, setBrandName] = useState('');
+  const [tagline, setTagline] = useState('');
+  const [identitySaving, setIdentitySaving] = useState(false);
+  useEffect(() => { setBrandName(store?.name ?? ''); setTagline(store?.tagline ?? ''); }, [store?.name, store?.tagline]);
+  const identityDirty = brandName.trim() !== (store?.name ?? '') || tagline.trim() !== (store?.tagline ?? '');
+  const saveIdentity = async () => {
+    if (!brandName.trim()) { toast.error('Your brand name cannot be empty.'); return; }
+    setIdentitySaving(true);
+    try {
+      await apiUpdateStore({ storeId, name: brandName.trim(), tagline: tagline.trim() });
+      refetchStore();
+      toast.success('Brand name and tagline saved. They are live on your store now.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save your brand name.');
+    } finally {
+      setIdentitySaving(false);
+    }
+  };
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -185,6 +205,15 @@ export function BrandKitPage() {
     setSaving(true);
     try {
       await apiSaveBrandKit(storeId, payload, installedId);
+      // a setting the seller put back on "Theme default" returns to the theme's own value (the kit just stops driving it)
+      const defaults = (manifest?.defaultSettings ?? {}) as Record<string, unknown>;
+      const prev = (saved ?? {}) as unknown as Record<string, unknown>;
+      const cleared: Record<string, unknown> = {};
+      for (const k of BRAND_KIT_EXTRA_KEYS) {
+        const now = (payload as unknown as Record<string, unknown>)[k];
+        if ((now === null || now === undefined || now === '') && prev[k] && defaults[k] !== undefined) cleared[k] = defaults[k];
+      }
+      if (Object.keys(cleared).length > 0) await apiUpdateStoreThemeColors(storeId, cleared as Partial<StorefrontColors>, installedId);
       setSaved(payload);
       setKit(payload);
       toast.success('Brand Kit saved to your draft. Open Customize and press Publish to make it live.');
@@ -364,6 +393,21 @@ export function BrandKitPage() {
               {select('Button hover', 'buttonHover', [['fade', 'Fade'], ['lift', 'Lift'], ['grow', 'Grow']])}
               {select('Button shadow', 'buttonShadow', [['none', 'None'], ['soft', 'Soft']])}
               {select('Card hover', 'cardHover', [['none', 'None'], ['shadow', 'Shadow'], ['lift', 'Lift']])}
+            </div>
+          </Card>
+
+          <Card title="Brand name and tagline" hint="Shown in your header, emails and search results. These two save straight to your live store.">
+            <Field label="Brand name">
+              <input className={INPUT} value={brandName} maxLength={60} onChange={e => setBrandName(e.target.value)} />
+            </Field>
+            <Field label="Tagline (optional)">
+              <input className={INPUT} value={tagline} maxLength={120} placeholder="A short line that says what you stand for" onChange={e => setTagline(e.target.value)} />
+            </Field>
+            <div className="flex justify-end">
+              <button type="button" onClick={() => void saveIdentity()} disabled={!identityDirty || identitySaving}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-bone bg-white text-[12.5px] font-bold text-charcoal cursor-pointer disabled:opacity-50">
+                {identitySaving && <Loader2 size={13} className="animate-spin" />} Save name and tagline
+              </button>
             </div>
           </Card>
 
