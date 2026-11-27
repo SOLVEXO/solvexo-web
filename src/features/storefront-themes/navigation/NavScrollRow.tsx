@@ -126,7 +126,7 @@ function MoreMenu({ boxRef, label, arrow, children }: { boxRef: MutableRefObject
         {label}<ChevronDown size={13} aria-hidden className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && pos && createPortal(
-        <div ref={panelRef} onMouseEnter={() => window.clearTimeout(timer.current)} onMouseLeave={closeSoon}
+        <div ref={panelRef} data-more-panel onMouseEnter={() => window.clearTimeout(timer.current)} onMouseLeave={closeSoon}
           onClick={e => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}
           style={{ position: 'fixed', top: pos.top, ...(pos.rtl ? { left: pos.x } : { right: pos.x }), zIndex: 1000, minWidth: 220, maxWidth: 'min(320px, 92vw)', maxHeight: `calc(100vh - ${pos.top + 16}px)`, overflowY: 'auto',
             background: arrow.bg, color: arrow.fg, border: `1px solid ${arrow.border ?? 'transparent'}`, borderRadius: radius, padding: 8, fontFamily: pos.font, fontSize: 14,
