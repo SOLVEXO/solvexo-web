@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Block } from '@/api/services/storefrontTypes';
 import { newTabProps } from '@/features/storefront-themes/linkTarget';
 import { PreviewBlock } from '@/features/storefront-themes/previewInspector';
+import { useInlineEditActive } from '@/features/storefront-themes/inlineEdit';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 
 const num = (v: unknown, min: number, max: number, fallback: number): number => {
@@ -30,6 +31,7 @@ const CSS = `
  */
 export function ImageMosaicGrid({ settings, blocks, defaultRadius, fontFamily }: { settings: Record<string, any>; blocks: Block[]; defaultRadius: string; fontFamily?: string }) {
   const { resolveLink } = useStorefront();
+  const editing = useInlineEditActive(); // in the editor a tile without a photo shows a placeholder instead of vanishing
   if (blocks.length === 0) return null;
   const cols = num(settings.columns, 1, 12, 4);
   const mcols = Math.min(cols, num(settings.mobileColumns, 1, 6, 2));
@@ -39,14 +41,14 @@ export function ImageMosaicGrid({ settings, blocks, defaultRadius, fontFamily }:
 
   const cells = blocks.map((b, i) => {
     const s = b.settings as Record<string, any>;
-    if (!s.imageUrl) return null;
+    if (!s.imageUrl && !editing) return null;
     const cs = Math.min(cols, num(s.colSpan, 1, 12, 1));
     const slot = { ['--im-cs' as string]: cs, ['--im-csm' as string]: Math.min(mcols, cs), ['--im-rs' as string]: num(s.rowSpan, 1, 12, 1) } as CSSProperties;
     const style: CSSProperties = { borderRadius: radius, background: '#0000000d' };
-    const img = <img src={s.imageUrl} alt={typeof s.alt === 'string' ? s.alt : ''} loading="lazy" style={{ objectFit: fit, objectPosition: typeof s.focalPoint === 'string' && s.focalPoint ? s.focalPoint : 'center' }} />;
+    const img = !s.imageUrl ? null : <img src={s.imageUrl} alt={typeof s.alt === 'string' ? s.alt : ''} loading="lazy" style={{ objectFit: fit, objectPosition: typeof s.focalPoint === 'string' && s.focalPoint ? s.focalPoint : 'center' }} />;
     const cap = s.caption ? <span className="im-cap" style={{ fontFamily }}>{s.caption}</span> : null;
     const target = s.link ? resolveLink(s.link as StorefrontLinkSettings) : null;
-    const cls = `im-cell ${hover}`.trim();
+    const cls = `im-cell ${hover} ${s.imageUrl ? '' : 'sx-media'}`.trim();
     return (
       <div key={b._id ?? i} className="im-slot" style={slot}>
         <PreviewBlock blockId={String(b._id ?? i)}>

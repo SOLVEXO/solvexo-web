@@ -305,7 +305,7 @@ export function ThemeLivePreview({
           // text-less and media-less shells (blocks added with nothing in them): blank unless a child paints a real picture (a flat colour or gradient overlay is not content)
           empty = !Array.from(el.querySelectorAll<HTMLElement>('*')).some(n => (n.ownerDocument.defaultView?.getComputedStyle(n).backgroundImage ?? 'none').includes('url('));
         }
-        if (SKIP.has(type)) empty = false;
+        if (SKIP.has(type) || el.querySelector('.sx-media')) empty = false; // image placeholders are content enough
         const label = 'Empty section: add blocks or content in the left panel';
         if (empty) { if (el.getAttribute('data-sx-empty') !== label) el.setAttribute('data-sx-empty', label); }
         else if (el.hasAttribute('data-sx-empty')) el.removeAttribute('data-sx-empty');
