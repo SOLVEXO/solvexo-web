@@ -5,6 +5,7 @@ import { NavAnchor } from '../../../navigation/NavAnchor';
 import { NavBadge } from '../../../navigation/NavBadge';
 import { isMegaItem } from '../../../navigation/megaNav';
 import { fashionTheme as t } from '../../theme.config';
+import { blockStyle } from '../../../blockStyle';
 
 function Toggle({ expanded, label, controls, onClick }: { expanded: boolean; label: string; controls: string; onClick: () => void }) {
   return (
@@ -23,10 +24,13 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
   const [openChildId, setOpenChildId] = useState<string | null>(null);
   const mega = isMegaItem(item);
   const row = `1px solid ${t.colors.border}`;
+  // the seller's own Style for this link (Header editor -> link -> Style), merged on, no wrapper
+  const bs = blockStyle(item.style);
+  const sty = (className: string, style: React.CSSProperties) => ({ className: `${className} ${bs?.className ?? ""}`.trim(), style: { ...style, ...bs?.style } });
   const top = { color: t.colors.ink, fontFamily: t.fonts.body, fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' } as const;
 
   if (item.children.length === 0) {
-    return <NavAnchor link={item.link} onClick={onNavigate} className="block no-underline" style={{ ...top, padding: '16px 4px', borderBottom: row }}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>;
+    return <NavAnchor link={item.link} onClick={onNavigate} {...sty("block no-underline", { ...top, padding: '16px 4px', borderBottom: row })}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>;
   }
 
   const panelId = `${baseId}-panel`;
@@ -34,8 +38,8 @@ export function MobileNavItem({ item, onNavigate }: { item: ResolvedStorefrontNa
     <div style={{ borderBottom: row }}>
       <div className="flex items-center justify-between gap-2 py-2.5 pl-1">
         {item.link.to || item.link.href
-          ? <NavAnchor link={item.link} onClick={onNavigate} className="flex-1 py-1.5 no-underline" style={top}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
-          : <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={panelId} className="flex-1 cursor-pointer border-0 bg-transparent py-1.5 text-left" style={top}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></button>}
+          ? <NavAnchor link={item.link} onClick={onNavigate} {...sty("flex-1 py-1.5 no-underline", top)}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></NavAnchor>
+          : <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={panelId} {...sty("flex-1 cursor-pointer border-0 bg-transparent py-1.5 text-left", top)}>{item.label}<NavBadge badge={item.badge} fallbackBg={t.colors.accent} fallbackInk={t.colors.accentInk} /></button>}
         <Toggle expanded={open} label={item.label} controls={panelId} onClick={() => setOpen(o => !o)} />
       </div>
 
